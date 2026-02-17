@@ -15,10 +15,10 @@ The system has three layers: **the Queen** (the orchestrator that never touches 
 ├───────────┬─────────────┬───────────────────────────────┤
 │  Scout    │  Pantry     │  Pest Control                 │
 │  - Recon  │  - Composes │  - CCO (prompt audit)         │
-│  - Writes │    data files│  - WWD (scope)               │
-│    briefing│  - Writes   │  - DMVDC (substance)         │
-│  - Writes │    previews │  - CCB (consolidation│
-│    metadata│            │    audit)                     │
+│  - Writes │   data files│  - WWD (scope)                │
+│   briefing│  - Writes   │  - DMVDC (substance)          │
+│  - Writes │    previews │  - CCB (consolidation         │
+│   metadata│             │    audit)                     │
 ├───────────┴─────────────┴───────────────────────────────┤
 │  Dirt Pushers (up to 7 concurrent)                      │
 ├─────────────────────────────────────────────────────────┤
@@ -69,7 +69,7 @@ Queen                          Pantry                    Pest Control
   │                              ├─write data files to disk  │
   │                              ├─write combined previews   │
   │  ◄──return paths + done──────┤                           │
-  │  (~10 lines)                 │ (agent dies, context freed)│
+  │  (~10 lines)                 │(agent dies, context freed)│
   │                                                          │
   ├──spawn─────────────────────────────────────────────────► │
   │  "read previews from {dir},                              │
@@ -110,9 +110,9 @@ Pest Control reads `templates/checkpoints.md`, task metadata, and git diffs itse
 Queen                                              Pest Control
   │  (agents committed, Queen has commit hashes)        │
   │                                                     │
-  ├──spawn──────────────────────────────────────────► │
+  ├──spawn──────────────────────────────────────────►   │
   │  "read checkpoints.md,                              │
-  │   run WWD for {tasks} against {commits},             │
+  │   run WWD for {tasks} against {commits},            │
   │   run DMVDC: read summary docs at {paths},          │
   │   cross-check against git diffs,                    │
   │   write reports, return verdicts"                   │
