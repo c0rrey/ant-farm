@@ -79,7 +79,7 @@ bd show/ready/blocked output, agent template files (scout.md, pantry.md, etc.)
 | Agent | subagent_type | Rationale |
 |-------|---------------|-----------|
 | Scout | `scout-organizer` | Custom agent: agent-organizer + Bash for bd CLI |
-| Pantry | `general-purpose` | Needs file reads + writes |
+| Pantry | `prompt-engineer` | Composes agent prompts from templates + metadata |
 | Pest Control | `code-reviewer` | Audits diffs, cross-checks claims against code |
 | Dirt Pushers | from Pantry verdict table | Specialist per task (see pantry.md selection tables) |
 | Nitpickers | `code-reviewer` | Fixed in nitpicker-skeleton.md |
