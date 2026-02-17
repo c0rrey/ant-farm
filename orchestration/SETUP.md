@@ -217,8 +217,8 @@ Follow reference/dependency-analysis.md more carefully:
 Fix: Check review comprehensiveness:
 ```
 Use exact prompts from templates/reviews.md.
-Each review should find 10-20 issues for 40+ task sessions.
-If finding <5 issues, review may be too superficial.
+Each review type should find 3-10 root-cause issues for a typical session.
+If finding <3 issues, review may be too superficial.
 ```
 
 ## Common High-Conflict Files

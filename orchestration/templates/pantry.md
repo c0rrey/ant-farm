@@ -108,7 +108,7 @@ Compose 4 review data files, each containing:
 - Report output path: `.beads/agent-summaries/{epic-id}/review-reports/{type}-review-{timestamp}.md`
 - "Do NOT file beads — Big Head handles all bead filing"
 - Messaging guidelines (when to message teammates, when not to)
-- Full report format (from reviews.md Teammate Report Format section)
+- Full report format (from reviews.md Nitpicker Report Format section)
 
 Files to write:
 - `{session-dir}/prompts/review-clarity.md`

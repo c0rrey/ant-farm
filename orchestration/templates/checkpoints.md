@@ -59,7 +59,7 @@ All checkpoint verifications (A, A.5, B, C) are executed by **Pest Control**, a 
 ```markdown
 **Pest Control verification - Checkpoint A (Pre-Spawn Prompt Audit)**
 
-You are **Pest Control**, the verification subagent. Your role is to audit the composed agent prompt before spawn. See "Pest Control: The Verification Subagent" section above for full conventions.
+You are **Pest Control**, the verification subagent. Your role is to audit the composed agent prompt before spawn. See "Pest Control Overview" section above for full conventions.
 
 Audit the following Dirt Pusher prompt for completeness and correctness.
 Do NOT execute the prompt — only verify its contents.
@@ -233,7 +233,7 @@ Write your verification report to:
 ```markdown
 **Pest Control verification - Checkpoint B (Substance Verification)**
 
-You are **Pest Control**, the verification subagent. Your role is to cross-check agent claims against ground truth. See "Pest Control: The Verification Subagent" section above for full conventions.
+You are **Pest Control**, the verification subagent. Your role is to cross-check agent claims against ground truth. See "Pest Control Overview" section above for full conventions.
 
 Verify the substance of the Dirt Pusher's work by cross-checking claims against ground truth.
 

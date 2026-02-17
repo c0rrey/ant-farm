@@ -32,7 +32,9 @@ Your first instinct will be to "gather context" by running `bd show` on the task
             (→ templates/dirt-pusher-skeleton.md).
             Prepare next wave (Pantry + Pest Control) WHILE current wave runs.
 
-**Step 3:** Verify — after each wave completes, spawn Pest Control for A.5 + B
+**Step 3:** Verify — after each agent commits, spawn Pest Control for A.5
+            (scope check before next agent in the wave can proceed).
+            After the full wave completes, spawn Pest Control for B
             (pass task IDs, commit hashes, summary doc paths; Pest Control reads
             checkpoints.md + task-metadata/ + git diffs itself).
             Failed B → resume agent (max 2 retries).
@@ -57,6 +59,7 @@ Your first instinct will be to "gather context" by running `bd show` on the task
 | Gate | Blocks | Artifact |
 |------|--------|----------|
 | Checkpoint A PASS | Agent/team spawn | .beads/agent-summaries/<epic>/verification/pest-control/*-checkpoint-a-*.md |
+| Checkpoint A.5 PASS | Next agent in wave | .beads/agent-summaries/<epic>/verification/pest-control/*-checkpoint-a5-*.md |
 | Checkpoint B PASS | Task closure (bd close) | .beads/agent-summaries/<epic>/verification/pest-control/*-checkpoint-b-*.md |
 | Checkpoint C PASS | Presenting results to user | .beads/agent-summaries/<epic>/verification/pest-control/*-consolidation-checkpoint-c-*.md |
 | Reviews | Mandatory after ALL implementation completes — do NOT ask user, do NOT skip |

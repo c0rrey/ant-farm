@@ -28,7 +28,7 @@ The system has three layers: **the Queen** (the orchestrator that never touches 
 
 ## Workflow
 
-Triggered by saying **"let's get to work"** in any project wired up per `SETUP.md`.
+Triggered by saying **"let's get to work"** in any project wired up per `orchestration/SETUP.md`.
 
 ### Step 0: Session setup
 
@@ -270,11 +270,11 @@ Documented in `reference/known-failures.md`. Key incidents that shaped the syste
 | `orchestration/templates/implementation.md` | the Pantry | Agent prompt template with 6 mandatory steps |
 | `orchestration/templates/checkpoints.md` | Pest Control | All checkpoint definitions (A, A.5, B, C) |
 | `orchestration/templates/reviews.md` | the Pantry (review mode) | Review protocol, 4 review types, report format, Big Head consolidation |
-| `orchestration/templates/pantry.md` | The Queen (to spawn the Pantry) | the Pantry's own instructions |
+| `orchestration/templates/pantry.md` | the Pantry (self-read at spawn) | the Pantry's own instructions |
 | `orchestration/templates/dirt-pusher-skeleton.md` | The Queen | Minimal agent spawn template |
 | `orchestration/templates/nitpicker-skeleton.md` | The Queen | Minimal review agent spawn template |
 | `orchestration/templates/big-head-skeleton.md` | The Queen | Minimal Big Head consolidation spawn template |
 | `orchestration/templates/queen-state.md` | The Queen | Session state file schema |
-| `orchestration/templates/scout.md` | The Queen (to spawn the Scout) | Pre-flight recon instructions |
+| `orchestration/templates/scout.md` | the Scout (self-read at spawn) | Pre-flight recon instructions |
 | `orchestration/reference/dependency-analysis.md` | The Scout | Pre-flight conflict analysis, spawn patterns |
 | `orchestration/reference/known-failures.md` | Post-mortem reference | Past failures and fixes applied |
