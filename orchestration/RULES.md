@@ -24,8 +24,10 @@ Your first instinct will be to "gather context" by running `bd show` on the task
             gathering. WAIT for the Scout to return its briefing verdict,
             then present the recommended strategy to the user for approval.
 
-**Step 2:** Spawn — create epic artifact dirs (from briefing Epics line).
-            Spawn the Pantry (`pantry-impl`) for data files + combined previews
+**Step 2:** Spawn — pre-spawn directory setup (run BEFORE Pantry or any agent):
+              `mkdir -p .beads/agent-summaries/<epic-id>/verification/pc/`
+              (one command per epic; use `_standalone` for tasks with no epic)
+            Then: Spawn the Pantry (`pantry-impl`) for data files + combined previews
             (→ templates/pantry.md). Spawn Pest Control (`pest-control`) for Colony Cartography Office (CCO)
             (pass preview file paths, Pest Control reads checkpoints.md itself).
             Only after all CCO PASS: spawn agents using skeleton
@@ -39,7 +41,10 @@ Your first instinct will be to "gather context" by running `bd show` on the task
             checkpoints.md + task-metadata/ + git diffs itself).
             Failed DMVDC → resume agent (max 2 retries).
 
-**Step 3b:** Review — spawn the Pantry (`pantry-review`) for review prompts + previews.
+**Step 3b:** Review — pre-spawn directory setup (run BEFORE Pantry or review team):
+               `mkdir -p .beads/agent-summaries/<epic-id>/review-reports/`
+               (one command per epic; use `_standalone` for tasks with no epic)
+             Then: spawn the Pantry (`pantry-review`) for review prompts + previews.
              Spawn Pest Control for CCO on review previews.
              Create Nitpicker team with 5 members: 4 reviewers
              (→ templates/nitpicker-skeleton.md) + Big Head
