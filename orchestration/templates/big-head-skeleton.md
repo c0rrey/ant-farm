@@ -2,7 +2,8 @@
 
 ## Instructions for The Queen
 
-Fill in all `{PLACEHOLDER}` values (uppercase) and use the result as the Task tool `prompt` parameter.
+Big Head is a **member of the Nitpicker team** (spawned via TeamCreate, NOT as a separate Task agent).
+Fill in all `{PLACEHOLDER}` values (uppercase) and use the result as the team member's prompt.
 The agent-facing text starts below the `---` separator. Do NOT include this instruction block.
 
 Placeholders:

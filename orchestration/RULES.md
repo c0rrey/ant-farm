@@ -39,7 +39,10 @@ Your first instinct will be to "gather context" by running `bd show` on the task
 
 **Step 3b:** Review — spawn the Pantry (review mode) for review prompts + previews.
              Spawn Pest Control for Checkpoint A on review previews.
-             Create Nitpicker team (→ templates/nitpicker-skeleton.md).
+             Create Nitpicker team with 5 members: 4 reviewers
+             (→ templates/nitpicker-skeleton.md) + Big Head
+             (→ templates/big-head-skeleton.md). Big Head MUST be a team
+             member, NOT a separate Task agent.
              After team completes, spawn Pest Control for B + C
              (pass report paths; Pest Control reads checkpoints.md itself).
 

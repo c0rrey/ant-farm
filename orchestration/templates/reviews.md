@@ -30,9 +30,9 @@ This ensures all 4 reviewers can write reports immediately without each needing 
 
 ## Agent Teams Protocol
 
-After the transition gate passes, the Queen launches **the Nitpickers** using **TeamCreate** (NOT the Task tool) — four specialized reviewers running in parallel with bidirectional messaging via SendMessage. Reviewers produce **reports only** and do NOT file beads. Big Head consolidates all findings, deduplicates by root cause, and files beads.
+After the transition gate passes, the Queen launches **the Nitpickers** using **TeamCreate** (NOT the Task tool) — four specialized reviewers plus **Big Head** (the consolidator), all as members of the same team. Reviewers produce **reports only** and do NOT file beads. Big Head consolidates all findings, deduplicates by root cause, and files beads.
 
-**CRITICAL**: Reviews MUST use Agent Teams (TeamCreate + SendMessage), NOT plain Task tool subagents. The team structure enables cross-pollination between reviewers.
+**CRITICAL**: Reviews MUST use Agent Teams (TeamCreate + SendMessage), NOT plain Task tool subagents. The team structure enables cross-pollination between reviewers. **Big Head MUST be spawned as a team member** (not a separate Task agent) so it can receive messages from reviewers and coordinate within the team.
 
 ### Why Agent Teams (Not Sequential)
 
@@ -49,10 +49,11 @@ After the transition gate passes, the Queen launches **the Nitpickers** using **
 
 **Pre-spawn requirement**: Before creating the Nitpickers, run **Checkpoint A (Pre-Spawn Prompt Audit)** on all 4 review prompts. See `templates/checkpoints.md`.
 
-The Queen creates the Nitpickers with 4 tasks:
+The Queen creates the Nitpicker team with **5 members** (4 reviewers + Big Head):
 
 ```markdown
-Create a team with these 4 review tasks. All reviewers work in parallel.
+Create a team with these 5 members. The 4 reviewers work in parallel.
+Big Head waits for all 4 reports, then consolidates.
 
 Nitpickers produce REPORTS ONLY — do NOT file beads (`bd create`).
 Big Head consolidates all reports, groups findings by root cause, and files beads.
@@ -64,7 +65,10 @@ Files to review: <list of files changed in session>
 2. Edge Cases Review (P2) — see prompt below
 3. Correctness Redux Review (P1-P2) — see prompt below
 4. Excellence Review (P3) — see prompt below
+5. Big Head (consolidation, opus) — see prompt from big-head-skeleton.md
 ```
+
+**Big Head is spawned as a team member using the big-head-skeleton.md template**, not as a separate Task agent. The Queen fills in the skeleton placeholders and uses the result as the teammate's prompt.
 
 ### Messaging Guidelines
 
@@ -316,7 +320,7 @@ List every in-scope file with its review status. Files with no findings MUST sti
 
 **Model:** `opus`
 
-After all 4 Nitpicker reports are complete, Big Head (orchestrator) consolidates:
+After all 4 Nitpicker reports are complete, Big Head (a member of the same team) consolidates:
 
 ### Step 0: Verify All Reports Exist (MANDATORY GATE)
 
