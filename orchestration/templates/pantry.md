@@ -89,16 +89,16 @@ Return to the Queen in this exact format:
 
 ## Section 2: Review Mode
 
-**Input from the Queen**: epic ID, commit range (first-commit..last-commit), list of changed files, session dir path
+**Input from the Queen**: epic ID, commit range (first-commit..last-commit), list of changed files, session dir path, review timestamp (YYYYMMDD-HHMMSS format)
 
 ### Step 1: Read Templates
 
 Read this file:
 - `~/.claude/orchestration/templates/reviews.md`
 
-### Step 2: Generate Timestamp
+### Step 2: Use Timestamp
 
-Generate a single review timestamp: `YYYYMMDD-HHMMSS` format. Use this same timestamp for ALL review files in this cycle.
+Use the review timestamp provided by the Queen. Do NOT generate a new timestamp. Use this same timestamp for ALL review files in this cycle.
 
 ### Step 3: Compose Review Data Files
 
