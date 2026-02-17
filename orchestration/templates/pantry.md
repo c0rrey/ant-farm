@@ -126,6 +126,8 @@ Files to write:
 
 ### Step 4: Compose Big Head Consolidation Data File
 
+> **See also**: `~/.claude/orchestration/templates/reviews.md` — **Big Head Consolidation Protocol** section. That section contains the full format specification: Step 0 (report verification gate), Steps 1-4 (read, merge/deduplicate, file beads, write consolidated summary), the root-cause grouping template, and the consolidated summary format. Read it before composing this data file.
+
 Write `{session-dir}/prompts/review-big-head-consolidation.md` containing:
 - All 4 report paths (with the timestamp)
 - Deduplication protocol (from reviews.md Big Head Consolidation Protocol)
