@@ -4,11 +4,20 @@
 
 The orchestration system uses custom Claude Code agent types defined in `agents/`. These are synced to `~/.claude/agents/` automatically on `git push` via the pre-push hook.
 
-**First-time setup:** After cloning, run the sync manually to install the agents:
+**First-time setup:** After cloning, run both setup commands:
 
 ```bash
+# 1. Install the pre-push hook so sync runs automatically on every git push:
+./scripts/install-hooks.sh
+
+# 2. Run the initial sync manually so agents are available right now:
 ./scripts/sync-to-claude.sh
 ```
+
+The pre-push hook (`scripts/install-hooks.sh`) writes `.git/hooks/pre-push`, which calls
+`scripts/sync-to-claude.sh` on every `git push`. The versioned hook source lives at
+`.beads/hooks/pre-push` (a bd-shim reference), but the hook installed by this script is the
+working variant that delegates directly to `scripts/sync-to-claude.sh`.
 
 Then **restart Claude Code** (fully quit and reopen) — agent types are loaded at startup and won't appear until the process restarts.
 
