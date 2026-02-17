@@ -1,5 +1,17 @@
 # Orchestration Setup
 
+## Prerequisites
+
+The orchestration system uses custom Claude Code agent types defined in `agents/`. These are synced to `~/.claude/agents/` automatically on `git push` via the pre-push hook.
+
+**First-time setup:** After cloning, run the sync manually to install the agents:
+
+```bash
+./scripts/sync-to-claude.sh
+```
+
+Then **restart Claude Code** (fully quit and reopen) — agent types are loaded at startup and won't appear until the process restarts.
+
 ## Quick Setup (5 minutes)
 
 **Step 1: Add orchestration reference to project CLAUDE.md**

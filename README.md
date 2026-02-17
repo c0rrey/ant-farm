@@ -261,11 +261,25 @@ Documented in `reference/known-failures.md`. Key incidents that shaped the syste
 
 **Work scrambling** (Epic 74g) — Three agents on the same file without line-level boundaries. Each "helpfully" fixed adjacent issues, scrambling work attribution. Fixes: WWD for real-time scope verification, enhanced CCO requiring line-number specificity, anti-scope-creep template with explicit boundary language, and pre-flight conflict risk assessment.
 
+## Custom agents
+
+Custom Claude Code agent types live in `agents/` and are synced to `~/.claude/agents/` on push via the pre-push hook. Changes to agent files require restarting Claude Code (fully quit and reopen) to take effect.
+
+| Agent | Tools | Purpose |
+|-------|-------|---------|
+| `scout-organizer` | Bash, Read, Write, Glob, Grep | Pre-flight recon: task discovery, dependency analysis, execution strategy |
+| `pest-control` | Bash, Read, Write, Glob, Grep | Verification auditor: checkpoint audits (CCO, WWD, DMVDC, CCB) |
+| `pantry-impl` | Read, Write, Glob, Grep | Implementation prompt composer: builds task briefs and combined previews |
+| `pantry-review` | Read, Write, Glob, Grep | Review prompt composer: builds review briefs and combined previews |
+| `nitpicker` | Read, Write, Edit, Bash, Glob, Grep | Code reviewer: finds issues with file:line specificity and calibrated severity |
+| `big-head` | Read, Write, Edit, Bash, Glob, Grep | Consolidation reviewer: merges and deduplicates findings across Nitpickers |
+
 ## File reference
 
 | File | Read by | Purpose |
 |------|---------|---------|
 | `CLAUDE.md` | Claude Code (all projects) | Global instructions: triggers, session completion rules |
+| `agents/*.md` | Claude Code (at startup) | Custom agent type definitions, synced to `~/.claude/agents/` on push |
 | `orchestration/RULES.md` | The Queen | Workflow steps, hard gates, concurrency rules, template lookup |
 | `orchestration/SETUP.md` | User | How to wire orchestration into a new project |
 | `orchestration/templates/implementation.md` | the Pantry | Agent prompt template with 6 mandatory steps |
