@@ -20,15 +20,15 @@
 |------|--------|-------|---------|
 | 1    | pending/completed/failed | <task-ids> | All PASS / <details> |
 
-## Colony TSA
-| Wave | Status | Verdict Summary |
-|------|--------|-----------------|
-| 1    | pending/completed/failed | All PASS / <details> |
-
-## Checkpoint Status
-| Checkpoint | Target | Result | Artifact Path |
-|------------|--------|--------|---------------|
-| C | consolidation | PASS/FAIL | <path> |
+## Pest Control
+| Phase | Checkpoint | Status | Verdict |
+|-------|------------|--------|---------|
+| Wave 1 prompts | A | pending/completed/failed | All PASS / <details> |
+| Wave 1 post | A.5 + B | pending/completed/failed | All PASS / <details> |
+| Wave 2 prompts | A | pending/completed/failed | All PASS / <details> |
+| Wave 2 post | A.5 + B | pending/completed/failed | All PASS / <details> |
+| Reviews | A | pending/completed/failed | All PASS / <details> |
+| Reviews | B + C | pending/completed/failed | All PASS / <details> |
 
 ## Queue Position
 - **Completed**: <N> of <total> tasks

@@ -10,21 +10,19 @@ The system has three layers: **the Queen** (the orchestrator that never touches 
 ┌─────────────────────────────────────────────────────────┐
 │  The Queen (orchestrator)                               │
 │  - Reads briefing + verdict tables only                 │
-│  - Spawns Scout, Pantry, Colony TSA                     │
+│  - Spawns Scout, Pantry, Pest Control directly          │
 │  - Only agent that pushes to remote                     │
 ├───────────┬─────────────┬───────────────────────────────┤
-│  Scout    │  Pantry     │  Colony TSA                   │
-│  - Recon  │  - Prompts  │  - Checkpoints               │
-│  - Pre-   │  - Reads    │  - Spawns Pest Control        │
-│    flight │    Scout's  │  - Returns verdicts           │
-│  - Writes │    metadata │                               │
-│    briefing│            │                               │
+│  Scout    │  Pantry     │  Pest Control                 │
+│  - Recon  │  - Composes │  - Checkpoint A (prompt audit)│
+│  - Writes │    data files│  - Checkpoint A.5 (scope)    │
+│    briefing│  - Writes   │  - Checkpoint B (substance)  │
+│  - Writes │    previews │  - Checkpoint C (consolidation│
+│    metadata│            │    audit)                     │
 ├───────────┴─────────────┴───────────────────────────────┤
 │  Dirt Pushers (up to 7 concurrent)                      │
 ├─────────────────────────────────────────────────────────┤
 │  The Nitpickers (4 reviewers + Big Head)                │
-├─────────────────────────────────────────────────────────┤
-│  Pest Control (verification)                            │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -52,11 +50,40 @@ The Queen reads the briefing, presents the strategy options, and **waits for use
 ### Step 2: Spawn implementation agents
 
 The Queen delegates prompt composition to **the Pantry**, a subagent that:
-1. Reads `templates/implementation.md` and `templates/checkpoints.md` (keeping these out of the Queen's context)
+1. Reads `templates/implementation.md` (keeping it out of the Queen's context)
 2. Extracts pre-digested context from each task (affected files, root cause, acceptance criteria)
 3. Writes a data file per task with scope boundaries and explicit off-limits areas
-4. Runs **Checkpoint A** (pre-spawn prompt audit) on each composed prompt
-5. Returns a verdict table — the Queen only spawns agents with PASS verdicts
+4. Writes combined prompt previews (skeleton + data file) to `{session-dir}/previews/`
+5. Returns a file path table — data files and preview files for each task
+
+The Queen then spawns **Pest Control** to audit the preview files against **Checkpoint A**. Pest Control reads `templates/checkpoints.md` itself, audits each preview, writes reports, and returns a verdict table. The Queen only spawns agents with PASS verdicts.
+
+```
+Queen                          Pantry                    Pest Control
+  │                              │                           │
+  ├──spawn────────────────────►  │                           │
+  │  "compose Wave N prompts"    │                           │
+  │                              ├─read templates            │
+  │                              ├─read task-metadata/       │
+  │                              ├─write data files to disk  │
+  │                              ├─write combined previews   │
+  │  ◄──return paths + done──────┤                           │
+  │  (~10 lines)                 │ (agent dies, context freed)│
+  │                                                          │
+  ├──spawn─────────────────────────────────────────────────► │
+  │  "read previews from {dir},                              │
+  │   audit against Checkpoint A                             │
+  │   in checkpoints.md,                                     │
+  │   write reports, return verdicts"                        │
+  │                                                          ├─read checkpoints.md
+  │                                                          ├─read preview files
+  │                                                          ├─audit each
+  │                                                          ├─write reports
+  │  ◄──return verdict table─────────────────────────────────┤
+  │  (~10 lines)                                (agent dies) │
+  │                                                          │
+  ├──spawn Dirt Pushers (up to 7)──►                         │
+```
 
 The Queen then spawns agents using `templates/dirt-pusher-skeleton.md`, a minimal template that points the agent to its data file. Each agent executes 6 mandatory steps:
 
@@ -71,14 +98,33 @@ Agents are constrained by **scope boundaries**: they may only edit the files and
 
 ### Step 3: Monitor and verify
 
-After each agent commits, **Colony TSA** runs verification in batch:
+After each wave completes, the Queen spawns **Pest Control** directly for post-wave verification:
 
-- **Checkpoint A.5** (haiku, mechanical) — compares files changed in the commit against expected scope from the task. Catches scope creep between agents before it cascades.
-- **Checkpoint B** (sonnet, judgment-based) — reads the agent's summary doc and cross-checks claims against the actual git diff: Do the claimed file changes exist? Are acceptance criteria genuinely met? Are the 4 design approaches substantively distinct? Is the correctness review specific or boilerplate?
+- **Checkpoint A.5** (scope verification) — compares files changed in the commit against expected scope from the task. Catches scope creep between agents before it cascades.
+- **Checkpoint B** (substance verification) — reads the agent's summary doc and cross-checks claims against the actual git diff: Do the claimed file changes exist? Are acceptance criteria genuinely met? Are the 4 design approaches substantively distinct? Is the correctness review specific or boilerplate?
+
+Pest Control reads `templates/checkpoints.md`, task metadata, and git diffs itself — the Queen only passes task IDs, commit hashes, and summary doc paths.
+
+```
+Queen                                              Pest Control
+  │  (agents committed, Queen has commit hashes)        │
+  │                                                     │
+  ├──spawn──────────────────────────────────────────► │
+  │  "read checkpoints.md,                              │
+  │   run A.5 for {tasks} against {commits},            │
+  │   run B: read summary docs at {paths},              │
+  │   cross-check against git diffs,                    │
+  │   write reports, return verdicts"                   │
+  │                                                     ├─read checkpoints.md
+  │                                                     ├─per task: git diff + summary doc
+  │                                                     ├─write A.5 + B reports
+  │  ◄──return verdict table────────────────────────────┤
+  │  (~15 lines)                            (agent dies)│
+```
 
 Failed Checkpoint B → agent is resumed with specific gaps listed → re-verified → escalated to user after 2 retries.
 
-The Queen prepares next-wave prompts while the current wave runs, eliminating spawn latency between waves.
+The Queen prepares next-wave prompts (Pantry + Pest Control) while the current wave runs, eliminating spawn latency between waves.
 
 ### Step 3b: Quality review
 
@@ -112,9 +158,41 @@ An opus-model Big Head reads all 4 reports and:
 4. Files one issue per root cause with all affected surfaces
 5. Writes a consolidated summary with deduplication log and priority breakdown
 
-#### Checkpoint C (consolidation audit)
+#### Checkpoint B + C (post-review verification)
 
-Before presenting results to the user, Pest Control audits the consolidation:
+After the Nitpicker team completes, the Queen spawns **Pest Control** for Checkpoint B (substance verification on each reviewer's report) and Checkpoint C (consolidation audit on Big Head's output).
+
+```
+Queen                          Pantry                    Pest Control
+  │                              │                           │
+  ├──spawn (review mode)──────►  │                           │
+  │  "compose review prompts"    ├─read reviews.md           │
+  │                              ├─write 4 review data files │
+  │                              ├─write combined previews   │
+  │                              ├─write Big Head data file  │
+  │  ◄──return paths─────────────┤                           │
+  │  (~15 lines)                 │                           │
+  │                                                          │
+  ├──spawn─────────────────────────────────────────────────► │
+  │  "audit review prompts, Checkpoint A"                    │
+  │  ◄──return verdicts──────────────────────────────────────┤
+  │                                                          │
+  ├──create Nitpicker team (4 reviewers + Big Head)──►       │
+  │  ...reviewers write reports, Big Head consolidates...    │
+  │  ◄──team returns report paths                            │
+  │                                                          │
+  ├──spawn─────────────────────────────────────────────────► │
+  │  "read 4 reports + consolidated report,                  │
+  │   run Checkpoint B (Nitpickers) + Checkpoint C,          │
+  │   write reports, return verdicts"                        │
+  │                                                          ├─read checkpoints.md
+  │                                                          ├─read 5 reports
+  │                                                          ├─audit each
+  │  ◄──return verdict table─────────────────────────────────┤
+  │  (~15 lines)                                             │
+```
+
+Before presenting results to the user, Checkpoint C audits the consolidation:
 - Finding count reconciliation (raw findings → consolidated, all accounted for)
 - Every filed issue exists and has required fields (root cause, file:line refs, acceptance criteria, suggested fix)
 - Priority calibration (P1s are genuinely blocking, not mislabeled style issues)
@@ -142,7 +220,7 @@ Work is not complete until `git push` succeeds.
 
 A core design principle: the Queen **never reads source code, tests, configs, or implementation templates**. It reads only the Scout's briefing, agent notifications, commit messages, and verdict tables.
 
-Task metadata is read by the Scout, which writes per-task files and a briefing. Templates like `implementation.md`, `checkpoints.md`, and `reviews.md` are read by the Pantry and Colony TSA. The Pantry reads the Scout's pre-extracted metadata files instead of running `bd show`. All these specialized subagents absorb the context cost so the Queen's window stays clean.
+Task metadata is read by the Scout, which writes per-task files and a briefing. `implementation.md` and `reviews.md` are read by the Pantry. `checkpoints.md` is read by Pest Control. The Pantry reads the Scout's pre-extracted metadata files and writes combined prompt previews to disk. Pest Control reads these previews and checkpoint criteria directly. All agents absorb the context cost so the Queen's window stays clean.
 
 Target: finish a 40+ task session with >50% context window remaining, <10 file reads in the Queen, <20 commits.
 
@@ -190,10 +268,9 @@ Documented in `reference/known-failures.md`. Key incidents that shaped the syste
 | `orchestration/RULES.md` | The Queen | Workflow steps, hard gates, concurrency rules, template lookup |
 | `orchestration/SETUP.md` | User | How to wire orchestration into a new project |
 | `orchestration/templates/implementation.md` | the Pantry | Agent prompt template with 6 mandatory steps |
-| `orchestration/templates/checkpoints.md` | the Pantry, Colony TSA | All checkpoint definitions (A, A.5, B, C) |
+| `orchestration/templates/checkpoints.md` | Pest Control | All checkpoint definitions (A, A.5, B, C) |
 | `orchestration/templates/reviews.md` | the Pantry (review mode) | Review protocol, 4 review types, report format, Big Head consolidation |
 | `orchestration/templates/pantry.md` | The Queen (to spawn the Pantry) | the Pantry's own instructions |
-| `orchestration/templates/colony-tsa.md` | The Queen (to spawn Colony TSA) | Colony TSA's own instructions |
 | `orchestration/templates/dirt-pusher-skeleton.md` | The Queen | Minimal agent spawn template |
 | `orchestration/templates/nitpicker-skeleton.md` | The Queen | Minimal review agent spawn template |
 | `orchestration/templates/big-head-skeleton.md` | The Queen | Minimal Big Head consolidation spawn template |

@@ -1,4 +1,4 @@
-<!-- Reader: the Pantry + Colony TSA. The Queen does NOT read this file. -->
+<!-- Reader: Pest Control. The Queen does NOT read this file. -->
 # Verification Checkpoints
 
 ## Pest Control Overview

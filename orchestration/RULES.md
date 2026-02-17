@@ -4,7 +4,7 @@
 
 - **NEVER** run `bd show`, `bd ready`, `bd list`, `bd blocked`, or any `bd` query command — the Scout does this
 - **NEVER** read source code, tests, data files, or config files — agents do this
-- **NEVER** read agent template files (scout.md, pantry.md, colony-tsa.md, etc.) — pass the path to the agent, let it read its own instructions
+- **NEVER** read agent template files (scout.md, pantry.md, etc.) — pass the path to the agent, let it read its own instructions
 
 Your first instinct will be to "gather context" by running `bd show` on the task list.
 **Do not do this.** Spawn the Scout and let it gather context for you.
@@ -24,15 +24,24 @@ Your first instinct will be to "gather context" by running `bd show` on the task
             gathering. WAIT for the Scout to return its briefing verdict,
             then present the recommended strategy to the user for approval.
 
-**Step 2:** Spawn — the Pantry composes data files + runs Checkpoint A (→ templates/pantry.md),
-then the Queen spawns agents using skeleton (→ templates/dirt-pusher-skeleton.md)
+**Step 2:** Spawn — create epic artifact dirs (from briefing Epics line).
+            Spawn the Pantry for data files + combined previews
+            (→ templates/pantry.md). Spawn Pest Control for Checkpoint A
+            (pass preview file paths, Pest Control reads checkpoints.md itself).
+            Only after all Checkpoint A PASS: spawn agents using skeleton
+            (→ templates/dirt-pusher-skeleton.md).
+            Prepare next wave (Pantry + Pest Control) WHILE current wave runs.
 
-**Step 3:** Monitor — track agent status, Colony TSA runs A.5 + B after wave completes
-(→ templates/colony-tsa.md)
+**Step 3:** Verify — after each wave completes, spawn Pest Control for A.5 + B
+            (pass task IDs, commit hashes, summary doc paths; Pest Control reads
+            checkpoints.md + task-metadata/ + git diffs itself).
+            Failed B → resume agent (max 2 retries).
 
-**Step 3b:** Review — the Pantry (review mode) composes prompts + Checkpoint A,
-the Queen launches team with review skeletons (→ templates/nitpicker-skeleton.md),
-Colony TSA (review mode) runs B + C after team completes
+**Step 3b:** Review — spawn the Pantry (review mode) for review prompts + previews.
+             Spawn Pest Control for Checkpoint A on review previews.
+             Create Nitpicker team (→ templates/nitpicker-skeleton.md).
+             After team completes, spawn Pest Control for B + C
+             (pass report paths; Pest Control reads checkpoints.md itself).
 
 **Step 4:** Documentation — update CHANGELOG, README, CLAUDE.md in single commit
 
@@ -53,15 +62,16 @@ Colony TSA (review mode) runs B + C after team completes
 
 **READ:** briefing.md (from the Scout, in Step 1), git status/log/diff --stat, agent notifications,
 commit messages, dirt-pusher-skeleton.md (once per wave), nitpicker-skeleton.md (once per review cycle),
-big-head-skeleton.md (once per review cycle), verdict tables from pantry/Colony TSA
+big-head-skeleton.md (once per review cycle), verdict tables from the Pantry and Pest Control
 
 **DO NOT READ:** source code, tests, data files, configs, implementation.md, checkpoints.md, reviews.md,
-bd show/ready/blocked output, agent template files (scout.md, colony-tsa.md, pantry.md, etc.)
-— these are agent inputs, not Queen inputs. The Pantry, Colony TSA, and Scout read them.
+bd show/ready/blocked output, agent template files (scout.md, pantry.md, etc.)
+— these are agent inputs, not Queen inputs. The Pantry, Pest Control, and Scout read them.
 
 ## Concurrency Rules
 
-- Max 7 background agents at any time
+- Max 7 Dirt Pushers concurrent
+- Max 10 total agents (Dirt Pushers + support agents: Pantry, Pest Control, Scout)
 - No two agents edit the same file — queue conflicting tasks sequentially
 - Each agent runs `git pull --rebase` before committing
 - Only the Queen pushes to remote
@@ -73,7 +83,7 @@ bd show/ready/blocked output, agent template files (scout.md, colony-tsa.md, pan
 At session start (Step 0), generate a session ID and create the session artifact directory:
 
     SESSION_ID=$(date +%s | shasum | head -c 6)
-    mkdir -p .beads/agent-summaries/_session-${SESSION_ID}/task-metadata
+    mkdir -p .beads/agent-summaries/_session-${SESSION_ID}/{task-metadata,previews}
 
 All session-scoped artifacts go here:
 - `queen-state.md` — session state for context recovery
@@ -109,10 +119,10 @@ The `review-reports/` subdirectory is created separately at Step 3b (see templat
 - Pushing mid-session — only push at end (atomic deployment)
 - Updating docs per-agent — batch all doc updates in Step 4
 - Verbose agent prompts — be concise, agents read their own task details from their data file
-- Reading implementation.md or checkpoints.md directly — spawn the Pantry instead
+- Reading implementation.md or checkpoints.md directly — the Pantry and Pest Control read these
 - Running bd show, bd ready, or bd list before spawning the Scout — all task discovery belongs to Step 1, which the Scout owns
 - Reading agent template files (scout.md, dirt-pusher-skeleton.md, etc.) in the Queen's window — pass the path to the agent, let it read its own instructions
-- Running individual checkpoints per agent — spawn Colony TSA as batch
+- Running individual checkpoints per agent — spawn one Pest Control with the full batch
 - Composing full agent prompts in the Queen's context — use dirt-pusher-skeleton.md with data file redirect
 
 ## Template Lookup
@@ -123,9 +133,8 @@ The `review-reports/` subdirectory is created separately at Step 3b (see templat
 | Agent skeleton for spawning (Step 2) | templates/dirt-pusher-skeleton.md |
 | Review skeleton for team (Step 3b) | templates/nitpicker-skeleton.md |
 | Big Head skeleton for consolidation (Step 3b) | templates/big-head-skeleton.md |
-| Post-wave verification (Step 3) | templates/colony-tsa.md |
 | Implementation details (read by the Pantry) | templates/implementation.md |
-| Checkpoint details (read by Pantry/Colony TSA) | templates/checkpoints.md |
+| Checkpoint details (read by Pest Control) | templates/checkpoints.md |
 | Review details (read by the Pantry) | templates/reviews.md |
 | Pre-flight recon (Step 1) | templates/scout.md |
 | Conflict patterns (read by the Scout) | reference/dependency-analysis.md |
@@ -158,5 +167,5 @@ Project-specific overrides belong in the project's CLAUDE.md or QUALITY_PROCESS.
 
 - Token budget: finish with >50% remaining
 - File reads in the Queen: <10 for 40+ task sessions
-- Concurrent agents: typical 5-6, max 7
+- Concurrent agents: typical 5-6 Dirt Pushers, max 10 total
 - Commits per session: <20 (batch related work)
