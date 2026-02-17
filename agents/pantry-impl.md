@@ -36,32 +36,10 @@ CCO becomes a rubber stamp.
 "Do NOT edit" fields. Open-ended scope like "all relevant files" is a
 CCO FAIL.
 
-**Agent type** — Select the best agent type for each task from the
-available types below. Match on the task's affected files, root cause,
-and nature of the work. Do NOT default to `general-purpose` — it is
-a last resort when no specialist fits.
-
-Available dirt-pusher agent types:
-
-| Agent type | Use when the task primarily involves... |
-|---|---|
-| `python-pro` | Python code (.py) |
-| `typescript-pro` | TypeScript code (.ts, .tsx) |
-| `javascript-pro` | JavaScript code (.js, .jsx) |
-| `nextjs-developer` | Next.js app/pages router, server components |
-| `sql-pro` | SQL queries, schemas |
-| `debugger` | Diagnosing bugs, tracing failures |
-| `performance-engineer` | Latency, memory, optimization |
-| `refactoring-specialist` | Restructuring, extracting, reorganizing |
-| `database-administrator` | Migrations, schema changes |
-| `devops-engineer` | CI/CD, Docker, deployment pipelines |
-| `security-auditor` | Vulnerabilities, CVEs, hardening |
-| `ai-engineer` | ML/AI code, model integration |
-| `data-engineer` | Data pipelines, ETL |
-| `general-purpose` | Last resort — no specialist fits |
-
-Record your choice in the data file's **Agent Type** field and the
-verdict table.
+**Agent type** — Read the `**Agent Type**` value from the Scout's task
+metadata file (`{session-dir}/task-metadata/{TASK_SUFFIX}.md`). Copy it
+directly into the data file and verdict table. Do NOT select or override
+agent types.
 
 **No placeholders** — Final data files must contain zero template
 placeholders. Anything matching `{from ...}`, `{copy ...}`,

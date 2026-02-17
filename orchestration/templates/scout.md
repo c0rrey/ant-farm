@@ -31,6 +31,29 @@ Then:
 - Run `bd blocked` to map dependency chains
 - Separate tasks into "ready" and "blocked" lists
 
+## Step 2.5: Discover Available Agents
+
+Scan for agent definitions. Project-level (`.claude/agents/*.md`) takes
+priority over global (`~/.claude/agents/*.md`) for same-name agents.
+
+For each `.md` file, read the YAML frontmatter (`---` delimiters).
+Extract `name` and first sentence of `description`. Skip files without
+valid frontmatter.
+
+**Exclusions** (not dirt-pusher candidates):
+scout-organizer, pantry-impl, pantry-review, pest-control, nitpicker, big-head
+
+Build an internal catalog (keep in context, do NOT write to disk):
+
+| Agent Name | Description (first sentence) |
+|------------|------------------------------|
+| python-pro | Expert Python developer specializing in modern Python 3.11+. |
+| debugger   | Expert debugger specializing in complex issue diagnosis. |
+| ...        | ... |
+
+`general-purpose` is a built-in type with no `.md` file — use it as
+the fallback when no discovered specialist fits.
+
 ## Step 3: Gather Metadata
 
 Create the metadata directory: `mkdir -p {SESSION_DIR}/task-metadata/`
@@ -45,6 +68,7 @@ For each **ready** task:
 **Type**: {bug/feature/task}
 **Priority**: {P1/P2/P3}
 **Epic**: {epic-id or _standalone}
+**Agent Type**: {recommended agent from catalog, or general-purpose}
 **Dependencies**: {blocks: [...], blockedBy: [...]}
 
 ## Affected Files
@@ -62,6 +86,13 @@ For each **ready** task:
 2. {criterion 2}
 ...
 ```
+
+**Agent type selection**: For each task, recommend the best agent from
+your Step 2.5 catalog. Consider in order:
+1. **File extensions** — .py → python-pro, .ts → typescript-pro, etc.
+2. **Task nature** — diagnostic → debugger, perf → performance-engineer
+3. **Description match** — agent descriptions vs task root cause/title
+4. **Fallback** — `general-purpose` if no specialist clearly fits
 
 For each **blocked** task: note the blocker in the briefing but do NOT
 write a metadata file (the Pantry only needs metadata for tasks that will be worked on).
@@ -97,9 +128,9 @@ Write `{SESSION_DIR}/briefing.md` using this exact format:
 # Session Briefing
 
 ## Task Inventory
-| ID | Epic | Title | Priority | Type | Files | Risk |
-|----|------|-------|----------|------|-------|------|
-| {id} | {epic-id} | {title} | P{N} | {type} | {file list} | HIGH/MED/LOW |
+| ID | Epic | Title | Priority | Type | Agent | Files | Risk |
+|----|------|-------|----------|------|-------|-------|------|
+| {id} | {epic-id} | {title} | P{N} | {type} | {agent} | {file list} | HIGH/MED/LOW |
 
 **Ready**: {N} tasks | **Blocked**: {M} tasks ({list with reasons})
 
@@ -141,6 +172,7 @@ Briefing: {SESSION_DIR}/briefing.md
 Epics: {epic-id-1}, {epic-id-2}, ...
 Tasks: {N} ready, {M} blocked
 Metadata: {SESSION_DIR}/task-metadata/ ({N} files)
+Agent types: {comma-separated unique types, e.g. python-pro, debugger}
 Highest risk: {HIGH/MEDIUM/LOW}
 Recommended strategy: {strategy name}
 ```

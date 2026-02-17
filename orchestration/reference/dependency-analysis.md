@@ -108,6 +108,12 @@ Typical wave pattern: P1 wave (7 tasks) → P2 wave (6 agents, file-grouped) →
 
 ## Subagent Type Mapping
 
+Agent type selection is performed dynamically by the Scout (Step 2.5 of
+`scout.md`). The Scout scans `~/.claude/agents/*.md` and `.claude/agents/*.md`,
+reads frontmatter descriptions, and recommends the best match per task.
+
+Legacy defaults retained for reference:
+
 | Task Category | Subagent Type | Rationale |
 |---------------|---------------|-----------|
 | Template/Jinja2 work | `python-pro` | Python ecosystem expertise |
@@ -117,8 +123,6 @@ Typical wave pattern: P1 wave (7 tasks) → P2 wave (6 agents, file-grouped) →
 | Nitpickers (all 4) | `code-reviewer` / `sonnet` | Code analysis focus |
 | Big Head (consolidation) | `opus` | Cross-report judgment, dedup, priority calibration |
 | General implementation | Match specialist to primary file type | Best domain expertise |
-
-Projects can override these defaults in their CLAUDE.md or MEMORY.md.
 
 ## Red Flags
 

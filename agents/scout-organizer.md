@@ -1,6 +1,6 @@
 ---
 name: scout-organizer
-description: Expert agent organizer specializing in multi-agent orchestration, team assembly, and workflow optimization. Masters task decomposition, agent selection, and coordination strategies with focus on achieving optimal team performance and resource utilization.
+description: Pre-flight recon agent for multi-agent orchestration. Discovers tasks, analyzes dependencies, dynamically discovers available agent types, recommends the best agent per task, and proposes execution strategies with wave groupings.
 tools: Read, Write, Edit, Glob, Grep, Bash
 model: sonnet
 ---

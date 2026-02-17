@@ -92,7 +92,7 @@ and listed in the READ section above.
 | Pantry (impl) | `pantry-impl` | Custom agent: CCO-aligned implementation prompt composer |
 | Pantry (review) | `pantry-review` | Custom agent: CCO-aligned review prompt composer |
 | Pest Control | `pest-control` | Custom agent: verification auditor, catches fabrication + scope creep |
-| Dirt Pushers | from Pantry verdict table | Specialist per task — Pantry selects based on task context |
+| Dirt Pushers | from Pantry verdict table | Specialist per task — Scout recommends via dynamic agent discovery, Pantry passes through |
 | Nitpickers | `nitpicker` | Custom agent: file:line specificity, calibrated severity, complete coverage |
 | Big Head | `big-head` | Custom agent: deduplication, root-cause grouping, issue filing |
 

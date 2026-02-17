@@ -31,7 +31,9 @@ For each task ID in the input list:
    - Acceptance criteria
    (Pre-extracted by the Scout. Do NOT run `bd show` — the metadata is already there.)
 
-2. Choose the best `subagent_type` for this task based on its title, affected files, root cause, and the nature of the work. Record the result — it goes in the data file's `**Agent Type**` field and in the Step 4 output table.
+2. Read the `**Agent Type**` field from the Scout's task metadata.
+   Copy it into the data file's `**Agent Type**` field and the Step 4
+   output table. Do NOT re-evaluate or override.
 
 3. Write a data file to `{session-dir}/prompts/task-{TASK_SUFFIX}.md` with this exact format:
 
@@ -39,7 +41,7 @@ For each task ID in the input list:
 # Task Brief: {TASK_ID}
 **Task**: {title from task-metadata}
 **Epic ID**: {EPIC_ID}
-**Agent Type**: {chosen subagent_type, e.g. python-pro, debugger, general-purpose}
+**Agent Type**: {from task metadata}
 **Summary output path**: .beads/agent-summaries/{EPIC_ID}/{TASK_SUFFIX}.md
 
 ## Context

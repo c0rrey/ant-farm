@@ -42,8 +42,9 @@ The Queen spawns **the Scout** (`templates/scout.md`), a sonnet subagent that pe
 2. Runs `bd ready` and `bd blocked` to separate ready vs. blocked tasks
 3. Runs `bd show` per task and writes per-task metadata files to `{session-dir}/task-metadata/`
 4. Builds a file modification matrix and assesses conflict risk using `reference/dependency-analysis.md`
-5. Proposes 2-3 execution strategies with wave groupings, agent counts, and risk assessments
-6. Writes `{session-dir}/briefing.md` — a ~40-line summary the Queen presents to the user
+5. Scans `~/.claude/agents/` and `.claude/agents/` to discover available agent types, then recommends the best specialist per task
+6. Proposes 2-3 execution strategies with wave groupings, agent counts, and risk assessments
+7. Writes `{session-dir}/briefing.md` — a ~40-line summary the Queen presents to the user
 
 The Queen reads the briefing, presents the strategy options, and **waits for user approval** before proceeding.
 
@@ -52,7 +53,7 @@ The Queen reads the briefing, presents the strategy options, and **waits for use
 The Queen delegates prompt composition to **the Pantry**, a subagent that:
 1. Reads `templates/implementation.md` (keeping it out of the Queen's context)
 2. Extracts pre-digested context from each task (affected files, root cause, acceptance criteria)
-3. Selects a specialist agent type per task (e.g., `python-pro`, `debugger`) using keyword and file-extension matching tables
+3. Copies the agent type recommendation from the Scout's task metadata (the Scout selects agent types dynamically based on available agents)
 4. Writes a data file per task with scope boundaries, agent type, and explicit off-limits areas
 5. Writes combined prompt previews (skeleton + data file) to `{session-dir}/previews/`
 6. Returns a file path table — task IDs, agent types, data files, and preview files
