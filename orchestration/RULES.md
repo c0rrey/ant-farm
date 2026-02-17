@@ -26,7 +26,7 @@ Your first instinct will be to "gather context" by running `bd show` on the task
 
 **Step 2:** Spawn — create epic artifact dirs (from briefing Epics line).
             Spawn the Pantry for data files + combined previews
-            (→ templates/pantry.md). Spawn Pest Control for Colony Cartography Office (CCO)
+            (→ templates/pantry.md). Spawn Pest Control (`code-reviewer`) for Colony Cartography Office (CCO)
             (pass preview file paths, Pest Control reads checkpoints.md itself).
             Only after all CCO PASS: spawn agents using skeleton
             (→ templates/dirt-pusher-skeleton.md, using Agent Type from Pantry verdict table).
@@ -73,6 +73,17 @@ big-head-skeleton.md (once per review cycle), verdict tables from the Pantry and
 **DO NOT READ:** source code, tests, data files, configs, implementation.md, checkpoints.md, reviews.md,
 bd show/ready/blocked output, agent template files (scout.md, pantry.md, etc.)
 — these are agent inputs, not Queen inputs. The Pantry, Pest Control, and Scout read them.
+
+## Agent Types
+
+| Agent | subagent_type | Rationale |
+|-------|---------------|-----------|
+| Scout | `general-purpose` | Needs bd CLI + file writes |
+| Pantry | `general-purpose` | Needs file reads + writes |
+| Pest Control | `code-reviewer` | Audits diffs, cross-checks claims against code |
+| Dirt Pushers | from Pantry verdict table | Specialist per task (see pantry.md selection tables) |
+| Nitpickers | `code-reviewer` | Fixed in nitpicker-skeleton.md |
+| Big Head | `code-reviewer` | Fixed in big-head-skeleton.md |
 
 ## Concurrency Rules
 
