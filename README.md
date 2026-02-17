@@ -275,6 +275,29 @@ Custom Claude Code agent types live in `agents/` and are synced to `~/.claude/ag
 | `nitpicker` | Read, Write, Edit, Bash, Glob, Grep | Code reviewer: finds issues with file:line specificity and calibrated severity |
 | `big-head` | Read, Write, Edit, Bash, Glob, Grep | Consolidation reviewer: merges and deduplicates findings across Nitpickers |
 
+## Forking this repo
+
+The `.beads/issues.jsonl` file is the issue database for **this** project's development. When you fork ant-farm to use as a template for your own orchestration setup, you should reset the issue database so you start with a clean slate under your own identity.
+
+### Steps for new adopters
+
+1. Fork or clone the repo and navigate into it.
+2. Run `bd init` to initialize a fresh issue database:
+   ```bash
+   bd init --prefix <your-project-name>
+   ```
+   This creates a new `.beads/issues.jsonl` with no inherited issues and sets your project prefix.
+3. If you want to import from the existing JSONL (e.g., you performed manual cleanup first), use the `--from-jsonl` flag:
+   ```bash
+   bd init --from-jsonl --prefix <your-project-name>
+   ```
+4. Install the git hooks so agent files sync to `~/.claude/agents/` on push:
+   ```bash
+   # See orchestration/SETUP.md for full hook installation instructions
+   ```
+
+The `.beads/issues.jsonl` in this repo contains sample issues from ant-farm's own development history. They are included as reference material showing how the system has been used but are not required for operation. Running `bd init` replaces them with a fresh database.
+
 ## File reference
 
 | File | Read by | Purpose |
