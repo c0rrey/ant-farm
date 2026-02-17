@@ -5,6 +5,17 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 echo "[ant-farm] Syncing to ~/.claude/ ..."
 
+# Ensure target directories exist before writing into them
+mkdir -p ~/.claude/orchestration/
+mkdir -p ~/.claude/agents/
+
+# Back up existing CLAUDE.md before overwrite
+if [ -f ~/.claude/CLAUDE.md ]; then
+    BACKUP_PATH="${HOME}/.claude/CLAUDE.md.bak.$(date +%Y%m%dT%H%M%S)"
+    cp ~/.claude/CLAUDE.md "$BACKUP_PATH"
+    echo "[ant-farm] Backed up ~/.claude/CLAUDE.md -> $BACKUP_PATH"
+fi
+
 # Sync CLAUDE.md (single file copy)
 cp "$REPO_ROOT/CLAUDE.md" ~/.claude/CLAUDE.md
 
@@ -26,5 +37,5 @@ echo "[ant-farm] Sync complete."
 
 if [ "$AGENTS_CHANGED" = true ]; then
     echo ""
-    echo "[ant-farm] ⚠ Agent files were updated. Reload Claude Code for changes to take effect."
+    echo "[ant-farm] Agent files were updated. Reload Claude Code for changes to take effect."
 fi
