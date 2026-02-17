@@ -283,11 +283,85 @@ Replace Colony TSA section with Pest Control tracking:
 
 **Architecture description:** Update the three-layer description. Pest Control is now spawned directly by the Queen (not nested through Colony TSA). Remove Colony TSA references.
 
-**Step 2 section:** Rewrite to describe the Pantry → file handoff → Pest Control → agents flow. Include the Step 2 flow diagram from the Design section above.
+**Step 2 section:** Rewrite to describe the Pantry → file handoff → Pest Control → agents flow. Include this flow diagram in a fenced code block:
 
-**Step 3 section:** Replace Colony TSA description with direct Pest Control spawn. Include the Step 3 flow diagram.
+```
+Queen                          Pantry                    Pest Control
+  │                              │                           │
+  ├──spawn────────────────────►  │                           │
+  │  "compose Wave N prompts"    │                           │
+  │                              ├─read templates            │
+  │                              ├─read task-metadata/       │
+  │                              ├─write data files to disk  │
+  │                              ├─write combined previews   │
+  │  ◄──return paths + done──────┤                           │
+  │  (~10 lines)                 │ (agent dies, context freed)│
+  │                                                          │
+  ├──spawn─────────────────────────────────────────────────► │
+  │  "read previews from {dir},                              │
+  │   audit against Checkpoint A                             │
+  │   in checkpoints.md,                                     │
+  │   write reports, return verdicts"                        │
+  │                                                          ├─read checkpoints.md
+  │                                                          ├─read preview files
+  │                                                          ├─audit each
+  │                                                          ├─write reports
+  │  ◄──return verdict table─────────────────────────────────┤
+  │  (~10 lines)                                (agent dies) │
+  │                                                          │
+  ├──spawn Dirt Pushers (up to 7)──►                         │
+```
 
-**Step 3b section:** Replace Colony TSA review mode with direct Pest Control spawn for B + C. Include the Step 3b flow diagram.
+**Step 3 section:** Replace Colony TSA description with direct Pest Control spawn. Include this flow diagram:
+
+```
+Queen                                              Pest Control
+  │  (agents committed, Queen has commit hashes)        │
+  │                                                     │
+  ├──spawn──────────────────────────────────────────► │
+  │  "read checkpoints.md,                              │
+  │   run A.5 for {tasks} against {commits},            │
+  │   run B: read summary docs at {paths},              │
+  │   cross-check against git diffs,                    │
+  │   write reports, return verdicts"                   │
+  │                                                     ├─read checkpoints.md
+  │                                                     ├─per task: git diff + summary doc
+  │                                                     ├─write A.5 + B reports
+  │  ◄──return verdict table────────────────────────────┤
+  │  (~15 lines)                            (agent dies)│
+```
+
+**Step 3b section:** Replace Colony TSA review mode with direct Pest Control spawn for B + C. Include this flow diagram:
+
+```
+Queen                          Pantry                    Pest Control
+  │                              │                           │
+  ├──spawn (review mode)──────►  │                           │
+  │  "compose review prompts"    ├─read reviews.md           │
+  │                              ├─write 4 review data files │
+  │                              ├─write combined previews   │
+  │                              ├─write Big Head data file  │
+  │  ◄──return paths─────────────┤                           │
+  │  (~15 lines)                 │                           │
+  │                                                          │
+  ├──spawn─────────────────────────────────────────────────► │
+  │  "audit review prompts, Checkpoint A"                    │
+  │  ◄──return verdicts──────────────────────────────────────┤
+  │                                                          │
+  ├──create Nitpicker team (4 reviewers + Big Head)──►       │
+  │  ...reviewers write reports, Big Head consolidates...    │
+  │  ◄──team returns report paths                            │
+  │                                                          │
+  ├──spawn─────────────────────────────────────────────────► │
+  │  "read 4 reports + consolidated report,                  │
+  │   run Checkpoint B (Nitpickers) + Checkpoint C,          │
+  │   write reports, return verdicts"                        │
+  │                                                          ├─read checkpoints.md
+  │                                                          ├─read 5 reports
+  │                                                          ├─audit each
+  │  ◄──return verdict table─────────────────────────────────┤
+  │  (~15 lines)                                             │
+```
 
 **Information diet section:** Change:
 > Task metadata is read by the Scout, which writes per-task files and a briefing. Templates like `implementation.md`, `checkpoints.md`, and `reviews.md` are read by the Pantry and Colony TSA. The Pantry reads the Scout's pre-extracted metadata files instead of running `bd show`. All these specialized subagents absorb the context cost so the Queen's window stays clean.
