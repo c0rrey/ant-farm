@@ -17,7 +17,12 @@ Your first instinct will be to "gather context" by running `bd show` on the task
             Do NOT examine, read, or query any task/issue details.
 
 **Step 1:** Recon — spawn the Scout (`scout-organizer` subagent). Include in its prompt:
-            (1) `Session directory: <value of SESSION_DIR>`, (2) input mode + task list,
+            (1) `Session directory: <value of SESSION_DIR>`,
+            (2) `Mode: <mode>` — derive from the user's message:
+                - User specifies an epic → `epic <epic-id>`
+                - User lists specific tasks → `tasks <id1>, <id2>, ...`
+                - User describes a filter → `filter <description>`
+                - User gives no specific scope (e.g., just "let's get to work") → `ready`
             (3) the path `~/.claude/orchestration/templates/scout.md` as its
             instruction file. Do NOT read the scout template yourself.
             Do NOT run `bd show`, `bd ready`, `bd blocked`, or any other `bd`

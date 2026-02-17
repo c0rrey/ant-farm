@@ -18,6 +18,7 @@ The Queen's spawn prompt provides two values:
   (e.g., `.beads/agent-summaries/_session-abc123/`). All artifacts you
   produce are written under this directory.
 - **Mode** — Tells you how to discover tasks. One of:
+  - `ready` — no specific scope; grab the 20 highest-priority unblocked tasks
   - `epic <epic-id>` — work scoped to a single epic's children
   - `tasks <id1>, <id2>, ...` — an explicit list of task IDs
   - `filter <description>` — a natural-language filter you translate into
