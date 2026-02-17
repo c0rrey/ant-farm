@@ -2,12 +2,18 @@
 
 ## Workflow: "Let's Get to Work"
 
-**Step 0:** Session setup — generate session ID, create session directory,
-            create task-metadata subdirectory
+**Step 0:** Session setup — generate session ID, create session directory +
+            task-metadata subdirectory. Then immediately proceed to Step 1.
+            Do NOT examine, read, or query any task/issue details.
 
-**Step 1:** Recon — spawn the Scout with session dir + input mode
-            (→ templates/scout.md). Read briefing.md, present strategy to user,
-            WAIT for approval
+**Step 1:** Recon — spawn the Scout (general-purpose subagent). Pass it:
+            (1) session dir path, (2) input mode + task list,
+            (3) the path `~/.claude/orchestration/templates/scout.md` as its
+            instruction file. Do NOT read the scout template yourself.
+            Do NOT run `bd show`, `bd ready`, `bd blocked`, or any other `bd`
+            commands — the Scout handles all task discovery and metadata
+            gathering. WAIT for the Scout to return its briefing verdict,
+            then present the recommended strategy to the user for approval.
 
 **Step 2:** Spawn — the Pantry composes data files + runs Checkpoint A (→ templates/pantry.md),
 then the Queen spawns agents using skeleton (→ templates/dirt-pusher-skeleton.md)
@@ -40,8 +46,9 @@ Colony TSA (review mode) runs B + C after team completes
 commit messages, dirt-pusher-skeleton.md (once per wave), nitpicker-skeleton.md (once per review cycle),
 big-head-skeleton.md (once per review cycle), verdict tables from pantry/Colony TSA
 
-**DO NOT READ:** source code, tests, data files, configs, implementation.md, checkpoints.md, reviews.md
-(these are read by the Pantry and Colony TSA, not the Queen)
+**DO NOT READ:** source code, tests, data files, configs, implementation.md, checkpoints.md, reviews.md,
+bd show/ready/blocked output, agent template files (scout.md, colony-tsa.md, pantry.md, etc.)
+— these are agent inputs, not Queen inputs. The Pantry, Colony TSA, and Scout read them.
 
 ## Concurrency Rules
 
@@ -88,7 +95,8 @@ The `review-reports/` subdirectory is created separately at Step 3b (see templat
 - Updating docs per-agent — batch all doc updates in Step 4
 - Verbose agent prompts — be concise, agents read their own task details from their data file
 - Reading implementation.md or checkpoints.md directly — spawn the Pantry instead
-- Running bd show in the Queen's window — spawn the Scout instead
+- Running bd show, bd ready, or bd list before spawning the Scout — all task discovery belongs to Step 1, which the Scout owns
+- Reading agent template files (scout.md, dirt-pusher-skeleton.md, etc.) in the Queen's window — pass the path to the agent, let it read its own instructions
 - Running individual checkpoints per agent — spawn Colony TSA as batch
 - Composing full agent prompts in the Queen's context — use dirt-pusher-skeleton.md with data file redirect
 
