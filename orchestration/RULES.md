@@ -70,9 +70,12 @@ Your first instinct will be to "gather context" by running `bd show` on the task
 commit messages, dirt-pusher-skeleton.md (once per wave), nitpicker-skeleton.md (once per review cycle),
 big-head-skeleton.md (once per review cycle), verdict tables from the Pantry and Pest Control
 
-**DO NOT READ:** source code, tests, data files, configs, implementation.md, checkpoints.md, reviews.md,
+**DO NOT READ:** source code, tests, project data files, configs, implementation.md, checkpoints.md, reviews.md,
 bd show/ready/blocked output, agent template files (scout.md, pantry.md, etc.)
 — these are agent inputs, not Queen inputs. The Pantry, Pest Control, and Scout read them.
+"Project data files" means application/repo data files, NOT orchestration artifacts. Orchestration artifacts
+(verdict tables, preview files, data files written by Pantry/agents to session dirs) are explicitly PERMITTED
+and listed in the READ section above.
 
 ## Agent Types
 
