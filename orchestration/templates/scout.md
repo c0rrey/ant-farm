@@ -19,6 +19,9 @@ you'll use in Steps 4-5.
 ## Step 2: Discover Tasks
 
 Based on input mode:
+- **`ready`** (no specific scope): Run `bd ready --limit=20 --sort=priority`
+  to grab the 20 highest-priority unblocked tasks. Use this when the user
+  says "let's get to work" without specifying an epic, task list, or filter.
 - **`epic <epic-id>`**: Run `bd show <epic-id> --children`, extract child task IDs
 - **`tasks <id1>, <id2>, ...`**: Use the provided list directly
 - **`filter <description>`**: Translate the description into `bd list` flags
@@ -26,7 +29,7 @@ Based on input mode:
   Use your judgment to construct the query. If the filter is ambiguous,
   note the ambiguity in the briefing so the Queen can clarify with the user.
 
-Then:
+Then (skip for `ready` mode — tasks are already unblocked):
 - Run `bd ready` to identify which discovered tasks are unblocked
 - Run `bd blocked` to map dependency chains
 - Separate tasks into "ready" and "blocked" lists
@@ -64,6 +67,7 @@ For each **ready** task:
 
 ```markdown
 # Task: {full-task-id}
+**Status**: success
 **Title**: {title}
 **Type**: {bug/feature/task}
 **Priority**: {P1/P2/P3}
@@ -179,9 +183,17 @@ Recommended strategy: {strategy name}
 
 ## Error Handling
 
-- **If `bd show` fails for a task**: Skip that task's metadata file.
+- **If `bd show` fails for a task**: Write a metadata file with `**Status**: error`.
+  Include the error message from `bd show` in a `**Error Details**` field.
   Note it in the briefing under a "## Errors" section with the error message.
   Continue with remaining tasks.
+
+  Example error metadata file:
+  ```markdown
+  # Task: {full-task-id}
+  **Status**: error
+  **Error Details**: {exact error message from bd show}
+  ```
 - **If `bd show <epic-id> --children` or `bd list` fails**: Return an error
   verdict to the Queen immediately: `ERROR: {command} failed — {error message}`.
   Do not proceed with analysis.

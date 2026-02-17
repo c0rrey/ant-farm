@@ -23,19 +23,27 @@ Read this file (you absorb the cost, not the Queen):
 
 For each task ID in the input list:
 
-1. Read `{session-dir}/task-metadata/{TASK_SUFFIX}.md` — extract:
+1. Read `{session-dir}/task-metadata/{TASK_SUFFIX}.md`.
+   **FAIL-FAST CHECK**: If the file is missing, does not exist, or contains `**Status**: error`:
+   - Record the task ID and error details in a failure list
+   - Do NOT write a data file for this task
+   - Report to the Queen immediately: `TASK FAILED: {TASK_ID} — Scout metadata error: {error details}`
+   - Do not proceed with data file composition for this task
+
+   (Pre-extracted by the Scout. Do NOT run `bd show` — the metadata is already there.)
+
+2. For successful tasks (Status: success), read and extract:
    - Title
    - Affected files (with line numbers)
    - Root cause
    - Expected behavior
    - Acceptance criteria
-   (Pre-extracted by the Scout. Do NOT run `bd show` — the metadata is already there.)
 
-2. Read the `**Agent Type**` field from the Scout's task metadata.
+3. Read the `**Agent Type**` field from the Scout's task metadata.
    Copy it into the data file's `**Agent Type**` field and the Step 4
    output table. Do NOT re-evaluate or override.
 
-3. Write a data file to `{session-dir}/prompts/task-{TASK_SUFFIX}.md` with this exact format:
+4. Write a data file to `{session-dir}/prompts/task-{TASK_SUFFIX}.md` with this exact format:
 
 ```markdown
 # Task Brief: {TASK_ID}
@@ -67,7 +75,7 @@ Do NOT fix adjacent issues you notice.
 6. Acceptance Criteria checklist (each criterion + PASS/FAIL)
 ```
 
-4. Validate the data file has no placeholder text remaining (no `<copy from bead>`, `<list from bead>`, `{from bead description}`, etc.)
+5. Validate the data file has no placeholder text remaining (no `<copy from bead>`, `<list from bead>`, `{from bead description}`, etc.)
 
 **Write each data file immediately after composing it** — do not batch all files and write at the end.
 
