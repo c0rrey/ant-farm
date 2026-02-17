@@ -86,7 +86,7 @@ This prevents collisions when multiple Queens run in the same repo.
 
 ## Epic Artifact Directories
 
-At Step 2, after selecting epics but before spawning any agents or running Checkpoint A, create all artifact directories for each epic:
+At Step 2, after the user approves a strategy but before spawning any agents or running Checkpoint A, create artifact directories for each epic listed in the Scout's briefing (Metadata → Epics line):
 
     mkdir -p .beads/agent-summaries/<epic-id>/verification/pest-control/
 

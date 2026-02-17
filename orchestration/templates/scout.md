@@ -97,9 +97,9 @@ Write `{SESSION_DIR}/briefing.md` using this exact format:
 # Session Briefing
 
 ## Task Inventory
-| ID | Title | Priority | Type | Files | Risk |
-|----|-------|----------|------|-------|------|
-| {id} | {title} | P{N} | {type} | {file list} | HIGH/MED/LOW |
+| ID | Epic | Title | Priority | Type | Files | Risk |
+|----|------|-------|----------|------|-------|------|
+| {id} | {epic-id} | {title} | P{N} | {type} | {file list} | HIGH/MED/LOW |
 
 **Ready**: {N} tasks | **Blocked**: {M} tasks ({list with reasons})
 
@@ -127,6 +127,7 @@ Write `{SESSION_DIR}/briefing.md` using this exact format:
 ...
 
 ## Metadata
+- Epics: {epic-id-1}, {epic-id-2}, ... (deduplicated list of all epics involved)
 - Task metadata files: {session-dir}/task-metadata/ ({N} files)
 - Session dir: {session-dir}
 ```
@@ -137,6 +138,7 @@ Return a compact verdict to the Queen (this is ALL the Queen reads from you):
 
 ```
 Briefing: {SESSION_DIR}/briefing.md
+Epics: {epic-id-1}, {epic-id-2}, ...
 Tasks: {N} ready, {M} blocked
 Metadata: {SESSION_DIR}/task-metadata/ ({N} files)
 Highest risk: {HIGH/MEDIUM/LOW}
