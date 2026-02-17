@@ -19,7 +19,7 @@ you'll use in Steps 4-5.
 ## Step 2: Discover Tasks
 
 Based on input mode:
-- **`epic <epic-id>`**: Run `bd epic show <epic-id>`, extract child task IDs
+- **`epic <epic-id>`**: Run `bd show <epic-id> --children`, extract child task IDs
 - **`tasks <id1>, <id2>, ...`**: Use the provided list directly
 - **`filter <description>`**: Translate the description into `bd list` flags
   (e.g., "all P2 bugs" → `bd list --priority=2 --type=bug --status=open`).
@@ -40,7 +40,7 @@ For each `.md` file, read the YAML frontmatter (`---` delimiters).
 Extract `name` and first sentence of `description`. Skip files without
 valid frontmatter.
 
-**Exclusions** (not dirt-pusher candidates):
+**Exclusions** (orchestration agents, not implementation candidates):
 scout-organizer, pantry-impl, pantry-review, pest-control, nitpicker, big-head
 
 Build an internal catalog (keep in context, do NOT write to disk):
@@ -182,9 +182,9 @@ Recommended strategy: {strategy name}
 - **If `bd show` fails for a task**: Skip that task's metadata file.
   Note it in the briefing under a "## Errors" section with the error message.
   Continue with remaining tasks.
-- **If `bd epic show` or `bd list` fails**: Return an error verdict to the
-  Queen immediately: `ERROR: {command} failed — {error message}`. Do not
-  proceed with analysis.
+- **If `bd show <epic-id> --children` or `bd list` fails**: Return an error
+  verdict to the Queen immediately: `ERROR: {command} failed — {error message}`.
+  Do not proceed with analysis.
 - **If filter returns zero results**: Return a verdict noting zero tasks found.
   The Queen can re-prompt with a different filter.
 - **If all tasks are blocked**: Still write the briefing with the blocked task

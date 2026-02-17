@@ -497,7 +497,7 @@ bd epic create --title="Future Work" --description="Low-priority polish and impr
 
 **File P3 beads under the epic**:
 - All P3 beads from consolidation should be children of the future-work epic
-- Use `bd epic add-child <future-work-epic-id> <p3-bead-id>` for each P3 issue
+- Use `bd dep add <p3-bead-id> <future-work-epic-id> --type parent-child` for each P3 issue
 - These can be addressed in future sessions
 - No immediate action required — they're queued for later
 
