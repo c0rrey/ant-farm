@@ -7,7 +7,7 @@ The agent-facing text starts below the `---` separator. Do NOT include this inst
 
 Placeholders:
 - {TASK_TYPE}: bead type (bug/feature/task) — from the Scout's briefing
-- {TASK_ID}: full bead ID (e.g., hs_website-74g.1)
+- {TASK_ID}: full bead ID including project prefix (e.g., ant-farm-9oa — NOT just the suffix 9oa)
 - {AGENT_TYPE}: subagent_type for Task tool — from the Pantry verdict table (Agent Type column). The Queen MAY override if strategy context warrants it.
 - {DATA_FILE_PATH}: from the Pantry verdict table
 - {SUMMARY_OUTPUT_PATH}: .beads/agent-summaries/{epic-id}/{task-id-suffix}.md

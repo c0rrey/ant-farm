@@ -131,7 +131,7 @@ Do NOT execute the prompts — only verify their contents.
 
 ## Verify each item (PASS or FAIL with evidence):
 
-0. **File list matches git diff**: Run `git diff --name-only <first-commit>..<last-commit>` and verify the prompt file list matches exactly. Every file in the diff must appear in the prompt, and every file in the prompt must appear in the diff. If there is a mismatch, FAIL with the list of missing/extra files.
+0. **File list matches git diff**: The Queen provides the commit range (`<first-commit>..<last-commit>`) in the spawn prompt — use those exact values. Run `git diff --name-only <first-commit>..<last-commit>` and verify the prompt file list matches exactly. Every file in the diff must appear in the prompt, and every file in the prompt must appear in the diff. If there is a mismatch, FAIL with the list of missing/extra files.
 1. **Same file list**: All 4 prompts contain the same set of files to review (not different subsets)
 2. **Same commit range**: All 4 prompts reference the same commit range
 3. **Correct focus areas**: Each prompt has focus areas specific to its review type:
