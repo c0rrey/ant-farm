@@ -5,16 +5,24 @@
 Big Head is a **member of the Nitpicker team** (spawned via TeamCreate, NOT as a separate Task agent).
 Do NOT use the Task tool for Big Head — it runs inside the same TeamCreate call as the 4 Nitpickers.
 
-### Wiring: TeamCreate + SendMessage
+**Term definitions (canonical across all orchestration templates):**
+- `{TASK_ID}` — full bead ID including project prefix (e.g., `ant-farm-9oa`)
+- `{TASK_SUFFIX}` — suffix portion only, no project prefix (e.g., `9oa` from `ant-farm-9oa`, or `74g1` from `hs_website-74g.1`)
+- `{EPIC_ID}` — epic suffix only (e.g., `74g` from `hs_website-74g`), or `_standalone` for tasks with no epic parent
+- `{TIMESTAMP}` — UTC timestamp in `YYYYMMDD-HHmmss` format (e.g., `20260217-143000`)
+
+### Wiring: TeamCreate + direct spawn prompt
 
 **Step 1 — Fill placeholders before building the TeamCreate call.**
 Replace `{PLACEHOLDER}` values (uppercase) in the agent-facing template below:
 - `{DATA_FILE_PATH}`: Big Head consolidation data file written by the Pantry (review mode)
 - `{EPIC_ID}`: epic being reviewed (e.g., `ant-farm`)
-- `{CONSOLIDATED_OUTPUT_PATH}`: `beads/agent-summaries/{epic-id}/review-reports/review-consolidated-<timestamp>.md`
+- `{CONSOLIDATED_OUTPUT_PATH}`: `.beads/agent-summaries/{EPIC_ID}/review-reports/review-consolidated-{TIMESTAMP}.md`
 
 **Step 2 — Create the Nitpicker team.**
-Big Head is the 5th member. Pass the filled-in template text as Big Head's `prompt`. Example:
+Big Head is the 5th member. Pass the filled-in template text as Big Head's `prompt`. Include all 4
+Nitpicker report paths directly in Big Head's spawn prompt so it can begin consolidation as soon as
+the reports are ready. Example:
 
 ```
 TeamCreate(
@@ -24,23 +32,15 @@ TeamCreate(
     { "name": "edge-cases-reviewer",   "prompt": "<filled nitpicker template with REVIEW_TYPE=edge-cases>" },
     { "name": "correctness-reviewer",  "prompt": "<filled nitpicker template with REVIEW_TYPE=correctness>" },
     { "name": "excellence-reviewer",   "prompt": "<filled nitpicker template with REVIEW_TYPE=excellence>" },
-    { "name": "big-head",              "prompt": "<filled big-head template (this file, below the --- separator)>" }
+    { "name": "big-head",              "prompt": "<filled big-head template with all 4 expected report paths embedded>" }
   ]
 )
 ```
 
-**Step 3 — Send report paths to Big Head via SendMessage.**
-After the 4 Nitpickers finish and write their reports, send Big Head a message with the paths:
-
-```
-SendMessage(
-  to="big-head",
-  message="All 4 Nitpicker reports are ready. Report paths:\n- {CLARITY_REPORT_PATH}\n- {EDGE_CASES_REPORT_PATH}\n- {CORRECTNESS_REPORT_PATH}\n- {EXCELLENCE_REPORT_PATH}\n\nProceed with consolidation."
-)
-```
-
-Big Head then reads those paths and performs consolidation. The Pantry writes all report paths into
-`{DATA_FILE_PATH}` so Big Head can also discover them from the brief if SendMessage is delayed.
+**Step 3 — Embed report paths in Big Head's spawn prompt.**
+Rather than sending a follow-up SendMessage, include the expected report paths directly in Big Head's
+initial prompt (the agent-facing template below). The Pantry writes all report paths into
+`{DATA_FILE_PATH}`, so Big Head discovers them from the brief. No SendMessage step is required.
 
 The agent-facing text starts below the `---` separator. Do NOT include this instruction block in the TeamCreate prompt.
 

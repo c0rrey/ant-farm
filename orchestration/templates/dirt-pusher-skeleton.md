@@ -36,8 +36,8 @@ Execute these 6 steps in order:
 5. **Commit**: `git pull --rebase && git add <changed-files> && git commit -m "<type>: <description> ({TASK_ID})"`
    Use conventional commit type (fix/feat/refactor/etc). Record commit hash in summary doc.
 6. **Summary doc** (MANDATORY): Write to {SUMMARY_OUTPUT_PATH} with all required sections
-   (see data file for section list).
+   (see data file for section list). Only after the summary doc is successfully written:
+   `bd close {TASK_ID}`
 
 SCOPE: Only edit files listed in the task context. Document adjacent issues, don't fix them.
 Do NOT push to remote. Do NOT modify CHANGELOG/README/CLAUDE.md.
-After committing: `bd close {TASK_ID}`

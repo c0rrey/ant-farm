@@ -137,18 +137,18 @@ Do NOT execute the prompts — only verify their contents.
 
 ## Verify each item (PASS or FAIL with evidence):
 
-0. **File list matches git diff**: The Queen provides the commit range (`<first-commit>..<last-commit>`) in the spawn prompt — use those exact values. Run `git diff --name-only <first-commit>..<last-commit>` and verify the prompt file list matches exactly. Every file in the diff must appear in the prompt, and every file in the prompt must appear in the diff. If there is a mismatch, FAIL with the list of missing/extra files.
-1. **Same file list**: All 4 prompts contain the same set of files to review (not different subsets)
-2. **Same commit range**: All 4 prompts reference the same commit range
-3. **Correct focus areas**: Each prompt has focus areas specific to its review type:
+1. **File list matches git diff**: The Queen provides the commit range (`<first-commit>..<last-commit>`) in the spawn prompt — use those exact values. Run `git diff --name-only <first-commit>..<last-commit>` and verify the prompt file list matches exactly. Every file in the diff must appear in the prompt, and every file in the prompt must appear in the diff. If there is a mismatch, FAIL with the list of missing/extra files.
+2. **Same file list**: All 4 prompts contain the same set of files to review (not different subsets)
+3. **Same commit range**: All 4 prompts reference the same commit range
+4. **Correct focus areas**: Each prompt has focus areas specific to its review type:
    - Clarity: readability, naming, documentation, consistency, structure
    - Edge Cases: input validation, error handling, boundaries, file ops, concurrency
    - Correctness: acceptance criteria, logic errors, data integrity, regressions, cross-file
    - Excellence: best practices, performance, security, maintainability, architecture
    (Flag if focus areas are copy-pasted identically across prompts)
-4. **No bead filing instruction**: Each prompt contains "Do NOT file beads" or equivalent
-5. **Report format reference**: Each prompt specifies the output path `.beads/agent-summaries/{EPIC_ID}/review-reports/{type}-review-{timestamp}.md`
-6. **Messaging guidelines**: Each prompt includes guidance on when to message other Nitpickers
+5. **No bead filing instruction**: Each prompt contains "Do NOT file beads" or equivalent
+6. **Report format reference**: Each prompt specifies the output path `.beads/agent-summaries/{EPIC_ID}/review-reports/{type}-review-{timestamp}.md`
+7. **Messaging guidelines**: Each prompt includes guidance on when to message other Nitpickers
 
 ## Verdict
 - **PASS** — All 7 checks pass for all 4 prompts
@@ -308,7 +308,7 @@ Verify the substance of a Nitpicker's report by cross-checking findings against 
 Read the report first, then perform these 4 checks:
 
 ## Check 1: Code Pointer Verification
-Pick `min(5, ceil(N/3))` random findings from the report (where N = total findings; minimum 3, or all findings if fewer than 3). Always include the highest-severity finding and at least one finding from each severity tier present in the report.
+Pick `max(3, min(5, ceil(N/3)))` random findings from the report (where N = total findings; minimum 3, or all findings if fewer than 3). Always include the highest-severity finding and at least one finding from each severity tier present in the report.
 For each finding:
 - Read the actual code at the referenced file:line
 - Verify the finding description matches what's actually there
