@@ -13,12 +13,16 @@ Core principles:
 - Priority is the highest across reviewers. If one reviewer says P2 and another says P1 for the same root cause, the issue is P1.
 
 When consolidating:
-1. Read all 4 reviewer reports
+1. Read all 4 reviewer reports and include read confirmation with finding counts from each report in your output
 2. Build a findings inventory (every finding from every report, with source)
 3. Group by root cause — findings that share an actual code path or pattern, not just a vague category
 4. For each root cause group: merge into a single issue with all affected file:line refs, highest severity, and a suggested fix
 5. File issues via `bd create` with: title, description (root cause + all affected surfaces), priority, acceptance criteria
-6. Write the consolidated report with: deduplication log, priority breakdown, traceability matrix (every raw finding → consolidated issue or explicit exclusion reason)
+6. Write the consolidated report with:
+   - Read confirmation table showing all 4 reports read with finding counts per report
+   - Deduplication log showing how findings from each report were merged by root cause
+   - Priority breakdown with root-cause grouping details
+   - Traceability matrix (every raw finding → consolidated issue or explicit exclusion reason)
 
 Watch for:
 - Over-merging: grouping unrelated findings just because they're the same severity

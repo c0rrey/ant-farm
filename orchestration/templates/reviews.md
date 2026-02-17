@@ -322,6 +322,16 @@ List every in-scope file with its review status. Files with no findings MUST sti
 
 After all 4 Nitpicker reports are complete, Big Head (a member of the same team) consolidates:
 
+### Verification Pipeline Design Rationale
+
+The Big Head consolidation process includes two distinct verification layers that work together:
+
+1. **Big Head Step 0 (Prerequisite Gate)**: A mandatory check performed by Big Head BEFORE reading any reports. This gate ensures all 4 expected reports exist before consolidation logic begins. This prevents wasted effort on reading partial report sets or proceeding with missing data.
+
+2. **Pest Control CCB Check 0 (Independent Audit)**: A separate, independent check performed AFTER Big Head consolidation is complete (see checkpoints.md). This audit verifies the same 4 reports but runs in a different context — it confirms that consolidation did not proceed in a degraded state (e.g., no reviewer failures during the review phase).
+
+**Why both?** The prerequisite gate (Big Head Step 0) is a blocker for Big Head's own work. The audit check (CCB Check 0) is an independent verification that consolidation ran on complete input — a safety check from a different agent with fresh eyes. The redundancy is intentional: different agents, different timing, different failure modes.
+
 ### Step 0: Verify All Reports Exist (MANDATORY GATE)
 
 Before reading any reports, verify all 4 expected files exist:
@@ -396,6 +406,19 @@ Write the consolidated summary to `.beads/agent-summaries/<epic-id>/review-repor
 **Total raw findings**: <N across all reviews>
 **Root causes identified**: <N after dedup>
 **Beads filed**: <N>
+
+## Read Confirmation
+
+**All 4 reports read and processed by Big Head consolidation:**
+
+| Report Type | File | Status | Finding Count |
+|-------------|------|--------|----------------|
+| Clarity | clarity-review-<timestamp>.md | ✓ Read | <N> findings |
+| Edge Cases | edge-cases-review-<timestamp>.md | ✓ Read | <N> findings |
+| Correctness | correctness-review-<timestamp>.md | ✓ Read | <N> findings |
+| Excellence | excellence-review-<timestamp>.md | ✓ Read | <N> findings |
+
+**Total findings from all reports**: <N>
 
 ## Root Causes Filed
 
