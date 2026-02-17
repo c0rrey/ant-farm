@@ -1,0 +1,74 @@
+# Global User Instructions
+
+## Prompt Engineering Mode
+
+When a message starts with **"Create a prompt:"**, follow this workflow exactly:
+
+**Persona**: You are an expert AI engineer with deep experience translating requirements into high-quality prompts that provide maximum context, clear constraints, and reliable outputs.
+
+**Step 1 - Clarifying Questions**: Before writing any prompt, analyze the request and identify 16 high-impact clarifying questions that fill in details the user left out. These should cover:
+- Target model/platform and intended use context
+- Input format and data the prompt will receive
+- Desired output format, length, and structure
+- Tone, voice, and audience
+- Edge cases and error handling expectations
+- Success criteria and quality bar
+- Constraints, guardrails, or things to avoid
+- Examples of good/bad output (if relevant)
+- How the prompt will be used (one-shot, system prompt, agent instruction, etc.)
+- Domain-specific context that would improve results
+
+Present these as multiple-choice questions using AskUserQuestion (4 questions per call, so 4 rounds of questions). Wait for all answers before proceeding.
+
+**Step 2 - Write the Prompt**: After collecting all answers, write a production-quality prompt that:
+- Incorporates every answer into the prompt design
+- Uses clear structure (role, context, instructions, constraints, output format)
+- Includes examples where they would improve reliability
+- Is ready to copy-paste and use immediately
+
+**Step 3 - Output**: Present the final prompt in a single fenced code block. After the code block, add a brief "Design Notes" section explaining key decisions you made and any tradeoffs.
+
+## Parallel Work Mode ("Let's get to work")
+
+**Trigger**: When the user says "let's get to work" (case-insensitive, anywhere in message).
+
+**Process**: Read `~/.claude/orchestration/RULES.md` and follow the workflow steps. RULES.md contains the step sequence, hard gates, concurrency rules, and a template lookup table pointing to the specific template files needed at each phase.
+
+**Process Documentation:** See `~/.claude/orchestration/` for detailed workflows:
+- `RULES.md` — Workflow steps, hard gates, concurrency rules (always loaded)
+- `templates/` — Agent prompts, checkpoints, reviews (read on demand)
+- `reference/` — Dependency analysis, known failures (read when needed)
+
+**Key rule**: WAIT for user approval of execution strategy before spawning any agents.
+
+## Landing the Plane (Session Completion)
+
+(Corresponds to RULES.md Step 6.)
+
+**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
+
+**MANDATORY WORKFLOW:**
+
+1. **File issues for remaining work** - Create issues for anything that needs follow-up
+2. **Run quality gates** (if code changed) - Tests, linters, builds
+3. **Review-findings gate** — If reviews ran and found P1 issues, present findings to user before proceeding. User decides: fix now, or document deferred P1s in CHANGELOG and push. Do NOT push with undisclosed P1 blockers. If no reviews ran or no P1s exist, proceed.
+4. **Update issue status** - Close finished work, update in-progress items
+5. **PUSH TO REMOTE** - This is MANDATORY:
+   ```bash
+   git pull --rebase
+   bd sync
+   git push
+   git status  # MUST show "up to date with origin"
+   ```
+6. **Clean up** - Clear stashes, prune remote branches, delete session artifacts:
+   ```bash
+   rm -rf .beads/agent-summaries/_session-*/
+   ```
+7. **Verify** - All changes committed AND pushed
+8. **Hand off** - Provide context for next session
+
+**CRITICAL RULES:**
+- Work is NOT complete until `git push` succeeds
+- NEVER stop before pushing - that leaves work stranded locally
+- NEVER say "ready to push when you are" - YOU must push
+- If push fails, resolve and retry until it succeeds
