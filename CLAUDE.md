@@ -32,6 +32,11 @@ Present these as multiple-choice questions using AskUserQuestion (4 questions pe
 
 **Trigger**: When the user says "let's get to work" (case-insensitive, anywhere in message).
 
+**CRITICAL — read before doing ANYTHING:**
+- NEVER run `bd show`, `bd ready`, `bd list`, `bd blocked`, or any `bd` query command. The Scout subagent does this.
+- NEVER read task/issue details from the user's message and act on them directly.
+- Read `~/.claude/orchestration/RULES.md` FIRST and ALONE — no parallel tool calls. Then follow it.
+
 **Process**: Read `~/.claude/orchestration/RULES.md` and follow the workflow steps. RULES.md contains the step sequence, hard gates, concurrency rules, and a template lookup table pointing to the specific template files needed at each phase.
 
 **Process Documentation:** See `~/.claude/orchestration/` for detailed workflows:
