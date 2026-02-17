@@ -15,7 +15,7 @@ Your first instinct will be to "gather context" by running `bd show` on the task
             task-metadata subdirectory. Then immediately proceed to Step 1.
             Do NOT examine, read, or query any task/issue details.
 
-**Step 1:** Recon — spawn the Scout (general-purpose subagent). Pass it:
+**Step 1:** Recon — spawn the Scout (`scout-organizer` subagent). Pass it:
             (1) session dir path, (2) input mode + task list,
             (3) the path `~/.claude/orchestration/templates/scout.md` as its
             instruction file. Do NOT read the scout template yourself.
@@ -78,7 +78,7 @@ bd show/ready/blocked output, agent template files (scout.md, pantry.md, etc.)
 
 | Agent | subagent_type | Rationale |
 |-------|---------------|-----------|
-| Scout | `general-purpose` | Needs bd CLI + file writes |
+| Scout | `scout-organizer` | Custom agent: agent-organizer + Bash for bd CLI |
 | Pantry | `general-purpose` | Needs file reads + writes |
 | Pest Control | `code-reviewer` | Audits diffs, cross-checks claims against code |
 | Dirt Pushers | from Pantry verdict table | Specialist per task (see pantry.md selection tables) |
