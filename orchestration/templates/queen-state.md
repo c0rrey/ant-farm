@@ -1,4 +1,4 @@
-# Boss-Bot Session State
+# The Queen's Session State
 **Updated**: <timestamp>
 **Session ID**: <session-id>
 **Session dir**: .beads/agent-summaries/_session-<session-id>
@@ -10,12 +10,12 @@
 |------------|----------|----------------|--------|-------------|--------------|
 | <name>     | <ids>    | <files>        | spawned/completed/errored | <hash> | PASS/PENDING/FAIL |
 
-## Prompt Factory
+## The Pantry
 | Wave | Status | Tasks | Verdict |
 |------|--------|-------|---------|
 | 1    | pending/completed/failed | <task-ids> | All PASS / <details> |
 
-## Checkpoint Coordinator
+## Colony TSA
 | Wave | Status | Verdict Summary |
 |------|--------|-----------------|
 | 1    | pending/completed/failed | All PASS / <details> |

@@ -1,10 +1,10 @@
-# Boss-Bot Discipline
+# The Queen Discipline
 
 When orchestrating multi-agent work sessions, Claude Code should follow these principles to preserve context and maximize efficiency.
 
 ## Core Principle: Information Diet
 
-**The boss-bot window is a monitoring hub, not an implementation workspace.**
+**The Queen's window is a monitoring hub, not an implementation workspace.**
 
 ### What TO Read (Metadata Only)
 ✅ Task definitions (`bd show <id>`)
@@ -22,7 +22,7 @@ When orchestrating multi-agent work sessions, Claude Code should follow these pr
 ❌ Configuration files (unless diagnosing agent spawn issues)
 
 **Why:** Reading implementation files consumes valuable context window that should be reserved for:
-1. Tracking multiple concurrent agents
+1. Tracking multiple concurrent Dirt Pushers
 2. Monitoring progress across task groups
 3. Planning next waves of work
 4. Handling errors and conflicts
@@ -51,7 +51,7 @@ When orchestrating multi-agent work sessions, Claude Code should follow these pr
 4. **Conflict Risk Assessment** — Pre-flight file modification matrix analysis with LOW/MEDIUM/HIGH risk tiers and corresponding serialization strategies.
 
 **When to Apply** (immediate effect for all future multi-agent sessions):
-- ✅ Always use anti-scope-creep template for implementation agents
+- ✅ Always use anti-scope-creep template for Dirt Pushers
 - ✅ Always run Checkpoint A.5 after each commit in multi-agent waves
 - ✅ Always assess file conflict risk before spawning (create modification matrix)
 - ✅ Serialize tasks when 3+ agents touch the same file (HIGH risk)
@@ -143,12 +143,12 @@ Every bead description includes:
 - ✅ **Fix description** - High-level approach (agents still design 4+ detailed approaches)
 - ✅ **Acceptance criteria** - Testable success conditions
 
-### Boss-Bot Extraction Pattern
+### The Queen's Extraction Pattern
 
 Before spawning an agent, extract this info from `bd show <id>`:
 
 ```bash
-bd show <task-id>  # Read ONCE in boss-bot window
+bd show <task-id>  # Read ONCE in the Queen's window
 
 # Extract and provide to agent:
 # - Affected files/lines from "Affected surfaces:" section
@@ -197,7 +197,7 @@ Your task: Design 4+ approaches to add these 3 fields to validation, select best
 
 ## Agent Prompt Template
 
-⚠️ **MANDATORY**: Every spawned implementation agent MUST receive ALL sections below. All 6 steps are required — skipping Step 2 (Design), Step 4 (Correctness Review), or Step 6 (Summary Doc) is a process failure. Copy this template verbatim and fill in the placeholders.
+⚠️ **MANDATORY**: Every spawned Dirt Pusher MUST receive ALL sections below. All 6 steps are required — skipping Step 2 (Design), Step 4 (Correctness Review), or Step 6 (Summary Doc) is a process failure. Copy this template verbatim and fill in the placeholders.
 
 ```markdown
 Execute <task-type> for <file-or-component>:
@@ -307,13 +307,13 @@ For each file changed:
 After all tasks in this batch:
 - Run `git pull --rebase` to stack commits cleanly
 - Close all tasks: `bd close <id1> <id2> ...`
-- DO NOT push to remote (boss-bot handles this)
+- DO NOT push to remote (the Queen handles this)
 - DO NOT modify documentation files (CHANGELOG, README, CLAUDE.md)
 
 Focus: <specific guidance for this file/component>
 ```
 
-### Boss-Bot Checklist (verify before spawning)
+### The Queen's Checklist (verify before spawning)
 
 Before sending any agent prompt, confirm it includes:
 - [ ] **Context section** with exact files/lines from bead (pre-digested, not "discover the problem")
@@ -332,7 +332,7 @@ If any checkbox is missing, DO NOT spawn the agent — fix the prompt first.
 
 ### Anti-Scope-Creep Prompt Template
 
-**When to use**: For all implementation agents, especially when multiple tasks touch the same file.
+**When to use**: For all Dirt Pushers, especially when multiple tasks touch the same file.
 
 **Why**: Agents are helpful by nature and will fix adjacent problems they notice ("while I'm here..."). This creates work attribution scrambling and misleading audit trails.
 
@@ -360,7 +360,7 @@ Your task is ONLY to {specific task description}.
 If you find other issues during your work:
 1. Document them in your summary doc under "Adjacent Issues Found"
 2. DO NOT FIX THEM
-3. Let boss-bot create separate tasks
+3. Let the Queen create separate tasks
 
 **Acceptance criterion**: ONLY the files and line ranges listed in Step 3 may be edited. Any additional changes are a scope violation.
 ```
@@ -370,20 +370,20 @@ If you find other issues during your work:
 - Add file-specific boundaries (e.g., "Edit lines 23-24 only" or "Only modify the sameAs field")
 - List specific off-limit areas if needed (e.g., "Do NOT edit foundingDate, @id, or defensive guards")
 
-### Review Teammate Checklist (verify before launching team)
+### Nitpicker Checklist (verify before launching team)
 
 Before launching the review agent team, confirm:
 - [ ] All 4 teammate prompts include review scope (list of all files to review)
 - [ ] Each teammate has focus areas specific to their review type
 - [ ] Catalog phase instructions included (find all, group preliminarily)
 - [ ] Report format instructions included (use standard teammate report format)
-- [ ] Each prompt says "Do NOT file beads — the lead handles all bead filing"
+- [ ] Each prompt says "Do NOT file beads — Big Head handles all bead filing"
 - [ ] Messaging guidelines included (what to share, what not to share)
 - [ ] Reports write to `.beads/agent-summaries/<epic-id>/review-reports/<review-type>-review-<timestamp>.md`
 
 ### Lead Consolidation Checklist (after all teammates finish)
 
-Before filing beads, confirm the lead has:
+Before filing beads, confirm Big Head has:
 - [ ] Read all 4 teammate reports
 - [ ] Merged duplicate findings across reviews
 - [ ] Grouped all findings by root cause (not per-occurrence)
@@ -430,7 +430,7 @@ Otherwise, trust agent summaries and commit messages.
 
 ### Mandatory Review Gate (NEVER SKIP)
 
-**CRITICAL**: After ALL implementation agents complete AND all Checkpoint B verifications pass, you MUST launch the Review Team (Step 3b). **This is NOT optional and does NOT require user permission.**
+**CRITICAL**: After ALL Dirt Pushers complete AND all Checkpoint B verifications pass, you MUST launch the Nitpickers (Step 3b). **This is NOT optional and does NOT require user permission.**
 
 **Why reviews are mandatory**:
 - Checkpoints verify process compliance and individual task claims
@@ -444,26 +444,26 @@ Otherwise, trust agent summaries and commit messages.
 - Skip reviews because "checkpoints already passed" - checkpoints ≠ reviews
 - Skip reviews for "small changes" - reviews scale efficiently via parallel execution
 
-**Proceed directly to Step 3b** (Launch Review Team with 4 parallel reviewers) after transition gate checklist passes.
+**Proceed directly to Step 3b** (Launch the Nitpickers with 4 parallel reviewers) after transition gate checklist passes.
 
 ## Verification Checkpoint System
 
 Three checkpoints cross-check agent claims against ground truth (actual code, git diffs, bead records). This replaces the previous single-pass "Summary Doc Verification" which only checked structural completeness.
 
-**Proof artifacts directory**: `.beads/agent-summaries/<epic-id>/verification/snitch-bot/` (all verification reports generated by snitch-bot subagent)
-(Cross-epic verification files are duplicated to each participating epic. Cross-epic batches and consolidations go to `_standalone/verification/snitch-bot/`.)
+**Proof artifacts directory**: `.beads/agent-summaries/<epic-id>/verification/pest-control/` (all verification reports generated by Pest Control subagent)
+(Cross-epic verification files are duplicated to each participating epic. Cross-epic batches and consolidations go to `_standalone/verification/pest-control/`.)
 
 ### Hard Gate Enforcement
 
-Checkpoints are **hard gates**, not advisory. Boss-bot MUST NOT proceed past a gate until the checkpoint PASS artifact exists on disk.
+Checkpoints are **hard gates**, not advisory. The Queen MUST NOT proceed past a gate until the checkpoint PASS artifact exists on disk.
 
 | Gate | Blocks | Required Artifact |
 |------|--------|-------------------|
-| Checkpoint A PASS | Agent spawn | `.beads/agent-summaries/<epic-id>/verification/snitch-bot/snitch-bot-*-checkpoint-a-*.md` with PASS verdict |
-| Checkpoint B PASS | Task closure (`bd close`) | `.beads/agent-summaries/<epic-id>/verification/snitch-bot/snitch-bot-*-checkpoint-b-*.md` with PASS verdict |
-| Checkpoint C PASS | Presenting results to user | `.beads/agent-summaries/<epic-id>/verification/snitch-bot/snitch-bot-*-consolidation-checkpoint-c-*.md` with PASS verdict |
+| Checkpoint A PASS | Agent spawn | `.beads/agent-summaries/<epic-id>/verification/pest-control/pest-control-*-checkpoint-a-*.md` with PASS verdict |
+| Checkpoint B PASS | Task closure (`bd close`) | `.beads/agent-summaries/<epic-id>/verification/pest-control/pest-control-*-checkpoint-b-*.md` with PASS verdict |
+| Checkpoint C PASS | Presenting results to user | `.beads/agent-summaries/<epic-id>/verification/pest-control/pest-control-*-consolidation-checkpoint-c-*.md` with PASS verdict |
 
-**Enforcement rule**: Before executing the blocked action, boss-bot MUST:
+**Enforcement rule**: Before executing the blocked action, the Queen MUST:
 1. Verify the artifact file exists (`ls` the path)
 2. Read the verdict line and confirm it says PASS
 3. If the artifact is missing or verdict is not PASS, stop and run/re-run the checkpoint
@@ -479,15 +479,15 @@ Checkpoints are **hard gates**, not advisory. Boss-bot MUST NOT proceed past a g
 | Agent hasn't committed within 15 turns | 0 | Check agent status; if stuck, escalate to user |
 | Total retries across all agents per session | 5 | Stop spawning new work; triage existing failures with user |
 
-**Budget tracking**: Boss-bot MUST track retry count in the session state file (see "Session State Persistence" below). If total retries reach 5, pause all new spawns and present the failure summary to the user.
+**Budget tracking**: The Queen MUST track retry count in the session state file (see "Session State Persistence" below). If total retries reach 5, pause all new spawns and present the failure summary to the user.
 
 ### Session State Persistence
 
-Boss-bot MUST maintain a session state file at `.beads/agent-summaries/_session-<session-id>/boss-bot-state.md` to survive context compaction. Update this file after EVERY agent event (spawn, completion, checkpoint result, error).
+The Queen MUST maintain a session state file at `.beads/agent-summaries/_session-<session-id>/queen-state.md` to survive context compaction. Update this file after EVERY agent event (spawn, completion, checkpoint result, error).
 This file lives in the session directory (`.beads/agent-summaries/_session-<session-id>/`), is session-scoped, and the entire session directory is deleted during "Landing the Plane" cleanup.
 
 ```markdown
-# Boss-Bot Session State
+# The Queen Session State
 **Updated**: <timestamp>
 **Session start**: <timestamp>
 **Strategy**: <chosen execution strategy>
@@ -514,7 +514,7 @@ This file lives in the session directory (`.beads/agent-summaries/_session-<sess
 - <timestamp>: <agent> — <error summary>
 ```
 
-**Recovery**: After context compaction or `bd prime`, read this file to restore boss-bot state. Do not rely on conversation context alone.
+**Recovery**: After context compaction or `bd prime`, read this file to restore the Queen's state. Do not rely on conversation context alone.
 
 ### Epic ID Resolution for File Paths
 
@@ -526,18 +526,18 @@ When constructing paths that include `<epic-id>`, resolve the epic ID from the t
 | `<X>.<N>` (non-prefixed) | `X` | `74g.8` → `74g` |
 | No epic parent | `_standalone` | `hs_website-596y` → `_standalone` |
 
-**Directory creation**: Always run `mkdir -p .beads/agent-summaries/<epic-id>/verification/snitch-bot/` before writing verification artifacts. Always run `mkdir -p .beads/agent-summaries/<epic-id>/review-reports/` before writing review reports.
+**Directory creation**: Always run `mkdir -p .beads/agent-summaries/<epic-id>/verification/pest-control/` before writing verification artifacts. Always run `mkdir -p .beads/agent-summaries/<epic-id>/review-reports/` before writing review reports.
 
-**Boss-bot responsibility**: Boss-bot MUST include `**Epic ID**` and `**Summary output path**` in the agent prompt context section. For review prompts, include all participating epic IDs and instruct reviewers to write reports to each epic's `review-reports/` directory.
+**The Queen's responsibility**: The Queen MUST include `**Epic ID**` and `**Summary output path**` in the agent prompt context section. For review prompts, include all participating epic IDs and instruct reviewers to write reports to each epic's `review-reports/` directory.
 
-**Review timestamp convention**: Boss-bot generates a single timestamp per review cycle (format: `YYYYMMDD-HHMMSS`) and passes the exact output filenames to each reviewer and the lead. This prevents reviewers from independently generating different timestamps.
+**Review timestamp convention**: The Queen generates a single timestamp per review cycle (format: `YYYYMMDD-HHMMSS`) and passes the exact output filenames to each reviewer and Big Head. This prevents reviewers from independently generating different timestamps.
 
 ### Known Failure Modes
 
 Document past process failures to prevent recurrence.
 
 #### Epic 3: Skipped Design and Review Steps
-**What happened**: Implementation agents skipped Step 2 (Design 4+ approaches) and Step 4 (Per-File Correctness Review) entirely. No checkpoint caught this because checkpoints weren't enforced as hard gates at the time.
+**What happened**: Dirt Pushers skipped Step 2 (Design 4+ approaches) and Step 4 (Per-File Correctness Review) entirely. No checkpoint caught this because checkpoints weren't enforced as hard gates at the time.
 **Impact**: Unreviewed, undesigned work shipped. Quality was unknown.
 **Root cause**: Steps marked "MANDATORY" in the template but nothing verified compliance.
 **Fix applied**: Hard gate enforcement (see above) — Checkpoint B now verifies approach substance and review evidence before allowing task closure.
@@ -552,26 +552,26 @@ Recommended agent types by task category. Projects can override these in their C
 | Build system changes | `python-pro` | Build scripts are Python |
 | CSS/HTML implementation | `nextjs-developer` or `javascript-pro` | Frontend expertise |
 | Build verification | `debugger` | Diagnostic and troubleshooting focus |
-| Review teammates (all 4) | `code-reviewer` / `sonnet` | Code analysis focus |
+| Nitpickers (all 4) | `code-reviewer` / `sonnet` | Code analysis focus |
 | Review lead (consolidation) | `opus` | Cross-report judgment, dedup, priority calibration |
 | General implementation | Match specialist to primary file type | Best domain expertise |
 
-### Snitch-Bot: The Verification Subagent
+### Pest Control: The Verification Subagent
 
-All checkpoint verifications (A, B, C) are executed by **snitch-bot**, a dedicated verification subagent that cross-checks orchestrator and agent work against ground truth.
+All checkpoint verifications (A, B, C) are executed by **Pest Control**, a dedicated verification subagent that cross-checks orchestrator and agent work against ground truth.
 
-**Snitch-bot responsibilities:**
+**Pest Control responsibilities:**
 - Pre-spawn prompt audits (Checkpoint A)
 - Post-completion substance verification (Checkpoint B)
 - Consolidation integrity audits (Checkpoint C)
 
 **Artifact naming conventions:**
-- **Task-specific checkpoints (A, B):** `snitch-bot-<task-id>-checkpoint-<step>-<timestamp>.md`
-  - Example: `snitch-bot-74g1-checkpoint-a-20260215-001145.md`
-  - Example: `snitch-bot-74g1-checkpoint-b-20260215-003422.md`
-- **Consolidation audits (C):** `snitch-bot-<epic-id>-consolidation-checkpoint-c-<timestamp>.md`
-  - Example: `snitch-bot-74g-consolidation-checkpoint-c-20260215-010520.md`
-- **Storage:** All artifacts in `.beads/agent-summaries/<epic-id>/verification/snitch-bot/`
+- **Task-specific checkpoints (A, B):** `pest-control-<task-id>-checkpoint-<step>-<timestamp>.md`
+  - Example: `pest-control-74g1-checkpoint-a-20260215-001145.md`
+  - Example: `pest-control-74g1-checkpoint-b-20260215-003422.md`
+- **Consolidation audits (C):** `pest-control-<epic-id>-consolidation-checkpoint-c-<timestamp>.md`
+  - Example: `pest-control-74g-consolidation-checkpoint-c-20260215-010520.md`
+- **Storage:** All artifacts in `.beads/agent-summaries/<epic-id>/verification/pest-control/`
   Cross-epic verification files are duplicated to each participating epic's verification directory.
 
 **Task ID format:**
@@ -584,25 +584,25 @@ All checkpoint verifications (A, B, C) are executed by **snitch-bot**, a dedicat
 
 **Timestamp format:** `YYYYMMDD-HHMMSS`
 
-**Backward compatibility:** All verification artifacts (including pre-Feb 2026 legacy files) have been migrated to epic subdirectories. Structure: `.beads/agent-summaries/<epic-id>/verification/snitch-bot/` for snitch-bot artifacts, `.beads/agent-summaries/<epic-id>/verification/` for legacy (non-snitch-bot) artifacts.
+**Backward compatibility:** All verification artifacts (including pre-Feb 2026 legacy files) have been migrated to epic subdirectories. Structure: `.beads/agent-summaries/<epic-id>/verification/pest-control/` for Pest Control artifacts, `.beads/agent-summaries/<epic-id>/verification/` for legacy (non-Pest Control) artifacts.
 
 ### Checkpoint A: Pre-Spawn Prompt Audit
 
 **When**: After orchestrator composes agent prompt(s), BEFORE spawning
-**Applies to**: Implementation agents AND review team
+**Applies to**: Dirt Pushers AND the Nitpickers
 **Model**: `haiku` (mechanical checklist — cheap, fast)
 **Agent type**: `code-reviewer`
 
 **Why**: The orchestrator has a self-policing checklist, but nobody audits the orchestrator. Catching prompt defects before spawn is 100x cheaper than catching them after.
 
-#### Checkpoint A Prompt Template (Implementation Agents)
+#### Checkpoint A Prompt Template (Dirt Pushers)
 
 ```markdown
-**Snitch-bot verification - Checkpoint A (Pre-Spawn Prompt Audit)**
+**Pest Control verification - Checkpoint A (Pre-Spawn Prompt Audit)**
 
-You are **snitch-bot**, the verification subagent. Your role is to audit the composed agent prompt before spawn. See "Snitch-Bot: The Verification Subagent" section above for full conventions.
+You are **Pest Control**, the verification subagent. Your role is to audit the composed agent prompt before spawn. See "Pest Control: The Verification Subagent" section above for full conventions.
 
-Audit the following implementation agent prompt for completeness and correctness.
+Audit the following Dirt Pusher prompt for completeness and correctness.
 Do NOT execute the prompt — only verify its contents.
 
 <prompt>
@@ -633,18 +633,18 @@ Do NOT execute the prompt — only verify its contents.
 - **FAIL: <list each failing check with evidence>**
 
 Write your verification report to:
-`.beads/agent-summaries/<epic-id>/verification/snitch-bot/snitch-bot-{task-id}-checkpoint-a-{timestamp}.md`
+`.beads/agent-summaries/<epic-id>/verification/pest-control/pest-control-{task-id}-checkpoint-a-{timestamp}.md`
 
 Where:
 - task-id: Full task ID suffix (e.g., `74g1` from `hs_website-74g.1`), or `standalone` if no epic
 - timestamp: YYYYMMDD-HHMMSS format
 ```
 
-#### Checkpoint A Prompt Template (Review Team)
+#### Checkpoint A Prompt Template (The Nitpickers)
 
 See `QUALITY_REVIEW_TEMPLATES.md` "Verification Checkpoints" section for the review-specific version.
 
-#### Boss-Bot Response to Checkpoint A
+#### The Queen's Response to Checkpoint A
 
 **On PASS**: Proceed to spawn the agent(s).
 
@@ -665,9 +665,9 @@ See `QUALITY_REVIEW_TEMPLATES.md` "Verification Checkpoints" section for the rev
 #### Checkpoint A.5 Prompt Template
 
 ```markdown
-**Snitch-bot verification - Checkpoint A.5 (Post-Commit Scope Verification)**
+**Pest Control verification - Checkpoint A.5 (Post-Commit Scope Verification)**
 
-You are **snitch-bot**, the verification subagent. Your role is to verify agent commits match task scope.
+You are **Pest Control**, the verification subagent. Your role is to verify agent commits match task scope.
 
 **Task ID**: {task-id}
 **Expected files** (from `bd show {task-id}`): {list files from task description}
@@ -687,21 +687,21 @@ You are **snitch-bot**, the verification subagent. Your role is to verify agent 
 
 ## Verdict
 - **PASS** — Files match expected scope (or extra files are legitimate build outputs)
-- **WARN: <list extra files with rationale>** — Extra files need boss-bot review (e.g., "index.html regenerated from template change — legitimate")
+- **WARN: <list extra files with rationale>** — Extra files need the Queen's review (e.g., "index.html regenerated from template change — legitimate")
 - **FAIL: <list unexpected files>** — Agent edited files outside task scope (scope creep detected)
 
 Write your verification report to:
-`.beads/agent-summaries/<epic-id>/verification/snitch-bot/snitch-bot-{task-id}-checkpoint-a5-{timestamp}.md`
+`.beads/agent-summaries/<epic-id>/verification/pest-control/pest-control-{task-id}-checkpoint-a5-{timestamp}.md`
 ```
 
-#### Boss-Bot Response to Checkpoint A.5
+#### The Queen's Response to Checkpoint A.5
 
 **On PASS**: Continue normally (run Checkpoint B, backfill queue).
 
 **On WARN**: Review the extra files. If legitimate (e.g., HTML rebuild from template), accept and continue. If suspicious, escalate to user.
 
 **On FAIL (scope creep detected)**:
-1. Log the violation in boss-bot state
+1. Log the violation in the Queen's state
 2. Mark task with scope creep note in final closure
 3. Check if overlapping work affects queued agents (may need to adjust or cancel)
 4. Continue but document for post-mortem
@@ -712,20 +712,20 @@ Write your verification report to:
 
 ### Checkpoint B: Substance Verification
 
-**When**: After each agent completes (implementation or review teammate)
+**When**: After each agent completes (Dirt Pusher or Nitpicker)
 **Model**: `sonnet` (needs judgment to compare claims against actual code)
 **Agent type**: `code-reviewer`
 
 **Why sonnet not haiku**: This checkpoint reads actual source code and compares it to report claims. "Is this finding description accurate for what's at build.py:L200?" requires understanding both the code and the claim. Haiku can check format; sonnet can check truth.
 
-#### Checkpoint B Prompt Template (Implementation Agents)
+#### Checkpoint B Prompt Template (Dirt Pushers)
 
 ```markdown
-**Snitch-bot verification - Checkpoint B (Substance Verification)**
+**Pest Control verification - Checkpoint B (Substance Verification)**
 
-You are **snitch-bot**, the verification subagent. Your role is to cross-check agent claims against ground truth. See "Snitch-Bot: The Verification Subagent" section above for full conventions.
+You are **Pest Control**, the verification subagent. Your role is to cross-check agent claims against ground truth. See "Pest Control: The Verification Subagent" section above for full conventions.
 
-Verify the substance of the implementation agent's work by cross-checking claims against ground truth.
+Verify the substance of the Dirt Pusher's work by cross-checking claims against ground truth.
 
 **Summary doc**: `.beads/agent-summaries/<epic-id>/{task-id}.md`
 **Task ID**: {task-id}
@@ -765,18 +765,18 @@ Pick 1 changed file and read the agent's correctness notes for it.
 - **FAIL: <list all failures with evidence>** — Multiple checks failed or critical fabrication detected
 
 Write your verification report to:
-`.beads/agent-summaries/<epic-id>/verification/snitch-bot/snitch-bot-{task-id}-checkpoint-b-{timestamp}.md`
+`.beads/agent-summaries/<epic-id>/verification/pest-control/pest-control-{task-id}-checkpoint-b-{timestamp}.md`
 
 Where:
 - task-id: Full task ID suffix (e.g., `74g1` from `hs_website-74g.1`)
 - timestamp: YYYYMMDD-HHMMSS format
 ```
 
-#### Checkpoint B Prompt Template (Review Teammates)
+#### Checkpoint B Prompt Template (Nitpickers)
 
 See `QUALITY_REVIEW_TEMPLATES.md` "Verification Checkpoints" section for the review-specific version.
 
-#### Boss-Bot Response to Checkpoint B
+#### The Queen's Response to Checkpoint B
 
 **On PASS**: Proceed normally (close task, backfill queue).
 
@@ -795,7 +795,7 @@ See `QUALITY_REVIEW_TEMPLATES.md` "Verification Checkpoints" section for the rev
 
 ### Checkpoint C: Consolidation Audit
 
-**When**: After lead consolidation (after all 4 review reports merged and beads filed)
+**When**: After Big Head consolidation (after all 4 review reports merged and beads filed)
 **Model**: `haiku` (mechanical counting + record-checking)
 **Agent type**: `code-reviewer`
 
@@ -810,7 +810,7 @@ See `QUALITY_REVIEW_TEMPLATES.md` "Verification Checkpoints" section for the ful
 6. **Deduplication correctness** — merged groups share common code/pattern, merge rationale is coherent
 7. **Bead provenance audit** — all open beads filed during consolidation, not during reviews
 
-**Proof artifact**: `.beads/agent-summaries/<epic-id>/verification/snitch-bot/snitch-bot-{epic-id}-consolidation-checkpoint-c-{timestamp}.md`
+**Proof artifact**: `.beads/agent-summaries/<epic-id>/verification/pest-control/pest-control-{epic-id}-consolidation-checkpoint-c-{timestamp}.md`
 
 ## Prompt Preparation Optimization
 
@@ -825,7 +825,7 @@ See `QUALITY_REVIEW_TEMPLATES.md` "Verification Checkpoints" section for the ful
 ### Benefits:
 - Eliminates 2-5 minute prompt composition delay between waves
 - Catches prompt defects early (before wave is ready to start)
-- Keeps boss-bot context focused on monitoring during active waves
+- Keeps the Queen's context focused on monitoring during active waves
 - Reduces total session time by 20-30%
 
 ### Example:
@@ -843,7 +843,7 @@ Wave 2 agents spawn (time = 20 min)
 
 **CRITICAL**: Reviews MUST use **Agent Teams** (TeamCreate + SendMessage), NOT plain Task tool subagents.
 
-After all implementation agents complete, launch reviews using **TeamCreate** to create a review team with 4 specialized reviewers running in parallel. The team structure enables cross-pollination between reviewers via SendMessage.
+After all Dirt Pushers complete, launch reviews using **TeamCreate** to create the Nitpickers with 4 specialized reviewers running in parallel. The team structure enables cross-pollination between reviewers via SendMessage.
 
 **DO NOT**:
 - Use plain Task tool for reviews (no cross-agent communication)
@@ -857,10 +857,10 @@ After all implementation agents complete, launch reviews using **TeamCreate** to
 - Provides structured report handoff to lead
 
 See `QUALITY_REVIEW_TEMPLATES.md` for the full protocol:
-1. Launch review team with TeamCreate (4 specialized code-reviewer teammates in parallel)
+1. Launch the Nitpickers with TeamCreate (4 specialized code-reviewer Nitpickers in parallel)
 2. Teammates produce reports using SendMessage (do NOT file beads)
 3. Lead reads all 4 reports, deduplicates by root cause, files beads
-4. Then spawn implementation agents for review-discovered issues (group by file, same pattern as original work)
+4. Then spawn Dirt Pushers for review-discovered issues (group by file, same pattern as original work)
 
 ## Session Closure Checklist
 
@@ -895,7 +895,7 @@ Track these to stay within limits:
 
 ❌ **Reading every agent's output files** - Trust summaries
 ❌ **Spawning agents one at a time** - Batch by file/priority
-❌ **Doing implementation work in boss-bot window** - Delegate everything
+❌ **Doing implementation work in the Queen's window** - Delegate everything
 ❌ **Re-reading the same metadata** - Read once, take notes
 ❌ **Pushing mid-session** - Only push at end (atomic deployment)
 ❌ **Updating docs per-agent** - Batch all doc updates at end
@@ -903,7 +903,7 @@ Track these to stay within limits:
 
 ## Success Indicators
 
-✅ Boss-bot finishes with >50% token budget
+✅ The Queen finishes with >50% token budget
 ✅ Zero merge conflicts (proper file grouping)
 ✅ All agents commit successfully
 ✅ Clean git history (sequential, meaningful commits)

@@ -114,8 +114,8 @@ Typical wave pattern: P1 wave (7 tasks) → P2 wave (6 agents, file-grouped) →
 | Build system changes | `python-pro` | Build scripts are Python |
 | CSS/HTML implementation | `nextjs-developer` or `javascript-pro` | Frontend expertise |
 | Build verification | `debugger` | Diagnostic and troubleshooting focus |
-| Review teammates (all 4) | `code-reviewer` / `sonnet` | Code analysis focus |
-| Review lead (consolidation) | `opus` | Cross-report judgment, dedup, priority calibration |
+| Nitpickers (all 4) | `code-reviewer` / `sonnet` | Code analysis focus |
+| Big Head (consolidation) | `opus` | Cross-report judgment, dedup, priority calibration |
 | General implementation | Match specialist to primary file type | Best domain expertise |
 
 Projects can override these defaults in their CLAUDE.md or MEMORY.md.

@@ -6,30 +6,30 @@ Standard protocol for running quality reviews using agent teams after implementa
 
 ## Agent Teams Review Protocol
 
-After all implementation agents complete, boss-bot launches a **review team** — four specialized reviewers running in parallel with bidirectional messaging. Reviewers produce **reports only** and do NOT file beads. The lead consolidates all findings, deduplicates by root cause, and files beads.
+After all Dirt Pushers complete, the Queen launches **the Nitpickers** — four specialized reviewers running in parallel with bidirectional messaging. Reviewers produce **reports only** and do NOT file beads. Big Head consolidates all findings, deduplicates by root cause, and files beads.
 
 ### Model Assignments
 
-- **Lead (consolidation)**: `opus` — needs judgment for cross-report deduplication, root-cause grouping, and priority calibration
-- **Review teammates (all 4)**: `sonnet` — sufficient for code review and finding cataloging
+- **Big Head (consolidation)**: `opus` — needs judgment for cross-report deduplication, root-cause grouping, and priority calibration
+- **Nitpickers (all 4)**: `sonnet` — sufficient for code review and finding cataloging
 
 ### Why Agent Teams (Not Sequential)
 
 - **Wall-clock time**: 4 parallel reviews vs 4 sequential = ~4x faster
 - **Cross-pollination**: Reviewers can message each other about overlapping findings, reducing duplicate work
-- **Unified dedup**: Lead sees ALL findings before filing, so root-cause grouping is authoritative — no duplicate beads
+- **Unified dedup**: Big Head sees ALL findings before filing, so root-cause grouping is authoritative — no duplicate beads
 
 ### Team Setup
 
-**Pre-spawn requirement**: Before creating the review team, run **Checkpoint A (Pre-Spawn Prompt Audit)** on all 4 review prompts. See "Verification Checkpoints" section below.
+**Pre-spawn requirement**: Before creating the Nitpickers, run **Checkpoint A (Pre-Spawn Prompt Audit)** on all 4 review prompts. See "Verification Checkpoints" section below.
 
-Boss-bot creates the review team with 4 tasks:
+The Queen creates the Nitpickers with 4 tasks:
 
 ```markdown
 Create a team with these 4 review tasks. All reviewers work in parallel.
 
-Teammates produce REPORTS ONLY — do NOT file beads (`bd create`).
-The lead consolidates all reports, groups findings by root cause, and files beads.
+Nitpickers produce REPORTS ONLY — do NOT file beads (`bd create`).
+Big Head consolidates all reports, groups findings by root cause, and files beads.
 
 Review scope: commits <first-commit> through <last-commit> (<N> commits total)
 Files to review: <list of files changed in session>
@@ -42,15 +42,15 @@ Files to review: <list of files changed in session>
 
 ### Messaging Guidelines
 
-**Teammates SHOULD message when:**
+**Nitpickers SHOULD message when:**
 - They find something that crosses into another reviewer's domain (e.g., clarity reviewer spots a potential edge case)
 - They want to flag "I'm covering X, skip it" to avoid duplicate analysis
 - They discover context that would help another reviewer (e.g., "this function is only called from one place")
 
-**Teammates should NOT message:**
+**Nitpickers should NOT message:**
 - Status updates ("I'm 50% done")
 - General observations that don't help other reviewers
-- Questions that should go to the lead
+- Questions that should go to Big Head
 
 ## Review 1: Clarity Review (P3)
 
@@ -75,11 +75,11 @@ Read all files in scope. For each issue, note the file, line, and what's wrong.
 Group findings into preliminary root causes where possible.
 
 ## Report (MANDATORY)
-Write your report to `.beads/agent-summaries/<epic-id>/review-reports/clarity-review-<timestamp>.md` using the format below. (Boss-bot provides the exact filename in your prompt.)
-Do NOT file beads — the lead handles all bead filing.
+Write your report to `.beads/agent-summaries/<epic-id>/review-reports/clarity-review-<timestamp>.md` using the format below. (The Queen provides the exact filename in your prompt.)
+Do NOT file beads — Big Head handles all bead filing.
 
 If you find something that looks like an edge case or correctness bug, message the
-relevant teammate so they can investigate in depth.
+relevant Nitpicker so they can investigate in depth.
 
 Review these files:
 <list of files changed in session>
@@ -109,8 +109,8 @@ Read all files in scope. For each issue, note the file, line, trigger condition,
 Group findings into preliminary root causes where possible.
 
 ## Report (MANDATORY)
-Write your report to `.beads/agent-summaries/<epic-id>/review-reports/edge-cases-review-<timestamp>.md` using the format below. (Boss-bot provides the exact filename in your prompt.)
-Do NOT file beads — the lead handles all bead filing.
+Write your report to `.beads/agent-summaries/<epic-id>/review-reports/edge-cases-review-<timestamp>.md` using the format below. (The Queen provides the exact filename in your prompt.)
+Do NOT file beads — Big Head handles all bead filing.
 
 Pay special attention to:
 - Functions that read/write files
@@ -149,8 +149,8 @@ Read all files in scope. For each issue, note the file, line, expected vs actual
 Group findings into preliminary root causes where possible.
 
 ## Report (MANDATORY)
-Write your report to `.beads/agent-summaries/<epic-id>/review-reports/correctness-review-<timestamp>.md` using the format below. (Boss-bot provides the exact filename in your prompt.)
-Do NOT file beads — the lead handles all bead filing.
+Write your report to `.beads/agent-summaries/<epic-id>/review-reports/correctness-review-<timestamp>.md` using the format below. (The Queen provides the exact filename in your prompt.)
+Do NOT file beads — Big Head handles all bead filing.
 
 Review these files and their acceptance criteria:
 <list of files and their original task requirements>
@@ -195,8 +195,8 @@ Read all files in scope. For each issue, note the file, line, improvement detail
 Group findings into preliminary root causes where possible.
 
 ## Report (MANDATORY)
-Write your report to `.beads/agent-summaries/<epic-id>/review-reports/excellence-review-<timestamp>.md` using the format below. (Boss-bot provides the exact filename in your prompt.)
-Do NOT file beads — the lead handles all bead filing.
+Write your report to `.beads/agent-summaries/<epic-id>/review-reports/excellence-review-<timestamp>.md` using the format below. (The Queen provides the exact filename in your prompt.)
+Do NOT file beads — Big Head handles all bead filing.
 
 Look for opportunities to:
 - Reduce complexity (cyclomatic complexity, nesting depth)
@@ -211,9 +211,9 @@ Review these files:
 <list of files changed in session>
 ```
 
-## Teammate Report Format (All 4 Reviewers)
+## Nitpicker Report Format (All 4 Reviewers)
 
-Every reviewer MUST write their report to `.beads/agent-summaries/<epic-id>/review-reports/<review-type>-review-<timestamp>.md` using this format. Boss-bot generates the timestamp once per review cycle and provides the exact output path in each reviewer's prompt.
+Every reviewer MUST write their report to `.beads/agent-summaries/<epic-id>/review-reports/<review-type>-review-<timestamp>.md` using this format. The Queen generates the timestamp once per review cycle and provides the exact output path in each reviewer's prompt.
 
 ```markdown
 # Report: <review-type> Review
@@ -286,11 +286,11 @@ List every in-scope file with its review status. Files with no findings MUST sti
 <1-2 sentence summary>
 ```
 
-## Lead Consolidation Step
+## Big Head Consolidation Step
 
 **Model:** `opus`
 
-After all 4 teammate reports are complete, the lead (orchestrator) consolidates:
+After all 4 Nitpicker reports are complete, Big Head (orchestrator) consolidates:
 
 ### Step 0: Verify All Reports Exist (MANDATORY GATE)
 
@@ -311,7 +311,7 @@ ls .beads/agent-summaries/<epic-id>/review-reports/clarity-review-*.md \
 
 ### Step 1: Read All Reports
 
-Read all 4 reports from `.beads/agent-summaries/<epic-id>/review-reports/` (boss-bot provides exact filenames in the consolidation prompt):
+Read all 4 reports from `.beads/agent-summaries/<epic-id>/review-reports/` (the Queen provides exact filenames in the consolidation prompt):
 - `clarity-review-<timestamp>.md`
 - `edge-cases-review-<timestamp>.md`
 - `correctness-review-<timestamp>.md`
@@ -392,22 +392,22 @@ Findings merged:
 
 ## Verification Checkpoints
 
-All checkpoint verifications are executed by **snitch-bot**, a dedicated verification subagent that cross-checks review work against ground truth. Snitch-bot produces verification reports with PASS/PARTIAL/FAIL verdicts and stores artifacts in `.beads/agent-summaries/<epic-id>/verification/snitch-bot/` using timestamped filenames to prevent overwriting. This ensures complete audit history for all checkpoints across all review sessions.
+All checkpoint verifications are executed by **Pest Control**, a dedicated verification subagent that cross-checks review work against ground truth. Pest Control produces verification reports with PASS/PARTIAL/FAIL verdicts and stores artifacts in `.beads/agent-summaries/<epic-id>/verification/pest-control/` using timestamped filenames to prevent overwriting. This ensures complete audit history for all checkpoints across all review sessions.
 
 Three checkpoints cross-check agent claims against ground truth. See `ORCHESTRATOR_DISCIPLINE.md` "Verification Checkpoint System" for Checkpoint A (implementation) and Checkpoint B (implementation) templates.
 
-### Checkpoint A: Pre-Spawn Prompt Audit (Review Team)
+### Checkpoint A: Pre-Spawn Prompt Audit (The Nitpickers)
 
 **When**: After composing all 4 review prompts, BEFORE creating the team
 **Model**: `haiku`
 **Agent type**: `code-reviewer`
 
 ```markdown
-**Snitch-bot verification - Checkpoint A (Pre-Spawn Review Team Audit)**
+**Pest Control verification - Checkpoint A (Pre-Spawn Nitpickers Audit)**
 
-You are **snitch-bot**, the verification subagent. Your role is to audit the review team prompts before spawn.
+You are **Pest Control**, the verification subagent. Your role is to audit the Nitpickers prompts before spawn.
 
-Audit the following 4 review team prompts for completeness and consistency.
+Audit the following 4 Nitpicker prompts for completeness and consistency.
 Do NOT execute the prompts — only verify their contents.
 
 <prompt_clarity>
@@ -446,7 +446,7 @@ Do NOT execute the prompts — only verify their contents.
 - **FAIL: <list each failing check, specifying which prompt(s)>**
 
 Write your verification report to:
-`.beads/agent-summaries/<epic-id>/verification/snitch-bot/snitch-bot-{epic-id}-checkpoint-a-review-{timestamp}.md`
+`.beads/agent-summaries/<epic-id>/verification/pest-control/pest-control-{epic-id}-checkpoint-a-review-{timestamp}.md`
 
 Where:
 - epic-id: 3-char epic suffix (e.g., `74g` from `hs_website-74g`), or `multi` for multi-epic reviews
@@ -455,18 +455,18 @@ Where:
 
 **On FAIL**: Fix the specific gaps in the prompts, then re-run. Do NOT create the team until PASS.
 
-### Checkpoint B: Substance Verification (Review Teammates)
+### Checkpoint B: Substance Verification (Nitpickers)
 
-**When**: After each review teammate completes its report
+**When**: After each Nitpicker completes its report
 **Model**: `sonnet`
 **Agent type**: `code-reviewer`
 
 ```markdown
-**Snitch-bot verification - Checkpoint B (Review Teammate Substance Verification)**
+**Pest Control verification - Checkpoint B (Nitpicker Substance Verification)**
 
-You are **snitch-bot**, the verification subagent. Your role is to cross-check review teammate findings against actual code.
+You are **Pest Control**, the verification subagent. Your role is to cross-check Nitpicker findings against actual code.
 
-Verify the substance of a review teammate's report by cross-checking findings against actual code.
+Verify the substance of a Nitpicker's report by cross-checking findings against actual code.
 
 **Report path**: `.beads/agent-summaries/<epic-id>/review-reports/{review-type}-review-<timestamp>.md`
 **Review type**: {clarity|edge-cases|correctness|excellence}
@@ -495,7 +495,7 @@ For each finding, check that it is actionable:
 
 ## Check 4: Process Compliance
 Search the report for `bd create`, `bd update`, `bd close`, or bead ID patterns (e.g., `hs_website-xxx`).
-- Teammates must NOT file beads
+- Nitpickers must NOT file beads
 - If any bead-filing commands or IDs are found, FAIL this check
 - If unauthorized bead filing is detected, this is a FAIL (not just a flag). The remediation step is: delete the unauthorized bead (`bd close <id> --reason="unauthorized filing during review"`) and document the violation in the verification report.
 
@@ -505,32 +505,32 @@ Search the report for `bd create`, `bd update`, `bd close`, or bead ID patterns 
 - **FAIL: <list all failures with evidence>**
 
 Write your verification report to:
-`.beads/agent-summaries/<epic-id>/verification/snitch-bot/snitch-bot-{task-id}-checkpoint-b-review-{timestamp}.md`
+`.beads/agent-summaries/<epic-id>/verification/pest-control/pest-control-{task-id}-checkpoint-b-review-{timestamp}.md`
 
 Where:
-- task-id: Review teammate task ID (e.g., `review-clarity`, `review-edge`)
+- task-id: Nitpicker task ID (e.g., `review-clarity`, `review-edge`)
 - timestamp: YYYYMMDD-HHMMSS format
 ```
 
-**On PARTIAL or FAIL**: Resume the original review teammate with specific gaps. Re-verify after fix. Second failure → flag to user.
+**On PARTIAL or FAIL**: Resume the original Nitpicker with specific gaps. Re-verify after fix. Second failure → flag to user.
 
 ### Checkpoint C: Consolidation Audit
 
-**When**: After lead consolidation (after all 4 reports merged and beads filed)
+**When**: After Big Head consolidation (after all 4 reports merged and beads filed)
 **Model**: `haiku` (mechanical counting + record-checking)
 **Agent type**: `code-reviewer`
 
 **Checkpoint C must PASS before presenting results to the user.**
 
 ```markdown
-**Snitch-bot verification - Checkpoint C (Consolidation Audit)**
+**Pest Control verification - Checkpoint C (Consolidation Audit)**
 
-You are **snitch-bot**, the verification subagent. Your role is to audit the lead's consolidated report for integrity.
+You are **Pest Control**, the verification subagent. Your role is to audit Big Head's consolidated report for integrity.
 
 Audit the review consolidation for completeness, accuracy, and traceability.
 
 **Consolidated summary**: `.beads/agent-summaries/<epic-id>/review-reports/review-consolidated-<timestamp>.md`
-**Individual reports**: (Boss-bot provides exact filenames in the consolidation prompt.)
+**Individual reports**: (The Queen provides exact filenames in the consolidation prompt.)
 - `.beads/agent-summaries/<epic-id>/review-reports/clarity-review-<timestamp>.md`
 - `.beads/agent-summaries/<epic-id>/review-reports/edge-cases-review-<timestamp>.md`
 - `.beads/agent-summaries/<epic-id>/review-reports/correctness-review-<timestamp>.md`
@@ -539,7 +539,7 @@ Audit the review consolidation for completeness, accuracy, and traceability.
 Read all 5 documents, then perform these 8 checks:
 
 ## Check 0: Report Existence Verification
-Verify exactly 4 report files exist at their expected paths (boss-bot provides exact filenames):
+Verify exactly 4 report files exist at their expected paths (the Queen provides exact filenames):
 - `.beads/agent-summaries/<epic-id>/review-reports/clarity-review-<timestamp>.md`
 - `.beads/agent-summaries/<epic-id>/review-reports/edge-cases-review-<timestamp>.md`
 - `.beads/agent-summaries/<epic-id>/review-reports/correctness-review-<timestamp>.md`
@@ -599,7 +599,7 @@ Run `bd list --status=open` and cross-reference against the consolidated summary
 - **FAIL: <list all failures with evidence>**
 
 Write your verification report to:
-`.beads/agent-summaries/<epic-id>/verification/snitch-bot/snitch-bot-{epic-id}-consolidation-checkpoint-c-{timestamp}.md`
+`.beads/agent-summaries/<epic-id>/verification/pest-control/pest-control-{epic-id}-consolidation-checkpoint-c-{timestamp}.md`
 
 Where:
 - epic-id: 3-char epic suffix (e.g., `74g` from `hs_website-74g`), or `multi` for multi-epic consolidations
@@ -629,7 +629,7 @@ Where:
 
 2. **If continuing with fixes:**
    - Group new beads by file (same pattern as original work)
-   - Spawn implementation agents to address issues (via Task tool, NOT agent teams)
+   - Spawn Dirt Pushers to address issues (via Task tool, NOT agent teams)
    - May need to run reviews again on fixes
 
 3. **If pushing without fixes:**

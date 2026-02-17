@@ -1,6 +1,6 @@
-# Agent Skeleton Template
+# Dirt Pusher Skeleton Template
 
-## Instructions for Boss-Bot
+## Instructions for The Queen
 
 Fill in all `{PLACEHOLDER}` values (uppercase) and use the result as the Task tool `prompt` parameter.
 The agent-facing text starts below the `---` separator. Do NOT include this instruction block.
@@ -8,7 +8,7 @@ The agent-facing text starts below the `---` separator. Do NOT include this inst
 Placeholders:
 - {TASK_TYPE}: bead type (bug/feature/task) — from bd show in Step 0
 - {TASK_ID}: full bead ID (e.g., hs_website-74g.1)
-- {DATA_FILE_PATH}: from Prompt Factory verdict table
+- {DATA_FILE_PATH}: from the Pantry verdict table
 - {SUMMARY_OUTPUT_PATH}: .beads/agent-summaries/{epic-id}/{task-id-suffix}.md
 
 ## Template (send everything below this line)

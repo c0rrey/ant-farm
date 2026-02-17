@@ -119,7 +119,7 @@ Example customizations:
 ```markdown
 ### Quality Review Plan
 
-After all implementation agents complete:
+After all Dirt Pushers complete:
 
 1. **Clarity Review**
    - Files: src/**/*.ts, tests/**/*.spec.ts
@@ -137,7 +137,7 @@ After all implementation agents complete:
 ```markdown
 ### Quality Review Plan
 
-After all implementation agents complete:
+After all Dirt Pushers complete:
 
 1. **Clarity Review**
    - Files: **/*.go, **/*_test.go

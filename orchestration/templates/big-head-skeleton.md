@@ -1,12 +1,12 @@
-# Lead Consolidation Skeleton Template
+# Big Head Consolidation Skeleton Template
 
-## Instructions for Boss-Bot
+## Instructions for The Queen
 
 Fill in all `{PLACEHOLDER}` values (uppercase) and use the result as the Task tool `prompt` parameter.
 The agent-facing text starts below the `---` separator. Do NOT include this instruction block.
 
 Placeholders:
-- {DATA_FILE_PATH}: lead consolidation data file from Prompt Factory
+- {DATA_FILE_PATH}: Big Head consolidation data file from the Pantry
 - {EPIC_ID}: epic being reviewed
 - {CONSOLIDATED_OUTPUT_PATH}: .beads/agent-summaries/{epic-id}/review-reports/review-consolidated-<timestamp>.md
 
@@ -14,7 +14,7 @@ Placeholders:
 
 ---
 
-Consolidate the 4 review team reports into a unified summary.
+Consolidate the 4 Nitpicker reports into a unified summary.
 
 Step 0: Read your consolidation brief from {DATA_FILE_PATH}
 (Contains: all 4 report paths, dedup protocol, bead filing instructions, output path.)

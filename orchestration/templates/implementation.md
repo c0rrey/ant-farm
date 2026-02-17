@@ -1,9 +1,9 @@
-<!-- Reader: Prompt Factory (implementation mode). Boss-bot does NOT read this file. -->
-# Implementation Agent Templates
+<!-- Reader: the Pantry (implementation mode). The Queen does NOT read this file. -->
+# Dirt Pusher Templates
 
 ## Agent Prompt Template
 
-⚠️ **MANDATORY**: Every spawned implementation agent MUST receive ALL sections below. All 6 steps are required — skipping Step 2 (Design), Step 4 (Correctness Review), or Step 6 (Summary Doc) is a process failure. Copy this template verbatim and fill in the placeholders.
+⚠️ **MANDATORY**: Every spawned Dirt Pusher MUST receive ALL sections below. All 6 steps are required — skipping Step 2 (Design), Step 4 (Correctness Review), or Step 6 (Summary Doc) is a process failure. Copy this template verbatim and fill in the placeholders.
 
 ```markdown
 Execute <task-type> for <file-or-component>:
@@ -63,7 +63,7 @@ After implementation, review EVERY file you changed or created:
 
 ## Step 6: Write Summary Doc (MANDATORY — do not skip)
 Write a structured summary to `.beads/agent-summaries/<epic-id>/<task-id>.md` using the Write tool.
-(Use `_standalone` if the task has no epic parent. Boss-bot pre-creates this directory at Step 2.)
+(Use `_standalone` if the task has no epic parent. The Queen pre-creates this directory at Step 2.)
 The summary MUST contain ALL of these sections — incomplete summaries will be rejected:
 
 ```markdown
@@ -113,7 +113,7 @@ For each file changed:
 After all tasks in this batch:
 - Run `git pull --rebase` to stack commits cleanly
 - Close all tasks: `bd close <id1> <id2> ...`
-- DO NOT push to remote (boss-bot handles this)
+- DO NOT push to remote (the Queen handles this)
 - DO NOT modify documentation files (CHANGELOG, README, CLAUDE.md)
 
 Focus: <specific guidance for this file/component>
@@ -121,7 +121,7 @@ Focus: <specific guidance for this file/component>
 
 ## Scope Boundary Insert
 
-**When to use**: For all implementation agents, especially when multiple tasks touch the same file.
+**When to use**: For all Dirt Pushers, especially when multiple tasks touch the same file.
 
 **Why**: Agents are helpful by nature and will fix adjacent problems they notice ("while I'm here..."). This creates work attribution scrambling and misleading audit trails.
 
@@ -149,7 +149,7 @@ Your task is ONLY to {specific task description}.
 If you find other issues during your work:
 1. Document them in your summary doc under "Adjacent Issues Found"
 2. DO NOT FIX THEM
-3. Let boss-bot create separate tasks
+3. Let the Queen create separate tasks
 
 **Acceptance criterion**: ONLY the files and line ranges listed in Step 3 may be edited. Any additional changes are a scope violation.
 ```
@@ -159,7 +159,7 @@ If you find other issues during your work:
 - Add file-specific boundaries (e.g., "Edit lines 23-24 only" or "Only modify the sameAs field")
 - List specific off-limit areas if needed (e.g., "Do NOT edit foundingDate, @id, or defensive guards")
 
-## Boss-Bot Pre-Spawn Checklist
+## The Queen's Pre-Spawn Checklist
 
 Before sending any agent prompt, confirm it includes:
 - [ ] **Context section** with exact files/lines from bead (pre-digested, not "discover the problem")
@@ -189,12 +189,12 @@ Every bead description includes:
 - ✅ **Fix description** - High-level approach (agents still design 4+ detailed approaches)
 - ✅ **Acceptance criteria** - Testable success conditions
 
-### Boss-Bot Extraction Pattern
+### The Queen's Extraction Pattern
 
 Before spawning an agent, extract this info from `bd show <id>`:
 
 ```bash
-bd show <task-id>  # Read ONCE in boss-bot window
+bd show <task-id>  # Read ONCE in the Queen's window
 
 # Extract and provide to agent:
 # - Affected files/lines from "Affected surfaces:" section
@@ -254,7 +254,7 @@ Your task: Design 4+ approaches to add these 3 fields to validation, select best
 ### Benefits:
 - Eliminates 2-5 minute prompt composition delay between waves
 - Catches prompt defects early (before wave is ready to start)
-- Keeps boss-bot context focused on monitoring during active waves
+- Keeps the Queen's context focused on monitoring during active waves
 - Reduces total session time by 20-30%
 
 ### Example:

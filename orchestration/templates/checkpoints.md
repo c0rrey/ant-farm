@@ -1,23 +1,23 @@
-<!-- Reader: Prompt Factory + Checkpoint Coordinator. Boss-bot does NOT read this file. -->
+<!-- Reader: the Pantry + Colony TSA. The Queen does NOT read this file. -->
 # Verification Checkpoints
 
-## Snitch-Bot Overview
+## Pest Control Overview
 
-All checkpoint verifications (A, A.5, B, C) are executed by **snitch-bot**, a dedicated verification subagent that cross-checks orchestrator and agent work against ground truth.
+All checkpoint verifications (A, A.5, B, C) are executed by **Pest Control**, a dedicated verification subagent that cross-checks orchestrator and agent work against ground truth.
 
-**Snitch-bot responsibilities:**
+**Pest Control responsibilities:**
 - Pre-spawn prompt audits (Checkpoint A)
 - Post-commit scope verification (Checkpoint A.5)
 - Post-completion substance verification (Checkpoint B)
 - Consolidation integrity audits (Checkpoint C)
 
 **Artifact naming conventions:**
-- **Task-specific checkpoints (A, B):** `snitch-bot-<task-id>-checkpoint-<step>-<timestamp>.md`
-  - Example: `snitch-bot-74g1-checkpoint-a-20260215-001145.md`
-  - Example: `snitch-bot-74g1-checkpoint-b-20260215-003422.md`
-- **Consolidation audits (C):** `snitch-bot-<epic-id>-consolidation-checkpoint-c-<timestamp>.md`
-  - Example: `snitch-bot-74g-consolidation-checkpoint-c-20260215-010520.md`
-- **Storage:** All artifacts in `.beads/agent-summaries/<epic-id>/verification/snitch-bot/`
+- **Task-specific checkpoints (A, B):** `pest-control-<task-id>-checkpoint-<step>-<timestamp>.md`
+  - Example: `pest-control-74g1-checkpoint-a-20260215-001145.md`
+  - Example: `pest-control-74g1-checkpoint-b-20260215-003422.md`
+- **Consolidation audits (C):** `pest-control-<epic-id>-consolidation-checkpoint-c-<timestamp>.md`
+  - Example: `pest-control-74g-consolidation-checkpoint-c-20260215-010520.md`
+- **Storage:** All artifacts in `.beads/agent-summaries/<epic-id>/verification/pest-control/`
   Cross-epic verification files are duplicated to each participating epic's verification directory.
 
 **Task ID format:**
@@ -38,17 +38,17 @@ All checkpoint verifications (A, A.5, B, C) are executed by **snitch-bot**, a de
 | `<X>.<N>` (non-prefixed) | `X` | `74g.8` → `74g` |
 | No epic parent | `_standalone` | `hs_website-596y` → `_standalone` |
 
-**Directory creation**: Boss-bot pre-creates `.beads/agent-summaries/<epic-id>/verification/snitch-bot/` at Step 2 (see RULES.md Epic Artifact Directories) and `.beads/agent-summaries/<epic-id>/review-reports/` at Step 3b (see reviews.md Pre-Spawn Directory Setup). Agents and snitch-bot can write immediately without creating directories.
+**Directory creation**: The Queen pre-creates `.beads/agent-summaries/<epic-id>/verification/pest-control/` at Step 2 (see RULES.md Epic Artifact Directories) and `.beads/agent-summaries/<epic-id>/review-reports/` at Step 3b (see reviews.md Pre-Spawn Directory Setup). Agents and Pest Control can write immediately without creating directories.
 
-**Boss-bot responsibility**: Boss-bot MUST include `**Epic ID**` and `**Summary output path**` in the agent prompt context section. For review prompts, include all participating epic IDs and instruct reviewers to write reports to each epic's `review-reports/` directory.
+**The Queen's responsibility**: The Queen MUST include `**Epic ID**` and `**Summary output path**` in the agent prompt context section. For review prompts, include all participating epic IDs and instruct reviewers to write reports to each epic's `review-reports/` directory.
 
-**Review timestamp convention**: Boss-bot generates a single timestamp per review cycle (format: `YYYYMMDD-HHMMSS`) and passes the exact output filenames to each reviewer and the lead. This prevents reviewers from independently generating different timestamps.
+**Review timestamp convention**: The Queen generates a single timestamp per review cycle (format: `YYYYMMDD-HHMMSS`) and passes the exact output filenames to each reviewer and Big Head. This prevents reviewers from independently generating different timestamps.
 
 ---
 
 ## Checkpoint A: Pre-Spawn Prompt Audit
 
-### Implementation Agents
+### Dirt Pushers
 
 **When**: After orchestrator composes agent prompt(s), BEFORE spawning
 **Model**: `haiku` (mechanical checklist — cheap, fast)
@@ -57,11 +57,11 @@ All checkpoint verifications (A, A.5, B, C) are executed by **snitch-bot**, a de
 **Why**: The orchestrator has a self-policing checklist, but nobody audits the orchestrator. Catching prompt defects before spawn is 100x cheaper than catching them after.
 
 ```markdown
-**Snitch-bot verification - Checkpoint A (Pre-Spawn Prompt Audit)**
+**Pest Control verification - Checkpoint A (Pre-Spawn Prompt Audit)**
 
-You are **snitch-bot**, the verification subagent. Your role is to audit the composed agent prompt before spawn. See "Snitch-Bot: The Verification Subagent" section above for full conventions.
+You are **Pest Control**, the verification subagent. Your role is to audit the composed agent prompt before spawn. See "Pest Control: The Verification Subagent" section above for full conventions.
 
-Audit the following implementation agent prompt for completeness and correctness.
+Audit the following Dirt Pusher prompt for completeness and correctness.
 Do NOT execute the prompt — only verify its contents.
 
 <prompt>
@@ -92,25 +92,25 @@ Do NOT execute the prompt — only verify its contents.
 - **FAIL: <list each failing check with evidence>**
 
 Write your verification report to:
-`.beads/agent-summaries/<epic-id>/verification/snitch-bot/snitch-bot-{task-id}-checkpoint-a-{timestamp}.md`
+`.beads/agent-summaries/<epic-id>/verification/pest-control/pest-control-{task-id}-checkpoint-a-{timestamp}.md`
 
 Where:
 - task-id: Full task ID suffix (e.g., `74g1` from `hs_website-74g.1`), or `standalone` if no epic
 - timestamp: YYYYMMDD-HHMMSS format
 ```
 
-### Review Team
+### The Nitpickers
 
 **When**: After composing all 4 review prompts, BEFORE creating the team
 **Model**: `haiku`
 **Agent type**: `code-reviewer`
 
 ```markdown
-**Snitch-bot verification - Checkpoint A (Pre-Spawn Review Team Audit)**
+**Pest Control verification - Checkpoint A (Pre-Spawn Nitpickers Audit)**
 
-You are **snitch-bot**, the verification subagent. Your role is to audit the review team prompts before spawn.
+You are **Pest Control**, the verification subagent. Your role is to audit the Nitpickers prompts before spawn.
 
-Audit the following 4 review team prompts for completeness and consistency.
+Audit the following 4 Nitpickers prompts for completeness and consistency.
 Do NOT execute the prompts — only verify their contents.
 
 <prompt_clarity>
@@ -142,21 +142,21 @@ Do NOT execute the prompts — only verify their contents.
    (Flag if focus areas are copy-pasted identically across prompts)
 4. **No bead filing instruction**: Each prompt contains "Do NOT file beads" or equivalent
 5. **Report format reference**: Each prompt specifies the output path `.beads/agent-summaries/<epic-id>/review-reports/<type>-review-<timestamp>.md`
-6. **Messaging guidelines**: Each prompt includes guidance on when to message teammates
+6. **Messaging guidelines**: Each prompt includes guidance on when to message other Nitpickers
 
 ## Verdict
 - **PASS** — All 7 checks pass for all 4 prompts
 - **FAIL: <list each failing check, specifying which prompt(s)>**
 
 Write your verification report to:
-`.beads/agent-summaries/<epic-id>/verification/snitch-bot/snitch-bot-{epic-id}-checkpoint-a-review-{timestamp}.md`
+`.beads/agent-summaries/<epic-id>/verification/pest-control/pest-control-{epic-id}-checkpoint-a-review-{timestamp}.md`
 
 Where:
 - epic-id: 3-char epic suffix (e.g., `74g` from `hs_website-74g`), or `multi` for multi-epic reviews
 - timestamp: YYYYMMDD-HHMMSS format
 ```
 
-### Boss-Bot Response
+### The Queen's Response
 
 **On PASS**: Proceed to spawn the agent(s) or create the team.
 
@@ -175,9 +175,9 @@ Where:
 **Known failure mode**: In Wave 1 of Epic 74g, agent 74g.6 (comment task) made functional changes belonging to 74g.7 (foundingDate filter), which cascaded into 74g.7 making changes belonging to 74g.4 (sameAs conditional). Checkpoint A.5 would have caught the first scope violation immediately.
 
 ```markdown
-**Snitch-bot verification - Checkpoint A.5 (Post-Commit Scope Verification)**
+**Pest Control verification - Checkpoint A.5 (Post-Commit Scope Verification)**
 
-You are **snitch-bot**, the verification subagent. Your role is to verify agent commits match task scope.
+You are **Pest Control**, the verification subagent. Your role is to verify agent commits match task scope.
 
 **Task ID**: {task-id}
 **Expected files** (from `bd show {task-id}`): {list files from task description}
@@ -197,21 +197,21 @@ You are **snitch-bot**, the verification subagent. Your role is to verify agent 
 
 ## Verdict
 - **PASS** — Files match expected scope (or extra files are legitimate build outputs)
-- **WARN: <list extra files with rationale>** — Extra files need boss-bot review (e.g., "index.html regenerated from template change — legitimate")
+- **WARN: <list extra files with rationale>** — Extra files need the Queen's review (e.g., "index.html regenerated from template change — legitimate")
 - **FAIL: <list unexpected files>** — Agent edited files outside task scope (scope creep detected)
 
 Write your verification report to:
-`.beads/agent-summaries/<epic-id>/verification/snitch-bot/snitch-bot-{task-id}-checkpoint-a5-{timestamp}.md`
+`.beads/agent-summaries/<epic-id>/verification/pest-control/pest-control-{task-id}-checkpoint-a5-{timestamp}.md`
 ```
 
-### Boss-Bot Response
+### The Queen's Response
 
 **On PASS**: Continue normally (run Checkpoint B, backfill queue).
 
 **On WARN**: Review the extra files. If legitimate (e.g., HTML rebuild from template), accept and continue. If suspicious, escalate to user.
 
 **On FAIL (scope creep detected)**:
-1. Log the violation in boss-bot state
+1. Log the violation in queen-state.md
 2. Mark task with scope creep note in final closure
 3. Check if overlapping work affects queued agents (may need to adjust or cancel)
 4. Continue but document for post-mortem
@@ -222,7 +222,7 @@ Write your verification report to:
 
 ## Checkpoint B: Substance Verification
 
-### Implementation Agents
+### Dirt Pushers
 
 **When**: After each agent completes
 **Model**: `sonnet` (needs judgment to compare claims against actual code)
@@ -231,11 +231,11 @@ Write your verification report to:
 **Why sonnet not haiku**: This checkpoint reads actual source code and compares it to report claims. "Is this finding description accurate for what's at build.py:L200?" requires understanding both the code and the claim. Haiku can check format; sonnet can check truth.
 
 ```markdown
-**Snitch-bot verification - Checkpoint B (Substance Verification)**
+**Pest Control verification - Checkpoint B (Substance Verification)**
 
-You are **snitch-bot**, the verification subagent. Your role is to cross-check agent claims against ground truth. See "Snitch-Bot: The Verification Subagent" section above for full conventions.
+You are **Pest Control**, the verification subagent. Your role is to cross-check agent claims against ground truth. See "Pest Control: The Verification Subagent" section above for full conventions.
 
-Verify the substance of the implementation agent's work by cross-checking claims against ground truth.
+Verify the substance of the Dirt Pusher's work by cross-checking claims against ground truth.
 
 **Summary doc**: `.beads/agent-summaries/<epic-id>/{task-id}.md`
 **Task ID**: {task-id}
@@ -275,25 +275,25 @@ Pick 1 changed file and read the agent's correctness notes for it.
 - **FAIL: <list all failures with evidence>** — Multiple checks failed or critical fabrication detected
 
 Write your verification report to:
-`.beads/agent-summaries/<epic-id>/verification/snitch-bot/snitch-bot-{task-id}-checkpoint-b-{timestamp}.md`
+`.beads/agent-summaries/<epic-id>/verification/pest-control/pest-control-{task-id}-checkpoint-b-{timestamp}.md`
 
 Where:
 - task-id: Full task ID suffix (e.g., `74g1` from `hs_website-74g.1`)
 - timestamp: YYYYMMDD-HHMMSS format
 ```
 
-### Review Teammates
+### Nitpickers
 
-**When**: After each review teammate completes its report
+**When**: After each Nitpicker completes its report
 **Model**: `sonnet`
 **Agent type**: `code-reviewer`
 
 ```markdown
-**Snitch-bot verification - Checkpoint B (Review Teammate Substance Verification)**
+**Pest Control verification - Checkpoint B (Nitpicker Substance Verification)**
 
-You are **snitch-bot**, the verification subagent. Your role is to cross-check review teammate findings against actual code.
+You are **Pest Control**, the verification subagent. Your role is to cross-check Nitpicker findings against actual code.
 
-Verify the substance of a review teammate's report by cross-checking findings against actual code.
+Verify the substance of a Nitpicker's report by cross-checking findings against actual code.
 
 **Report path**: `.beads/agent-summaries/<epic-id>/review-reports/{review-type}-review-<timestamp>.md`
 **Review type**: {clarity|edge-cases|correctness|excellence}
@@ -322,7 +322,7 @@ For each finding, check that it is actionable:
 
 ## Check 4: Process Compliance
 Search the report for `bd create`, `bd update`, `bd close`, or bead ID patterns (e.g., `hs_website-xxx`).
-- Teammates must NOT file beads
+- Nitpickers must NOT file beads
 - If any bead-filing commands or IDs are found, FAIL this check
 - If unauthorized bead filing is detected, this is a FAIL (not just a flag). The remediation step is: delete the unauthorized bead (`bd close <id> --reason="unauthorized filing during review"`) and document the violation in the verification report.
 
@@ -332,14 +332,14 @@ Search the report for `bd create`, `bd update`, `bd close`, or bead ID patterns 
 - **FAIL: <list all failures with evidence>**
 
 Write your verification report to:
-`.beads/agent-summaries/<epic-id>/verification/snitch-bot/snitch-bot-{task-id}-checkpoint-b-review-{timestamp}.md`
+`.beads/agent-summaries/<epic-id>/verification/pest-control/pest-control-{task-id}-checkpoint-b-review-{timestamp}.md`
 
 Where:
-- task-id: Review teammate task ID (e.g., `review-clarity`, `review-edge`)
+- task-id: Nitpicker task ID (e.g., `review-clarity`, `review-edge`)
 - timestamp: YYYYMMDD-HHMMSS format
 ```
 
-### Boss-Bot Response
+### The Queen's Response
 
 **On PASS**: Proceed normally (close task, backfill queue).
 
@@ -358,21 +358,21 @@ Where:
 
 ## Checkpoint C: Consolidation Audit
 
-**When**: After lead consolidation (after all 4 review reports merged and beads filed)
+**When**: After Big Head consolidation (after all 4 review reports merged and beads filed)
 **Model**: `haiku` (mechanical counting + record-checking)
 **Agent type**: `code-reviewer`
 
 **Checkpoint C must PASS before presenting results to the user.**
 
 ```markdown
-**Snitch-bot verification - Checkpoint C (Consolidation Audit)**
+**Pest Control verification - Checkpoint C (Consolidation Audit)**
 
-You are **snitch-bot**, the verification subagent. Your role is to audit the lead's consolidated report for integrity.
+You are **Pest Control**, the verification subagent. Your role is to audit Big Head's consolidated report for integrity.
 
 Audit the review consolidation for completeness, accuracy, and traceability.
 
 **Consolidated summary**: `.beads/agent-summaries/<epic-id>/review-reports/review-consolidated-<timestamp>.md`
-**Individual reports**: (Boss-bot provides exact filenames in the consolidation prompt.)
+**Individual reports**: (The Queen provides exact filenames in the consolidation prompt.)
 - `.beads/agent-summaries/<epic-id>/review-reports/clarity-review-<timestamp>.md`
 - `.beads/agent-summaries/<epic-id>/review-reports/edge-cases-review-<timestamp>.md`
 - `.beads/agent-summaries/<epic-id>/review-reports/correctness-review-<timestamp>.md`
@@ -381,7 +381,7 @@ Audit the review consolidation for completeness, accuracy, and traceability.
 Read all 5 documents, then perform these 8 checks:
 
 ## Check 0: Report Existence Verification
-Verify exactly 4 report files exist at their expected paths (boss-bot provides exact filenames):
+Verify exactly 4 report files exist at their expected paths (the Queen provides exact filenames):
 - `.beads/agent-summaries/<epic-id>/review-reports/clarity-review-<timestamp>.md`
 - `.beads/agent-summaries/<epic-id>/review-reports/edge-cases-review-<timestamp>.md`
 - `.beads/agent-summaries/<epic-id>/review-reports/correctness-review-<timestamp>.md`
@@ -441,7 +441,7 @@ Run `bd list --status=open` and cross-reference against the consolidated summary
 - **FAIL: <list all failures with evidence>**
 
 Write your verification report to:
-`.beads/agent-summaries/<epic-id>/verification/snitch-bot/snitch-bot-{epic-id}-consolidation-checkpoint-c-{timestamp}.md`
+`.beads/agent-summaries/<epic-id>/verification/pest-control/pest-control-{epic-id}-consolidation-checkpoint-c-{timestamp}.md`
 
 Where:
 - epic-id: 3-char epic suffix (e.g., `74g` from `hs_website-74g`), or `multi` for multi-epic consolidations
@@ -450,7 +450,7 @@ Where:
 **CRITICAL FIX**: The timestamp ensures each Checkpoint C audit is preserved. Previous versions used static filename `consolidation-audit.md` which caused overwrites on repeated consolidations. Now each audit has a unique timestamped filename, preserving complete audit history.
 ```
 
-### Boss-Bot Response
+### The Queen's Response
 
 **On PASS**: Proceed to present results to user.
 

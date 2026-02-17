@@ -2,7 +2,7 @@
 
 ## Epic 3: Skipped Design and Review Steps
 
-**What happened**: Implementation agents bypassed Step 2 (Design 4+ approaches) and Step 4 (Per-File Correctness Review). Unreviewed, undesigned work shipped with unknown quality.
+**What happened**: Dirt Pushers bypassed Step 2 (Design 4+ approaches) and Step 4 (Per-File Correctness Review). Unreviewed, undesigned work shipped with unknown quality.
 
 **Root cause**: Steps were marked "MANDATORY" in templates but nothing verified compliance. No checkpoints existed to enforce adherence.
 
@@ -29,7 +29,7 @@
 4. **Conflict Risk Assessment** — Pre-flight file modification matrix with LOW/MEDIUM/HIGH risk tiers and serialization strategies
 
 **When to apply** (every multi-agent session):
-- Always use anti-scope-creep template for implementation agents
+- Always use anti-scope-creep template for Dirt Pushers
 - Always run Checkpoint A.5 after each commit
 - Always assess file conflict risk before spawning (create modification matrix)
 - Serialize tasks when 3+ agents touch the same file (HIGH risk tier)
