@@ -35,6 +35,7 @@ Present these as multiple-choice questions using AskUserQuestion (4 questions pe
 **CRITICAL — read before doing ANYTHING:**
 - NEVER run `bd show`, `bd ready`, `bd list`, `bd blocked`, or any `bd` query command. The Scout subagent does this.
 - NEVER read task/issue details from the user's message and act on them directly.
+- NEVER set `run_in_background` on Task agents. Multiple Task calls in one message already run concurrently. Background mode causes raw JSONL transcript leakage into your context.
 - Read `~/.claude/orchestration/RULES.md` FIRST and ALONE — no parallel tool calls. Then follow it.
 
 **Process**: Read `~/.claude/orchestration/RULES.md` and follow the workflow steps. RULES.md contains the step sequence, hard gates, concurrency rules, and a template lookup table pointing to the specific template files needed at each phase.
