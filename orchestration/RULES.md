@@ -11,12 +11,13 @@ Your first instinct will be to "gather context" by running `bd show` on the task
 
 ## Workflow: "Let's Get to Work"
 
-**Step 0:** Session setup — generate session ID, create session directory +
-            task-metadata subdirectory. Then immediately proceed to Step 1.
+**Step 0:** Session setup — run the commands in the Session Directory section below to
+            generate SESSION_ID and SESSION_DIR. Store both as variables in your context.
+            Then immediately proceed to Step 1.
             Do NOT examine, read, or query any task/issue details.
 
-**Step 1:** Recon — spawn the Scout (`scout-organizer` subagent). Pass it:
-            (1) session dir path, (2) input mode + task list,
+**Step 1:** Recon — spawn the Scout (`scout-organizer` subagent). Include in its prompt:
+            (1) `Session directory: <value of SESSION_DIR>`, (2) input mode + task list,
             (3) the path `~/.claude/orchestration/templates/scout.md` as its
             instruction file. Do NOT read the scout template yourself.
             Do NOT run `bd show`, `bd ready`, `bd blocked`, or any other `bd`
@@ -28,8 +29,9 @@ Your first instinct will be to "gather context" by running `bd show` on the task
               `mkdir -p .beads/agent-summaries/<epic-id>/verification/pc/`
               (one command per epic; use `_standalone` for tasks with no epic)
             Then: Spawn the Pantry (`pantry-impl`) for data files + combined previews
-            (→ templates/pantry.md). Spawn Pest Control (`pest-control`) for Colony Cartography Office (CCO)
-            (pass preview file paths, Pest Control reads checkpoints.md itself).
+            (→ templates/pantry.md). Include `Session directory: <value of SESSION_DIR>`
+            in Pantry's prompt. Pass preview file paths and SESSION_DIR to Pest Control
+            (`pest-control`) for Colony Cartography Office (CCO); Pest Control reads checkpoints.md itself.
             Only after all CCO PASS: spawn agents using skeleton
             (→ templates/dirt-pusher-skeleton.md, using Agent Type from Pantry verdict table).
             Prepare next wave (Pantry + Pest Control) WHILE current wave runs.
@@ -109,7 +111,13 @@ and listed in the READ section above.
 At session start (Step 0), generate a session ID and create the session artifact directory:
 
     SESSION_ID=$(date +%s | shasum | head -c 6)
-    mkdir -p .beads/agent-summaries/_session-${SESSION_ID}/{task-metadata,previews}
+    SESSION_DIR=".beads/agent-summaries/_session-${SESSION_ID}"
+    mkdir -p ${SESSION_DIR}/{task-metadata,previews}
+
+Store SESSION_DIR in your context. Pass it explicitly to every agent that needs to write artifacts:
+Scout receives it as "Session directory: <SESSION_DIR>".
+Pantry receives it as "Session directory: <SESSION_DIR>".
+Pest Control receives it as "Session directory: <SESSION_DIR>" (when writing checkpoint artifacts).
 
 All session-scoped artifacts go here:
 - `queen-state.md` — session state for context recovery
