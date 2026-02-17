@@ -90,6 +90,12 @@ At Step 2, after the user approves a strategy but before spawning any agents or 
 
     mkdir -p .beads/agent-summaries/<epic-id>/verification/pest-control/
 
+Tasks not belonging to any epic use `_standalone` as the epic-id:
+
+    mkdir -p .beads/agent-summaries/_standalone/verification/pest-control/
+
+The `_standalone` directory persists across sessions (it is NOT cleaned up with `_session-*` artifacts).
+
 This creates the full path (`<epic-id>/` and `verification/pest-control/`) in one command. Agents and Pest Control can then write artifacts immediately without each independently creating directories.
 
 The `review-reports/` subdirectory is created separately at Step 3b (see templates/reviews.md Pre-Spawn Directory Setup).

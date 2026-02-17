@@ -127,7 +127,7 @@ Write `{SESSION_DIR}/briefing.md` using this exact format:
 ...
 
 ## Metadata
-- Epics: {epic-id-1}, {epic-id-2}, ... (deduplicated list of all epics involved)
+- Epics: {epic-id-1}, {epic-id-2}, ... (deduplicated list; use `_standalone` for tasks not in any epic)
 - Task metadata files: {session-dir}/task-metadata/ ({N} files)
 - Session dir: {session-dir}
 ```
