@@ -11,3 +11,8 @@ Explore running orchestrated subagents in tmux windows instead of background Tas
 4. Hook-based automation options?
 
 **Goal:** Each spawned agent gets its own tmux window you can switch to with ctrl+b n/p. May influence orchestration templates if feasible.
+
+## Come up with a better name for the Pantry's "data files"
+
+The Pantry template references "data files" — find a more descriptive/thematic name that fits the ant-farm metaphor.
+

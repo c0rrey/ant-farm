@@ -29,7 +29,7 @@ Your first instinct will be to "gather context" by running `bd show` on the task
             (→ templates/pantry.md). Spawn Pest Control for Checkpoint A
             (pass preview file paths, Pest Control reads checkpoints.md itself).
             Only after all Checkpoint A PASS: spawn agents using skeleton
-            (→ templates/dirt-pusher-skeleton.md).
+            (→ templates/dirt-pusher-skeleton.md, using Agent Type from Pantry verdict table).
             Prepare next wave (Pantry + Pest Control) WHILE current wave runs.
 
 **Step 3:** Verify — after each agent commits, spawn Pest Control for A.5

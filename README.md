@@ -52,9 +52,10 @@ The Queen reads the briefing, presents the strategy options, and **waits for use
 The Queen delegates prompt composition to **the Pantry**, a subagent that:
 1. Reads `templates/implementation.md` (keeping it out of the Queen's context)
 2. Extracts pre-digested context from each task (affected files, root cause, acceptance criteria)
-3. Writes a data file per task with scope boundaries and explicit off-limits areas
-4. Writes combined prompt previews (skeleton + data file) to `{session-dir}/previews/`
-5. Returns a file path table — data files and preview files for each task
+3. Selects a specialist agent type per task (e.g., `python-pro`, `debugger`) using keyword and file-extension matching tables
+4. Writes a data file per task with scope boundaries, agent type, and explicit off-limits areas
+5. Writes combined prompt previews (skeleton + data file) to `{session-dir}/previews/`
+6. Returns a file path table — task IDs, agent types, data files, and preview files
 
 The Queen then spawns **Pest Control** to audit the preview files against **Checkpoint A**. Pest Control reads `templates/checkpoints.md` itself, audits each preview, writes reports, and returns a verdict table. The Queen only spawns agents with PASS verdicts.
 
@@ -85,7 +86,7 @@ Queen                          Pantry                    Pest Control
   ├──spawn Dirt Pushers (up to 7)──►                         │
 ```
 
-The Queen then spawns agents using `templates/dirt-pusher-skeleton.md`, a minimal template that points the agent to its data file. Each agent executes 6 mandatory steps:
+The Queen then spawns agents using `templates/dirt-pusher-skeleton.md`, a minimal template that points the agent to its data file. Each agent is spawned with the specialist `subagent_type` recommended by the Pantry (e.g., `python-pro` for `.py` files, `debugger` for investigation bugs). Each agent executes 6 mandatory steps:
 
 1. **Claim** — `bd show` + `bd update --status=in_progress`
 2. **Design** — 4+ genuinely distinct approaches with tradeoffs (not cosmetic variations)
