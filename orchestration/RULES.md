@@ -112,7 +112,7 @@ At session start (Step 0), generate a session ID and create the session artifact
 
     SESSION_ID=$(date +%s | shasum | head -c 6)
     SESSION_DIR=".beads/agent-summaries/_session-${SESSION_ID}"
-    mkdir -p ${SESSION_DIR}/{task-metadata,previews}
+    mkdir -p ${SESSION_DIR}/{task-metadata,previews,prompts}
 
 Store SESSION_DIR in your context. Pass it explicitly to every agent that needs to write artifacts:
 Scout receives it as "Session directory: <SESSION_DIR>".
