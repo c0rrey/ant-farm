@@ -14,10 +14,10 @@ The system has three layers: **the Queen** (the orchestrator that never touches 
 │  - Only agent that pushes to remote                     │
 ├───────────┬─────────────┬───────────────────────────────┤
 │  Scout    │  Pantry     │  Pest Control                 │
-│  - Recon  │  - Composes │  - Checkpoint A (prompt audit)│
-│  - Writes │    data files│  - Checkpoint A.5 (scope)    │
-│    briefing│  - Writes   │  - Checkpoint B (substance)  │
-│  - Writes │    previews │  - Checkpoint C (consolidation│
+│  - Recon  │  - Composes │  - CCO (prompt audit)         │
+│  - Writes │    data files│  - WWD (scope)               │
+│    briefing│  - Writes   │  - DMVDC (substance)         │
+│  - Writes │    previews │  - CCB (consolidation│
 │    metadata│            │    audit)                     │
 ├───────────┴─────────────┴───────────────────────────────┤
 │  Dirt Pushers (up to 7 concurrent)                      │
@@ -57,7 +57,7 @@ The Queen delegates prompt composition to **the Pantry**, a subagent that:
 5. Writes combined prompt previews (skeleton + data file) to `{session-dir}/previews/`
 6. Returns a file path table — task IDs, agent types, data files, and preview files
 
-The Queen then spawns **Pest Control** to audit the preview files against **Checkpoint A**. Pest Control reads `templates/checkpoints.md` itself, audits each preview, writes reports, and returns a verdict table. The Queen only spawns agents with PASS verdicts.
+The Queen then spawns **Pest Control** to audit the preview files against the **Colony Cartography Office (CCO)** checkpoint. Pest Control reads `templates/checkpoints.md` itself, audits each preview, writes reports, and returns a verdict table. The Queen only spawns agents with PASS verdicts.
 
 ```
 Queen                          Pantry                    Pest Control
@@ -73,7 +73,7 @@ Queen                          Pantry                    Pest Control
   │                                                          │
   ├──spawn─────────────────────────────────────────────────► │
   │  "read previews from {dir},                              │
-  │   audit against Checkpoint A                             │
+  │   audit against CCO                                      │
   │   in checkpoints.md,                                     │
   │   write reports, return verdicts"                        │
   │                                                          ├─read checkpoints.md
@@ -101,8 +101,8 @@ Agents are constrained by **scope boundaries**: they may only edit the files and
 
 After each wave completes, the Queen spawns **Pest Control** directly for post-wave verification:
 
-- **Checkpoint A.5** (scope verification) — compares files changed in the commit against expected scope from the task. Catches scope creep between agents before it cascades.
-- **Checkpoint B** (substance verification) — reads the agent's summary doc and cross-checks claims against the actual git diff: Do the claimed file changes exist? Are acceptance criteria genuinely met? Are the 4 design approaches substantively distinct? Is the correctness review specific or boilerplate?
+- **Wandering Worker Detection (WWD)** (scope verification) — compares files changed in the commit against expected scope from the task. Catches scope creep between agents before it cascades.
+- **Dirt Moved vs Dirt Claimed (DMVDC)** (substance verification) — reads the agent's summary doc and cross-checks claims against the actual git diff: Do the claimed file changes exist? Are acceptance criteria genuinely met? Are the 4 design approaches substantively distinct? Is the correctness review specific or boilerplate?
 
 Pest Control reads `templates/checkpoints.md`, task metadata, and git diffs itself — the Queen only passes task IDs, commit hashes, and summary doc paths.
 
@@ -112,28 +112,28 @@ Queen                                              Pest Control
   │                                                     │
   ├──spawn──────────────────────────────────────────► │
   │  "read checkpoints.md,                              │
-  │   run A.5 for {tasks} against {commits},            │
-  │   run B: read summary docs at {paths},              │
+  │   run WWD for {tasks} against {commits},             │
+  │   run DMVDC: read summary docs at {paths},          │
   │   cross-check against git diffs,                    │
   │   write reports, return verdicts"                   │
   │                                                     ├─read checkpoints.md
   │                                                     ├─per task: git diff + summary doc
-  │                                                     ├─write A.5 + B reports
+  │                                                     ├─write WWD + DMVDC reports
   │  ◄──return verdict table────────────────────────────┤
   │  (~15 lines)                            (agent dies)│
 ```
 
-Failed Checkpoint B → agent is resumed with specific gaps listed → re-verified → escalated to user after 2 retries.
+Failed DMVDC → agent is resumed with specific gaps listed → re-verified → escalated to user after 2 retries.
 
 The Queen prepares next-wave prompts (Pantry + Pest Control) while the current wave runs, eliminating spawn latency between waves.
 
 ### Step 3b: Quality review
 
-After **all** implementation completes and all Checkpoint Bs pass, the Queen enters the review phase. This is mandatory — it cannot be skipped or deferred.
+After **all** implementation completes and all DMVDC checks pass, the Queen enters the review phase. This is mandatory — it cannot be skipped or deferred.
 
 #### Transition gate
 
-Before launching reviews, verify: all agents completed, all Checkpoint Bs passed, git log shows expected commits.
+Before launching reviews, verify: all agents completed, all DMVDC checks passed, git log shows expected commits.
 
 #### The Nitpickers
 
@@ -159,9 +159,9 @@ An opus-model Big Head reads all 4 reports and:
 4. Files one issue per root cause with all affected surfaces
 5. Writes a consolidated summary with deduplication log and priority breakdown
 
-#### Checkpoint B + C (post-review verification)
+#### DMVDC + CCB (post-review verification)
 
-After the Nitpicker team completes, the Queen spawns **Pest Control** for Checkpoint B (substance verification on each reviewer's report) and Checkpoint C (consolidation audit on Big Head's output).
+After the Nitpicker team completes, the Queen spawns **Pest Control** for DMVDC (substance verification on each reviewer's report) and **Colony Census Bureau (CCB)** (consolidation audit on Big Head's output).
 
 ```
 Queen                          Pantry                    Pest Control
@@ -175,7 +175,7 @@ Queen                          Pantry                    Pest Control
   │  (~15 lines)                 │                           │
   │                                                          │
   ├──spawn─────────────────────────────────────────────────► │
-  │  "audit review prompts, Checkpoint A"                    │
+  │  "audit review prompts, CCO"                             │
   │  ◄──return verdicts──────────────────────────────────────┤
   │                                                          │
   ├──create Nitpicker team (4 reviewers + Big Head)──►       │
@@ -184,7 +184,7 @@ Queen                          Pantry                    Pest Control
   │                                                          │
   ├──spawn─────────────────────────────────────────────────► │
   │  "read 4 reports + consolidated report,                  │
-  │   run Checkpoint B (Nitpickers) + Checkpoint C,          │
+  │   run DMVDC (Nitpickers) + CCB,                          │
   │   write reports, return verdicts"                        │
   │                                                          ├─read checkpoints.md
   │                                                          ├─read 5 reports
@@ -193,7 +193,7 @@ Queen                          Pantry                    Pest Control
   │  (~15 lines)                                             │
 ```
 
-Before presenting results to the user, Checkpoint C audits the consolidation:
+Before presenting results to the user, CCB audits the consolidation:
 - Finding count reconciliation (raw findings → consolidated, all accounted for)
 - Every filed issue exists and has required fields (root cause, file:line refs, acceptance criteria, suggested fix)
 - Priority calibration (P1s are genuinely blocking, not mislabeled style issues)
@@ -229,12 +229,12 @@ Target: finish a 40+ task session with >50% context window remaining, <10 file r
 
 | Gate | What it blocks | Model |
 |------|---------------|-------|
-| **Checkpoint A** — prompt audit | Agent spawn | haiku |
-| **Checkpoint A.5** — scope verification | Next agent in wave | haiku |
-| **Checkpoint B** — substance verification | Task closure | sonnet |
-| **Checkpoint C** — consolidation audit | Presenting results to user | haiku |
+| **CCO** — prompt audit | Agent spawn | haiku |
+| **WWD** — scope verification | Next agent in wave | haiku |
+| **DMVDC** — substance verification | Task closure | sonnet |
+| **CCB** — consolidation audit | Presenting results to user | haiku |
 
-All checkpoint artifacts are written to `.beads/agent-summaries/<epic>/verification/pest-control/` with timestamped filenames for full audit history.
+All checkpoint artifacts are written to `.beads/agent-summaries/<epic>/verification/pc/` with timestamped filenames for full audit history.
 
 ## Priority calibration
 
@@ -248,8 +248,8 @@ All checkpoint artifacts are written to `.beads/agent-summaries/<epic>/verificat
 
 | Situation | Max retries | After limit |
 |-----------|-------------|-------------|
-| Agent fails Checkpoint B | 2 | Escalate to user |
-| Checkpoint C fails | 1 | Present to user with verification report |
+| Agent fails DMVDC | 2 | Escalate to user |
+| CCB fails | 1 | Present to user with verification report |
 | Agent stuck (no commit in 15 turns) | 0 | Check status, escalate |
 | Total retries per session | 5 | Pause all spawns, triage with user |
 
@@ -257,9 +257,9 @@ All checkpoint artifacts are written to `.beads/agent-summaries/<epic>/verificat
 
 Documented in `reference/known-failures.md`. Key incidents that shaped the system:
 
-**Skipped design and review steps** (Epic 3) — Agents bypassed the mandatory design (4 approaches) and correctness review steps. Fix: Checkpoint B now verifies substance, not just completion claims.
+**Skipped design and review steps** (Epic 3) — Agents bypassed the mandatory design (4 approaches) and correctness review steps. Fix: DMVDC now verifies substance, not just completion claims.
 
-**Work scrambling** (Epic 74g) — Three agents on the same file without line-level boundaries. Each "helpfully" fixed adjacent issues, scrambling work attribution. Fixes: Checkpoint A.5 for real-time scope verification, enhanced Checkpoint A requiring line-number specificity, anti-scope-creep template with explicit boundary language, and pre-flight conflict risk assessment.
+**Work scrambling** (Epic 74g) — Three agents on the same file without line-level boundaries. Each "helpfully" fixed adjacent issues, scrambling work attribution. Fixes: WWD for real-time scope verification, enhanced CCO requiring line-number specificity, anti-scope-creep template with explicit boundary language, and pre-flight conflict risk assessment.
 
 ## File reference
 
@@ -269,7 +269,7 @@ Documented in `reference/known-failures.md`. Key incidents that shaped the syste
 | `orchestration/RULES.md` | The Queen | Workflow steps, hard gates, concurrency rules, template lookup |
 | `orchestration/SETUP.md` | User | How to wire orchestration into a new project |
 | `orchestration/templates/implementation.md` | the Pantry | Agent prompt template with 6 mandatory steps |
-| `orchestration/templates/checkpoints.md` | Pest Control | All checkpoint definitions (A, A.5, B, C) |
+| `orchestration/templates/checkpoints.md` | Pest Control | All checkpoint definitions (CCO, WWD, DMVDC, CCB) |
 | `orchestration/templates/reviews.md` | the Pantry (review mode) | Review protocol, 4 review types, report format, Big Head consolidation |
 | `orchestration/templates/pantry.md` | the Pantry (self-read at spawn) | the Pantry's own instructions |
 | `orchestration/templates/dirt-pusher-skeleton.md` | The Queen | Minimal agent spawn template |

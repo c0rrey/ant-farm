@@ -11,7 +11,7 @@
 | pending/completed/failed | {path} | {N} | {M} | {name} |
 
 ## Agent Registry
-| Agent Name | Task IDs | Files Assigned | Status | Commit Hash | Checkpoint B |
+| Agent Name | Task IDs | Files Assigned | Status | Commit Hash | DMVDC |
 |------------|----------|----------------|--------|-------------|--------------|
 | <name>     | <ids>    | <files>        | spawned/completed/errored | <hash> | PASS/PENDING/FAIL |
 
@@ -23,12 +23,12 @@
 ## Pest Control
 | Phase | Checkpoint | Status | Verdict |
 |-------|------------|--------|---------|
-| Wave 1 prompts | A | pending/completed/failed | All PASS / <details> |
-| Wave 1 post | A.5 + B | pending/completed/failed | All PASS / <details> |
-| Wave 2 prompts | A | pending/completed/failed | All PASS / <details> |
-| Wave 2 post | A.5 + B | pending/completed/failed | All PASS / <details> |
-| Reviews | A | pending/completed/failed | All PASS / <details> |
-| Reviews | B + C | pending/completed/failed | All PASS / <details> |
+| Wave 1 prompts | CCO | pending/completed/failed | All PASS / <details> |
+| Wave 1 post | WWD + DMVDC | pending/completed/failed | All PASS / <details> |
+| Wave 2 prompts | CCO | pending/completed/failed | All PASS / <details> |
+| Wave 2 post | WWD + DMVDC | pending/completed/failed | All PASS / <details> |
+| Reviews | CCO | pending/completed/failed | All PASS / <details> |
+| Reviews | DMVDC + CCB | pending/completed/failed | All PASS / <details> |
 
 ## Queue Position
 - **Completed**: <N> of <total> tasks

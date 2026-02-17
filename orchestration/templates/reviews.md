@@ -8,7 +8,7 @@
 Verify all 4 criteria before proceeding to team launch:
 
 1. **All Dirt Pushers completed** — none stuck or errored (check the Queen's state file)
-2. **Checkpoint B PASS for every agent** — verify artifact exists at `.beads/agent-summaries/<epic>/verification/pest-control/pest-control-<task-id>-checkpoint-b-*.md` with PASS verdict
+2. **Dirt Moved vs Dirt Claimed (DMVDC) PASS for every agent** — verify artifact exists at `.beads/agent-summaries/<epic>/verification/pc/pc-<task-id>-dmvdc-*.md` with PASS verdict
 3. **The Queen's state file updated** — all completions tracked, checkpoint results recorded
 4. **Git log shows expected commits** — run `git log --oneline -N` (where N = number of agents) to confirm commits exist
 
@@ -18,7 +18,7 @@ Verify all 4 criteria before proceeding to team launch:
 
 ### Pre-Spawn Directory Setup
 
-Before composing review prompts or running Checkpoint A, create the review-reports directory:
+Before composing review prompts or running Colony Cartography Office (CCO), create the review-reports directory:
 
 ```bash
 mkdir -p .beads/agent-summaries/<epic-id>/review-reports/
@@ -47,7 +47,7 @@ After the transition gate passes, the Queen launches **the Nitpickers** using **
 
 ### Team Setup
 
-**Pre-spawn requirement**: Before creating the Nitpickers, run **Checkpoint A (Pre-Spawn Prompt Audit)** on all 4 review prompts. See `templates/checkpoints.md`.
+**Pre-spawn requirement**: Before creating the Nitpickers, run **CCO** on all 4 review prompts. See `templates/checkpoints.md`.
 
 The Queen creates the Nitpicker team with **5 members** (4 reviewers + Big Head):
 
@@ -444,7 +444,7 @@ Before filing beads, confirm Big Head has:
 
 ## After Consolidation Complete
 
-**Prerequisite**: Checkpoint C (Consolidation Audit) must PASS before proceeding.
+**Prerequisite**: Colony Census Bureau (CCB) must PASS before proceeding.
 
 ### Step 1: Present Findings to User
 
@@ -474,12 +474,12 @@ Show the consolidated summary with:
       - Group fix tasks by file (use reference/dependency-analysis.md for conflict analysis)
       - Spawn Dirt Pushers to implement fixes (same 6-step process as original work)
       - Agents must run tests and verify they now PASS
-      - Run Checkpoint B on each fix agent
-      - Run `bd close` on fix tasks after Checkpoint B passes
+      - Run DMVDC on each fix agent
+      - Run `bd close` on fix tasks after DMVDC passes
 
    c. **Re-run reviews** (optional):
       - If fixes touched >3 files or made significant changes, consider re-running Step 3b (the Nitpickers)
-      - Otherwise, rely on test verification + Checkpoint B
+      - Otherwise, rely on test verification + DMVDC
 
 3. **If user chooses "push and address later"**:
    - P1/P2 beads already filed during consolidation — they stay open

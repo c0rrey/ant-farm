@@ -3,28 +3,28 @@
 
 ## Pest Control Overview
 
-All checkpoint verifications (A, A.5, B, C) are executed by **Pest Control**, a dedicated verification subagent that cross-checks orchestrator and agent work against ground truth.
+All checkpoint verifications (CCO, WWD, DMVDC, CCB) are executed by **Pest Control**, a dedicated verification subagent that cross-checks orchestrator and agent work against ground truth.
 
 **Pest Control responsibilities:**
-- Pre-spawn prompt audits (Checkpoint A)
-- Post-commit scope verification (Checkpoint A.5)
-- Post-completion substance verification (Checkpoint B)
-- Consolidation integrity audits (Checkpoint C)
+- Pre-spawn prompt audits (CCO)
+- Post-commit scope verification (WWD)
+- Post-completion substance verification (DMVDC)
+- Consolidation integrity audits (CCB)
 
 **Artifact naming conventions:**
-- **Task-specific checkpoints (A, B):** `pest-control-<task-id>-checkpoint-<step>-<timestamp>.md`
-  - Example: `pest-control-74g1-checkpoint-a-20260215-001145.md`
-  - Example: `pest-control-74g1-checkpoint-b-20260215-003422.md`
-- **Consolidation audits (C):** `pest-control-<epic-id>-consolidation-checkpoint-c-<timestamp>.md`
-  - Example: `pest-control-74g-consolidation-checkpoint-c-20260215-010520.md`
-- **Storage:** All artifacts in `.beads/agent-summaries/<epic-id>/verification/pest-control/`
+- **Task-specific checkpoints (CCO, DMVDC):** `pc-<task-id>-<checkpoint>-<timestamp>.md`
+  - Example: `pc-74g1-cco-20260215-001145.md`
+  - Example: `pc-74g1-dmvdc-20260215-003422.md`
+- **Consolidation audits (CCB):** `pc-<epic-id>-ccb-<timestamp>.md`
+  - Example: `pc-74g-ccb-20260215-010520.md`
+- **Storage:** All artifacts in `.beads/agent-summaries/<epic-id>/verification/pc/`
   Cross-epic verification files are duplicated to each participating epic's verification directory.
 
 **Task ID format:**
 - Use full task ID suffix (e.g., `74g1` from `hs_website-74g.1`) - epic is already embedded
 - Use `standalone` for tasks without epic parent
 
-**Epic ID format (Checkpoint C only):**
+**Epic ID format (CCB only):**
 - Use 3-char epic suffix (e.g., `74g` from `hs_website-74g`)
 - Use `multi` for consolidations spanning multiple epics
 
@@ -38,7 +38,7 @@ All checkpoint verifications (A, A.5, B, C) are executed by **Pest Control**, a 
 | `<X>.<N>` (non-prefixed) | `X` | `74g.8` → `74g` |
 | No epic parent | `_standalone` | `hs_website-596y` → `_standalone` |
 
-**Directory creation**: The Queen pre-creates `.beads/agent-summaries/<epic-id>/verification/pest-control/` at Step 2 (see RULES.md Epic Artifact Directories) and `.beads/agent-summaries/<epic-id>/review-reports/` at Step 3b (see reviews.md Pre-Spawn Directory Setup). Agents and Pest Control can write immediately without creating directories.
+**Directory creation**: The Queen pre-creates `.beads/agent-summaries/<epic-id>/verification/pc/` at Step 2 (see RULES.md Epic Artifact Directories) and `.beads/agent-summaries/<epic-id>/review-reports/` at Step 3b (see reviews.md Pre-Spawn Directory Setup). Agents and Pest Control can write immediately without creating directories.
 
 **The Queen's responsibility**: The Queen MUST include `**Epic ID**` and `**Summary output path**` in the agent prompt context section. For review prompts, include all participating epic IDs and instruct reviewers to write reports to each epic's `review-reports/` directory.
 
@@ -46,7 +46,7 @@ All checkpoint verifications (A, A.5, B, C) are executed by **Pest Control**, a 
 
 ---
 
-## Checkpoint A: Pre-Spawn Prompt Audit
+## Colony Cartography Office (CCO): Pre-Spawn Prompt Audit
 
 ### Dirt Pushers
 
@@ -57,7 +57,7 @@ All checkpoint verifications (A, A.5, B, C) are executed by **Pest Control**, a 
 **Why**: The orchestrator has a self-policing checklist, but nobody audits the orchestrator. Catching prompt defects before spawn is 100x cheaper than catching them after.
 
 ```markdown
-**Pest Control verification - Checkpoint A (Pre-Spawn Prompt Audit)**
+**Pest Control verification - CCO (Pre-Spawn Prompt Audit)**
 
 You are **Pest Control**, the verification subagent. Your role is to audit the composed agent prompt before spawn. See "Pest Control Overview" section above for full conventions.
 
@@ -92,7 +92,7 @@ Do NOT execute the prompt — only verify its contents.
 - **FAIL: <list each failing check with evidence>**
 
 Write your verification report to:
-`.beads/agent-summaries/<epic-id>/verification/pest-control/pest-control-{task-id}-checkpoint-a-{timestamp}.md`
+`.beads/agent-summaries/<epic-id>/verification/pc/pc-{task-id}-cco-{timestamp}.md`
 
 Where:
 - task-id: Full task ID suffix (e.g., `74g1` from `hs_website-74g.1`), or `standalone` if no epic
@@ -106,7 +106,7 @@ Where:
 **Agent type**: `code-reviewer`
 
 ```markdown
-**Pest Control verification - Checkpoint A (Pre-Spawn Nitpickers Audit)**
+**Pest Control verification - CCO (Pre-Spawn Nitpickers Audit)**
 
 You are **Pest Control**, the verification subagent. Your role is to audit the Nitpickers prompts before spawn.
 
@@ -149,7 +149,7 @@ Do NOT execute the prompts — only verify their contents.
 - **FAIL: <list each failing check, specifying which prompt(s)>**
 
 Write your verification report to:
-`.beads/agent-summaries/<epic-id>/verification/pest-control/pest-control-{epic-id}-checkpoint-a-review-{timestamp}.md`
+`.beads/agent-summaries/<epic-id>/verification/pc/pc-{epic-id}-cco-review-{timestamp}.md`
 
 Where:
 - epic-id: 3-char epic suffix (e.g., `74g` from `hs_website-74g`), or `multi` for multi-epic reviews
@@ -160,22 +160,22 @@ Where:
 
 **On PASS**: Proceed to spawn the agent(s) or create the team.
 
-**On FAIL**: Fix the specific gaps in the prompt(s), then re-run Checkpoint A. Do NOT spawn until PASS.
+**On FAIL**: Fix the specific gaps in the prompt(s), then re-run CCO. Do NOT spawn until PASS.
 
 ---
 
-## Checkpoint A.5: Post-Commit Scope Verification
+## Wandering Worker Detection (WWD): Post-Commit Scope Verification
 
 **When**: After agent commits, BEFORE spawning next agent in same wave
 **Model**: `haiku` (mechanical file list comparison — cheap, fast)
 **Agent type**: `code-reviewer`
 
-**Why**: Catches scope creep in real-time between agents, before Checkpoint B runs. Prevents cascading work attribution errors when multiple agents work on related files.
+**Why**: Catches scope creep in real-time between agents, before DMVDC runs. Prevents cascading work attribution errors when multiple agents work on related files.
 
-**Known failure mode**: In Wave 1 of Epic 74g, agent 74g.6 (comment task) made functional changes belonging to 74g.7 (foundingDate filter), which cascaded into 74g.7 making changes belonging to 74g.4 (sameAs conditional). Checkpoint A.5 would have caught the first scope violation immediately.
+**Known failure mode**: In Wave 1 of Epic 74g, agent 74g.6 (comment task) made functional changes belonging to 74g.7 (foundingDate filter), which cascaded into 74g.7 making changes belonging to 74g.4 (sameAs conditional). WWD would have caught the first scope violation immediately.
 
 ```markdown
-**Pest Control verification - Checkpoint A.5 (Post-Commit Scope Verification)**
+**Pest Control verification - WWD (Post-Commit Scope Verification)**
 
 You are **Pest Control**, the verification subagent. Your role is to verify agent commits match task scope.
 
@@ -201,12 +201,12 @@ You are **Pest Control**, the verification subagent. Your role is to verify agen
 - **FAIL: <list unexpected files>** — Agent edited files outside task scope (scope creep detected)
 
 Write your verification report to:
-`.beads/agent-summaries/<epic-id>/verification/pest-control/pest-control-{task-id}-checkpoint-a5-{timestamp}.md`
+`.beads/agent-summaries/<epic-id>/verification/pc/pc-{task-id}-wwd-{timestamp}.md`
 ```
 
 ### The Queen's Response
 
-**On PASS**: Continue normally (run Checkpoint B, backfill queue).
+**On PASS**: Continue normally (run DMVDC, backfill queue).
 
 **On WARN**: Review the extra files. If legitimate (e.g., HTML rebuild from template), accept and continue. If suspicious, escalate to user.
 
@@ -220,7 +220,7 @@ Write your verification report to:
 
 ---
 
-## Checkpoint B: Substance Verification
+## Dirt Moved vs Dirt Claimed (DMVDC): Substance Verification
 
 ### Dirt Pushers
 
@@ -231,7 +231,7 @@ Write your verification report to:
 **Why sonnet not haiku**: This checkpoint reads actual source code and compares it to report claims. "Is this finding description accurate for what's at build.py:L200?" requires understanding both the code and the claim. Haiku can check format; sonnet can check truth.
 
 ```markdown
-**Pest Control verification - Checkpoint B (Substance Verification)**
+**Pest Control verification - DMVDC (Substance Verification)**
 
 You are **Pest Control**, the verification subagent. Your role is to cross-check agent claims against ground truth. See "Pest Control Overview" section above for full conventions.
 
@@ -275,7 +275,7 @@ Pick 1 changed file and read the agent's correctness notes for it.
 - **FAIL: <list all failures with evidence>** — Multiple checks failed or critical fabrication detected
 
 Write your verification report to:
-`.beads/agent-summaries/<epic-id>/verification/pest-control/pest-control-{task-id}-checkpoint-b-{timestamp}.md`
+`.beads/agent-summaries/<epic-id>/verification/pc/pc-{task-id}-dmvdc-{timestamp}.md`
 
 Where:
 - task-id: Full task ID suffix (e.g., `74g1` from `hs_website-74g.1`)
@@ -289,7 +289,7 @@ Where:
 **Agent type**: `code-reviewer`
 
 ```markdown
-**Pest Control verification - Checkpoint B (Nitpicker Substance Verification)**
+**Pest Control verification - DMVDC (Nitpicker Substance Verification)**
 
 You are **Pest Control**, the verification subagent. Your role is to cross-check Nitpicker findings against actual code.
 
@@ -332,7 +332,7 @@ Search the report for `bd create`, `bd update`, `bd close`, or bead ID patterns 
 - **FAIL: <list all failures with evidence>**
 
 Write your verification report to:
-`.beads/agent-summaries/<epic-id>/verification/pest-control/pest-control-{task-id}-checkpoint-b-review-{timestamp}.md`
+`.beads/agent-summaries/<epic-id>/verification/pc/pc-{task-id}-dmvdc-review-{timestamp}.md`
 
 Where:
 - task-id: Nitpicker task ID (e.g., `review-clarity`, `review-edge`)
@@ -351,21 +351,21 @@ Where:
    <paste specific failures from verification report>
    Please address these gaps: re-do the missing work, update your summary doc, and recommit.
    ```
-3. Re-run Checkpoint B after the agent updates
+3. Re-run DMVDC after the agent updates
 4. If it fails a second time, flag to user for manual review
 
 ---
 
-## Checkpoint C: Consolidation Audit
+## Colony Census Bureau (CCB): Consolidation Audit
 
 **When**: After Big Head consolidation (after all 4 review reports merged and beads filed)
 **Model**: `haiku` (mechanical counting + record-checking)
 **Agent type**: `code-reviewer`
 
-**Checkpoint C must PASS before presenting results to the user.**
+**CCB must PASS before presenting results to the user.**
 
 ```markdown
-**Pest Control verification - Checkpoint C (Consolidation Audit)**
+**Pest Control verification - CCB (Consolidation Audit)**
 
 You are **Pest Control**, the verification subagent. Your role is to audit Big Head's consolidated report for integrity.
 
@@ -441,13 +441,13 @@ Run `bd list --status=open` and cross-reference against the consolidated summary
 - **FAIL: <list all failures with evidence>**
 
 Write your verification report to:
-`.beads/agent-summaries/<epic-id>/verification/pest-control/pest-control-{epic-id}-consolidation-checkpoint-c-{timestamp}.md`
+`.beads/agent-summaries/<epic-id>/verification/pc/pc-{epic-id}-ccb-{timestamp}.md`
 
 Where:
 - epic-id: 3-char epic suffix (e.g., `74g` from `hs_website-74g`), or `multi` for multi-epic consolidations
 - timestamp: YYYYMMDD-HHMMSS format
 
-**CRITICAL FIX**: The timestamp ensures each Checkpoint C audit is preserved. Previous versions used static filename `consolidation-audit.md` which caused overwrites on repeated consolidations. Now each audit has a unique timestamped filename, preserving complete audit history.
+**CRITICAL FIX**: The timestamp ensures each CCB audit is preserved. Previous versions used static filename `consolidation-audit.md` which caused overwrites on repeated consolidations. Now each audit has a unique timestamped filename, preserving complete audit history.
 ```
 
 ### The Queen's Response
@@ -456,5 +456,5 @@ Where:
 
 **On PARTIAL or FAIL**:
 1. Fix consolidation gaps (re-read reports, file missing beads, update dedup log)
-2. Re-run Checkpoint C
+2. Re-run CCB
 3. If it fails a second time, present to user with the verification report attached so they can see what was flagged

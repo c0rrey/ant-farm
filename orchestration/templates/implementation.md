@@ -59,7 +59,7 @@ After implementation, review EVERY file you changed or created:
 ## Step 5: Commit
 - `git pull --rebase && git add <files> && git commit -m "<type>: <description> (<task-id>)"`
 - **MANDATORY**: Include the task ID in parentheses at the end of the commit message (e.g., `fix: handle None input (hs_website-abc)`)
-- Record your commit hash in the summary doc (Step 6) so Checkpoint B can identify your commits without scanning `git log`
+- Record your commit hash in the summary doc (Step 6) so Dirt Moved vs Dirt Claimed (DMVDC) can identify your commits without scanning `git log`
 
 ## Step 6: Write Summary Doc (MANDATORY — do not skip)
 Write a structured summary to `.beads/agent-summaries/<epic-id>/<task-id>.md` using the Write tool.
@@ -174,7 +174,7 @@ Before sending any agent prompt, confirm it includes:
 
 If any checkbox is missing, DO NOT spawn the agent — fix the prompt first.
 
-**External validation**: After composing the prompt, run **Checkpoint A (Pre-Spawn Prompt Audit)** to independently verify this checklist. See templates/checkpoints.md.
+**External validation**: After composing the prompt, run **Colony Cartography Office (CCO)** to independently verify this checklist. See templates/checkpoints.md.
 
 ## Information Diet for Agents
 
@@ -247,7 +247,7 @@ Your task: Design 4+ approaches to add these 3 fields to validation, select best
 
 ### Workflow:
 1. **During Wave N**: Compose prompts for Wave N+1 and Wave N+2
-2. **Run Checkpoint A** on all future wave prompts (verify in parallel)
+2. **Run CCO** on all future wave prompts (verify in parallel)
 3. **When Wave N completes**: Immediately spawn Wave N+1 (prompts already verified)
 4. **Repeat**: Prepare Wave N+2 prompts while Wave N+1 runs
 

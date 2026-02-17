@@ -100,7 +100,7 @@ Do NOT fix adjacent issues you notice.
    c. Append the data file content below it
    d. Write to `{session-dir}/previews/task-{task-id-suffix}-preview.md`
 
-These preview files are what Pest Control will audit against Checkpoint A.
+These preview files are what Pest Control will audit against the Colony Cartography Office (CCO).
 
 ### Step 4: Return File Paths
 
@@ -163,7 +163,7 @@ Write `{session-dir}/prompts/review-big-head-consolidation.md` containing:
    c. Append the data file content below it
    d. Write to `{session-dir}/previews/review-{type}-preview.md`
 
-These preview files are what Pest Control will audit against Checkpoint A.
+These preview files are what Pest Control will audit against the CCO.
 
 ### Step 6: Return File Paths
 

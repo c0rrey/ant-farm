@@ -26,26 +26,26 @@ Your first instinct will be to "gather context" by running `bd show` on the task
 
 **Step 2:** Spawn — create epic artifact dirs (from briefing Epics line).
             Spawn the Pantry for data files + combined previews
-            (→ templates/pantry.md). Spawn Pest Control for Checkpoint A
+            (→ templates/pantry.md). Spawn Pest Control for Colony Cartography Office (CCO)
             (pass preview file paths, Pest Control reads checkpoints.md itself).
-            Only after all Checkpoint A PASS: spawn agents using skeleton
+            Only after all CCO PASS: spawn agents using skeleton
             (→ templates/dirt-pusher-skeleton.md, using Agent Type from Pantry verdict table).
             Prepare next wave (Pantry + Pest Control) WHILE current wave runs.
 
-**Step 3:** Verify — after each agent commits, spawn Pest Control for A.5
+**Step 3:** Verify — after each agent commits, spawn Pest Control for Wandering Worker Detection (WWD)
             (scope check before next agent in the wave can proceed).
-            After the full wave completes, spawn Pest Control for B
+            After the full wave completes, spawn Pest Control for Dirt Moved vs Dirt Claimed (DMVDC)
             (pass task IDs, commit hashes, summary doc paths; Pest Control reads
             checkpoints.md + task-metadata/ + git diffs itself).
-            Failed B → resume agent (max 2 retries).
+            Failed DMVDC → resume agent (max 2 retries).
 
 **Step 3b:** Review — spawn the Pantry (review mode) for review prompts + previews.
-             Spawn Pest Control for Checkpoint A on review previews.
+             Spawn Pest Control for CCO on review previews.
              Create Nitpicker team with 5 members: 4 reviewers
              (→ templates/nitpicker-skeleton.md) + Big Head
              (→ templates/big-head-skeleton.md). Big Head MUST be a team
              member, NOT a separate Task agent.
-             After team completes, spawn Pest Control for B + C
+             After team completes, spawn Pest Control for DMVDC + Colony Census Bureau (CCB)
              (pass report paths; Pest Control reads checkpoints.md itself).
 
 **Step 4:** Documentation — update CHANGELOG, README, CLAUDE.md in single commit
@@ -58,10 +58,10 @@ Your first instinct will be to "gather context" by running `bd show` on the task
 
 | Gate | Blocks | Artifact |
 |------|--------|----------|
-| Checkpoint A PASS | Agent/team spawn | .beads/agent-summaries/<epic>/verification/pest-control/*-checkpoint-a-*.md |
-| Checkpoint A.5 PASS | Next agent in wave | .beads/agent-summaries/<epic>/verification/pest-control/*-checkpoint-a5-*.md |
-| Checkpoint B PASS | Task closure (bd close) | .beads/agent-summaries/<epic>/verification/pest-control/*-checkpoint-b-*.md |
-| Checkpoint C PASS | Presenting results to user | .beads/agent-summaries/<epic>/verification/pest-control/*-consolidation-checkpoint-c-*.md |
+| CCO PASS | Agent/team spawn | .beads/agent-summaries/<epic>/verification/pc/*-cco-*.md |
+| WWD PASS | Next agent in wave | .beads/agent-summaries/<epic>/verification/pc/*-wwd-*.md |
+| DMVDC PASS | Task closure (bd close) | .beads/agent-summaries/<epic>/verification/pc/*-dmvdc-*.md |
+| CCB PASS | Presenting results to user | .beads/agent-summaries/<epic>/verification/pc/*-ccb-*.md |
 | Reviews | Mandatory after ALL implementation completes — do NOT ask user, do NOT skip |
 
 ## Information Diet (The Queen's Window)
@@ -102,17 +102,17 @@ This prevents collisions when multiple Queens run in the same repo.
 
 ## Epic Artifact Directories
 
-At Step 2, after the user approves a strategy but before spawning any agents or running Checkpoint A, create artifact directories for each epic listed in the Scout's briefing (Metadata → Epics line):
+At Step 2, after the user approves a strategy but before spawning any agents or running CCO, create artifact directories for each epic listed in the Scout's briefing (Metadata → Epics line):
 
-    mkdir -p .beads/agent-summaries/<epic-id>/verification/pest-control/
+    mkdir -p .beads/agent-summaries/<epic-id>/verification/pc/
 
 Tasks not belonging to any epic use `_standalone` as the epic-id:
 
-    mkdir -p .beads/agent-summaries/_standalone/verification/pest-control/
+    mkdir -p .beads/agent-summaries/_standalone/verification/pc/
 
 The `_standalone` directory persists across sessions (it is NOT cleaned up with `_session-*` artifacts).
 
-This creates the full path (`<epic-id>/` and `verification/pest-control/`) in one command. Agents and Pest Control can then write artifacts immediately without each independently creating directories.
+This creates the full path (`<epic-id>/` and `verification/pc/`) in one command. Agents and Pest Control can then write artifacts immediately without each independently creating directories.
 
 The `review-reports/` subdirectory is created separately at Step 3b (see templates/reviews.md Pre-Spawn Directory Setup).
 
@@ -152,8 +152,8 @@ The `review-reports/` subdirectory is created separately at Step 3b (see templat
 
 | Situation | Max Retries | After Limit |
 |-----------|-------------|-------------|
-| Agent fails Checkpoint B | 2 | Escalate to user with full context |
-| Checkpoint C fails | 1 | Present to user with verification report attached |
+| Agent fails DMVDC | 2 | Escalate to user with full context |
+| CCB fails | 1 | Present to user with verification report attached |
 | Agent stuck (no commit within 15 turns) | 0 | Check status; escalate to user |
 | Total retries per session | 5 | Pause all new spawns; triage with user |
 

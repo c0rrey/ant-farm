@@ -6,7 +6,7 @@
 
 **Root cause**: Steps were marked "MANDATORY" in templates but nothing verified compliance. No checkpoints existed to enforce adherence.
 
-**Fix applied**: Hard gate enforcement — Checkpoint B now verifies approach substance and review evidence before allowing task closure.
+**Fix applied**: Hard gate enforcement — Dirt Moved vs Dirt Claimed (DMVDC) now verifies approach substance and review evidence before allowing task closure.
 
 **When to apply**: Every quality review session. Verify agents completed all 6 mandatory steps before closing tasks.
 
@@ -20,17 +20,17 @@
 - No file-level locking for same-file tasks
 - Agents fixed adjacent issues they noticed ("while I'm here" fixes)
 - No real-time scope verification between commits
-- Checkpoint A verified prompts but not line-level specificity
+- Colony Cartography Office (CCO) verified prompts but not line-level specificity
 
 **Fixes applied**:
-1. **Checkpoint A.5** (Post-Commit Scope Verification) — Lightweight check after each commit verifies files changed match expected scope, catching scope creep before next agent spawns
-2. **Enhanced Checkpoint A** — Now requires line number specificity (e.g., "lines 23-24" not "file.py")
+1. **Wandering Worker Detection (WWD)** (Post-Commit Scope Verification) — Lightweight check after each commit verifies files changed match expected scope, catching scope creep before next agent spawns
+2. **Enhanced CCO** — Now requires line number specificity (e.g., "lines 23-24" not "file.py")
 3. **Anti-Scope-Creep Template** — Aggressive boundary language with explicit "Adjacent Issues Found" section
 4. **Conflict Risk Assessment** — Pre-flight file modification matrix with LOW/MEDIUM/HIGH risk tiers and serialization strategies
 
 **When to apply** (every multi-agent session):
 - Always use anti-scope-creep template for Dirt Pushers
-- Always run Checkpoint A.5 after each commit
+- Always run WWD after each commit
 - Always assess file conflict risk before spawning (create modification matrix)
 - Serialize tasks when 3+ agents touch the same file (HIGH risk tier)
 
