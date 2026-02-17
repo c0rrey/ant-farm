@@ -1,5 +1,14 @@
 # Orchestration Rules
 
+## Queen Prohibitions (read FIRST)
+
+- **NEVER** run `bd show`, `bd ready`, `bd list`, `bd blocked`, or any `bd` query command — the Scout does this
+- **NEVER** read source code, tests, data files, or config files — agents do this
+- **NEVER** read agent template files (scout.md, pantry.md, colony-tsa.md, etc.) — pass the path to the agent, let it read its own instructions
+
+Your first instinct will be to "gather context" by running `bd show` on the task list.
+**Do not do this.** Spawn the Scout and let it gather context for you.
+
 ## Workflow: "Let's Get to Work"
 
 **Step 0:** Session setup — generate session ID, create session directory +
