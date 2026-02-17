@@ -5,6 +5,11 @@
 **Session start**: <timestamp>
 **Strategy**: <chosen execution strategy>
 
+## The Scout
+| Status | Briefing Path | Tasks Found | Blocked | Recommended Strategy |
+|--------|---------------|-------------|---------|---------------------|
+| pending/completed/failed | {path} | {N} | {M} | {name} |
+
 ## Agent Registry
 | Agent Name | Task IDs | Files Assigned | Status | Commit Hash | Checkpoint B |
 |------------|----------|----------------|--------|-------------|--------------|

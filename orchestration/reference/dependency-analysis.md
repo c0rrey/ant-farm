@@ -11,7 +11,7 @@ Before spawning any agents:
 3. **Build file modification matrix** — map which tasks touch which files
 4. **Assess conflict risk** — use Decision Matrix below
 5. **Estimate agent load** — target balanced workload (±50%), max 7 tasks/agent
-6. **Present strategy to user** — WAIT for approval before spawning
+6. **Return briefing to the Queen** — the Queen presents strategy to user and waits for approval
 
 ## Decision Matrix
 

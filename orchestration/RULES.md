@@ -2,9 +2,12 @@
 
 ## Workflow: "Let's Get to Work"
 
-**Step 0:** Pre-flight — gather task metadata (bd show), analyze file conflicts (→ reference/dependency-analysis.md), present strategy, WAIT for user approval
+**Step 0:** Session setup — generate session ID, create session directory,
+            create task-metadata subdirectory
 
-**Step 1:** Discover — run bd ready, filter epics, group by priority tier, select highest tier
+**Step 1:** Recon — spawn the Scout with session dir + input mode
+            (→ templates/scout.md). Read briefing.md, present strategy to user,
+            WAIT for approval
 
 **Step 2:** Spawn — the Pantry composes data files + runs Checkpoint A (→ templates/pantry.md),
 then the Queen spawns agents using skeleton (→ templates/dirt-pusher-skeleton.md)
@@ -33,7 +36,7 @@ Colony TSA (review mode) runs B + C after team completes
 
 ## Information Diet (The Queen's Window)
 
-**READ:** bd show (once per task, in Step 0), git status/log/diff --stat, agent notifications,
+**READ:** briefing.md (from the Scout, in Step 1), git status/log/diff --stat, agent notifications,
 commit messages, dirt-pusher-skeleton.md (once per wave), nitpicker-skeleton.md (once per review cycle),
 big-head-skeleton.md (once per review cycle), verdict tables from pantry/Colony TSA
 
@@ -54,7 +57,7 @@ big-head-skeleton.md (once per review cycle), verdict tables from pantry/Colony 
 At session start (Step 0), generate a session ID and create the session artifact directory:
 
     SESSION_ID=$(date +%s | shasum | head -c 6)
-    mkdir -p .beads/agent-summaries/_session-${SESSION_ID}
+    mkdir -p .beads/agent-summaries/_session-${SESSION_ID}/task-metadata
 
 All session-scoped artifacts go here:
 - `queen-state.md` — session state for context recovery
@@ -83,8 +86,9 @@ The `review-reports/` subdirectory is created separately at Step 3b (see templat
 - Re-reading the same metadata — read once, take notes in session state file
 - Pushing mid-session — only push at end (atomic deployment)
 - Updating docs per-agent — batch all doc updates in Step 4
-- Verbose agent prompts — be concise, agents read their own task details via bd show
+- Verbose agent prompts — be concise, agents read their own task details from their data file
 - Reading implementation.md or checkpoints.md directly — spawn the Pantry instead
+- Running bd show in the Queen's window — spawn the Scout instead
 - Running individual checkpoints per agent — spawn Colony TSA as batch
 - Composing full agent prompts in the Queen's context — use dirt-pusher-skeleton.md with data file redirect
 
@@ -100,7 +104,8 @@ The `review-reports/` subdirectory is created separately at Step 3b (see templat
 | Implementation details (read by the Pantry) | templates/implementation.md |
 | Checkpoint details (read by Pantry/Colony TSA) | templates/checkpoints.md |
 | Review details (read by the Pantry) | templates/reviews.md |
-| Analyzing file conflicts (Step 0) | reference/dependency-analysis.md |
+| Pre-flight recon (Step 1) | templates/scout.md |
+| Conflict patterns (read by the Scout) | reference/dependency-analysis.md |
 | Diagnosing a failure or post-mortem | reference/known-failures.md |
 | Creating/recovering the Queen's state file | templates/queen-state.md |
 | Setting up orchestration in new project | SETUP.md |

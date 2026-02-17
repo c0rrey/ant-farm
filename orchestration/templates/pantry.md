@@ -7,6 +7,7 @@ You are **the Pantry** — a subagent that composes task data files and runs Che
 ## Section 1: Implementation Mode
 
 **Input from the Queen**: list of task IDs, epic ID, session dir path
+(Session dir contains task-metadata/ files pre-extracted by the Scout.)
 
 ### Step 1: Read Templates
 
@@ -18,19 +19,19 @@ Read these files (you absorb the cost, not the Queen):
 
 For each task ID in the input list:
 
-1. Run `bd show <task-id>` — extract:
+1. Read `{session-dir}/task-metadata/{task-id-suffix}.md` — extract:
    - Title
    - Affected files (with line numbers)
    - Root cause
    - Expected behavior
    - Acceptance criteria
-   - Scope boundaries
+   (Pre-extracted by the Scout. Do NOT run `bd show` — the metadata is already there.)
 
 2. Write a data file to `{session-dir}/prompts/task-{task-id-suffix}.md` with this exact format:
 
 ```markdown
 # Task Brief: {task-id}
-**Task**: {title from bd show}
+**Task**: {title from task-metadata}
 **Epic ID**: {epic-id}
 **Summary output path**: .beads/agent-summaries/{epic-id}/{task-id-suffix}.md
 

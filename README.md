@@ -9,26 +9,22 @@ The system has three layers: **the Queen** (the orchestrator that never touches 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │  The Queen (orchestrator)                               │
-│  - Reads task metadata only (never source code)         │
-│  - Spawns the Pantry & Colony TSA                       │
-│  - Tracks state in session state file                   │
+│  - Reads briefing + verdict tables only                 │
+│  - Spawns Scout, Pantry, Colony TSA                     │
 │  - Only agent that pushes to remote                     │
-├─────────────────────┬───────────────────────────────────┤
-│  the Pantry         │  Colony TSA                       │
-│  - Reads templates  │  - Reads checkpoint templates     │
-│  - Composes agent   │  - Spawns Pest Control in batch   │
-│    data files       │  - Returns verdict tables         │
-│  - Runs Checkpoint A│                                   │
-├─────────────────────┴───────────────────────────────────┤
+├───────────┬─────────────┬───────────────────────────────┤
+│  Scout    │  Pantry     │  Colony TSA                   │
+│  - Recon  │  - Prompts  │  - Checkpoints               │
+│  - Pre-   │  - Reads    │  - Spawns Pest Control        │
+│    flight │    Scout's  │  - Returns verdicts           │
+│  - Writes │    metadata │                               │
+│    briefing│            │                               │
+├───────────┴─────────────┴───────────────────────────────┤
 │  Dirt Pushers (up to 7 concurrent)                      │
-│  - Implementation agents: 6-step process per task       │
-│  - The Nitpickers: 4 parallel reviewers + Big Head     │
+├─────────────────────────────────────────────────────────┤
+│  The Nitpickers (4 reviewers + Big Head)                │
 ├─────────────────────────────────────────────────────────┤
 │  Pest Control (verification)                            │
-│  - Audits prompts before spawn (Checkpoint A)           │
-│  - Verifies commit scope after each agent (A.5)         │
-│  - Cross-checks claims against code (Checkpoint B)      │
-│  - Audits consolidated review (Checkpoint C)            │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -36,20 +32,22 @@ The system has three layers: **the Queen** (the orchestrator that never touches 
 
 Triggered by saying **"let's get to work"** in any project wired up per `SETUP.md`.
 
-### Step 0: Pre-flight
+### Step 0: Session setup
 
-The Queen gathers task metadata (`bd show`), builds a **file modification matrix** to identify conflict risk, and presents 2-3 execution strategies (serial, balanced, full parallel) to the user. No agents spawn until the user approves a strategy.
+Generate a session ID, create the session directory and `task-metadata/` subdirectory. No agents spawn yet.
 
-Conflict risk tiers:
-- **HIGH** (3+ tasks on same file) — serialize or batch to one agent
-- **MEDIUM** (2 tasks on same file, different sections) — parallel with rebase
-- **LOW** (independent files) — full parallel
+### Step 1: Recon
 
-See `reference/dependency-analysis.md` for the full decision matrix.
+The Queen spawns **the Scout** (`templates/scout.md`), a sonnet subagent that performs all pre-flight reconnaissance:
 
-### Step 1: Discover
+1. Discovers tasks (from epic, explicit list, or natural-language filter)
+2. Runs `bd ready` and `bd blocked` to separate ready vs. blocked tasks
+3. Runs `bd show` per task and writes per-task metadata files to `{session-dir}/task-metadata/`
+4. Builds a file modification matrix and assesses conflict risk using `reference/dependency-analysis.md`
+5. Proposes 2-3 execution strategies with wave groupings, agent counts, and risk assessments
+6. Writes `{session-dir}/briefing.md` — a ~40-line summary the Queen presents to the user
 
-Run `bd ready`, filter by epic, group by priority tier. P1 tasks (build failures, security, data loss) go first.
+The Queen reads the briefing, presents the strategy options, and **waits for user approval** before proceeding.
 
 ### Step 2: Spawn implementation agents
 
@@ -142,9 +140,9 @@ Work is not complete until `git push` succeeds.
 
 ## Information diet
 
-A core design principle: the Queen **never reads source code, tests, configs, or implementation templates**. It reads only task metadata, agent notifications, commit messages, and verdict tables.
+A core design principle: the Queen **never reads source code, tests, configs, or implementation templates**. It reads only the Scout's briefing, agent notifications, commit messages, and verdict tables.
 
-Templates like `implementation.md`, `checkpoints.md`, and `reviews.md` are read by the Pantry and Colony TSA — specialized subagents that absorb the context cost so the Queen's window stays clean.
+Task metadata is read by the Scout, which writes per-task files and a briefing. Templates like `implementation.md`, `checkpoints.md`, and `reviews.md` are read by the Pantry and Colony TSA. The Pantry reads the Scout's pre-extracted metadata files instead of running `bd show`. All these specialized subagents absorb the context cost so the Queen's window stays clean.
 
 Target: finish a 40+ task session with >50% context window remaining, <10 file reads in the Queen, <20 commits.
 
@@ -200,5 +198,6 @@ Documented in `reference/known-failures.md`. Key incidents that shaped the syste
 | `orchestration/templates/nitpicker-skeleton.md` | The Queen | Minimal review agent spawn template |
 | `orchestration/templates/big-head-skeleton.md` | The Queen | Minimal Big Head consolidation spawn template |
 | `orchestration/templates/queen-state.md` | The Queen | Session state file schema |
-| `orchestration/reference/dependency-analysis.md` | The Queen (Step 0) | Pre-flight conflict analysis, spawn patterns |
+| `orchestration/templates/scout.md` | The Queen (to spawn the Scout) | Pre-flight recon instructions |
+| `orchestration/reference/dependency-analysis.md` | The Scout | Pre-flight conflict analysis, spawn patterns |
 | `orchestration/reference/known-failures.md` | Post-mortem reference | Past failures and fixes applied |
