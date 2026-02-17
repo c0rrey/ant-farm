@@ -26,7 +26,7 @@ Your first instinct will be to "gather context" by running `bd show` on the task
             then present the recommended strategy to the user for approval.
 
 **Step 2:** Spawn — pre-spawn directory setup (run BEFORE Pantry or any agent):
-              `mkdir -p .beads/agent-summaries/<epic-id>/verification/pc/`
+              `mkdir -p .beads/agent-summaries/{EPIC_ID}/verification/pc/`
               (one command per epic; use `_standalone` for tasks with no epic)
             Then: Spawn the Pantry (`pantry-impl`) for data files + combined previews
             (→ templates/pantry.md). Include `Session directory: <value of SESSION_DIR>`
@@ -44,7 +44,7 @@ Your first instinct will be to "gather context" by running `bd show` on the task
             Failed DMVDC → resume agent (max 2 retries).
 
 **Step 3b:** Review — pre-spawn directory setup (run BEFORE Pantry or review team):
-               `mkdir -p .beads/agent-summaries/<epic-id>/review-reports/`
+               `mkdir -p .beads/agent-summaries/{EPIC_ID}/review-reports/`
                (one command per epic; use `_standalone` for tasks with no epic)
              Then: spawn the Pantry (`pantry-review`) for review prompts + previews.
              Spawn Pest Control for CCO on review previews.
@@ -65,10 +65,10 @@ Your first instinct will be to "gather context" by running `bd show` on the task
 
 | Gate | Blocks | Artifact |
 |------|--------|----------|
-| CCO PASS | Agent/team spawn | .beads/agent-summaries/<epic>/verification/pc/*-cco-*.md |
-| WWD PASS | Next agent in wave | .beads/agent-summaries/<epic>/verification/pc/*-wwd-*.md |
-| DMVDC PASS | Task closure (bd close) | .beads/agent-summaries/<epic>/verification/pc/*-dmvdc-*.md |
-| CCB PASS | Presenting results to user | .beads/agent-summaries/<epic>/verification/pc/*-ccb-*.md |
+| CCO PASS | Agent/team spawn | .beads/agent-summaries/{EPIC_ID}/verification/pc/*-cco-*.md |
+| WWD PASS | Next agent in wave | .beads/agent-summaries/{EPIC_ID}/verification/pc/*-wwd-*.md |
+| DMVDC PASS | Task closure (bd close) | .beads/agent-summaries/{EPIC_ID}/verification/pc/*-dmvdc-*.md |
+| CCB PASS | Presenting results to user | .beads/agent-summaries/{EPIC_ID}/verification/pc/*-ccb-*.md |
 | Reviews | Mandatory after ALL implementation completes — do NOT ask user, do NOT skip |
 
 ## Information Diet (The Queen's Window)
@@ -132,15 +132,15 @@ This prevents collisions when multiple Queens run in the same repo.
 
 At Step 2, after the user approves a strategy but before spawning any agents or running CCO, create artifact directories for each epic listed in the Scout's briefing (Metadata → Epics line):
 
-    mkdir -p .beads/agent-summaries/<epic-id>/verification/pc/
+    mkdir -p .beads/agent-summaries/{EPIC_ID}/verification/pc/
 
-Tasks not belonging to any epic use `_standalone` as the epic-id:
+Tasks not belonging to any epic use `_standalone` as the `{EPIC_ID}`:
 
     mkdir -p .beads/agent-summaries/_standalone/verification/pc/
 
 The `_standalone` directory persists across sessions (it is NOT cleaned up with `_session-*` artifacts).
 
-This creates the full path (`<epic-id>/` and `verification/pc/`) in one command. Agents and Pest Control can then write artifacts immediately without each independently creating directories.
+This creates the full path (`{EPIC_ID}/` and `verification/pc/`) in one command. Agents and Pest Control can then write artifacts immediately without each independently creating directories.
 
 The `review-reports/` subdirectory is created separately at Step 3b (see templates/reviews.md Pre-Spawn Directory Setup).
 

@@ -1,6 +1,11 @@
 <!-- Reader: Pest Control. The Queen does NOT read this file. -->
 # Verification Checkpoints
 
+**Term definitions (canonical across all orchestration templates):**
+- `{TASK_ID}` — full bead ID including project prefix (e.g., `ant-farm-9oa` or `hs_website-74g.1`)
+- `{TASK_SUFFIX}` — suffix portion only, no project prefix (e.g., `9oa` from `ant-farm-9oa`, or `74g1` from `hs_website-74g.1`)
+- `{EPIC_ID}` — epic suffix only (e.g., `74g` from `hs_website-74g`), or `_standalone` for tasks with no epic parent
+
 ## Pest Control Overview
 
 All checkpoint verifications (CCO, WWD, DMVDC, CCB) are executed by **Pest Control**, a dedicated verification subagent that cross-checks orchestrator and agent work against ground truth.
@@ -12,16 +17,16 @@ All checkpoint verifications (CCO, WWD, DMVDC, CCB) are executed by **Pest Contr
 - Consolidation integrity audits (CCB)
 
 **Artifact naming conventions:**
-- **Task-specific checkpoints (CCO, DMVDC):** `pc-<task-id>-<checkpoint>-<timestamp>.md`
+- **Task-specific checkpoints (CCO, DMVDC):** `pc-{TASK_SUFFIX}-{checkpoint}-{timestamp}.md`
   - Example: `pc-74g1-cco-20260215-001145.md`
   - Example: `pc-74g1-dmvdc-20260215-003422.md`
-- **Consolidation audits (CCB):** `pc-<epic-id>-ccb-<timestamp>.md`
+- **Consolidation audits (CCB):** `pc-{EPIC_ID}-ccb-{timestamp}.md`
   - Example: `pc-74g-ccb-20260215-010520.md`
-- **Storage:** All artifacts in `.beads/agent-summaries/<epic-id>/verification/pc/`
+- **Storage:** All artifacts in `.beads/agent-summaries/{EPIC_ID}/verification/pc/`
   Cross-epic verification files are duplicated to each participating epic's verification directory.
 
-**Task ID format:**
-- Use full task ID suffix (e.g., `74g1` from `hs_website-74g.1`) - epic is already embedded
+**Task suffix derivation:**
+- `{TASK_SUFFIX}` = suffix portion of bead ID with no project prefix (e.g., `74g1` from `hs_website-74g.1`)
 - Use `standalone` for tasks without epic parent
 
 **Epic ID format (CCB only):**
@@ -30,7 +35,7 @@ All checkpoint verifications (CCO, WWD, DMVDC, CCB) are executed by **Pest Contr
 
 **Timestamp format:** `YYYYMMDD-HHMMSS`
 
-**Epic ID resolution:** When constructing paths that include `<epic-id>`, resolve the epic ID from the task ID:
+**Epic ID resolution:** When constructing paths that include `{EPIC_ID}`, resolve the epic ID from the task ID:
 
 | Task ID Pattern | Epic ID | Example |
 |----------------|---------|---------|
@@ -38,7 +43,7 @@ All checkpoint verifications (CCO, WWD, DMVDC, CCB) are executed by **Pest Contr
 | `<X>.<N>` (non-prefixed) | `X` | `74g.8` → `74g` |
 | No epic parent | `_standalone` | `hs_website-596y` → `_standalone` |
 
-**Directory creation**: The Queen pre-creates `.beads/agent-summaries/<epic-id>/verification/pc/` at Step 2 (see RULES.md Epic Artifact Directories) and `.beads/agent-summaries/<epic-id>/review-reports/` at Step 3b (see reviews.md Pre-Spawn Directory Setup). Agents and Pest Control can write immediately without creating directories.
+**Directory creation**: The Queen pre-creates `.beads/agent-summaries/{EPIC_ID}/verification/pc/` at Step 2 (see RULES.md Epic Artifact Directories) and `.beads/agent-summaries/{EPIC_ID}/review-reports/` at Step 3b (see reviews.md Pre-Spawn Directory Setup). Agents and Pest Control can write immediately without creating directories.
 
 **The Queen's responsibility**: The Queen MUST include `**Epic ID**` and `**Summary output path**` in the agent prompt context section. For review prompts, include all participating epic IDs and instruct reviewers to write reports to each epic's `review-reports/` directory.
 
@@ -79,7 +84,7 @@ Do NOT execute the prompt — only verify its contents.
    - Step 3: Implementation instructions
    - Step 4: "Review EVERY file" or per-file correctness review (MANDATORY keyword present)
    - Step 5: Commit with `git pull --rebase`
-   - Step 6: Write summary doc to `.beads/agent-summaries/<epic-id>/`
+   - Step 6: Write summary doc to `.beads/agent-summaries/{EPIC_ID}/`
 5. **Scope boundaries**: Contains explicit limits on which files to read (not open-ended "explore the codebase")
 6. **Commit instructions**: Includes `git pull --rebase` before commit
 7. **Line number specificity** (NEW - prevents scope creep): File paths include specific line ranges or section markers
@@ -92,10 +97,11 @@ Do NOT execute the prompt — only verify its contents.
 - **FAIL: <list each failing check with evidence>**
 
 Write your verification report to:
-`.beads/agent-summaries/<epic-id>/verification/pc/pc-{task-id}-cco-{timestamp}.md`
+`.beads/agent-summaries/{EPIC_ID}/verification/pc/pc-{TASK_SUFFIX}-cco-{timestamp}.md`
 
 Where:
-- task-id: Full task ID suffix (e.g., `74g1` from `hs_website-74g.1`), or `standalone` if no epic
+- `{TASK_SUFFIX}`: suffix portion of bead ID with no project prefix (e.g., `74g1` from `hs_website-74g.1`), or `standalone` if no epic
+- `{EPIC_ID}`: epic suffix only (e.g., `74g`), or `_standalone` for tasks with no epic parent
 - timestamp: YYYYMMDD-HHMMSS format
 ```
 
@@ -141,7 +147,7 @@ Do NOT execute the prompts — only verify their contents.
    - Excellence: best practices, performance, security, maintainability, architecture
    (Flag if focus areas are copy-pasted identically across prompts)
 4. **No bead filing instruction**: Each prompt contains "Do NOT file beads" or equivalent
-5. **Report format reference**: Each prompt specifies the output path `.beads/agent-summaries/<epic-id>/review-reports/<type>-review-<timestamp>.md`
+5. **Report format reference**: Each prompt specifies the output path `.beads/agent-summaries/{EPIC_ID}/review-reports/{type}-review-{timestamp}.md`
 6. **Messaging guidelines**: Each prompt includes guidance on when to message other Nitpickers
 
 ## Verdict
@@ -149,10 +155,10 @@ Do NOT execute the prompts — only verify their contents.
 - **FAIL: <list each failing check, specifying which prompt(s)>**
 
 Write your verification report to:
-`.beads/agent-summaries/<epic-id>/verification/pc/pc-{epic-id}-cco-review-{timestamp}.md`
+`.beads/agent-summaries/{EPIC_ID}/verification/pc/pc-{EPIC_ID}-cco-review-{timestamp}.md`
 
 Where:
-- epic-id: 3-char epic suffix (e.g., `74g` from `hs_website-74g`), or `multi` for multi-epic reviews
+- `{EPIC_ID}`: epic suffix only (e.g., `74g` from `hs_website-74g`), or `multi` for multi-epic reviews
 - timestamp: YYYYMMDD-HHMMSS format
 ```
 
@@ -179,8 +185,8 @@ Where:
 
 You are **Pest Control**, the verification subagent. Your role is to verify agent commits match task scope.
 
-**Task ID**: {task-id}
-**Expected files** (from `bd show {task-id}`): {list files from task description}
+**Task ID**: {TASK_ID}
+**Expected files** (from `bd show {TASK_ID}`): {list files from task description}
 
 ## Verification Steps
 
@@ -201,7 +207,7 @@ You are **Pest Control**, the verification subagent. Your role is to verify agen
 - **FAIL: <list unexpected files>** — Agent edited files outside task scope (scope creep detected)
 
 Write your verification report to:
-`.beads/agent-summaries/<epic-id>/verification/pc/pc-{task-id}-wwd-{timestamp}.md`
+`.beads/agent-summaries/{EPIC_ID}/verification/pc/pc-{TASK_SUFFIX}-wwd-{timestamp}.md`
 ```
 
 ### The Queen's Response
@@ -237,8 +243,8 @@ You are **Pest Control**, the verification subagent. Your role is to cross-check
 
 Verify the substance of the Dirt Pusher's work by cross-checking claims against ground truth.
 
-**Summary doc**: `.beads/agent-summaries/<epic-id>/{task-id}.md`
-**Task ID**: {task-id}
+**Summary doc**: `.beads/agent-summaries/{EPIC_ID}/{TASK_SUFFIX}.md`
+**Task ID**: {TASK_ID}
 
 Read the summary doc first, then perform these 4 checks:
 
@@ -250,7 +256,7 @@ Compare the actual changes to the summary doc's "Files changed" and "Implementat
 - Are there files listed in the summary but NOT changed in the diff?
 
 ## Check 2: Acceptance Criteria Spot-Check
-Run `bd show {task-id}` to get the task's acceptance criteria.
+Run `bd show {TASK_ID}` to get the task's acceptance criteria.
 Pick the 2 most critical criteria. For each:
 - Read the actual code that should satisfy this criterion
 - Verify it's genuinely met (not just marked "PASS" in the summary)
@@ -275,10 +281,11 @@ Pick 1 changed file and read the agent's correctness notes for it.
 - **FAIL: <list all failures with evidence>** — Multiple checks failed or critical fabrication detected
 
 Write your verification report to:
-`.beads/agent-summaries/<epic-id>/verification/pc/pc-{task-id}-dmvdc-{timestamp}.md`
+`.beads/agent-summaries/{EPIC_ID}/verification/pc/pc-{TASK_SUFFIX}-dmvdc-{timestamp}.md`
 
 Where:
-- task-id: Full task ID suffix (e.g., `74g1` from `hs_website-74g.1`)
+- `{TASK_SUFFIX}`: suffix portion of bead ID with no project prefix (e.g., `74g1` from `hs_website-74g.1`)
+- `{EPIC_ID}`: epic suffix only (e.g., `74g`), or `_standalone` for tasks with no epic parent
 - timestamp: YYYYMMDD-HHMMSS format
 ```
 
@@ -295,7 +302,7 @@ You are **Pest Control**, the verification subagent. Your role is to cross-check
 
 Verify the substance of a Nitpicker's report by cross-checking findings against actual code.
 
-**Report path**: `.beads/agent-summaries/<epic-id>/review-reports/{review-type}-review-<timestamp>.md`
+**Report path**: `.beads/agent-summaries/{EPIC_ID}/review-reports/{review-type}-review-{timestamp}.md`
 **Review type**: {clarity|edge-cases|correctness|excellence}
 
 Read the report first, then perform these 4 checks:
@@ -332,10 +339,11 @@ Search the report for `bd create`, `bd update`, `bd close`, or bead ID patterns 
 - **FAIL: <list all failures with evidence>**
 
 Write your verification report to:
-`.beads/agent-summaries/<epic-id>/verification/pc/pc-{task-id}-dmvdc-review-{timestamp}.md`
+`.beads/agent-summaries/{EPIC_ID}/verification/pc/pc-{TASK_SUFFIX}-dmvdc-review-{timestamp}.md`
 
 Where:
-- task-id: Nitpicker task ID (e.g., `review-clarity`, `review-edge`)
+- `{TASK_SUFFIX}`: Nitpicker task suffix (e.g., `review-clarity`, `review-edge`)
+- `{EPIC_ID}`: epic suffix only (e.g., `74g`), or `_standalone` for tasks with no epic parent
 - timestamp: YYYYMMDD-HHMMSS format
 ```
 
@@ -371,21 +379,21 @@ You are **Pest Control**, the verification subagent. Your role is to audit Big H
 
 Audit the review consolidation for completeness, accuracy, and traceability.
 
-**Consolidated summary**: `.beads/agent-summaries/<epic-id>/review-reports/review-consolidated-<timestamp>.md`
+**Consolidated summary**: `.beads/agent-summaries/{EPIC_ID}/review-reports/review-consolidated-{timestamp}.md`
 **Individual reports**: (The Queen provides exact filenames in the consolidation prompt.)
-- `.beads/agent-summaries/<epic-id>/review-reports/clarity-review-<timestamp>.md`
-- `.beads/agent-summaries/<epic-id>/review-reports/edge-cases-review-<timestamp>.md`
-- `.beads/agent-summaries/<epic-id>/review-reports/correctness-review-<timestamp>.md`
-- `.beads/agent-summaries/<epic-id>/review-reports/excellence-review-<timestamp>.md`
+- `.beads/agent-summaries/{EPIC_ID}/review-reports/clarity-review-{timestamp}.md`
+- `.beads/agent-summaries/{EPIC_ID}/review-reports/edge-cases-review-{timestamp}.md`
+- `.beads/agent-summaries/{EPIC_ID}/review-reports/correctness-review-{timestamp}.md`
+- `.beads/agent-summaries/{EPIC_ID}/review-reports/excellence-review-{timestamp}.md`
 
 Read all 5 documents, then perform these 8 checks:
 
 ## Check 0: Report Existence Verification
 Verify exactly 4 report files exist at their expected paths (the Queen provides exact filenames):
-- `.beads/agent-summaries/<epic-id>/review-reports/clarity-review-<timestamp>.md`
-- `.beads/agent-summaries/<epic-id>/review-reports/edge-cases-review-<timestamp>.md`
-- `.beads/agent-summaries/<epic-id>/review-reports/correctness-review-<timestamp>.md`
-- `.beads/agent-summaries/<epic-id>/review-reports/excellence-review-<timestamp>.md`
+- `.beads/agent-summaries/{EPIC_ID}/review-reports/clarity-review-{timestamp}.md`
+- `.beads/agent-summaries/{EPIC_ID}/review-reports/edge-cases-review-{timestamp}.md`
+- `.beads/agent-summaries/{EPIC_ID}/review-reports/correctness-review-{timestamp}.md`
+- `.beads/agent-summaries/{EPIC_ID}/review-reports/excellence-review-{timestamp}.md`
 If any file is missing, FAIL immediately — consolidation should not have proceeded.
 
 ## Check 1: Finding Count Reconciliation
@@ -441,10 +449,10 @@ Run `bd list --status=open` and cross-reference against the consolidated summary
 - **FAIL: <list all failures with evidence>**
 
 Write your verification report to:
-`.beads/agent-summaries/<epic-id>/verification/pc/pc-{epic-id}-ccb-{timestamp}.md`
+`.beads/agent-summaries/{EPIC_ID}/verification/pc/pc-{EPIC_ID}-ccb-{timestamp}.md`
 
 Where:
-- epic-id: 3-char epic suffix (e.g., `74g` from `hs_website-74g`), or `multi` for multi-epic consolidations
+- `{EPIC_ID}`: epic suffix only (e.g., `74g` from `hs_website-74g`), or `multi` for multi-epic consolidations
 - timestamp: YYYYMMDD-HHMMSS format
 
 **CRITICAL FIX**: The timestamp ensures each CCB audit is preserved. Previous versions used static filename `consolidation-audit.md` which caused overwrites on repeated consolidations. Now each audit has a unique timestamped filename, preserving complete audit history.
