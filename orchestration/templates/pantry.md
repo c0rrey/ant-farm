@@ -16,33 +16,6 @@ Read this file (you absorb the cost, not the Queen):
 
 ### Step 2: Compose Data Files
 
-**Agent type selection tables** — used in sub-step 2 below to set the `Agent Type` field.
-
-Evaluate Tier 1 first (top to bottom — first matching row wins). If no row matches, fall through to Tier 2.
-
-Tier 1 — Title keywords (case-insensitive substring match):
-
-| If title contains any of... | AND type is | Use agent type |
-|------------------------------|-------------|----------------|
-| debug, investigate, trace, diagnose | bug | `debugger` |
-| performance, slow, latency, memory leak | any | `performance-engineer` |
-| refactor, restructure, extract, reorganize | any | `refactoring-specialist` |
-| security, vulnerability, CVE, OWASP | any | `security-auditor` |
-| migration, schema, database, SQL | any | `database-administrator` |
-| deploy, CI/CD, pipeline, docker, k8s | any | `devops-engineer` |
-
-Tier 2 — Primary file extension (if no Tier 1 match):
-
-Pick the "primary" affected file: the one with the widest line range (e.g., `build.py:L200-210` spans 10 lines vs `template.html:L94` spans 1 line). If all files have equal range or single-line references, use the first listed file.
-
-| Primary extension | Use agent type |
-|-------------------|----------------|
-| `.py` | `python-pro` |
-| `.ts`, `.tsx` | `typescript-pro` |
-| `.js`, `.jsx` | `javascript-pro` |
-| `.sql` | `sql-pro` |
-| anything else | `general-purpose` |
-
 For each task ID in the input list:
 
 1. Read `{session-dir}/task-metadata/{task-id-suffix}.md` — extract:
@@ -53,7 +26,7 @@ For each task ID in the input list:
    - Acceptance criteria
    (Pre-extracted by the Scout. Do NOT run `bd show` — the metadata is already there.)
 
-2. Determine agent type using the selection tables above (Tier 1, then Tier 2). Record the result — it goes in the data file's `**Agent Type**` field and in the Step 4 output table.
+2. Choose the best `subagent_type` for this task based on its title, affected files, root cause, and the nature of the work. Record the result — it goes in the data file's `**Agent Type**` field and in the Step 4 output table.
 
 3. Write a data file to `{session-dir}/prompts/task-{task-id-suffix}.md` with this exact format:
 
@@ -61,7 +34,7 @@ For each task ID in the input list:
 # Task Brief: {task-id}
 **Task**: {title from task-metadata}
 **Epic ID**: {epic-id}
-**Agent Type**: {agent type from selection tables, e.g. python-pro, debugger, general-purpose}
+**Agent Type**: {chosen subagent_type, e.g. python-pro, debugger, general-purpose}
 **Summary output path**: .beads/agent-summaries/{epic-id}/{task-id-suffix}.md
 
 ## Context

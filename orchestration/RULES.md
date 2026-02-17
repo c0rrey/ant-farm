@@ -25,7 +25,7 @@ Your first instinct will be to "gather context" by running `bd show` on the task
             then present the recommended strategy to the user for approval.
 
 **Step 2:** Spawn — create epic artifact dirs (from briefing Epics line).
-            Spawn the Pantry for data files + combined previews
+            Spawn the Pantry (`pantry-impl`) for data files + combined previews
             (→ templates/pantry.md). Spawn Pest Control (`pest-control`) for Colony Cartography Office (CCO)
             (pass preview file paths, Pest Control reads checkpoints.md itself).
             Only after all CCO PASS: spawn agents using skeleton
@@ -39,7 +39,7 @@ Your first instinct will be to "gather context" by running `bd show` on the task
             checkpoints.md + task-metadata/ + git diffs itself).
             Failed DMVDC → resume agent (max 2 retries).
 
-**Step 3b:** Review — spawn the Pantry (review mode) for review prompts + previews.
+**Step 3b:** Review — spawn the Pantry (`pantry-review`) for review prompts + previews.
              Spawn Pest Control for CCO on review previews.
              Create Nitpicker team with 5 members: 4 reviewers
              (→ templates/nitpicker-skeleton.md) + Big Head
@@ -79,9 +79,10 @@ bd show/ready/blocked output, agent template files (scout.md, pantry.md, etc.)
 | Agent | subagent_type | Rationale |
 |-------|---------------|-----------|
 | Scout | `scout-organizer` | Custom agent: agent-organizer + Bash for bd CLI |
-| Pantry | `prompt-engineer` | Composes agent prompts from templates + metadata |
+| Pantry (impl) | `pantry-impl` | Custom agent: CCO-aligned implementation prompt composer |
+| Pantry (review) | `pantry-review` | Custom agent: CCO-aligned review prompt composer |
 | Pest Control | `pest-control` | Custom agent: verification auditor, catches fabrication + scope creep |
-| Dirt Pushers | from Pantry verdict table | Specialist per task (see pantry.md selection tables) |
+| Dirt Pushers | from Pantry verdict table | Specialist per task — Pantry selects based on task context |
 | Nitpickers | `nitpicker` | Custom agent: file:line specificity, calibrated severity, complete coverage |
 | Big Head | `big-head` | Custom agent: deduplication, root-cause grouping, issue filing |
 
