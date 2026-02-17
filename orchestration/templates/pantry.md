@@ -61,7 +61,7 @@ For each task ID in the input list:
 # Task Brief: {task-id}
 **Task**: {title from task-metadata}
 **Epic ID**: {epic-id}
-**Agent Type**: {result from sub-step 2}
+**Agent Type**: {agent type from selection tables, e.g. python-pro, debugger, general-purpose}
 **Summary output path**: .beads/agent-summaries/{epic-id}/{task-id-suffix}.md
 
 ## Context
