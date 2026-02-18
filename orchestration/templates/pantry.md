@@ -104,7 +104,7 @@ Return to the Queen in this exact format:
 
 ## Section 2: Review Mode
 
-**Input from the Queen**: epic ID, commit range (first-commit..last-commit), list of changed files, session dir path, review timestamp (YYYYMMDD-HHMMSS format)
+**Input from the Queen**: list of epic IDs (for context in review prompts), commit range (first-commit..last-commit), list of ALL changed files across all epics (deduplicated), list of ALL task IDs (for correctness review acceptance criteria), session dir path, review timestamp (YYYYMMDD-HHMMSS format)
 
 ### Step 1: Read Templates
 
@@ -121,12 +121,13 @@ Create the prompts directory if needed: `{session-dir}/prompts/`
 
 Compose 4 review data files, each containing:
 - Commit range
-- Full file list (identical across all 4)
+- Full file list (identical across all 4, deduplicated across all epics)
 - Focus areas specific to that review type (from reviews.md)
-- Report output path: `.beads/agent-summaries/{EPIC_ID}/review-reports/{type}-review-{timestamp}.md`
+- Report output path: `{session-dir}/review-reports/{type}-review-{timestamp}.md`
 - "Do NOT file beads — Big Head handles all bead filing"
 - Messaging guidelines (when to message teammates, when not to)
 - Full report format (from reviews.md Nitpicker Report Format section)
+- For the **correctness** data file: include the full list of ALL task IDs so the correctness reviewer can run `bd show <task-id>` for acceptance criteria verification across all epics
 
 Files to write:
 - `{session-dir}/prompts/review-clarity.md`
@@ -142,7 +143,7 @@ Write `{session-dir}/prompts/review-big-head-consolidation.md` containing:
 - All 4 report paths (with the timestamp)
 - Deduplication protocol (from reviews.md Big Head Consolidation Protocol)
 - Bead filing instructions
-- Consolidated output path: `.beads/agent-summaries/{EPIC_ID}/review-reports/review-consolidated-{timestamp}.md`
+- Consolidated output path: `{session-dir}/review-reports/review-consolidated-{timestamp}.md`
 
 ### Step 5: Write Combined Review Previews
 
@@ -162,13 +163,13 @@ Return to the Queen:
 ```
 | Review Type | Data File | Preview File | Report Output Path |
 |-------------|-----------|--------------|-------------------|
-| clarity     | {path}    | {path}       | {path}            |
-| edge-cases  | {path}    | {path}       | {path}            |
-| correctness | {path}    | {path}       | {path}            |
-| excellence  | {path}    | {path}       | {path}            |
+| clarity     | {session-dir}/prompts/review-clarity.md | {session-dir}/previews/review-clarity-preview.md | {session-dir}/review-reports/clarity-review-{timestamp}.md |
+| edge-cases  | {session-dir}/prompts/review-edge-cases.md | {session-dir}/previews/review-edge-cases-preview.md | {session-dir}/review-reports/edge-cases-review-{timestamp}.md |
+| correctness | {session-dir}/prompts/review-correctness.md | {session-dir}/previews/review-correctness-preview.md | {session-dir}/review-reports/correctness-review-{timestamp}.md |
+| excellence  | {session-dir}/prompts/review-excellence.md | {session-dir}/previews/review-excellence-preview.md | {session-dir}/review-reports/excellence-review-{timestamp}.md |
 
-Big Head consolidation data: {path}
-Big Head consolidated output: {path}
+Big Head consolidation data: {session-dir}/prompts/review-big-head-consolidation.md
+Big Head consolidated output: {session-dir}/review-reports/review-consolidated-{timestamp}.md
 ```
 
 ---

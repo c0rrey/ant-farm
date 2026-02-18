@@ -131,8 +131,8 @@ For unique requirements beyond standard reviews:
 
 ## Overview
 
-Uses standard reviews from ~/.claude/orchestration/templates/reviews.md
-with these additions:
+Uses standard session-scoped reviews from ~/.claude/orchestration/templates/reviews.md
+(reviews run once per session across all epics) with these additions:
 
 ## Additional Quality Gates
 
@@ -238,6 +238,7 @@ Follow reference/dependency-analysis.md more carefully:
 Fix: Check review comprehensiveness:
 ```
 Use exact prompts from templates/reviews.md.
+Reviews are session-scoped (run once per session, covering all epics).
 Each review type should find 3-10 root-cause issues for a typical session.
 If finding <3 issues, review may be too superficial.
 ```

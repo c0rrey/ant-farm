@@ -48,17 +48,21 @@ Your first instinct will be to "gather context" by running `bd show` on the task
             checkpoints.md + task-metadata/ + git diffs itself).
             Failed DMVDC → resume agent (max 2 retries).
 
-**Step 3b:** Review — pre-spawn directory setup (run BEFORE Pantry or review team):
-               `mkdir -p .beads/agent-summaries/{EPIC_ID}/review-reports/`
-               (one command per epic; use `_standalone` for tasks with no epic)
-             Then: spawn the Pantry (`pantry-review`) for review prompts + previews.
-             Spawn Pest Control for CCO on review previews.
-             Create Nitpicker team with 5 members: 4 reviewers
-             (→ templates/nitpicker-skeleton.md) + Big Head
-             (→ templates/big-head-skeleton.md). Big Head MUST be a team
-             member, NOT a separate Task agent.
-             After team completes, spawn Pest Control for DMVDC + Colony Census Bureau (CCB)
-             (pass report paths; Pest Control reads checkpoints.md itself).
+**Step 3b:** Review — pre-spawn directory setup:
+              `mkdir -p ${SESSION_DIR}/{review-reports,verification/pc}`
+            Gather review inputs from the Queen's state file:
+            - Commit range: first commit of the session through HEAD
+            - File list: `git diff --name-only <first-session-commit>..HEAD` (deduplicated)
+            - Task IDs: all task IDs worked on this session (from Queen's state file)
+            - Epic IDs: all epics worked on this session (for context only)
+            Then: spawn the Pantry (`pantry-review`) for review prompts + previews.
+            Spawn Pest Control for CCO on review previews.
+            Create Nitpicker team with 5 members: 4 reviewers
+            (→ templates/nitpicker-skeleton.md) + Big Head
+            (→ templates/big-head-skeleton.md). Big Head MUST be a team
+            member, NOT a separate Task agent.
+            After team completes, spawn Pest Control for DMVDC + Colony Census Bureau (CCB)
+            (pass report paths; Pest Control reads checkpoints.md itself).
 
 **Step 4:** Documentation — update CHANGELOG, README, CLAUDE.md in single commit
 
@@ -70,10 +74,11 @@ Your first instinct will be to "gather context" by running `bd show` on the task
 
 | Gate | Blocks | Artifact |
 |------|--------|----------|
-| CCO PASS | Agent/team spawn | .beads/agent-summaries/{EPIC_ID}/verification/pc/*-cco-*.md |
+| CCO PASS (impl) | Agent spawn | .beads/agent-summaries/{EPIC_ID}/verification/pc/*-cco-*.md |
+| CCO PASS (review) | Nitpicker team spawn | ${SESSION_DIR}/verification/pc/pc-session-cco-review-{timestamp}.md |
 | WWD PASS | Next agent in wave | .beads/agent-summaries/{EPIC_ID}/verification/pc/*-wwd-*.md |
 | DMVDC PASS | Task closure (bd close) | .beads/agent-summaries/{EPIC_ID}/verification/pc/*-dmvdc-*.md |
-| CCB PASS | Presenting results to user | .beads/agent-summaries/{EPIC_ID}/verification/pc/*-ccb-*.md |
+| CCB PASS | Presenting results | ${SESSION_DIR}/verification/pc/pc-session-ccb-{timestamp}.md |
 | Reviews | Mandatory after ALL implementation completes — do NOT ask user, do NOT skip |
 
 ## Information Diet (The Queen's Window)
@@ -147,7 +152,7 @@ The `_standalone` directory persists across sessions (it is NOT cleaned up with 
 
 This creates the full path (`{EPIC_ID}/` and `verification/pc/`) in one command. Agents and Pest Control can then write artifacts immediately without each independently creating directories.
 
-The `review-reports/` subdirectory is created separately at Step 3b (see templates/reviews.md Pre-Spawn Directory Setup).
+The `review-reports/` and `verification/pc/` subdirectories for reviews are created at Step 3b under `${SESSION_DIR}/` (session-scoped, not per-epic).
 
 ## Anti-Patterns
 

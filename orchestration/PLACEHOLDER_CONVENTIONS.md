@@ -103,13 +103,13 @@ All files audited. No violations found. All files use the Tiered convention corr
 | File | Tier 1 Placeholders | Tier 2 Placeholders | Tier 3 Placeholders | Term Definition Block | Status |
 |------|---|---|---|---|---------|
 | `scout.md` | `{SESSION_DIR}` (L10,62,66,129,175,178), `{MODE}` (L11) | `{session-dir}` (L166-167), `{id}`, `{epic-id}`, `{title}`, `{N}`, `{M}`, `{name}`, `{task-list}`, `{task-A/B/C}` (L137-198) | None | No (uses examples inline) | PASS |
-| `pantry.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{EPIC_ID}` (term def L6-8, used in L26,30,46,49-53,89) | `{session-dir}` (L26,46,89,120,132-135,141,154), `{id}`, `{type}`, `{path}` (L100,165-171) | None | Yes (L5-8) | PASS |
-| `RULES.md` | `{EPIC_ID}` (L29,34,47,52,68-71,135,137,140,142,143) | None | `${SESSION_ID}` (L119), `${SESSION_DIR}` (L119-120) | No (references other term defs) | PASS |
-| `checkpoints.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{EPIC_ID}`, `{TIMESTAMP}` (term def L5-7, used throughout) | `{checkpoint}`, `{path}`, `{N}`, `{M}`, `{before-commit}`, `{after-commit}`, `{commit}`, `{file}`, `{line}`, `{description}`, `{list}` (in examples) | None | Yes (L4-7) | PASS |
+| `pantry.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{EPIC_ID}` (impl mode only; review mode uses `{session-dir}` for output paths) | `{session-dir}` (review output paths, previews, prompts), `{id}`, `{type}`, `{path}`, `{timestamp}` | None | Yes (L5-8) | PASS |
+| `RULES.md` | `{EPIC_ID}` (impl gates + epic dirs), `${SESSION_DIR}` (review gates) | None | `${SESSION_ID}` (L119), `${SESSION_DIR}` (L119-120, Step 3b) | No (references other term defs) | PASS |
+| `checkpoints.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{EPIC_ID}` (impl), `{SESSION_DIR}` (review), `{TIMESTAMP}` (term def L5-7, used throughout) | `{checkpoint}`, `{path}`, `{N}`, `{M}`, `{before-commit}`, `{after-commit}`, `{commit}`, `{file}`, `{line}`, `{description}`, `{list}` (in examples) | None | Yes (L4-7) | PASS |
 | `dirt-pusher-skeleton.md` | `{TASK_TYPE}`, `{TASK_ID}`, `{TASK_SUFFIX}`, `{AGENT_TYPE}`, `{DATA_FILE_PATH}`, `{SUMMARY_OUTPUT_PATH}`, `{EPIC_ID}` | None | None | Yes (L8-11) | PASS |
-| `nitpicker-skeleton.md` | `{REVIEW_TYPE}`, `{DATA_FILE_PATH}`, `{EPIC_ID}`, `{REPORT_OUTPUT_PATH}` | None | None | Partial (L8-12, missing EPOCH/timestamp defs) | PASS |
-| `big-head-skeleton.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{EPIC_ID}`, `{TIMESTAMP}`, `{DATA_FILE_PATH}`, `{CONSOLIDATED_OUTPUT_PATH}`, `{PLACEHOLDER}` | None | None | Yes (L8-12) | PASS |
-| `reviews.md` | None (uses angle-bracket syntax `<epic-id>`, `<timestamp>` in text) | None | None | No | PASS |
+| `nitpicker-skeleton.md` | `{REVIEW_TYPE}`, `{DATA_FILE_PATH}`, `{REPORT_OUTPUT_PATH}` | None | None | Partial (L8-11, missing EPOCH/timestamp defs) | PASS |
+| `big-head-skeleton.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{TIMESTAMP}`, `{DATA_FILE_PATH}`, `{CONSOLIDATED_OUTPUT_PATH}`, `{SESSION_DIR}` | None | None | Yes (L8-12) | PASS |
+| `reviews.md` | None (uses angle-bracket syntax `<session-dir>`, `<timestamp>` in text; `<epic>` only in impl DMVDC paths) | None | None | No | PASS |
 | `implementation.md` | None (uses angle-bracket syntax `<task-type>`, `<task-id>`, etc.) | None | None | No | PASS |
 | `queen-state.md` | `<placeholder>` syntax (Tier 1 variant for human editing) on L2-6,16,21,34-40; `{path}`, `{N}`, `{M}`, `{name}` (Tier 2 in table) on L11 | Tier 2 examples in table (L11) | None | No | PASS |
 | `SESSION_PLAN_TEMPLATE.md` | None (no placeholders found) | None | None | No | PASS |

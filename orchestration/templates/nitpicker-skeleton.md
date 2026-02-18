@@ -8,8 +8,7 @@ The agent-facing text starts below the `---` separator. Do NOT include this inst
 Placeholders:
 - {REVIEW_TYPE}: clarity / edge-cases / correctness / excellence
 - {DATA_FILE_PATH}: from the Pantry (review mode) verdict table
-- {EPIC_ID}: epic being reviewed
-- {REPORT_OUTPUT_PATH}: from the Pantry verdict table
+- {REPORT_OUTPUT_PATH}: from the Pantry verdict table (session-scoped)
 
 ## Template (send everything below this line)
 

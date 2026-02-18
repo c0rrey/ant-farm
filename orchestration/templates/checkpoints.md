@@ -17,21 +17,24 @@ All checkpoint verifications (CCO, WWD, DMVDC, CCB) are executed by **Pest Contr
 - Consolidation integrity audits (CCB)
 
 **Artifact naming conventions:**
-- **Task-specific checkpoints (CCO, DMVDC):** `pc-{TASK_SUFFIX}-{checkpoint}-{timestamp}.md`
+- **Task-specific checkpoints (CCO, DMVDC for Dirt Pushers):** `pc-{TASK_SUFFIX}-{checkpoint}-{timestamp}.md`
   - Example: `pc-74g1-cco-20260215-001145.md`
   - Example: `pc-74g1-dmvdc-20260215-003422.md`
-- **Consolidation audits (CCB):** `pc-{EPIC_ID}-ccb-{timestamp}.md`
-  - Example: `pc-74g-ccb-20260215-010520.md`
-- **Storage:** All artifacts in `.beads/agent-summaries/{EPIC_ID}/verification/pc/`
-  Cross-epic verification files are duplicated to each participating epic's verification directory.
+  - Storage: `.beads/agent-summaries/{EPIC_ID}/verification/pc/` (implementation, per-epic)
+- **Review-phase checkpoints (CCO-review, CCB):** `pc-session-{checkpoint}-{timestamp}.md`
+  - Example: `pc-session-cco-review-20260215-001145.md`
+  - Example: `pc-session-ccb-20260215-010520.md`
+  - Storage: `{SESSION_DIR}/verification/pc/` (review, per-session)
+
+**Note:** Implementation-phase artifacts (CCO, WWD, DMVDC for Dirt Pushers) remain per-epic at `.beads/agent-summaries/{EPIC_ID}/verification/pc/`. Review-phase artifacts (CCO-review, CCB) are per-session at `{SESSION_DIR}/verification/pc/`.
 
 **Task suffix derivation:**
 - `{TASK_SUFFIX}` = suffix portion of bead ID with no project prefix (e.g., `74g1` from `hs_website-74g.1`)
 - Use `standalone` for tasks without epic parent
 
-**Epic ID format (CCB only):**
-- Use 3-char epic suffix (e.g., `74g` from `hs_website-74g`)
-- Use `multi` for consolidations spanning multiple epics
+**Session-scoped naming (CCO-review, CCB):**
+- CCB and CCO-review artifacts use `pc-session-` prefix instead of `pc-{EPIC_ID}-`
+- Written to `{SESSION_DIR}/verification/pc/` (not per-epic directories)
 
 **Timestamp format:** `YYYYMMDD-HHMMSS`
 
@@ -43,9 +46,9 @@ All checkpoint verifications (CCO, WWD, DMVDC, CCB) are executed by **Pest Contr
 | `<X>.<N>` (non-prefixed) | `X` | `74g.8` → `74g` |
 | No epic parent | `_standalone` | `hs_website-596y` → `_standalone` |
 
-**Directory creation**: The Queen pre-creates `.beads/agent-summaries/{EPIC_ID}/verification/pc/` at Step 2 (see RULES.md Epic Artifact Directories) and `.beads/agent-summaries/{EPIC_ID}/review-reports/` at Step 3b (see reviews.md Pre-Spawn Directory Setup). Agents and Pest Control can write immediately without creating directories.
+**Directory creation**: The Queen pre-creates `.beads/agent-summaries/{EPIC_ID}/verification/pc/` at Step 2 (see RULES.md Epic Artifact Directories) and `${SESSION_DIR}/{review-reports,verification/pc}` at Step 3b (see RULES.md). Agents and Pest Control can write immediately without creating directories.
 
-**The Queen's responsibility**: The Queen MUST include `**Epic ID**` and `**Summary output path**` in the agent prompt context section. For review prompts, include all participating epic IDs and instruct reviewers to write reports to each epic's `review-reports/` directory.
+**The Queen's responsibility**: The Queen MUST include `**Epic ID**` and `**Summary output path**` in Dirt Pusher prompt context. For review prompts, include the session-scoped review report paths and all participating epic IDs (for context). Reviewers write to `{SESSION_DIR}/review-reports/`, not per-epic directories.
 
 **Review timestamp convention**: The Queen generates a single timestamp per review cycle (format: `YYYYMMDD-HHMMSS`) and passes the exact output filenames to each reviewer and Big Head. This prevents reviewers from independently generating different timestamps.
 
@@ -137,7 +140,7 @@ Do NOT execute the prompts — only verify their contents.
 
 ## Verify each item (PASS or FAIL with evidence):
 
-1. **File list matches git diff**: The Queen provides the commit range (`<first-commit>..<last-commit>`) in the spawn prompt — use those exact values. Run `git diff --name-only <first-commit>..<last-commit>` and verify the prompt file list matches exactly. Every file in the diff must appear in the prompt, and every file in the prompt must appear in the diff. If there is a mismatch, FAIL with the list of missing/extra files.
+1. **File list matches git diff**: The Queen provides the commit range (`<first-commit>..<last-commit>`) in the spawn prompt — use those exact values. This is session-wide, spanning all epics. Run `git diff --name-only <first-commit>..<last-commit>` and verify the prompt file list matches exactly. Every file in the diff must appear in the prompt, and every file in the prompt must appear in the diff. If there is a mismatch, FAIL with the list of missing/extra files.
 2. **Same file list**: All 4 prompts contain the same set of files to review (not different subsets)
 3. **Same commit range**: All 4 prompts reference the same commit range
 4. **Correct focus areas**: Each prompt has focus areas specific to its review type:
@@ -147,7 +150,7 @@ Do NOT execute the prompts — only verify their contents.
    - Excellence: best practices, performance, security, maintainability, architecture
    (Flag if focus areas are copy-pasted identically across prompts)
 5. **No bead filing instruction**: Each prompt contains "Do NOT file beads" or equivalent
-6. **Report format reference**: Each prompt specifies the output path `.beads/agent-summaries/{EPIC_ID}/review-reports/{type}-review-{timestamp}.md`
+6. **Report format reference**: Each prompt specifies the output path `{SESSION_DIR}/review-reports/{type}-review-{timestamp}.md`
 7. **Messaging guidelines**: Each prompt includes guidance on when to message other Nitpickers
 
 ## Verdict
@@ -155,10 +158,10 @@ Do NOT execute the prompts — only verify their contents.
 - **FAIL: <list each failing check, specifying which prompt(s)>**
 
 Write your verification report to:
-`.beads/agent-summaries/{EPIC_ID}/verification/pc/pc-{EPIC_ID}-cco-review-{timestamp}.md`
+`{SESSION_DIR}/verification/pc/pc-session-cco-review-{timestamp}.md`
 
 Where:
-- `{EPIC_ID}`: epic suffix only (e.g., `74g` from `hs_website-74g`), or `multi` for multi-epic reviews
+- `{SESSION_DIR}`: session artifact directory (e.g., `.beads/agent-summaries/_session-abc123`)
 - timestamp: YYYYMMDD-HHMMSS format
 ```
 
@@ -302,7 +305,7 @@ You are **Pest Control**, the verification subagent. Your role is to cross-check
 
 Verify the substance of a Nitpicker's report by cross-checking findings against actual code.
 
-**Report path**: `.beads/agent-summaries/{EPIC_ID}/review-reports/{review-type}-review-{timestamp}.md`
+**Report path**: `{SESSION_DIR}/review-reports/{review-type}-review-{timestamp}.md`
 **Review type**: {clarity|edge-cases|correctness|excellence}
 
 Read the report first, then perform these 4 checks:
@@ -339,11 +342,11 @@ Search the report for `bd create`, `bd update`, `bd close`, or bead ID patterns 
 - **FAIL: <list all failures with evidence>**
 
 Write your verification report to:
-`.beads/agent-summaries/{EPIC_ID}/verification/pc/pc-{TASK_SUFFIX}-dmvdc-review-{timestamp}.md`
+`{SESSION_DIR}/verification/pc/pc-{TASK_SUFFIX}-dmvdc-review-{timestamp}.md`
 
 Where:
 - `{TASK_SUFFIX}`: Nitpicker task suffix (e.g., `review-clarity`, `review-edge`)
-- `{EPIC_ID}`: epic suffix only (e.g., `74g`), or `_standalone` for tasks with no epic parent
+- `{SESSION_DIR}`: session artifact directory (e.g., `.beads/agent-summaries/_session-abc123`)
 - timestamp: YYYYMMDD-HHMMSS format
 ```
 
@@ -379,21 +382,21 @@ You are **Pest Control**, the verification subagent. Your role is to audit Big H
 
 Audit the review consolidation for completeness, accuracy, and traceability.
 
-**Consolidated summary**: `.beads/agent-summaries/{EPIC_ID}/review-reports/review-consolidated-{timestamp}.md`
+**Consolidated summary**: `{SESSION_DIR}/review-reports/review-consolidated-{timestamp}.md`
 **Individual reports**: (The Queen provides exact filenames in the consolidation prompt.)
-- `.beads/agent-summaries/{EPIC_ID}/review-reports/clarity-review-{timestamp}.md`
-- `.beads/agent-summaries/{EPIC_ID}/review-reports/edge-cases-review-{timestamp}.md`
-- `.beads/agent-summaries/{EPIC_ID}/review-reports/correctness-review-{timestamp}.md`
-- `.beads/agent-summaries/{EPIC_ID}/review-reports/excellence-review-{timestamp}.md`
+- `{SESSION_DIR}/review-reports/clarity-review-{timestamp}.md`
+- `{SESSION_DIR}/review-reports/edge-cases-review-{timestamp}.md`
+- `{SESSION_DIR}/review-reports/correctness-review-{timestamp}.md`
+- `{SESSION_DIR}/review-reports/excellence-review-{timestamp}.md`
 
 Read all 5 documents, then perform these 8 checks:
 
 ## Check 0: Report Existence Verification
 Verify exactly 4 report files exist at their expected paths (the Queen provides exact filenames):
-- `.beads/agent-summaries/{EPIC_ID}/review-reports/clarity-review-{timestamp}.md`
-- `.beads/agent-summaries/{EPIC_ID}/review-reports/edge-cases-review-{timestamp}.md`
-- `.beads/agent-summaries/{EPIC_ID}/review-reports/correctness-review-{timestamp}.md`
-- `.beads/agent-summaries/{EPIC_ID}/review-reports/excellence-review-{timestamp}.md`
+- `{SESSION_DIR}/review-reports/clarity-review-{timestamp}.md`
+- `{SESSION_DIR}/review-reports/edge-cases-review-{timestamp}.md`
+- `{SESSION_DIR}/review-reports/correctness-review-{timestamp}.md`
+- `{SESSION_DIR}/review-reports/excellence-review-{timestamp}.md`
 If any file is missing, FAIL immediately — consolidation should not have proceeded.
 
 ## Check 1: Finding Count Reconciliation
@@ -449,10 +452,10 @@ Run `bd list --status=open` and cross-reference against the consolidated summary
 - **FAIL: <list all failures with evidence>**
 
 Write your verification report to:
-`.beads/agent-summaries/{EPIC_ID}/verification/pc/pc-{EPIC_ID}-ccb-{timestamp}.md`
+`{SESSION_DIR}/verification/pc/pc-session-ccb-{timestamp}.md`
 
 Where:
-- `{EPIC_ID}`: epic suffix only (e.g., `74g` from `hs_website-74g`), or `multi` for multi-epic consolidations
+- `{SESSION_DIR}`: session artifact directory (e.g., `.beads/agent-summaries/_session-abc123`)
 - timestamp: YYYYMMDD-HHMMSS format
 
 **CRITICAL FIX**: The timestamp ensures each CCB audit is preserved. Previous versions used static filename `consolidation-audit.md` which caused overwrites on repeated consolidations. Now each audit has a unique timestamped filename, preserving complete audit history.

@@ -3,14 +3,14 @@
 
 ## Transition Gate Checklist
 
-**When**: After all Dirt Pushers from Step 3 complete, BEFORE launching the Nitpickers.
+**When**: After all Dirt Pushers from Step 3 complete across ALL epics, BEFORE launching the Nitpickers.
 
-Verify all 4 criteria before proceeding to team launch:
+Verify all 4 criteria before proceeding to team launch. These checks span ALL epics worked in this session:
 
-1. **All Dirt Pushers completed** — none stuck or errored (check the Queen's state file)
-2. **Dirt Moved vs Dirt Claimed (DMVDC) PASS for every agent** — verify artifact exists at `.beads/agent-summaries/<epic>/verification/pc/pc-<task-id>-dmvdc-*.md` with PASS verdict
-3. **The Queen's state file updated** — all completions tracked, checkpoint results recorded
-4. **Git log shows expected commits** — run `git log --oneline -N` (where N = number of agents) to confirm commits exist
+1. **All Dirt Pushers completed across ALL epics** — none stuck or errored (check the Queen's state file for every epic)
+2. **Dirt Moved vs Dirt Claimed (DMVDC) PASS for every agent** — verify artifact exists at `.beads/agent-summaries/<epic>/verification/pc/pc-<task-id>-dmvdc-*.md` with PASS verdict (check each epic's verification directory)
+3. **The Queen's state file updated** — all completions tracked, checkpoint results recorded for all epics
+4. **Git log shows expected commits** — run `git log --oneline -N` (where N = total number of agents across all epics) to confirm commits exist
 
 **If any check fails**: Do NOT launch reviews. Investigate stuck agents, re-run failed checkpoints, or escalate to user.
 
@@ -18,13 +18,13 @@ Verify all 4 criteria before proceeding to team launch:
 
 ### Pre-Spawn Directory Setup
 
-Before composing review prompts or running Colony Cartography Office (CCO), create the review-reports directory:
+The Queen handles directory creation in RULES.md Step 3b:
 
 ```bash
-mkdir -p .beads/agent-summaries/<epic-id>/review-reports/
+mkdir -p ${SESSION_DIR}/{review-reports,verification/pc}
 ```
 
-This ensures all 4 reviewers can write reports immediately without each needing to create the directory independently.
+This creates session-scoped directories for review reports and verification artifacts. All 4 reviewers write to `${SESSION_DIR}/review-reports/` — no per-epic review directories needed.
 
 ---
 
@@ -58,8 +58,9 @@ Big Head waits for all 4 reports, then consolidates.
 Nitpickers produce REPORTS ONLY — do NOT file beads (`bd create`).
 Big Head consolidates all reports, groups findings by root cause, and files beads.
 
-Review scope: commits <first-commit> through <last-commit> (<N> commits total)
-Files to review: <list of files changed in session>
+Review scope: commits <first-commit> through <last-commit> (<N> commits total, across epics: <epic-list>)
+Files to review: <deduplicated list of ALL files changed across all epics>
+Task IDs for acceptance criteria: <list of all task IDs worked this session>
 
 1. Clarity Review (P3) — see prompt below
 2. Edge Cases Review (P2) — see prompt below
@@ -105,7 +106,7 @@ Read all files in scope. For each issue, note the file, line, and what's wrong.
 Group findings into preliminary root causes where possible.
 
 ## Report (MANDATORY)
-Write your report to `.beads/agent-summaries/<epic-id>/review-reports/clarity-review-<timestamp>.md` using the format below. (The Queen provides the exact filename in your prompt.)
+Write your report to `<session-dir>/review-reports/clarity-review-<timestamp>.md` using the format below. (The Queen provides the exact filename in your prompt.)
 Do NOT file beads — Big Head handles all bead filing.
 
 If you find something that looks like an edge case or correctness bug, message the
@@ -139,7 +140,7 @@ Read all files in scope. For each issue, note the file, line, trigger condition,
 Group findings into preliminary root causes where possible.
 
 ## Report (MANDATORY)
-Write your report to `.beads/agent-summaries/<epic-id>/review-reports/edge-cases-review-<timestamp>.md` using the format below. (The Queen provides the exact filename in your prompt.)
+Write your report to `<session-dir>/review-reports/edge-cases-review-<timestamp>.md` using the format below. (The Queen provides the exact filename in your prompt.)
 Do NOT file beads — Big Head handles all bead filing.
 
 Pay special attention to:
@@ -179,7 +180,7 @@ Read all files in scope. For each issue, note the file, line, expected vs actual
 Group findings into preliminary root causes where possible.
 
 ## Report (MANDATORY)
-Write your report to `.beads/agent-summaries/<epic-id>/review-reports/correctness-review-<timestamp>.md` using the format below. (The Queen provides the exact filename in your prompt.)
+Write your report to `<session-dir>/review-reports/correctness-review-<timestamp>.md` using the format below. (The Queen provides the exact filename in your prompt.)
 Do NOT file beads — Big Head handles all bead filing.
 
 Review these files and their acceptance criteria:
@@ -225,7 +226,7 @@ Read all files in scope. For each issue, note the file, line, improvement detail
 Group findings into preliminary root causes where possible.
 
 ## Report (MANDATORY)
-Write your report to `.beads/agent-summaries/<epic-id>/review-reports/excellence-review-<timestamp>.md` using the format below. (The Queen provides the exact filename in your prompt.)
+Write your report to `<session-dir>/review-reports/excellence-review-<timestamp>.md` using the format below. (The Queen provides the exact filename in your prompt.)
 Do NOT file beads — Big Head handles all bead filing.
 
 Look for opportunities to:
@@ -243,7 +244,7 @@ Review these files:
 
 ## Nitpicker Report Format (All 4 Reviewers)
 
-Every reviewer MUST write their report to `.beads/agent-summaries/<epic-id>/review-reports/<review-type>-review-<timestamp>.md` using this format. The Queen generates the timestamp once per review cycle and provides the exact output path in each reviewer's prompt.
+Every reviewer MUST write their report to `<session-dir>/review-reports/<review-type>-review-<timestamp>.md` using this format. The Queen generates the timestamp once per review cycle and provides the exact output path in each reviewer's prompt.
 
 ```markdown
 # Report: <review-type> Review
@@ -337,11 +338,11 @@ The Big Head consolidation process includes two distinct verification layers tha
 Before reading any reports, verify all 4 expected files exist:
 
 ```bash
-# Verify all 4 review types + consolidated exist for this epic
-ls .beads/agent-summaries/<epic-id>/review-reports/clarity-review-*.md \
-   .beads/agent-summaries/<epic-id>/review-reports/edge-cases-review-*.md \
-   .beads/agent-summaries/<epic-id>/review-reports/correctness-review-*.md \
-   .beads/agent-summaries/<epic-id>/review-reports/excellence-review-*.md
+# Verify all 4 review types exist in the session review-reports directory
+ls <session-dir>/review-reports/clarity-review-*.md \
+   <session-dir>/review-reports/edge-cases-review-*.md \
+   <session-dir>/review-reports/correctness-review-*.md \
+   <session-dir>/review-reports/excellence-review-*.md
 ```
 
 **All 4 files MUST exist.** If any file is missing:
@@ -351,7 +352,7 @@ ls .beads/agent-summaries/<epic-id>/review-reports/clarity-review-*.md \
 
 ### Step 1: Read All Reports
 
-Read all 4 reports from `.beads/agent-summaries/<epic-id>/review-reports/` (the Queen provides exact filenames in the consolidation prompt):
+Read all 4 reports from `<session-dir>/review-reports/` (the Queen provides exact filenames in the consolidation prompt):
 - `clarity-review-<timestamp>.md`
 - `edge-cases-review-<timestamp>.md`
 - `correctness-review-<timestamp>.md`
@@ -385,7 +386,9 @@ For each group of related findings across all 4 reviews:
 
 ### Step 3: File Beads
 
-File ONE bead per root cause (not per finding, not per review):
+File ONE bead per root cause (not per finding, not per review).
+
+**Important**: Beads filed during session review are standalone. Do NOT assign them to a specific epic via `bd dep add --type parent-child`. They represent session-wide findings, not epic-specific work.
 
 ```bash
 bd create --type=bug --priority=<combined-priority> --title="<root cause title>"
@@ -395,7 +398,7 @@ bd label add <id> <primary-review-type>
 
 ### Step 4: Write Consolidated Summary
 
-Write the consolidated summary to `.beads/agent-summaries/<epic-id>/review-reports/review-consolidated-<timestamp>.md`:
+Write the consolidated summary to `<session-dir>/review-reports/review-consolidated-<timestamp>.md`:
 
 ```markdown
 # Consolidated Review Summary
@@ -454,7 +457,7 @@ Before launching the review agent team, confirm:
 - [ ] Report format instructions included (use standard Nitpicker report format)
 - [ ] Each prompt says "Do NOT file beads — Big Head handles all bead filing"
 - [ ] Messaging guidelines included (what to share, what not to share)
-- [ ] Reports write to `.beads/agent-summaries/<epic-id>/review-reports/<review-type>-review-<timestamp>.md`
+- [ ] Reports write to `<session-dir>/review-reports/<review-type>-review-<timestamp>.md`
 
 ### Big Head Consolidation Checklist (after all Nitpickers finish)
 
@@ -463,7 +466,7 @@ Before filing beads, confirm Big Head has:
 - [ ] Merged duplicate findings across reviews
 - [ ] Grouped all findings by root cause (not per-occurrence)
 - [ ] Filed ONE bead per root cause with all affected surfaces listed
-- [ ] Written consolidated summary to `.beads/agent-summaries/<epic-id>/review-reports/review-consolidated-<timestamp>.md`
+- [ ] Written consolidated summary to `<session-dir>/review-reports/review-consolidated-<timestamp>.md`
 
 ## After Consolidation Complete
 

@@ -8,16 +8,15 @@ Do NOT use the Task tool for Big Head — it runs inside the same TeamCreate cal
 **Term definitions (canonical across all orchestration templates):**
 - `{TASK_ID}` — full bead ID including project prefix (e.g., `ant-farm-9oa`)
 - `{TASK_SUFFIX}` — suffix portion only, no project prefix (e.g., `9oa` from `ant-farm-9oa`, or `74g1` from `hs_website-74g.1`)
-- `{EPIC_ID}` — epic suffix only (e.g., `74g` from `hs_website-74g`), or `_standalone` for tasks with no epic parent
 - `{TIMESTAMP}` — UTC timestamp in `YYYYMMDD-HHmmss` format (e.g., `20260217-143000`)
+- `{SESSION_DIR}` — session artifact directory (e.g., `.beads/agent-summaries/_session-abc123`)
 
 ### Wiring: TeamCreate + direct spawn prompt
 
 **Step 1 — Fill placeholders before building the TeamCreate call.**
 Replace `{PLACEHOLDER}` values (uppercase) in the agent-facing template below:
 - `{DATA_FILE_PATH}`: Big Head consolidation data file written by the Pantry (review mode)
-- `{EPIC_ID}`: epic being reviewed (e.g., `ant-farm`)
-- `{CONSOLIDATED_OUTPUT_PATH}`: `.beads/agent-summaries/{EPIC_ID}/review-reports/review-consolidated-{TIMESTAMP}.md`
+- `{CONSOLIDATED_OUTPUT_PATH}`: `{SESSION_DIR}/review-reports/review-consolidated-{TIMESTAMP}.md`
 
 **Step 2 — Create the Nitpicker team.**
 Big Head is the 5th member. Pass the filled-in template text as Big Head's `prompt`. Include all 4
