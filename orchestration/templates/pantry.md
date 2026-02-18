@@ -27,11 +27,30 @@ Read this file (you absorb the cost, not the Queen):
 For each task ID in the input list:
 
 1. Read `{session-dir}/task-metadata/{TASK_SUFFIX}.md`.
-   **FAIL-FAST CHECK**: If the file is missing, does not exist, or contains `**Status**: error`:
+   **FAIL-FAST CHECK**: Halt and report for any of these conditions:
+
+   **Condition 1 — File missing or Scout error**: File is absent, unreadable, or contains `**Status**: error`.
    - Record the task ID and error details in a failure list
    - Do NOT write a task brief for this task
-   - Report to the Queen immediately: `TASK FAILED: {TASK_ID} — Scout metadata error: {error details}`
+   - Report: `TASK FAILED: {TASK_ID} — Scout metadata error: {error details}`
    - Do not proceed with task brief composition for this task
+
+   **Condition 2 — Incomplete metadata**: Any required section is absent, empty, or contains only whitespace.
+   Required sections: `**Title**`, `**Affected Files**`, `**Root Cause**`, `**Expected Behavior**`, `**Acceptance Criteria**`, `**Agent Type**`.
+   - Report: `TASK FAILED: {TASK_ID} — Incomplete metadata: missing or empty section(s): {section names}`
+   - Do NOT write a task brief for this task; skip to the next task
+
+   **Condition 3 — Placeholder-contaminated metadata**: The metadata contains unfilled placeholder text from the Scout template. Placeholders appear as `<angle-bracket text>` (e.g., `<copy from bead>`, `<list from bead>`) or as `[square-bracket text]` (e.g., `[root cause here]`). Note: `{UPPERCASE}` tokens in this Pantry template are Pantry instruction text, not Scout placeholders — do NOT treat them as contamination.
+   - Report: `TASK FAILED: {TASK_ID} — Placeholder-contaminated metadata: found unfilled placeholders: {examples}`
+   - Do NOT write a task brief for this task; skip to the next task
+
+   **On any failure above**: Return a partial verdict table to the Queen showing completed and failed tasks:
+   ```
+   | Task ID | Agent Type | Task Brief | Preview File | Status |
+   |---------|------------|------------|--------------|--------|
+   | {id}    | {type}     | {path}     | {path}       | OK     |
+   | {id}    | —          | —          | —            | FAILED: {reason} |
+   ```
 
    (Pre-extracted by the Scout. Do NOT run `bd show` — the metadata is already there.)
 
@@ -77,7 +96,7 @@ Do NOT fix adjacent issues you notice.
 6. Acceptance Criteria checklist (each criterion + PASS/FAIL)
 ```
 
-5. Validate the task brief has no placeholder text remaining (no `<copy from bead>`, `<list from bead>`, `{from bead description}`, etc.)
+5. Validate the task brief has no unfilled placeholder text remaining. Unfilled placeholders are `<angle-bracket text>` or `[square-bracket text]` patterns that survived from Scout metadata. Lowercase `{curly-brace}` literals from the format template (e.g., `{from bead description}` used as field labels inside the template above) are NOT unfilled placeholders — they will have been replaced with real values during composition.
 
 **Write each task brief immediately after composing it** — do not batch all files and write at the end.
 

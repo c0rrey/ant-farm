@@ -18,7 +18,9 @@ When a message starts with **"Create a prompt:"**, follow this workflow exactly:
 - How the prompt will be used (one-shot, system prompt, agent instruction, etc.)
 - Domain-specific context that would improve results
 
-Present these as multiple-choice questions using AskUserQuestion (4 questions per call, so 4 rounds of questions). Wait for all answers before proceeding.
+Present these as multiple-choice questions using the platform's question tool (4 questions per call, so 4 rounds of questions). Wait for all answers before proceeding.
+
+> **Platform compatibility**: Use the tool name that matches your environment — `AskUserQuestion` in Claude Code, `AskQuestion` in Cursor, or plain conversational turns if no dedicated question tool is available.
 
 **Step 2 - Write the Prompt**: After collecting all answers, write a production-quality prompt that:
 - Incorporates every answer into the prompt design
