@@ -18,23 +18,24 @@ Full bead ID including project prefix.
 
 ### {TASK_SUFFIX}
 
-Suffix portion only, extracted from {TASK_ID} by removing the project prefix and any leading dots.
+Suffix portion only, extracted from {TASK_ID} by splitting on the LAST hyphen and removing any leading dots.
 
-**Extraction rule**: Remove everything up to and including the first hyphen (`-`), then remove any leading dots from remaining characters.
+**Extraction rule**: Split on the LAST hyphen (`-`), take the right side, then remove any leading dots from the result.
 
-**Regex**: `^[^-]+-(.+)$` → capture group 1, with dots normalized to the numeric suffix pattern
+**Regex**: `^.*-(.+)$` → capture group 1, with dots normalized to the numeric suffix pattern
 
 **Algorithm (step-by-step)**:
-1. Locate the first hyphen (`-`) in {TASK_ID}
-2. Remove the project prefix and hyphen: `ant-farm-9oa` → `9oa`
-3. If the remainder contains a dot followed by digits, convert to alphanumeric suffix: `hs_website-74g.1` → `74g.1` → `74g1`
+1. Locate the LAST hyphen (`-`) in {TASK_ID}
+2. Extract everything after the last hyphen: `ant-farm-9oa` → `9oa`, `ant-farm-74g.1` → `74g.1`
+3. If the result contains a dot followed by digits, convert to alphanumeric suffix: `74g.1` → `74g1`
 4. Return the suffix
 
 **Examples**:
-- `ant-farm-9oa` → `9oa` (undotted pattern)
-- `ant-farm-b61` → `b61` (undotted pattern)
-- `hs_website-74g.1` → `74g1` (dotted pattern; dot replaced with final digit)
-- `project-abc.10` → `abc10` (dotted with multi-digit sub-ID)
+- `ant-farm-9oa` → `9oa` (no hyphens in project name; remove project prefix)
+- `ant-farm-b61` → `b61` (no hyphens in project name; remove project prefix)
+- `ant-farm-74g.1` → `74g1` (with dotted sub-ID; remove project prefix, normalize dot)
+- `hs_website-74g.1` → `74g1` (no hyphens in project; remove prefix, normalize dot)
+- `my-project-abc.10` → `abc10` (hyphen in project name; split on last hyphen, normalize dot)
 
 **Usage context**:
 - File paths: `{SESSION_DIR}/task-metadata/{TASK_SUFFIX}.md`
