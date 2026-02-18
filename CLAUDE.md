@@ -66,10 +66,8 @@ Present these as multiple-choice questions using AskUserQuestion (4 questions pe
    git push
    git status  # MUST show "up to date with origin"
    ```
-6. **Clean up** - Clear stashes, prune remote branches, delete session artifacts:
-   ```bash
-   rm -rf .beads/agent-summaries/_session-*/
-   ```
+6. **Clean up** - Clear stashes, prune remote branches
+   (Session artifacts in .beads/agent-summaries/_session-*/ are retained for posterity. Prune old sessions manually when needed.)
 7. **Verify** - All changes committed AND pushed
 8. **Hand off** - Provide context for next session
 

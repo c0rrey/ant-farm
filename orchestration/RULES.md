@@ -65,7 +65,7 @@ Your first instinct will be to "gather context" by running `bd show` on the task
 
 **Step 5:** Verify — cross-references valid, all tasks have CHANGELOG entries
 
-**Step 6:** Land the plane — git pull --rebase, bd sync, git push, cleanup artifacts
+**Step 6:** Land the plane — git pull --rebase, bd sync, git push, clean up stashes and remote branches
 
 ## Hard Gates
 

@@ -71,7 +71,7 @@ For each **ready** task:
 **Title**: {title}
 **Type**: {bug/feature/task}
 **Priority**: {P1/P2/P3}
-**Epic**: {epic-id or _standalone}
+**Epic**: {epic-id or none}
 **Agent Type**: {recommended agent from catalog, or general-purpose}
 **Dependencies**: {blocks: [...], blockedBy: [...]}
 
@@ -162,7 +162,7 @@ Write `{SESSION_DIR}/briefing.md` using this exact format:
 ...
 
 ## Metadata
-- Epics: {epic-id-1}, {epic-id-2}, ... (deduplicated list; use `_standalone` for tasks not in any epic)
+- Epics: {epic-id-1}, {epic-id-2}, ... (deduplicated list; use `none` for tasks with no epic parent)
 - Task metadata files: {session-dir}/task-metadata/ ({N} files)
 - Session dir: {session-dir}
 ```
