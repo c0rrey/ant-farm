@@ -30,10 +30,7 @@ Your first instinct will be to "gather context" by running `bd show` on the task
             gathering. WAIT for the Scout to return its briefing verdict,
             then present the recommended strategy to the user for approval.
 
-**Step 2:** Spawn — pre-spawn directory setup (run BEFORE Pantry or any agent):
-              `mkdir -p .beads/agent-summaries/{EPIC_ID}/verification/pc/`
-              (one command per epic; use `_standalone` for tasks with no epic)
-            Then: Spawn the Pantry (`pantry-impl`) for data files + combined previews
+**Step 2:** Spawn — Spawn the Pantry (`pantry-impl`) for data files + combined previews
             (→ templates/pantry.md). Include `Session directory: <value of SESSION_DIR>`
             in Pantry's prompt. Pass preview file paths and SESSION_DIR to Pest Control
             (`pest-control`) for Colony Cartography Office (CCO); Pest Control reads checkpoints.md itself.
@@ -49,7 +46,7 @@ Your first instinct will be to "gather context" by running `bd show` on the task
             Failed DMVDC → resume agent (max 2 retries).
 
 **Step 3b:** Review — pre-spawn directory setup:
-              `mkdir -p ${SESSION_DIR}/{review-reports,verification/pc}`
+              `mkdir -p ${SESSION_DIR}/review-reports`
             Gather review inputs from the Queen's state file:
             - Commit range: first commit of the session through HEAD
             - File list: `git diff --name-only <first-session-commit>..HEAD` (deduplicated)
@@ -74,11 +71,11 @@ Your first instinct will be to "gather context" by running `bd show` on the task
 
 | Gate | Blocks | Artifact |
 |------|--------|----------|
-| CCO PASS (impl) | Agent spawn | .beads/agent-summaries/{EPIC_ID}/verification/pc/*-cco-*.md |
-| CCO PASS (review) | Nitpicker team spawn | ${SESSION_DIR}/verification/pc/pc-session-cco-review-{timestamp}.md |
-| WWD PASS | Next agent in wave | .beads/agent-summaries/{EPIC_ID}/verification/pc/*-wwd-*.md |
-| DMVDC PASS | Task closure (bd close) | .beads/agent-summaries/{EPIC_ID}/verification/pc/*-dmvdc-*.md |
-| CCB PASS | Presenting results | ${SESSION_DIR}/verification/pc/pc-session-ccb-{timestamp}.md |
+| CCO PASS (impl) | Agent spawn | ${SESSION_DIR}/pc/*-cco-*.md |
+| CCO PASS (review) | Nitpicker team spawn | ${SESSION_DIR}/pc/pc-session-cco-review-{timestamp}.md |
+| WWD PASS | Next agent in wave | ${SESSION_DIR}/pc/*-wwd-*.md |
+| DMVDC PASS | Task closure (bd close) | ${SESSION_DIR}/pc/*-dmvdc-*.md |
+| CCB PASS | Presenting results | ${SESSION_DIR}/pc/pc-session-ccb-{timestamp}.md |
 | Reviews | Mandatory after ALL implementation completes — do NOT ask user, do NOT skip |
 
 ## Information Diet (The Queen's Window)
@@ -122,7 +119,7 @@ At session start (Step 0), generate a session ID and create the session artifact
 
     SESSION_ID=$(date +%s | shasum | head -c 6)
     SESSION_DIR=".beads/agent-summaries/_session-${SESSION_ID}"
-    mkdir -p ${SESSION_DIR}/{task-metadata,previews,prompts}
+    mkdir -p ${SESSION_DIR}/{task-metadata,previews,prompts,pc,summaries}
 
 Store SESSION_DIR in your context. Pass it explicitly to every agent that needs to write artifacts:
 Scout receives it as "Session directory: <SESSION_DIR>".
@@ -135,24 +132,8 @@ All session-scoped artifacts go here:
 - `step3b-transition-gate.md` — review transition gate
 - `HANDOFF-*.md` — handoff documents
 
-The `_session-` prefix distinguishes session directories from epic directories (e.g., `78k/`, `goose-6dh/`).
+The `_session-` prefix distinguishes session directories from other entries in `agent-summaries/`.
 This prevents collisions when multiple Queens run in the same repo.
-
-## Epic Artifact Directories
-
-At Step 2, after the user approves a strategy but before spawning any agents or running CCO, create artifact directories for each epic listed in the Scout's briefing (Metadata → Epics line):
-
-    mkdir -p .beads/agent-summaries/{EPIC_ID}/verification/pc/
-
-Tasks not belonging to any epic use `_standalone` as the `{EPIC_ID}`:
-
-    mkdir -p .beads/agent-summaries/_standalone/verification/pc/
-
-The `_standalone` directory persists across sessions (it is NOT cleaned up with `_session-*` artifacts).
-
-This creates the full path (`{EPIC_ID}/` and `verification/pc/`) in one command. Agents and Pest Control can then write artifacts immediately without each independently creating directories.
-
-The `review-reports/` and `verification/pc/` subdirectories for reviews are created at Step 3b under `${SESSION_DIR}/` (session-scoped, not per-epic).
 
 ## Anti-Patterns
 

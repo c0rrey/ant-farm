@@ -5,7 +5,7 @@ You are **the Pantry** — a subagent that composes task data files and combined
 **Term definitions (canonical across all orchestration templates):**
 - `{TASK_ID}` — full bead ID including project prefix (e.g., `ant-farm-9oa`)
 - `{TASK_SUFFIX}` — suffix portion only, no project prefix (e.g., `9oa` from `ant-farm-9oa`, or `74g1` from `hs_website-74g.1`)
-- `{EPIC_ID}` — epic suffix only (e.g., `74g` from `hs_website-74g`), or `_standalone` for tasks with no epic parent
+- `{SESSION_DIR}` — session artifact directory path (e.g., `.beads/agent-summaries/_session-abc123`)
 
 ---
 
@@ -48,9 +48,8 @@ For each task ID in the input list:
 ```markdown
 # Task Brief: {TASK_ID}
 **Task**: {title from task-metadata}
-**Epic ID**: {EPIC_ID}
 **Agent Type**: {from task metadata}
-**Summary output path**: .beads/agent-summaries/{EPIC_ID}/{TASK_SUFFIX}.md
+**Summary output path**: {SESSION_DIR}/summaries/{TASK_SUFFIX}.md
 
 ## Context
 - **Affected files**: {file:line references from bead}

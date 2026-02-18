@@ -8,7 +8,7 @@ The orchestration system uses three distinct placeholder syntaxes, each with a s
 
 | Syntax | Purpose | Substituted By | Substituted When | Example |
 |--------|---------|---|---|---------|
-| `{UPPERCASE}` | Queen-provided context | Queen agent | Before agent spawn | `{TASK_ID}`, `{SESSION_DIR}`, `{EPIC_ID}` |
+| `{UPPERCASE}` | Queen-provided context | Queen agent | Before agent spawn | `{TASK_ID}`, `{SESSION_DIR}`, `{TASK_SUFFIX}` |
 | `{lowercase-kebab}` | Runtime-derived or output format | Agent or system | At runtime by agent | `{session-dir}` (computed from SESSION_DIR), `{timestamp}` (from system clock) |
 | `${SHELL_VAR}` | Bash/shell variables | Shell interpreter | When bash script executes | `${SESSION_ID}`, `${SESSION_DIR}` in code blocks only |
 
@@ -29,12 +29,10 @@ These placeholders are filled in by the Queen agent **before spawning a subagent
 **Examples**:
 - `{TASK_ID}` — full bead ID including project prefix (e.g., `ant-farm-9oa`)
 - `{TASK_SUFFIX}` — suffix portion only (e.g., `9oa` from `ant-farm-9oa`)
-- `{EPIC_ID}` — epic suffix only (e.g., `74g`), or `_standalone` for tasks with no epic
 - `{SESSION_DIR}` — session artifact directory path (e.g., `.beads/agent-summaries/_session-abc123`)
 - `{AGENT_TYPE}` — subagent type for Task tool (e.g., `python-pro`, `general-purpose`)
 - `{DATA_FILE_PATH}` — full path to data file pre-written by Pantry
-- `{SUMMARY_OUTPUT_PATH}` — full path where agent should write summary doc
-- `{EPIC_ID}` — epic suffix or `_standalone`
+- `{SUMMARY_OUTPUT_PATH}` — full path where agent should write summary doc (e.g., `{SESSION_DIR}/summaries/{TASK_SUFFIX}.md`)
 
 **Term Definition Block Template**:
 Every template that uses `{UPPERCASE}` placeholders MUST include this block at the top:
@@ -43,7 +41,7 @@ Every template that uses `{UPPERCASE}` placeholders MUST include this block at t
 **Term definitions (canonical across all orchestration templates):**
 - `{TASK_ID}` — full bead ID including project prefix (e.g., `ant-farm-9oa`)
 - `{TASK_SUFFIX}` — suffix portion only, no project prefix (e.g., `9oa`)
-- `{EPIC_ID}` — epic suffix only (e.g., `74g`), or `_standalone` for tasks with no epic
+- `{SESSION_DIR}` — session artifact directory path (e.g., `.beads/agent-summaries/_session-abc123`)
 ```
 
 ---
@@ -85,8 +83,6 @@ These placeholders represent **bash/shell variables** and appear ONLY in code bl
 **Examples**:
 - `${SESSION_ID}` — Session ID value for bash commands
 - `${SESSION_DIR}` — Session directory path for bash mkdir/mkdir operations
-- `${EPIC_ID}` — Epic ID variable in bash scripts
-
 **Usage pattern**:
 ```bash
 SESSION_ID=$(date +%s | shasum | head -c 6)
@@ -103,10 +99,10 @@ All files audited. No violations found. All files use the Tiered convention corr
 | File | Tier 1 Placeholders | Tier 2 Placeholders | Tier 3 Placeholders | Term Definition Block | Status |
 |------|---|---|---|---|---------|
 | `scout.md` | `{SESSION_DIR}` (L10,62,66,129,175,178), `{MODE}` (L11) | `{session-dir}` (L166-167), `{id}`, `{epic-id}`, `{title}`, `{N}`, `{M}`, `{name}`, `{task-list}`, `{task-A/B/C}` (L137-198) | None | No (uses examples inline) | PASS |
-| `pantry.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{EPIC_ID}` (impl mode only; review mode uses `{session-dir}` for output paths) | `{session-dir}` (review output paths, previews, prompts), `{id}`, `{type}`, `{path}`, `{timestamp}` | None | Yes (L5-8) | PASS |
-| `RULES.md` | `{EPIC_ID}` (impl gates + epic dirs), `${SESSION_DIR}` (review gates) | None | `${SESSION_ID}` (L119), `${SESSION_DIR}` (L119-120, Step 3b) | No (references other term defs) | PASS |
-| `checkpoints.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{EPIC_ID}` (impl), `{SESSION_DIR}` (review), `{TIMESTAMP}` (term def L5-7, used throughout) | `{checkpoint}`, `{path}`, `{N}`, `{M}`, `{before-commit}`, `{after-commit}`, `{commit}`, `{file}`, `{line}`, `{description}`, `{list}` (in examples) | None | Yes (L4-7) | PASS |
-| `dirt-pusher-skeleton.md` | `{TASK_TYPE}`, `{TASK_ID}`, `{TASK_SUFFIX}`, `{AGENT_TYPE}`, `{DATA_FILE_PATH}`, `{SUMMARY_OUTPUT_PATH}`, `{EPIC_ID}` | None | None | Yes (L8-11) | PASS |
+| `pantry.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{SESSION_DIR}` | `{session-dir}` (review output paths, previews, prompts), `{id}`, `{type}`, `{path}`, `{timestamp}` | None | Yes (L5-8) | PASS |
+| `RULES.md` | `${SESSION_DIR}` (all gates) | None | `${SESSION_ID}` (L119), `${SESSION_DIR}` (L119-120) | No (references other term defs) | PASS |
+| `checkpoints.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{SESSION_DIR}` (term def L4-6, used throughout) | `{checkpoint}`, `{path}`, `{N}`, `{M}`, `{before-commit}`, `{after-commit}`, `{commit}`, `{file}`, `{line}`, `{description}`, `{list}` (in examples) | None | Yes (L4-6) | PASS |
+| `dirt-pusher-skeleton.md` | `{TASK_TYPE}`, `{TASK_ID}`, `{TASK_SUFFIX}`, `{AGENT_TYPE}`, `{DATA_FILE_PATH}`, `{SUMMARY_OUTPUT_PATH}`, `{SESSION_DIR}` | None | None | Yes (L8-11) | PASS |
 | `nitpicker-skeleton.md` | `{REVIEW_TYPE}`, `{DATA_FILE_PATH}`, `{REPORT_OUTPUT_PATH}` | None | None | Partial (L8-11, missing EPOCH/timestamp defs) | PASS |
 | `big-head-skeleton.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{TIMESTAMP}`, `{DATA_FILE_PATH}`, `{CONSOLIDATED_OUTPUT_PATH}`, `{SESSION_DIR}` | None | None | Yes (L8-12) | PASS |
 | `reviews.md` | None (uses angle-bracket syntax `<session-dir>`, `<timestamp>` in text; `<epic>` only in impl DMVDC paths) | None | None | No | PASS |
@@ -128,7 +124,7 @@ To ensure compliance with these conventions, apply these grep patterns:
 grep -rE '\{[A-Z][A-Z_]*\}' orchestration/ --exclude-dir=_archive
 ```
 
-Expected matches: `{TASK_ID}`, `{SESSION_DIR}`, `{EPIC_ID}`, etc. These should all appear in templates meant for Queen substitution or in term definition blocks.
+Expected matches: `{TASK_ID}`, `{SESSION_DIR}`, `{TASK_SUFFIX}`, etc. These should all appear in templates meant for Queen substitution or in term definition blocks.
 
 ### Pattern 2: Find all Tier 2 placeholders
 ```bash
@@ -171,7 +167,6 @@ The orchestration system **already complies** with the Tiered Placeholder Conven
    - No changes needed
 
 3. **RULES.md** — COMPLIANT
-   - Tier 1 `{EPIC_ID}` used correctly for Queen context
    - Tier 3 `${SESSION_ID}`, `${SESSION_DIR}` used correctly in bash code block
    - No changes needed
 
@@ -194,7 +189,7 @@ The orchestration system **already complies** with the Tiered Placeholder Conven
 ### Why No Changes Needed
 
 The development team unconsciously implemented the Tiered Placeholder Convention correctly:
-- Queen-provided context uses uppercase (`{SESSION_DIR}`, `{TASK_ID}`)
+- Queen-provided context uses uppercase (`{SESSION_DIR}`, `{TASK_ID}`, `{TASK_SUFFIX}`)
 - Agent-derived or output examples use lowercase (`{session-dir}`, `{timestamp}`)
 - Shell variables use `${}` syntax (`${SESSION_ID}`)
 

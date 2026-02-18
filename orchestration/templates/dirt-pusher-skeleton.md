@@ -8,7 +8,7 @@ The agent-facing text starts below the `---` separator. Do NOT include this inst
 **Term definitions (canonical across all orchestration templates):**
 - `{TASK_ID}` — full bead ID including project prefix (e.g., `ant-farm-9oa`)
 - `{TASK_SUFFIX}` — suffix portion only, no project prefix (e.g., `9oa` from `ant-farm-9oa`, or `74g1` from `hs_website-74g.1`)
-- `{EPIC_ID}` — epic suffix only (e.g., `74g` from `hs_website-74g`), or `_standalone` for tasks with no epic parent
+- `{SESSION_DIR}` — session artifact directory path (e.g., `.beads/agent-summaries/_session-abc123`)
 
 Placeholders:
 - {TASK_TYPE}: bead type (bug/feature/task) — from the Scout's briefing
@@ -16,7 +16,7 @@ Placeholders:
 - {TASK_SUFFIX}: suffix only, no prefix (e.g., 9oa)
 - {AGENT_TYPE}: subagent_type for Task tool — from the Pantry verdict table (Agent Type column). The Queen MAY override if strategy context warrants it.
 - {DATA_FILE_PATH}: from the Pantry verdict table
-- {SUMMARY_OUTPUT_PATH}: .beads/agent-summaries/{EPIC_ID}/{TASK_SUFFIX}.md
+- {SUMMARY_OUTPUT_PATH}: {SESSION_DIR}/summaries/{TASK_SUFFIX}.md
 
 ## Template (send everything below this line)
 

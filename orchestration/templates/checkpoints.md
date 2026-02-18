@@ -4,7 +4,7 @@
 **Term definitions (canonical across all orchestration templates):**
 - `{TASK_ID}` — full bead ID including project prefix (e.g., `ant-farm-9oa` or `hs_website-74g.1`)
 - `{TASK_SUFFIX}` — suffix portion only, no project prefix (e.g., `9oa` from `ant-farm-9oa`, or `74g1` from `hs_website-74g.1`)
-- `{EPIC_ID}` — epic suffix only (e.g., `74g` from `hs_website-74g`), or `_standalone` for tasks with no epic parent
+- `{SESSION_DIR}` — session artifact directory path (e.g., `.beads/agent-summaries/_session-abc123`)
 
 ## Pest Control Overview
 
@@ -17,38 +17,23 @@ All checkpoint verifications (CCO, WWD, DMVDC, CCB) are executed by **Pest Contr
 - Consolidation integrity audits (CCB)
 
 **Artifact naming conventions:**
-- **Task-specific checkpoints (CCO, DMVDC for Dirt Pushers):** `pc-{TASK_SUFFIX}-{checkpoint}-{timestamp}.md`
+- **Task-specific checkpoints (CCO, WWD, DMVDC for Dirt Pushers):** `pc-{TASK_SUFFIX}-{checkpoint}-{timestamp}.md`
   - Example: `pc-74g1-cco-20260215-001145.md`
   - Example: `pc-74g1-dmvdc-20260215-003422.md`
-  - Storage: `.beads/agent-summaries/{EPIC_ID}/verification/pc/` (implementation, per-epic)
-- **Review-phase checkpoints (CCO-review, CCB):** `pc-session-{checkpoint}-{timestamp}.md`
+- **Session-wide checkpoints (CCO-review, CCB):** `pc-session-{checkpoint}-{timestamp}.md`
   - Example: `pc-session-cco-review-20260215-001145.md`
   - Example: `pc-session-ccb-20260215-010520.md`
-  - Storage: `{SESSION_DIR}/verification/pc/` (review, per-session)
 
-**Note:** Implementation-phase artifacts (CCO, WWD, DMVDC for Dirt Pushers) remain per-epic at `.beads/agent-summaries/{EPIC_ID}/verification/pc/`. Review-phase artifacts (CCO-review, CCB) are per-session at `{SESSION_DIR}/verification/pc/`.
+All checkpoints write to `{SESSION_DIR}/pc/`.
 
 **Task suffix derivation:**
 - `{TASK_SUFFIX}` = suffix portion of bead ID with no project prefix (e.g., `74g1` from `hs_website-74g.1`)
-- Use `standalone` for tasks without epic parent
-
-**Session-scoped naming (CCO-review, CCB):**
-- CCB and CCO-review artifacts use `pc-session-` prefix instead of `pc-{EPIC_ID}-`
-- Written to `{SESSION_DIR}/verification/pc/` (not per-epic directories)
 
 **Timestamp format:** `YYYYMMDD-HHMMSS`
 
-**Epic ID resolution:** When constructing paths that include `{EPIC_ID}`, resolve the epic ID from the task ID:
+**Directory creation**: The Queen creates `{SESSION_DIR}/pc/` at session start (Step 0 in RULES.md). Agents and Pest Control can write immediately without creating directories.
 
-| Task ID Pattern | Epic ID | Example |
-|----------------|---------|---------|
-| `hs_website-<X>.<N>` | `X` | `hs_website-74g.1` → `74g` |
-| `<X>.<N>` (non-prefixed) | `X` | `74g.8` → `74g` |
-| No epic parent | `_standalone` | `hs_website-596y` → `_standalone` |
-
-**Directory creation**: The Queen pre-creates `.beads/agent-summaries/{EPIC_ID}/verification/pc/` at Step 2 (see RULES.md Epic Artifact Directories) and `${SESSION_DIR}/{review-reports,verification/pc}` at Step 3b (see RULES.md). Agents and Pest Control can write immediately without creating directories.
-
-**The Queen's responsibility**: The Queen MUST include `**Epic ID**` and `**Summary output path**` in Dirt Pusher prompt context. For review prompts, include the session-scoped review report paths and all participating epic IDs (for context). Reviewers write to `{SESSION_DIR}/review-reports/`, not per-epic directories.
+**The Queen's responsibility**: The Queen MUST include `**Summary output path**` in Dirt Pusher prompt context. For review prompts, include the session-scoped review report paths and all participating epic IDs (for context). Reviewers write to `{SESSION_DIR}/review-reports/`, not per-epic directories.
 
 **Review timestamp convention**: The Queen generates a single timestamp per review cycle (format: `YYYYMMDD-HHMMSS`) and passes the exact output filenames to each reviewer and Big Head. This prevents reviewers from independently generating different timestamps.
 
@@ -87,7 +72,7 @@ Do NOT execute the prompt — only verify its contents.
    - Step 3: Implementation instructions
    - Step 4: "Review EVERY file" or per-file correctness review (MANDATORY keyword present)
    - Step 5: Commit with `git pull --rebase`
-   - Step 6: Write summary doc to `.beads/agent-summaries/{EPIC_ID}/`
+   - Step 6: Write summary doc to `{SESSION_DIR}/summaries/`
 5. **Scope boundaries**: Contains explicit limits on which files to read (not open-ended "explore the codebase")
 6. **Commit instructions**: Includes `git pull --rebase` before commit
 7. **Line number specificity** (NEW - prevents scope creep): File paths include specific line ranges or section markers
@@ -100,11 +85,11 @@ Do NOT execute the prompt — only verify its contents.
 - **FAIL: <list each failing check with evidence>**
 
 Write your verification report to:
-`.beads/agent-summaries/{EPIC_ID}/verification/pc/pc-{TASK_SUFFIX}-cco-{timestamp}.md`
+`{SESSION_DIR}/pc/pc-{TASK_SUFFIX}-cco-{timestamp}.md`
 
 Where:
-- `{TASK_SUFFIX}`: suffix portion of bead ID with no project prefix (e.g., `74g1` from `hs_website-74g.1`), or `standalone` if no epic
-- `{EPIC_ID}`: epic suffix only (e.g., `74g`), or `_standalone` for tasks with no epic parent
+- `{TASK_SUFFIX}`: suffix portion of bead ID with no project prefix (e.g., `74g1` from `hs_website-74g.1`)
+- `{SESSION_DIR}`: session artifact directory (e.g., `.beads/agent-summaries/_session-abc123`)
 - timestamp: YYYYMMDD-HHMMSS format
 ```
 
@@ -158,7 +143,7 @@ Do NOT execute the prompts — only verify their contents.
 - **FAIL: <list each failing check, specifying which prompt(s)>**
 
 Write your verification report to:
-`{SESSION_DIR}/verification/pc/pc-session-cco-review-{timestamp}.md`
+`{SESSION_DIR}/pc/pc-session-cco-review-{timestamp}.md`
 
 Where:
 - `{SESSION_DIR}`: session artifact directory (e.g., `.beads/agent-summaries/_session-abc123`)
@@ -210,7 +195,7 @@ You are **Pest Control**, the verification subagent. Your role is to verify agen
 - **FAIL: <list unexpected files>** — Agent edited files outside task scope (scope creep detected)
 
 Write your verification report to:
-`.beads/agent-summaries/{EPIC_ID}/verification/pc/pc-{TASK_SUFFIX}-wwd-{timestamp}.md`
+`{SESSION_DIR}/pc/pc-{TASK_SUFFIX}-wwd-{timestamp}.md`
 ```
 
 ### The Queen's Response
@@ -246,7 +231,7 @@ You are **Pest Control**, the verification subagent. Your role is to cross-check
 
 Verify the substance of the Dirt Pusher's work by cross-checking claims against ground truth.
 
-**Summary doc**: `.beads/agent-summaries/{EPIC_ID}/{TASK_SUFFIX}.md`
+**Summary doc**: `{SESSION_DIR}/summaries/{TASK_SUFFIX}.md`
 **Task ID**: {TASK_ID}
 
 Read the summary doc first, then perform these 4 checks:
@@ -284,11 +269,11 @@ Pick 1 changed file and read the agent's correctness notes for it.
 - **FAIL: <list all failures with evidence>** — Multiple checks failed or critical fabrication detected
 
 Write your verification report to:
-`.beads/agent-summaries/{EPIC_ID}/verification/pc/pc-{TASK_SUFFIX}-dmvdc-{timestamp}.md`
+`{SESSION_DIR}/pc/pc-{TASK_SUFFIX}-dmvdc-{timestamp}.md`
 
 Where:
 - `{TASK_SUFFIX}`: suffix portion of bead ID with no project prefix (e.g., `74g1` from `hs_website-74g.1`)
-- `{EPIC_ID}`: epic suffix only (e.g., `74g`), or `_standalone` for tasks with no epic parent
+- `{SESSION_DIR}`: session artifact directory (e.g., `.beads/agent-summaries/_session-abc123`)
 - timestamp: YYYYMMDD-HHMMSS format
 ```
 
@@ -342,7 +327,7 @@ Search the report for `bd create`, `bd update`, `bd close`, or bead ID patterns 
 - **FAIL: <list all failures with evidence>**
 
 Write your verification report to:
-`{SESSION_DIR}/verification/pc/pc-{TASK_SUFFIX}-dmvdc-review-{timestamp}.md`
+`{SESSION_DIR}/pc/pc-{TASK_SUFFIX}-dmvdc-review-{timestamp}.md`
 
 Where:
 - `{TASK_SUFFIX}`: Nitpicker task suffix (e.g., `review-clarity`, `review-edge`)
@@ -452,7 +437,7 @@ Run `bd list --status=open` and cross-reference against the consolidated summary
 - **FAIL: <list all failures with evidence>**
 
 Write your verification report to:
-`{SESSION_DIR}/verification/pc/pc-session-ccb-{timestamp}.md`
+`{SESSION_DIR}/pc/pc-session-ccb-{timestamp}.md`
 
 Where:
 - `{SESSION_DIR}`: session artifact directory (e.g., `.beads/agent-summaries/_session-abc123`)

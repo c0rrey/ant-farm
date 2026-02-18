@@ -8,7 +8,7 @@
 Verify all 4 criteria before proceeding to team launch. These checks span ALL epics worked in this session:
 
 1. **All Dirt Pushers completed across ALL epics** — none stuck or errored (check the Queen's state file for every epic)
-2. **Dirt Moved vs Dirt Claimed (DMVDC) PASS for every agent** — verify artifact exists at `.beads/agent-summaries/<epic>/verification/pc/pc-<task-id>-dmvdc-*.md` with PASS verdict (check each epic's verification directory)
+2. **Dirt Moved vs Dirt Claimed (DMVDC) PASS for every agent** — verify artifact exists at `<session-dir>/pc/pc-<task-id>-dmvdc-*.md` with PASS verdict
 3. **The Queen's state file updated** — all completions tracked, checkpoint results recorded for all epics
 4. **Git log shows expected commits** — run `git log --oneline -N` (where N = total number of agents across all epics) to confirm commits exist
 
@@ -21,10 +21,10 @@ Verify all 4 criteria before proceeding to team launch. These checks span ALL ep
 The Queen handles directory creation in RULES.md Step 3b:
 
 ```bash
-mkdir -p ${SESSION_DIR}/{review-reports,verification/pc}
+mkdir -p ${SESSION_DIR}/review-reports
 ```
 
-This creates session-scoped directories for review reports and verification artifacts. All 4 reviewers write to `${SESSION_DIR}/review-reports/` — no per-epic review directories needed.
+This creates the session-scoped directory for review reports. All 4 reviewers write to `${SESSION_DIR}/review-reports/`. Verification artifacts (`pc/`) are already created at Step 0.
 
 ---
 

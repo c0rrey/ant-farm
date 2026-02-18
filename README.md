@@ -235,7 +235,7 @@ Target: finish a 40+ task session with >50% context window remaining, <10 file r
 | **DMVDC** — substance verification | Task closure | sonnet |
 | **CCB** — consolidation audit | Presenting results to user | haiku |
 
-All checkpoint artifacts are written to `.beads/agent-summaries/<epic>/verification/pc/` with timestamped filenames for full audit history.
+All checkpoint artifacts are written to `<session-dir>/pc/` with timestamped filenames for full audit history.
 
 ## Priority calibration
 

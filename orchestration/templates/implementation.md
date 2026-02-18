@@ -15,8 +15,7 @@ Tasks: <task-id-1>, <task-id-2>, ...
 - **Root cause**: <copy from bead>
 - **Expected behavior**: <copy from bead>
 - **Scope boundaries**: Read ONLY the files/lines listed above
-- **Epic ID**: <epic-id or _standalone>
-- **Summary output path**: `.beads/agent-summaries/<epic-id>/<task-id>.md`
+- **Summary output path**: `<session-dir>/summaries/<task-id>.md`
 
 ---
 
@@ -62,8 +61,8 @@ After implementation, review EVERY file you changed or created:
 - Record your commit hash in the summary doc (Step 6) so Dirt Moved vs Dirt Claimed (DMVDC) can identify your commits without scanning `git log`
 
 ## Step 6: Write Summary Doc (MANDATORY — do not skip)
-Write a structured summary to `.beads/agent-summaries/<epic-id>/<task-id>.md` using the Write tool.
-(Use `_standalone` if the task has no epic parent. The Queen pre-creates this directory at Step 2.)
+Write a structured summary to `<session-dir>/summaries/<task-id>.md` using the Write tool.
+(The Queen creates this directory at session start.)
 The summary MUST contain ALL of these sections — incomplete summaries will be rejected:
 
 ```markdown
@@ -170,7 +169,7 @@ Before sending any agent prompt, confirm it includes:
 - [ ] **Step 3**: Implementation instructions
 - [ ] **Step 4**: "Review EVERY file you changed" with explicit checks (MANDATORY)
 - [ ] **Step 5**: Commit instructions with `git pull --rebase`
-- [ ] **Step 6**: Write summary doc to `.beads/agent-summaries/<epic-id>/<task-id>.md` (MANDATORY)
+- [ ] **Step 6**: Write summary doc to `<session-dir>/summaries/<task-id>.md` (MANDATORY)
 
 If any checkbox is missing, DO NOT spawn the agent — fix the prompt first.
 
