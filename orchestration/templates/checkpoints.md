@@ -41,6 +41,58 @@ All checkpoints write to `{SESSION_DIR}/pc/`.
 
 ---
 
+## Verdict Thresholds Summary
+
+This section provides a unified reference for all checkpoint verdict definitions and tie-breaking rules.
+
+### Common Verdict Definitions
+
+All checkpoints use three verdict states:
+
+**PASS**: Verification succeeded. No action required. Proceed to next phase.
+
+**WARN** (checkpoints: CCO, WWD, DMVDC only):
+- CCO WARN: Small file exception approved. Queen reviews and approves before spawn.
+- WWD WARN: Legitimate extra files. Soft gate — does not block queue. Queen approves concurrently.
+- DMVDC WARN: Partial failures detected. Agent can repair and resubmit.
+
+**FAIL**: Verification failed. Blocking issue detected. Pause and remediate before continuing.
+
+### Checkpoint-Specific Thresholds
+
+| Checkpoint | Quantitative Threshold | Tie-Breaking Rule | Queue Blocking |
+|---|---|---|---|
+| **CCO (Dirt Pushers)** | Small file = <100 lines | First-listed section/function | WARN does not block; Queen approves before spawn |
+| **CCO (Nitpickers)** | All 4 prompts identical file list | (No tie-breaking) | FAIL blocks spawn |
+| **WWD** | Small file = <100 lines | First-listed changed file | WARN does not block queue; FAIL blocks queue |
+| **DMVDC (Dirt Pushers)** | Pick 2 criteria: first-listed OR identified-as-critical OR all if <2 | First-listed acceptance criterion | WARN allows resubmission; FAIL escalates |
+| **DMVDC (Nitpickers)** | Sample size = max(3, min(5, ceil(N/3))) | Include highest-severity + all tiers | WARN allows resubmission; FAIL escalates |
+| **CCB** | Finding count must reconcile to 100% | Earliest-filed bead per root cause | FAIL blocks user presentation |
+
+### Details by Checkpoint
+
+**CCO Verdict Specifics:**
+- PASS: All 7 checks pass
+- WARN: Check 7 is WARN (file-level scope) + file <100 lines + prompt has context. Acceptable.
+- FAIL: Any check fails, or Check 7 is WARN + file ≥100 lines
+
+**WWD Verdict Specifics:**
+- PASS: All changed files in expected scope
+- WARN: Extra files changed that are legitimate build artifacts (require Queen approval but don't block queue)
+- FAIL: Scope creep (files outside task scope). Blocks queue pending investigation.
+
+**DMVDC Verdict Specifics:**
+- PASS: All 4 checks confirm (Check 1: git diff matches claims, Check 2: 2 criteria verified, Check 3: approaches distinct, Check 4: correctness evidence specific)
+- PARTIAL: Some checks fail (agent can resubmit)
+- FAIL: Multiple checks fail or critical fabrication (escalate to user)
+
+**CCB Verdict Specifics:**
+- PASS: All 8 checks confirm (finding reconciliation, bead quality, priority calibration, traceability, dedup correctness, provenance)
+- PARTIAL: Some checks fail (fix and re-run)
+- FAIL: Critical failures (e.g., missing reports, orphaned findings). Must resolve before presenting to user.
+
+---
+
 ## Colony Cartography Office (CCO): Pre-Spawn Prompt Audit
 
 ### Dirt Pushers
@@ -50,6 +102,19 @@ All checkpoints write to `{SESSION_DIR}/pc/`.
 **Agent type**: `code-reviewer`
 
 **Why**: The orchestrator has a self-policing checklist, but nobody audits the orchestrator. Catching prompt defects before spawn is 100x cheaper than catching them after.
+
+#### Verdict Thresholds for CCO
+
+**PASS verdict**: All 7 checks pass without exceptions.
+
+**WARN verdict** (acceptable for small files only):
+- Check 7 is WARN instead of PASS, AND
+- The file in question is "small": fewer than 100 lines of code OR fewer than 5 logical sections/functions, AND
+- The prompt includes specific context about what the agent should modify (e.g., "update the error message on line 15")
+- Example WARN: "Edit config.json (update API endpoint)" is WARN if config.json is 45 lines. The Queen reviews and approves.
+- Example FAIL: "Edit templates/macros/jsonld.html" is FAIL because it provides no line specificity and the file is likely >100 lines. Needs rewrite.
+
+**FAIL verdict**: Any check fails without WARN exception, or Check 7 is WARN but the file is large (≥100 lines) or lacks context.
 
 ```markdown
 **Pest Control verification - CCO (Pre-Spawn Prompt Audit)**
@@ -79,12 +144,13 @@ Do NOT execute the prompt — only verify its contents.
 6. **Commit instructions**: Includes `git pull --rebase` before commit
 7. **Line number specificity** (NEW - prevents scope creep): File paths include specific line ranges or section markers
    - ✅ PASS: "Edit templates/macros/jsonld.html lines 23-24 (image property only)"
-   - ⚠️ WARN: "Edit templates/macros/jsonld.html (image property)" — file-level scope, acceptable if small file
+   - ⚠️ WARN: "Edit templates/macros/jsonld.html (image property)" — file-level scope, acceptable if small file (<100 lines)
    - ❌ FAIL: "Edit templates/macros/jsonld.html" — vague, high scope creep risk
 
 ## Verdict
 - **PASS** — All 7 checks pass
-- **FAIL: <list each failing check with evidence>**
+- **WARN** — Check 7 is WARN but file is small (<100 lines) and has context. Queen reviews and approves before spawn.
+- **FAIL** — One or more checks fail, or Check 7 is WARN and file is large (≥100 lines). Rewrite prompt.
 
 Write your verification report to:
 `{SESSION_DIR}/pc/pc-{TASK_SUFFIX}-cco-{timestamp}.md`
@@ -191,10 +257,20 @@ You are **Pest Control**, the verification subagent. Your role is to verify agen
 - ⚠️ Extra files changed (e.g., regenerated HTML from template changes) — check if legitimate
 - ❌ Unexpected files changed (e.g., different template, unrelated config)
 
+#### Verdict Thresholds and Queue Blocking Behavior for WWD
+
+**PASS verdict**: All changed files are in the expected scope (from `bd show {TASK_ID}`), or any extra files are clearly legitimate build outputs (e.g., HTML regenerated from template change, CSS compiled from SASS).
+
+**WARN verdict**: Extra files changed that need the Queen's judgment before continuing to the next task in the wave. Does NOT block the queue — only requires Queen review.
+- Examples: template changes that cascade into multiple HTML files, configuration changes affecting derived docs
+- Queen decision: approve as legitimate build artifact, or escalate to user if suspicious
+
+**FAIL verdict**: Scope creep detected — agent edited files outside the expected scope (different feature, unrelated config, cross-epic work). Indicates a real work attribution problem that needs correction.
+
 ## Verdict
 - **PASS** — Files match expected scope (or extra files are legitimate build outputs)
-- **WARN: <list extra files with rationale>** — Extra files need the Queen's review (e.g., "index.html regenerated from template change — legitimate")
-- **FAIL: <list unexpected files>** — Agent edited files outside task scope (scope creep detected)
+- **WARN: <list extra files with rationale>** — Extra files need the Queen's review but do NOT block queue continuation. Queen approves and proceeds, or escalates if suspicious.
+- **FAIL: <list unexpected files>** — Agent edited files outside task scope (scope creep detected). Blocks queue progression until documented.
 
 Write your verification report to:
 `{SESSION_DIR}/pc/pc-{TASK_SUFFIX}-wwd-{timestamp}.md`
@@ -204,15 +280,20 @@ Write your verification report to:
 
 **On PASS**: Continue normally (run DMVDC, backfill queue).
 
-**On WARN**: Review the extra files. If legitimate (e.g., HTML rebuild from template), accept and continue. If suspicious, escalate to user.
+**On WARN** (does NOT block queue):
+- Review the extra files within 30 seconds of receiving this report
+- If legitimate (e.g., HTML rebuild from template, derived artifact), log approval and continue immediately
+- If suspicious, escalate to user for decision before spawning next agent in wave
+- Queue does NOT pause while Queen reviews — this is a soft gate (concurrent review is acceptable)
 
-**On FAIL (scope creep detected)**:
-1. Log the violation in queen-state.md
-2. Mark task with scope creep note in final closure
-3. Check if overlapping work affects queued agents (may need to adjust or cancel)
-4. Continue but document for post-mortem
+**On FAIL (scope creep detected)** (blocks queue progression):
+1. Log the violation in queen-state.md immediately
+2. Do NOT spawn the next queued agent yet
+3. Investigate: check if overlapping work affects queued agents (may need to adjust scope or cancel)
+4. Document the violation and decide on next steps (escalate, adjust queue, or retry agent)
+5. Once resolved, document for post-mortem analysis
 
-**Do NOT retry** — the code is already committed. Focus on documenting and preventing cascade effects.
+Note: FAIL blocks queue progression because scope creep may invalidate queued tasks' work scope. WARN does not block because legitimate build artifacts don't create dependencies.
 
 ---
 
@@ -247,7 +328,13 @@ Compare the actual changes to the summary doc's "Files changed" and "Implementat
 
 ## Check 2: Acceptance Criteria Spot-Check
 Run `bd show {TASK_ID}` to get the task's acceptance criteria.
-Pick the 2 most critical criteria. For each:
+
+**Tie-breaking rule for selecting which criteria to verify** (when multiple criteria exist):
+1. Pick the first 2 criteria listed in the acceptance criteria section, OR
+2. If the summary doc identifies specific criteria as "critical," pick those 2, OR
+3. If fewer than 2 criteria exist, verify all of them
+
+For each selected criterion:
 - Read the actual code that should satisfy this criterion
 - Verify it's genuinely met (not just marked "PASS" in the summary)
 - Quote the specific code that satisfies (or fails to satisfy) each criterion
