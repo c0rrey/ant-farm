@@ -28,7 +28,7 @@ For each task, execute these 6 steps in order:
 ## Step 2: Design (MANDATORY — do not skip)
 Design at least 4 **genuinely distinct** approaches to solve the problem.
 
-**"Distinct" means**: approaches must differ in algorithm, architecture, or data model — not just implementation detail. Each approach must identify a unique tradeoff (e.g., "optimizes for speed at cost of memory" vs. "optimizes for readability at cost of performance"). If two approaches have the same tradeoff profile, they are not distinct.
+**"Distinct" means**: approaches must differ in **algorithm, data structure, or architectural pattern**. Cosmetic variations (same algorithm with different parameters or names) do not count. Example: QuickSort and MergeSort are distinct (different algorithms). QuickSort with different pivot strategies is not distinct (same algorithm, different implementation detail).
 
 For each approach:
 - Describe the strategy in 1-2 sentences
@@ -58,6 +58,7 @@ After implementation, review EVERY file you changed or created:
 ## Step 5: Commit
 - `git pull --rebase && git add <files> && git commit -m "<type>: <description> (<task-id>)"`
 - **MANDATORY**: Include the task ID in parentheses at the end of the commit message (e.g., `fix: handle None input (hs_website-abc)`)
+- **MANDATORY — Conditional Re-Review**: If `git pull --rebase` resolves any merge conflicts, you MUST repeat Step 4 (Per-File Correctness Review) on all files affected by the conflict resolution before committing. Conflict resolution can silently change code semantics. Verify the merged files are correct before proceeding.
 - Record your commit hash in the summary doc (Step 6) so Dirt Moved vs Dirt Claimed (DMVDC) can identify your commits without scanning `git log`
 
 ## Step 6: Write Summary Doc (MANDATORY — do not skip)
