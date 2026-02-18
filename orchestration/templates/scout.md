@@ -139,6 +139,46 @@ Each strategy MUST include:
 Recommend one strategy with explicit rationale (reference specific conflict
 patterns or dependency chains that informed the recommendation).
 
+## Step 5.5: Verify Full Inventory Coverage
+
+**This is a mandatory gate. Do NOT proceed to Step 6 until it passes.**
+
+After proposing strategies, cross-check every strategy against the full ready task inventory
+from Step 2 to confirm no task was silently dropped.
+
+1. **Collect assigned tasks**: For each proposed strategy, union all task IDs across
+   every wave in that strategy. Build one flat list per strategy.
+
+2. **Compare against inventory**: For each strategy, compute:
+   - `assigned_count` = number of unique task IDs in that strategy's wave groupings
+   - `inventory_count` = total number of ready tasks from Step 2
+   - `unassigned` = ready task IDs that appear in the inventory but NOT in this strategy
+
+3. **Pass condition**: `assigned_count == inventory_count` AND `unassigned` is empty
+   for every proposed strategy.
+
+4. **If any strategy fails**:
+   - List the unassigned task IDs explicitly as errors, e.g.:
+     ```
+     ERROR: Strategy A is missing 1 task(s): ant-farm-jv4
+     ```
+   - Add the missing tasks to the appropriate wave before continuing.
+     Small, conflict-free tasks that have no file overlaps with other tasks
+     should be placed in Wave 1 as solo agents unless that would exceed the
+     7-agent limit, in which case defer to the earliest wave with capacity.
+   - Re-verify after adding. Do NOT proceed until all strategies pass.
+
+5. **Record verification result** in a `## Coverage Verification` block immediately
+   after the last proposed strategy in the briefing (Step 6). Format:
+
+   ```
+   ## Coverage Verification
+   - Inventory: {N} ready tasks
+   - Strategy A: {N} assigned — PASS  (or: FAIL — missing: {id-list})
+   - Strategy B: {N} assigned — PASS
+   - Strategy C: {N} assigned — PASS
+   ```
+
 ## Step 6: Write Briefing
 
 Write `{SESSION_DIR}/briefing.md` using this exact format:
@@ -175,6 +215,12 @@ Write `{SESSION_DIR}/briefing.md` using this exact format:
 
 ### Strategy C: {name}
 ...
+
+## Coverage Verification
+- Inventory: {N} ready tasks
+- Strategy A: {N} assigned — PASS
+- Strategy B: {N} assigned — PASS
+- Strategy C: {N} assigned — PASS
 
 ## Metadata
 - Epics: {epic-id-1}, {epic-id-2}, ... (deduplicated list; use `none` for tasks with no epic parent)
