@@ -2,6 +2,55 @@
 
 Pre-flight conflict analysis and agent spawn patterns for parallel orchestration.
 
+## Term Definitions (Canonical)
+
+These definitions apply across all orchestration templates and reference files.
+
+### {TASK_ID}
+
+Full bead ID including project prefix.
+
+**Format**: `<project>-<suffix>` or `<project>-<suffix>.<sub-id>`
+
+**Examples**:
+- `ant-farm-9oa` — full ID, no sub-ID
+- `hs_website-74g.1` — full ID with sub-ID
+
+### {TASK_SUFFIX}
+
+Suffix portion only, extracted from {TASK_ID} by removing the project prefix and any leading dots.
+
+**Extraction rule**: Remove everything up to and including the first hyphen (`-`), then remove any leading dots from remaining characters.
+
+**Regex**: `^[^-]+-(.+)$` → capture group 1, with dots normalized to the numeric suffix pattern
+
+**Algorithm (step-by-step)**:
+1. Locate the first hyphen (`-`) in {TASK_ID}
+2. Remove the project prefix and hyphen: `ant-farm-9oa` → `9oa`
+3. If the remainder contains a dot followed by digits, convert to alphanumeric suffix: `hs_website-74g.1` → `74g.1` → `74g1`
+4. Return the suffix
+
+**Examples**:
+- `ant-farm-9oa` → `9oa` (undotted pattern)
+- `ant-farm-b61` → `b61` (undotted pattern)
+- `hs_website-74g.1` → `74g1` (dotted pattern; dot replaced with final digit)
+- `project-abc.10` → `abc10` (dotted with multi-digit sub-ID)
+
+**Usage context**:
+- File paths: `{SESSION_DIR}/task-metadata/{TASK_SUFFIX}.md`
+- Directories: `{SESSION_DIR}/summaries/{TASK_SUFFIX}.md`
+- Artifact naming: `pc-{TASK_SUFFIX}-cco-{timestamp}.md`
+
+### {SESSION_DIR}
+
+Session artifact directory path containing task metadata, prompts, summaries, and verification checkpoints.
+
+**Format**: `.beads/agent-summaries/_session-<id>`
+
+**Example**: `.beads/agent-summaries/_session-abc123` or `.beads/agent-summaries/_session-3be37d`
+
+---
+
 ## Pre-Flight Checklist
 
 Before spawning any agents:

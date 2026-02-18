@@ -5,6 +5,16 @@ keeping task metadata and conflict analysis out of the Queen's context window.
 
 ---
 
+## Term Definitions
+
+**For canonical extraction rules and detailed examples, see `~/.claude/orchestration/reference/dependency-analysis.md` (Term Definitions section).**
+
+- `{TASK_ID}` — full bead ID including project prefix (e.g., `ant-farm-9oa`, `hs_website-74g.1`)
+- `{TASK_SUFFIX}` — suffix portion only, no project prefix (e.g., `9oa` from `ant-farm-9oa`, or `74g1` from `hs_website-74g.1`). See reference file for extraction algorithm.
+- `{SESSION_DIR}` — session artifact directory path (e.g., `.beads/agent-summaries/_session-abc123`)
+
+---
+
 ## Input
 
 **Session dir**: {SESSION_DIR}
@@ -43,7 +53,9 @@ For each `.md` file, read the YAML frontmatter (`---` delimiters).
 Extract `name` and first sentence of `description`. Skip files without
 valid frontmatter.
 
-**Exclusions** (orchestration agents, not implementation candidates):
+All agents appear in your internal catalog for reference, but implementation candidates are separate from orchestration agents. Orchestration agents (scout, pantry, pest-control, etc.) coordinate the work; they do not implement tasks. Therefore, they are excluded from Dirt Pusher recommendations. Implementation candidates are agents who will execute tasks (python-pro, debugger, etc.).
+
+**Exclusions from Dirt Pusher recommendations** (orchestration agents):
 scout-organizer, pantry-impl, pantry-review, pest-control, nitpicker, big-head
 
 Build an internal catalog (keep in context, do NOT write to disk):
@@ -115,11 +127,14 @@ Using the decision matrix from dependency-analysis.md:
 
 ## Step 5: Propose Strategies
 
-Propose 2-3 execution strategies. Each strategy MUST include:
+Propose 2-3 execution strategies. **Each strategy is a complete, non-overlapping alternative where every ready task appears in exactly one strategy.** This ensures you haven't missed tasks or accidentally grouped them in multiple strategies.
+
+Each strategy MUST include:
 - **Wave groupings**: which specific tasks go in each wave
 - **Agent count per wave**: respecting the max 7 concurrent limit
 - **File conflict handling**: how conflicts are resolved (batching, serialization, rebase)
 - **Risk assessment**: overall risk level and what could go wrong
+- **Coverage**: verify all ready tasks are assigned to exactly one wave across all strategies
 
 Recommend one strategy with explicit rationale (reference specific conflict
 patterns or dependency chains that informed the recommendation).
