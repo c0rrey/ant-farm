@@ -4,26 +4,30 @@
 
 The orchestration system uses custom Claude Code agent types defined in `agents/`. These are synced to `~/.claude/agents/` automatically on `git push` via the pre-push hook.
 
-**First-time setup:** After cloning, run both setup commands:
+**First-time setup:** See `docs/installation-guide.md` for complete installation, sync behavior, backup, and uninstall documentation.
 
+Quick reference:
 ```bash
-# 1. Install the pre-push hook so sync runs automatically on every git push:
-./scripts/install-hooks.sh
-
-# 2. Run the initial sync manually so agents are available right now:
-./scripts/sync-to-claude.sh
+./scripts/install-hooks.sh          # Install the hook
+./scripts/sync-to-claude.sh         # Initial sync to ~/.claude/
+# Then restart Claude Code
 ```
 
-The pre-push hook (`scripts/install-hooks.sh`) writes `.git/hooks/pre-push`, which calls
-`scripts/sync-to-claude.sh` on every `git push`. The versioned hook source lives at
-`.beads/hooks/pre-push` (a bd-shim reference), but the hook installed by this script is the
-working variant that delegates directly to `scripts/sync-to-claude.sh`.
-
-Then **restart Claude Code** (fully quit and reopen) — agent types are loaded at startup and won't appear until the process restarts.
+For details on what gets synced, how to back up `~/.claude/`, and how to uninstall, refer to the full installation guide.
 
 ## Quick Setup (5 minutes)
 
-**Step 1: Add orchestration reference to project CLAUDE.md**
+**Step 1: Install the hook and sync**
+
+For complete details, see `docs/installation-guide.md`. Quick reference:
+
+```bash
+./scripts/install-hooks.sh          # Install pre-push hook
+./scripts/sync-to-claude.sh         # Sync to ~/.claude/
+# Then restart Claude Code
+```
+
+**Step 2: Add orchestration reference to project CLAUDE.md**
 
 ```bash
 cd /path/to/your/project
@@ -50,7 +54,7 @@ Follow orchestration docs for pre-flight planning.
 - [ ] Build succeeds: [your build command]
 ```
 
-**Step 2: Copy session template (optional)**
+**Step 3: Copy session template (optional)**
 
 ```bash
 # Copy from reference project:
@@ -62,7 +66,7 @@ cp ~/projects/hs_website/SESSION_PLAN_TEMPLATE.md .
 # - Line 200: Map file types to agent types
 ```
 
-**Step 3: Test it**
+**Step 4: Test it**
 
 ```bash
 bd create --title="Test orchestration" --type=task --priority=3
@@ -71,7 +75,7 @@ bd create --title="Test orchestration" --type=task --priority=3
 # "Let's get to work on: <task-id>"
 
 # Verify Claude:
-# 1. Runs bd show
+# 1. Spawns the Scout, which runs bd show
 # 2. Analyzes conflicts
 # 3. Presents strategy
 # 4. Waits for approval
