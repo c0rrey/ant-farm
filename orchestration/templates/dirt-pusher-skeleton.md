@@ -14,7 +14,9 @@ Placeholders:
 - {TASK_TYPE}: bead type (bug/feature/task) — from the Scout's briefing
 - {TASK_ID}: full bead ID including project prefix (e.g., ant-farm-9oa)
 - {TASK_SUFFIX}: suffix only, no prefix (e.g., 9oa)
-- {AGENT_TYPE}: subagent_type for Task tool — from the Pantry verdict table (Agent Type column). The Queen MAY override if strategy context warrants it.
+- {AGENT_TYPE}: subagent_type for Task tool — from the Pantry verdict table (Agent Type column).
+  **Authority chain**: Scout recommends → Pantry passes through unchanged → Queen may override.
+  **Queen override**: Allowed only when Scout metadata is demonstrably wrong (e.g., wrong domain, agent type unavailable). Document the override reason in the Queen's state file before spawning. Do NOT override based on preference or guesswork.
 - {DATA_FILE_PATH}: from the Pantry verdict table
 - {SUMMARY_OUTPUT_PATH}: {SESSION_DIR}/summaries/{TASK_SUFFIX}.md
 

@@ -63,7 +63,9 @@ For each task ID in the input list:
 
 3. Read the `**Agent Type**` field from the Scout's task metadata.
    Copy it into the task brief's `**Agent Type**` field and the Step 4
-   output table. Do NOT re-evaluate or override.
+   output table. The Pantry passes this value through unchanged — do NOT re-evaluate it.
+   The Queen decides whether to override at spawn time; override policy is defined in
+   `orchestration/templates/dirt-pusher-skeleton.md` (the {AGENT_TYPE} placeholder description).
 
 4. Write a task brief to `{session-dir}/prompts/task-{TASK_SUFFIX}.md` with this exact format:
 
