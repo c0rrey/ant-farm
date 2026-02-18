@@ -15,6 +15,7 @@ Do NOT use the Task tool for Big Head — it runs inside the same TeamCreate cal
 
 **Step 1 — Fill placeholders before building the TeamCreate call.**
 Replace `{PLACEHOLDER}` values (uppercase) in the agent-facing template below:
+- `{MODEL}`: Big Head model (specified in orchestration/templates/reviews.md line 322; currently `opus`)
 - `{DATA_FILE_PATH}`: Big Head consolidation data file written by the Pantry (review mode)
 - `{CONSOLIDATED_OUTPUT_PATH}`: `{SESSION_DIR}/review-reports/review-consolidated-{TIMESTAMP}.md`
 
@@ -27,11 +28,11 @@ the reports are ready. Example:
 TeamCreate(
   name="nitpicker-team",
   members=[
-    { "name": "clarity-reviewer",      "prompt": "<filled nitpicker template with REVIEW_TYPE=clarity>" },
-    { "name": "edge-cases-reviewer",   "prompt": "<filled nitpicker template with REVIEW_TYPE=edge-cases>" },
-    { "name": "correctness-reviewer",  "prompt": "<filled nitpicker template with REVIEW_TYPE=correctness>" },
-    { "name": "excellence-reviewer",   "prompt": "<filled nitpicker template with REVIEW_TYPE=excellence>" },
-    { "name": "big-head",              "prompt": "<filled big-head template with all 4 expected report paths embedded>" }
+    { "name": "clarity-reviewer",      "prompt": "<filled nitpicker template with REVIEW_TYPE=clarity>", "model": "sonnet" },
+    { "name": "edge-cases-reviewer",   "prompt": "<filled nitpicker template with REVIEW_TYPE=edge-cases>", "model": "sonnet" },
+    { "name": "correctness-reviewer",  "prompt": "<filled nitpicker template with REVIEW_TYPE=correctness>", "model": "sonnet" },
+    { "name": "excellence-reviewer",   "prompt": "<filled nitpicker template with REVIEW_TYPE=excellence>", "model": "sonnet" },
+    { "name": "big-head",              "prompt": "<filled big-head template with all 4 expected report paths embedded>", "model": "{MODEL}" }
   ]
 )
 ```

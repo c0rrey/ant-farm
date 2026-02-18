@@ -42,8 +42,9 @@ After the transition gate passes, the Queen launches **the Nitpickers** using **
 
 ### Model Assignments
 
-- **Big Head (consolidation)**: `opus` — needs judgment for cross-report deduplication, root-cause grouping, and priority calibration
 - **Nitpickers (all 4)**: `sonnet` — sufficient for code review and finding cataloging
+
+(Big Head model is specified in the Big Head Consolidation Protocol section below.)
 
 ### Team Setup
 
@@ -66,7 +67,7 @@ Task IDs for acceptance criteria: <list of all task IDs worked this session>
 2. Edge Cases Review (P2) — see prompt below
 3. Correctness Redux Review (P1-P2) — see prompt below
 4. Excellence Review (P3) — see prompt below
-5. Big Head (consolidation, opus) — see prompt from big-head-skeleton.md
+5. Big Head (consolidation) — see prompt from big-head-skeleton.md; model specified in Big Head Consolidation Protocol section
 ```
 
 **Big Head is spawned as a team member using the big-head-skeleton.md template**, not as a separate Task agent. The Queen fills in the skeleton placeholders and uses the result as the teammate's prompt.
@@ -472,33 +473,38 @@ Before filing beads, confirm Big Head has:
 
 **Prerequisite**: Colony Census Bureau (CCB) must PASS before proceeding.
 
-### Step 1: Present Findings to User
+Big Head writes the consolidated summary to `{session-dir}/review-reports/review-consolidated-<timestamp>.md`.
 
-Show the consolidated summary with:
-- Total issues by priority (P1: X, P2: Y, P3: Z)
-- Root causes identified
-- Deduplication stats (N raw findings → M root causes)
+This section documents the Queen's Step 3c (User Triage) workflow. **The Queen owns this step**, not the review agents.
+The Queen reads Big Head's consolidated summary and follows the procedures below.
 
-### Step 2: Triage P1/P2 Issues
+## Queen's Step 3c: User Triage on P1/P2 Issues
 
-**If P1 or P2 issues found:**
+**Prerequisite**: CCB PASS + consolidated summary written by Big Head
 
-1. **Ask user**: "Reviews found X P1 and Y P2 issues. Should we fix them now, or push and address later?"
+### If P1 or P2 issues found:
 
-2. **If user chooses "fix now"**:
+1. **Present findings to user** with consolidated summary showing:
+   - Total issues by priority (P1: X, P2: Y, P3: Z)
+   - Root causes identified
+   - Deduplication stats (N raw findings → M root causes)
+
+2. **Ask user**: "Reviews found X P1 and Y P2 issues. Should we fix them now, or push and address later?"
+
+3. **If user chooses "fix now"** — Queen spawns fix tasks:
 
    a. **Test-first workflow** (TDD approach):
-      - For each P1/P2 bead, create a test-writing task FIRST
-      - Group test tasks by file (same conflict analysis as original implementation)
-      - Spawn Dirt Pushers (via Task tool, NOT agent teams) to write failing tests
+      - For each P1/P2 bead, Queen creates a test-writing task FIRST
+      - Group test tasks by file (use orchestration/reference/dependency-analysis.md for conflict analysis)
+      - Queen spawns Dirt Pushers (via Task tool, NOT agent teams) to write failing tests
       - Test requirements: Must cover edge cases and failure scenarios, not just happy path
       - Verify tests fail with expected error messages
       - Run `bd close` on test-writing tasks after verification
 
    b. **Implementation workflow**:
-      - For each P1/P2 bead, create a fix implementation task
-      - Group fix tasks by file (use reference/dependency-analysis.md for conflict analysis)
-      - Spawn Dirt Pushers to implement fixes (same 6-step process as original work)
+      - For each P1/P2 bead, Queen creates a fix implementation task
+      - Group fix tasks by file (use orchestration/reference/dependency-analysis.md for conflict analysis)
+      - Queen spawns Dirt Pushers to implement fixes (same 6-step process as original work)
       - Agents must run tests and verify they now PASS
       - Run DMVDC on each fix agent
       - Run `bd close` on fix tasks after DMVDC passes
@@ -507,12 +513,12 @@ Show the consolidated summary with:
       - If fixes touched >3 files or made significant changes, consider re-running Step 3b (the Nitpickers)
       - Otherwise, rely on test verification + DMVDC
 
-3. **If user chooses "push and address later"**:
+4. **If user chooses "push and address later"**:
    - P1/P2 beads already filed during consolidation — they stay open
    - Document in CHANGELOG: "Known issues filed for future work: <list bead IDs>"
-   - Proceed to Step 3 (Handle P3 Issues)
+   - Proceed to Step 4 (Handle P3 Issues and Documentation)
 
-### Step 3: Handle P3 Issues
+### Handle P3 Issues (Queen's Step 4)
 
 **Create "Future Work" epic if needed**:
 ```bash
@@ -527,9 +533,7 @@ bd epic create --title="Future Work" --description="Low-priority polish and impr
 - These can be addressed in future sessions
 - No immediate action required — they're queued for later
 
-### Step 4: Continue to Documentation (RULES.md Step 4)
-
-Proceed with CHANGELOG, README, CLAUDE.md updates.
+After handling P3 issues, proceed to RULES.md Step 4 (Documentation — update CHANGELOG, README, CLAUDE.md).
 
 ## Review Quality Metrics
 
