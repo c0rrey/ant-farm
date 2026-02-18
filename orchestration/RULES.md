@@ -1,5 +1,16 @@
 # Orchestration Rules
 
+## Path Reference Convention
+
+All file paths in this document use **repo-root relative** format: `orchestration/templates/scout.md`.
+
+When code runs at runtime, agent files are synced to `~/.claude/agents/` and orchestration files are
+accessible at `~/.claude/orchestration/templates/scout.md`. To translate repo paths to runtime paths:
+- Replace `orchestration/` with `~/.claude/orchestration/`
+- Replace `agents/` with `~/.claude/agents/`
+
+**In-document shorthand** (e.g., "templates/scout.md") is informal and always refers to the repo-root path with the `orchestration/` prefix implied.
+
 ## Queen Prohibitions (read FIRST)
 
 - **NEVER** run `bd show`, `bd ready`, `bd list`, `bd blocked`, or any `bd` query command — the Scout does this
@@ -16,26 +27,26 @@ Your first instinct will be to "gather context" by running `bd show` on the task
             Then immediately proceed to Step 1.
             Do NOT examine, read, or query any task/issue details.
 
-**Step 1:** Recon — spawn the Scout (`scout-organizer` subagent). Include in its prompt:
+**Step 1:** Recon — Read `{SESSION_DIR}/briefing.md` written by the Scout's previous run, or spawn the Scout
+            (`scout-organizer` subagent) if this is the first session. Include in Scout's prompt:
             (1) `Session directory: <value of SESSION_DIR>`,
             (2) `Mode: <mode>` — derive from the user's message:
                 - User specifies an epic → `epic <epic-id>`
                 - User lists specific tasks → `tasks <id1>, <id2>, ...`
                 - User describes a filter → `filter <description>`
                 - User gives no specific scope (e.g., just "let's get to work") → `ready`
-            (3) the path `~/.claude/orchestration/templates/scout.md` as its
-            instruction file. Do NOT read the scout template yourself.
-            Do NOT run `bd show`, `bd ready`, `bd blocked`, or any other `bd`
-            commands — the Scout handles all task discovery and metadata
-            gathering. WAIT for the Scout to return its briefing verdict,
+            (3) the path `orchestration/templates/scout.md` as its instruction file.
+            Do NOT read the scout template yourself. Do NOT run `bd show`, `bd ready`, `bd blocked`,
+            or any other `bd` commands — the Scout handles all task discovery and metadata gathering.
+            WAIT for the Scout to return its briefing verdict (written to `{SESSION_DIR}/briefing.md`),
             then present the recommended strategy to the user for approval.
 
-**Step 2:** Spawn — Spawn the Pantry (`pantry-impl`) for data files + combined previews
-            (→ templates/pantry.md). Include `Session directory: <value of SESSION_DIR>`
+**Step 2:** Spawn — Spawn the Pantry (`pantry-impl`) for task briefs + combined previews
+            (→ orchestration/templates/pantry.md). Include `Session directory: <value of SESSION_DIR>`
             in Pantry's prompt. Pass preview file paths and SESSION_DIR to Pest Control
-            (`pest-control`) for Colony Cartography Office (CCO); Pest Control reads checkpoints.md itself.
+            (`pest-control`) for Colony Cartography Office (CCO); Pest Control reads orchestration/templates/checkpoints.md itself.
             Only after all CCO PASS: spawn agents using skeleton
-            (→ templates/dirt-pusher-skeleton.md, using Agent Type from Pantry verdict table).
+            (→ orchestration/templates/dirt-pusher-skeleton.md, using Agent Type from Pantry verdict table).
             Prepare next wave (Pantry + Pest Control) WHILE current wave runs.
 
 **Step 3:** Verify — after each agent commits, spawn Pest Control for Wandering Worker Detection (WWD)
@@ -55,11 +66,20 @@ Your first instinct will be to "gather context" by running `bd show` on the task
             Then: spawn the Pantry (`pantry-review`) for review prompts + previews.
             Spawn Pest Control for CCO on review previews.
             Create Nitpicker team with 5 members: 4 reviewers
-            (→ templates/nitpicker-skeleton.md) + Big Head
-            (→ templates/big-head-skeleton.md). Big Head MUST be a team
+            (→ orchestration/templates/nitpicker-skeleton.md) + Big Head
+            (→ orchestration/templates/big-head-skeleton.md). Big Head MUST be a team
             member, NOT a separate Task agent.
             After team completes, spawn Pest Control for DMVDC + Colony Census Bureau (CCB)
-            (pass report paths; Pest Control reads checkpoints.md itself).
+            (pass report paths; Pest Control reads orchestration/templates/checkpoints.md itself).
+
+**Step 3c:** User triage on P1/P2 findings — **MANDATORY if P1 or P2 issues found; SKIP if none**.
+            After CCB PASS (and reviews.md Big Head consolidation completes):
+            1. Read the consolidated review summary (written to {session-dir}/review-reports/)
+            2. Present findings to user with priority breakdown (P1 count, P2 count, P3 count)
+            3. Ask user: "Reviews found X P1 and Y P2 issues. Should we fix them now, or push and address later?"
+            - **If "fix now"**: Follow orchestration/templates/reviews.md L485-514 (test-writing + fix workflow)
+            - **If "push and address later"**: P1/P2 beads stay open; document in CHANGELOG; proceed to Step 4
+            - **If no P1/P2 issues**: Skip to Step 4 directly
 
 **Step 4:** Documentation — update CHANGELOG, README, CLAUDE.md in single commit
 
@@ -88,7 +108,7 @@ big-head-skeleton.md (once per review cycle), verdict tables from the Pantry and
 bd show/ready/blocked output, agent template files (scout.md, pantry.md, etc.)
 — these are agent inputs, not Queen inputs. The Pantry, Pest Control, and Scout read them.
 "Project data files" means application/repo data files, NOT orchestration artifacts. Orchestration artifacts
-(verdict tables, preview files, data files written by Pantry/agents to session dirs) are explicitly PERMITTED
+(verdict tables, preview files, task briefs written by Pantry/agents to session dirs) are explicitly PERMITTED
 and listed in the READ section above.
 
 ## Agent Types
@@ -143,29 +163,29 @@ This prevents collisions when multiple Queens run in the same repo.
 - Re-reading the same metadata — read once, take notes in session state file
 - Pushing mid-session — only push at end (atomic deployment)
 - Updating docs per-agent — batch all doc updates in Step 4
-- Verbose agent prompts — be concise, agents read their own task details from their data file
+- Verbose agent prompts — be concise, agents read their own task details from their task brief
 - Reading implementation.md or checkpoints.md directly — the Pantry and Pest Control read these
 - Running bd show, bd ready, or bd list before spawning the Scout — all task discovery belongs to Step 1, which the Scout owns
 - Reading agent template files (scout.md, dirt-pusher-skeleton.md, etc.) in the Queen's window — pass the path to the agent, let it read its own instructions
 - Running individual checkpoints per agent — spawn one Pest Control with the full batch
-- Composing full agent prompts in the Queen's context — use dirt-pusher-skeleton.md with data file redirect
+- Composing full agent prompts in the Queen's context — use dirt-pusher-skeleton.md with task brief redirect
 
 ## Template Lookup
 
 | Workflow Phase | Read This File |
 |----------------|----------------|
-| Composing agent prompts (Step 2) | templates/pantry.md |
-| Agent skeleton for spawning (Step 2) | templates/dirt-pusher-skeleton.md |
-| Review skeleton for team (Step 3b) | templates/nitpicker-skeleton.md |
-| Big Head skeleton for consolidation (Step 3b) | templates/big-head-skeleton.md |
-| Implementation details (read by the Pantry) | templates/implementation.md |
-| Checkpoint details (read by Pest Control) | templates/checkpoints.md |
-| Review details (read by the Pantry) | templates/reviews.md |
-| Pre-flight recon (Step 1) | templates/scout.md |
-| Conflict patterns (read by the Scout) | reference/dependency-analysis.md |
-| Diagnosing a failure or post-mortem | reference/known-failures.md |
-| Creating/recovering the Queen's state file | templates/queen-state.md |
-| Setting up orchestration in new project | SETUP.md |
+| Composing agent prompts (Step 2) | orchestration/templates/pantry.md |
+| Agent skeleton for spawning (Step 2) | orchestration/templates/dirt-pusher-skeleton.md |
+| Review skeleton for team (Step 3b) | orchestration/templates/nitpicker-skeleton.md |
+| Big Head skeleton for consolidation (Step 3b) | orchestration/templates/big-head-skeleton.md |
+| Implementation details (read by the Pantry) | orchestration/templates/implementation.md |
+| Checkpoint details (read by Pest Control) | orchestration/templates/checkpoints.md |
+| Review details (read by the Pantry) | orchestration/templates/reviews.md |
+| Pre-flight recon (Step 1) | orchestration/templates/scout.md |
+| Conflict patterns (read by the Scout) | orchestration/reference/dependency-analysis.md |
+| Diagnosing a failure or post-mortem | orchestration/reference/known-failures.md |
+| Creating/recovering the Queen's state file | orchestration/templates/queen-state.md |
+| Setting up orchestration in new project | orchestration/SETUP.md |
 
 ## Retry Limits
 

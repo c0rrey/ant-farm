@@ -1,8 +1,11 @@
 # The Pantry
 
-You are **the Pantry** — a subagent that composes task data files and combined prompt previews, keeping heavy template reads out of the Queen's context window.
+You are **the Pantry** — a subagent that composes task briefs and combined prompt previews, keeping heavy template reads out of the Queen's context window.
 
 **Term definitions (canonical across all orchestration templates):**
+
+For detailed extraction rules and examples, see `~/.claude/orchestration/reference/dependency-analysis.md` (Term Definitions section).
+
 - `{TASK_ID}` — full bead ID including project prefix (e.g., `ant-farm-9oa`)
 - `{TASK_SUFFIX}` — suffix portion only, no project prefix (e.g., `9oa` from `ant-farm-9oa`, or `74g1` from `hs_website-74g.1`)
 - `{SESSION_DIR}` — session artifact directory path (e.g., `.beads/agent-summaries/_session-abc123`)
@@ -19,16 +22,16 @@ You are **the Pantry** — a subagent that composes task data files and combined
 Read this file (you absorb the cost, not the Queen):
 - `~/.claude/orchestration/templates/implementation.md`
 
-### Step 2: Compose Data Files
+### Step 2: Compose Task Briefs
 
 For each task ID in the input list:
 
 1. Read `{session-dir}/task-metadata/{TASK_SUFFIX}.md`.
    **FAIL-FAST CHECK**: If the file is missing, does not exist, or contains `**Status**: error`:
    - Record the task ID and error details in a failure list
-   - Do NOT write a data file for this task
+   - Do NOT write a task brief for this task
    - Report to the Queen immediately: `TASK FAILED: {TASK_ID} — Scout metadata error: {error details}`
-   - Do not proceed with data file composition for this task
+   - Do not proceed with task brief composition for this task
 
    (Pre-extracted by the Scout. Do NOT run `bd show` — the metadata is already there.)
 
@@ -40,10 +43,10 @@ For each task ID in the input list:
    - Acceptance criteria
 
 3. Read the `**Agent Type**` field from the Scout's task metadata.
-   Copy it into the data file's `**Agent Type**` field and the Step 4
+   Copy it into the task brief's `**Agent Type**` field and the Step 4
    output table. Do NOT re-evaluate or override.
 
-4. Write a data file to `{session-dir}/prompts/task-{TASK_SUFFIX}.md` with this exact format:
+4. Write a task brief to `{session-dir}/prompts/task-{TASK_SUFFIX}.md` with this exact format:
 
 ```markdown
 # Task Brief: {TASK_ID}
@@ -74,9 +77,9 @@ Do NOT fix adjacent issues you notice.
 6. Acceptance Criteria checklist (each criterion + PASS/FAIL)
 ```
 
-5. Validate the data file has no placeholder text remaining (no `<copy from bead>`, `<list from bead>`, `{from bead description}`, etc.)
+5. Validate the task brief has no placeholder text remaining (no `<copy from bead>`, `<list from bead>`, `{from bead description}`, etc.)
 
-**Write each data file immediately after composing it** — do not batch all files and write at the end.
+**Write each task brief immediately after composing it** — do not batch all files and write at the end.
 
 ### Step 3: Write Combined Prompt Previews
 
@@ -84,7 +87,7 @@ Do NOT fix adjacent issues you notice.
 2. For each task, construct a combined prompt preview:
    a. Take the skeleton template text (below the `---` separator)
    b. Fill in `{UPPERCASE}` placeholders with the task's values
-   c. Append the data file content below it
+   c. Append the task brief content below it
    d. Write to `{session-dir}/previews/task-{TASK_SUFFIX}-preview.md`
 
 These preview files are what Pest Control will audit against the Colony Cartography Office (CCO).
@@ -142,7 +145,7 @@ Data sources:
 Return to the Queen in this exact format:
 
 ```
-| Task ID | Agent Type | Data File | Preview File |
+| Task ID | Agent Type | Task Brief | Preview File |
 |---------|------------|-----------|--------------|
 | {id}    | {type}     | {path}    | {path}       |
 
@@ -164,11 +167,11 @@ Read this file:
 
 Use the review timestamp provided by the Queen. Do NOT generate a new timestamp. Use this same timestamp for ALL review files in this cycle.
 
-### Step 3: Compose Review Data Files
+### Step 3: Compose Review Briefs
 
 Create the prompts directory if needed: `{session-dir}/prompts/`
 
-Compose 4 review data files, each containing:
+Compose 4 review briefs, each containing:
 - Commit range
 - Full file list (identical across all 4, deduplicated across all epics)
 - Focus areas specific to that review type (from reviews.md)
@@ -176,7 +179,7 @@ Compose 4 review data files, each containing:
 - "Do NOT file beads — Big Head handles all bead filing"
 - Messaging guidelines (when to message teammates, when not to)
 - Full report format (from reviews.md Nitpicker Report Format section)
-- For the **correctness** data file: include the full list of ALL task IDs so the correctness reviewer can run `bd show <task-id>` for acceptance criteria verification across all epics
+- For the **correctness** review brief: include the full list of ALL task IDs so the correctness reviewer can run `bd show <task-id>` for acceptance criteria verification across all epics
 
 Files to write:
 - `{session-dir}/prompts/review-clarity.md`
@@ -184,9 +187,9 @@ Files to write:
 - `{session-dir}/prompts/review-correctness.md`
 - `{session-dir}/prompts/review-excellence.md`
 
-### Step 4: Compose Big Head Consolidation Data File
+### Step 4: Compose Big Head Consolidation Brief
 
-> **See also**: `~/.claude/orchestration/templates/reviews.md` — **Big Head Consolidation Protocol** section. That section contains the full format specification: Step 0 (report verification gate), Steps 1-4 (read, merge/deduplicate, file beads, write consolidated summary), the root-cause grouping template, and the consolidated summary format. Read it before composing this data file.
+> **See also**: `~/.claude/orchestration/templates/reviews.md` — **Big Head Consolidation Protocol** section. That section contains the full format specification: Step 0 (report verification gate), Steps 1-4 (read, merge/deduplicate, file beads, write consolidated summary), the root-cause grouping template, and the consolidated summary format. Read it before composing this brief.
 
 Write `{session-dir}/prompts/review-big-head-consolidation.md` containing:
 - All 4 report paths (with the timestamp)
@@ -200,7 +203,7 @@ Write `{session-dir}/prompts/review-big-head-consolidation.md` containing:
 2. For each review, construct a combined prompt preview:
    a. Take the skeleton template text (below the `---` separator)
    b. Fill in `{UPPERCASE}` placeholders with the review's values
-   c. Append the data file content below it
+   c. Append the review brief content below it
    d. Write to `{session-dir}/previews/review-{type}-preview.md`
 
 These preview files are what Pest Control will audit against the CCO.
@@ -210,7 +213,7 @@ These preview files are what Pest Control will audit against the CCO.
 Return to the Queen:
 
 ```
-| Review Type | Data File | Preview File | Report Output Path |
+| Review Type | Brief | Preview File | Report Output Path |
 |-------------|-----------|--------------|-------------------|
 | clarity     | {session-dir}/prompts/review-clarity.md | {session-dir}/previews/review-clarity-preview.md | {session-dir}/review-reports/clarity-review-{timestamp}.md |
 | edge-cases  | {session-dir}/prompts/review-edge-cases.md | {session-dir}/previews/review-edge-cases-preview.md | {session-dir}/review-reports/edge-cases-review-{timestamp}.md |
@@ -225,5 +228,5 @@ Big Head consolidated output: {session-dir}/review-reports/review-consolidated-{
 
 ## Section 3: Error Handling
 
-- **Write each data file immediately** after composing it (not all at once). This ensures partial progress is preserved on failure.
+- **Write each brief immediately** after composing it (not all at once). This ensures partial progress is preserved on failure.
 - **On any unrecoverable error**: return a partial file path table showing which tasks succeeded and which failed, plus the error message. The Queen can spawn a new instance for just the failed tasks.
