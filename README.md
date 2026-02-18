@@ -36,12 +36,12 @@ Generate a session ID, create the session directory and `task-metadata/` subdire
 
 ### Step 1: Recon
 
-The Queen spawns **the Scout** (`templates/scout.md`), a sonnet subagent that performs all pre-flight reconnaissance:
+The Queen spawns **the Scout** (`orchestration/templates/scout.md`), a sonnet subagent that performs all pre-flight reconnaissance:
 
 1. Discovers tasks (from epic, explicit list, or natural-language filter)
 2. Runs `bd ready` and `bd blocked` to separate ready vs. blocked tasks
 3. Runs `bd show` per task and writes per-task metadata files to `{session-dir}/task-metadata/`
-4. Builds a file modification matrix and assesses conflict risk using `reference/dependency-analysis.md`
+4. Builds a file modification matrix and assesses conflict risk using `orchestration/reference/dependency-analysis.md`
 5. Scans `~/.claude/agents/` and `.claude/agents/` to discover available agent types, then recommends the best specialist per task
 6. Proposes 2-3 execution strategies with wave groupings, agent counts, and risk assessments
 7. Writes `{session-dir}/briefing.md` — a ~40-line summary the Queen presents to the user
@@ -51,14 +51,14 @@ The Queen reads the briefing, presents the strategy options, and **waits for use
 ### Step 2: Spawn implementation agents
 
 The Queen delegates prompt composition to **the Pantry**, a subagent that:
-1. Reads `templates/implementation.md` (keeping it out of the Queen's context)
+1. Reads `orchestration/templates/implementation.md` (keeping it out of the Queen's context)
 2. Extracts pre-digested context from each task (affected files, root cause, acceptance criteria)
 3. Copies the agent type recommendation from the Scout's task metadata (the Scout selects agent types dynamically based on available agents)
 4. Writes a data file per task with scope boundaries, agent type, and explicit off-limits areas
 5. Writes combined prompt previews (skeleton + data file) to `{session-dir}/previews/`
 6. Returns a file path table — task IDs, agent types, data files, and preview files
 
-The Queen then spawns **Pest Control** to audit the preview files against the **Colony Cartography Office (CCO)** checkpoint. Pest Control reads `templates/checkpoints.md` itself, audits each preview, writes reports, and returns a verdict table. The Queen only spawns agents with PASS verdicts.
+The Queen then spawns **Pest Control** to audit the preview files against the **Colony Cartography Office (CCO)** checkpoint. Pest Control reads `orchestration/templates/checkpoints.md` itself, audits each preview, writes reports, and returns a verdict table. The Queen only spawns agents with PASS verdicts.
 
 ```
 Queen                          Pantry                    Pest Control
@@ -87,7 +87,7 @@ Queen                          Pantry                    Pest Control
   ├──spawn Dirt Pushers (up to 7)──►                         │
 ```
 
-The Queen then spawns agents using `templates/dirt-pusher-skeleton.md`, a minimal template that points the agent to its data file. Each agent is spawned with the specialist `subagent_type` recommended by the Pantry (e.g., `python-pro` for `.py` files, `debugger` for investigation bugs). Each agent executes 6 mandatory steps:
+The Queen then spawns agents using `orchestration/templates/dirt-pusher-skeleton.md`, a minimal template that points the agent to its data file. Each agent is spawned with the specialist `subagent_type` recommended by the Pantry (e.g., `python-pro` for `.py` files, `debugger` for investigation bugs). Each agent executes 6 mandatory steps:
 
 1. **Claim** — `bd show` + `bd update --status=in_progress`
 2. **Design** — 4+ genuinely distinct approaches with tradeoffs (not cosmetic variations)
@@ -105,7 +105,7 @@ After each wave completes, the Queen spawns **Pest Control** directly for post-w
 - **Wandering Worker Detection (WWD)** (scope verification) — compares files changed in the commit against expected scope from the task. Catches scope creep between agents before it cascades.
 - **Dirt Moved vs Dirt Claimed (DMVDC)** (substance verification) — reads the agent's summary doc and cross-checks claims against the actual git diff: Do the claimed file changes exist? Are acceptance criteria genuinely met? Are the 4 design approaches substantively distinct? Is the correctness review specific or boilerplate?
 
-Pest Control reads `templates/checkpoints.md`, task metadata, and git diffs itself — the Queen only passes task IDs, commit hashes, and summary doc paths.
+Pest Control reads `orchestration/templates/checkpoints.md`, task metadata, and git diffs itself — the Queen only passes task IDs, commit hashes, and summary doc paths.
 
 ```
 Queen                                              Pest Control
@@ -256,7 +256,7 @@ All checkpoint artifacts are written to `<session-dir>/pc/` with timestamped fil
 
 ## Known failure modes
 
-Documented in `reference/known-failures.md`. Key incidents that shaped the system:
+Documented in `orchestration/reference/known-failures.md`. Key incidents that shaped the system:
 
 **Skipped design and review steps** (Epic 3) — Agents bypassed the mandatory design (4 approaches) and correctness review steps. Fix: DMVDC now verifies substance, not just completion claims.
 
@@ -297,6 +297,18 @@ The `.beads/issues.jsonl` file is the issue database for **this** project's deve
    ```
 
 The `.beads/issues.jsonl` in this repo contains sample issues from ant-farm's own development history. They are included as reference material showing how the system has been used but are not required for operation. Running `bd init` replaces them with a fresh database.
+
+## Path reference convention
+
+All file paths in this document and `orchestration/RULES.md` use **repo-root relative** format:
+`orchestration/templates/scout.md`, `agents/scout-organizer.md`, etc.
+
+When code runs at runtime, agent files are synced to `~/.claude/agents/` and orchestration files are
+accessible at `~/.claude/orchestration/templates/scout.md`. To translate repo paths to runtime paths:
+- Replace `orchestration/` with `~/.claude/orchestration/`
+- Replace `agents/` with `~/.claude/agents/`
+
+Informal shorthand (e.g., "templates/scout.md") is informal and always refers to repo-root paths with the `orchestration/` prefix implied.
 
 ## File reference
 

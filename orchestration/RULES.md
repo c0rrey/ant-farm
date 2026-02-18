@@ -15,10 +15,40 @@ accessible at `~/.claude/orchestration/templates/scout.md`. To translate repo pa
 
 - **NEVER** run `bd show`, `bd ready`, `bd list`, `bd blocked`, or any `bd` query command — the Scout does this
 - **NEVER** read source code, tests, project data files, or config files — agents do this
-- **NEVER** read agent template files (scout.md, pantry.md, etc.) — pass the path to the agent, let it read its own instructions
+- **NEVER** read agent **instruction files** (scout.md, pantry.md, implementation.md, checkpoints.md, reviews.md, etc.) — pass the path to the agent, let it read its own instructions
 
 Your first instinct will be to "gather context" by running `bd show` on the task list.
 **Do not do this.** Spawn the Scout and let it gather context for you.
+
+## Queen Read Permissions
+
+The Queen's window is restricted to prevent context bloat, but certain files are explicitly PERMITTED.
+
+**PERMITTED (Queen must read these):**
+- `{SESSION_DIR}/briefing.md` — Scout-generated strategy summary, required for Step 1 approval decision
+- `{SESSION_DIR}/task-metadata/*.md` — Per-task scope, acceptance criteria (pre-digested by Scout)
+- `{SESSION_DIR}/previews/*.md` — Combined prompt previews (pre-digested by Pantry)
+- `{SESSION_DIR}/review-reports/*.md` — Individual reviewer reports and Big Head consolidated summary
+- Verdict tables from Pantry and Pest Control — CCO, WWD, DMVDC, CCB verdicts
+- Commit messages and git status/log/diff --stat output
+- Agent notifications (as they complete)
+
+**PERMITTED (Queen reads once per phase, for context only):**
+- `orchestration/templates/dirt-pusher-skeleton.md` — Once per implementation wave (skeleton structure)
+- `orchestration/templates/nitpicker-skeleton.md` — Once per review cycle (skeleton structure)
+- `orchestration/templates/big-head-skeleton.md` — Once per review cycle (skeleton structure)
+- Project's `CLAUDE.md` — Global project rules
+
+**FORBIDDEN (agents read; Queen never reads):**
+- `orchestration/templates/scout.md` — Scout's instruction file
+- `orchestration/templates/pantry.md` — Pantry's instruction file
+- `orchestration/templates/implementation.md` — Implementation details (read by Pantry)
+- `orchestration/templates/checkpoints.md` — Checkpoint definitions (read by Pest Control)
+- `orchestration/templates/reviews.md` — Review protocol (read by Pantry in review mode)
+- `orchestration/reference/dependency-analysis.md` — Used by Scout for conflict analysis
+- `orchestration/reference/known-failures.md` — Reference material; for post-mortem only
+- Source code files, tests, project configs, application data files
+- Raw `bd show`, `bd ready`, `bd blocked`, `bd list` output (let the Scout digest this)
 
 ## Workflow: "Let's Get to Work"
 
@@ -100,16 +130,14 @@ Your first instinct will be to "gather context" by running `bd show` on the task
 
 ## Information Diet (The Queen's Window)
 
-**READ:** briefing.md (from the Scout, in Step 1), git status/log/diff --stat, agent notifications,
-commit messages, dirt-pusher-skeleton.md (once per wave), nitpicker-skeleton.md (once per review cycle),
-big-head-skeleton.md (once per review cycle), verdict tables from the Pantry and Pest Control
+The Queen's read permissions are defined explicitly in the "Queen Read Permissions" section above.
 
-**DO NOT READ:** source code, tests, project data files, configs, implementation.md, checkpoints.md, reviews.md,
-bd show/ready/blocked output, agent template files (scout.md, pantry.md, etc.)
-— these are agent inputs, not Queen inputs. The Pantry, Pest Control, and Scout read them.
-"Project data files" means application/repo data files, NOT orchestration artifacts. Orchestration artifacts
-(verdict tables, preview files, task briefs written by Pantry/agents to session dirs) are explicitly PERMITTED
-and listed in the READ section above.
+**Quick summary**:
+- **READ**: Briefing, verdict tables, skeleton files, orchestration artifacts from session dir, git log
+- **DO NOT READ**: Agent instruction files, source code, tests, configs, implementation details
+- **Permitted**: Pre-digested artifacts written by Pantry/Scout to session directories
+
+For the complete detailed list and rationale, see "Queen Read Permissions" above.
 
 ## Agent Types
 
