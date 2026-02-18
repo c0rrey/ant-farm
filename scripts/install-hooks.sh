@@ -3,9 +3,10 @@
 #
 # Usage: ./scripts/install-hooks.sh
 #
-# This script installs the pre-push hook that triggers sync-to-claude.sh
-# on every `git push`. The hook keeps ~/.claude/ in sync with the versioned
-# agents/, orchestration/, and CLAUDE.md files in this repo.
+# This script installs:
+#   - pre-push hook: triggers sync-to-claude.sh on every `git push`
+#   - pre-commit hook: runs scrub-pii.sh to strip email addresses from
+#     issues.jsonl before any commit, preventing PII from entering git history
 #
 # Safe to re-run: backs up any existing hook before overwriting.
 
@@ -13,14 +14,16 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 HOOKS_DIR="$REPO_ROOT/.git/hooks"
-HOOK_TARGET="$HOOKS_DIR/pre-push"
 
 if [[ ! -d "$HOOKS_DIR" ]]; then
     echo "ERROR: .git/hooks directory not found. Are you in a git repo?" >&2
     exit 1
 fi
 
-# Back up any existing hook so nothing is silently overwritten.
+# ── pre-push hook ──────────────────────────────────────────────────────────────
+
+HOOK_TARGET="$HOOKS_DIR/pre-push"
+
 if [[ -f "$HOOK_TARGET" ]]; then
     BACKUP="$HOOK_TARGET.bak"
     echo "Existing pre-push hook found — backing up to $BACKUP"
@@ -42,6 +45,44 @@ fi
 HOOK
 
 chmod +x "$HOOK_TARGET"
-
 echo "Installed pre-push hook -> $HOOK_TARGET"
 echo "The hook will run scripts/sync-to-claude.sh on every git push."
+
+# ── pre-commit hook (PII scrub) ────────────────────────────────────────────────
+
+PRECOMMIT_TARGET="$HOOKS_DIR/pre-commit"
+
+if [[ -f "$PRECOMMIT_TARGET" ]]; then
+    BACKUP="$PRECOMMIT_TARGET.bak"
+    echo "Existing pre-commit hook found — backing up to $BACKUP"
+    cp "$PRECOMMIT_TARGET" "$BACKUP"
+fi
+
+cat > "$PRECOMMIT_TARGET" <<'HOOK'
+#!/usr/bin/env bash
+# pre-commit: scrub PII from issues.jsonl before each commit.
+# bd sync exports raw email addresses from the database; this hook
+# ensures they are stripped before the file enters git history.
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+SCRUB_SCRIPT="$REPO_ROOT/scripts/scrub-pii.sh"
+ISSUES_FILE="$REPO_ROOT/.beads/issues.jsonl"
+
+if [[ ! -x "$SCRUB_SCRIPT" ]]; then
+    echo "[ant-farm] WARNING: scrub-pii.sh not found or not executable — skipping PII scrub." >&2
+    exit 0
+fi
+
+# Only run the scrub if issues.jsonl is staged for this commit.
+if git diff --cached --name-only | grep -q "^\.beads/issues\.jsonl$"; then
+    "$SCRUB_SCRIPT"
+    # Re-stage the scrubbed file so the clean version is what gets committed.
+    git add "$ISSUES_FILE"
+    echo "[ant-farm] PII scrub applied and re-staged: .beads/issues.jsonl"
+fi
+HOOK
+
+chmod +x "$PRECOMMIT_TARGET"
+echo "Installed pre-commit hook -> $PRECOMMIT_TARGET"
+echo "The hook will run scripts/scrub-pii.sh before committing .beads/issues.jsonl."
