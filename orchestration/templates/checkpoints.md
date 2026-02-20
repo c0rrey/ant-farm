@@ -47,7 +47,7 @@ This section provides a unified reference for all checkpoint verdict definitions
 
 ### Common Verdict Definitions
 
-All checkpoints use three verdict states:
+All checkpoints use the following verdict states:
 
 **PASS**: Verification succeeded. No action required. Proceed to next phase.
 
@@ -55,6 +55,8 @@ All checkpoints use three verdict states:
 - CCO WARN: Small file exception approved. Queen reviews and approves before spawn.
 - WWD WARN: Legitimate extra files. Soft gate — does not block queue. Queen approves concurrently.
 - DMVDC WARN: Partial failures detected. Agent can repair and resubmit.
+
+**PARTIAL** (DMVDC and CCB only): Some checks failed. Agent can repair and resubmit, or consolidation can be amended. Does not escalate to user.
 
 **FAIL**: Verification failed. Blocking issue detected. Pause and remediate before continuing.
 
@@ -65,9 +67,9 @@ All checkpoints use three verdict states:
 | **CCO (Dirt Pushers)** | Small file = <100 lines | First-listed section/function | WARN does not block; Queen approves before spawn |
 | **CCO (Nitpickers)** | All round-active prompts identical file list (round 1: 4; round 2+: 2) | (No tie-breaking) | FAIL blocks spawn |
 | **WWD** | Small file = <100 lines | First-listed changed file | WARN does not block queue; FAIL blocks queue |
-| **DMVDC (Dirt Pushers)** | Pick 2 criteria: first-listed OR identified-as-critical OR all if <2 | First-listed acceptance criterion | WARN allows resubmission; FAIL escalates |
-| **DMVDC (Nitpickers)** | Sample size = max(3, min(5, ceil(N/3))) | Include highest-severity + all tiers | WARN allows resubmission; FAIL escalates |
-| **CCB** | Finding count must reconcile to 100% | Earliest-filed bead per root cause | FAIL blocks user presentation |
+| **DMVDC (Dirt Pushers)** | Pick 2 criteria: first-listed OR identified-as-critical OR all if <2 | First-listed acceptance criterion | PARTIAL allows resubmission; FAIL escalates |
+| **DMVDC (Nitpickers)** | Sample size = max(3, min(5, ceil(N/3))) | Include highest-severity + all tiers | PARTIAL allows resubmission; FAIL escalates |
+| **CCB** | Finding count must reconcile to 100% | Earliest-filed bead per root cause | PARTIAL: fix and re-run; FAIL blocks user presentation |
 
 ### Details by Checkpoint
 
