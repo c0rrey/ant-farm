@@ -35,7 +35,7 @@ fi
 PII_PATTERN='[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}'
 
 if $CHECK_ONLY; then
-    if grep -qE "\"$PII_PATTERN\"" "$ISSUES_FILE" 2>/dev/null; then
+    if grep -qE "$PII_PATTERN" "$ISSUES_FILE" 2>/dev/null; then
         echo "[scrub-pii] FAIL: PII (email addresses) found in $ISSUES_FILE" >&2
         exit 1
     else
@@ -47,10 +47,10 @@ fi
 # Replace email addresses in JSON string values with the non-PII token "ctc".
 # Uses perl for reliable in-place editing on macOS (BSD sed -i requires an
 # extension argument; perl -i works cross-platform).
-perl -i -pe 's/"([a-zA-Z0-9._%+\-]+\@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})"/"ctc"/g' "$ISSUES_FILE"
+perl -i -pe 's/[a-zA-Z0-9._%+\-]+\@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/ctc/g' "$ISSUES_FILE"
 
-if grep -qE '"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"' "$ISSUES_FILE" 2>/dev/null; then
-    REMAINING=$(grep -cE '"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"' "$ISSUES_FILE" 2>/dev/null)
+if grep -qE '[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}' "$ISSUES_FILE" 2>/dev/null; then
+    REMAINING=$(grep -cE '[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}' "$ISSUES_FILE" 2>/dev/null)
     echo "[scrub-pii] WARNING: $REMAINING email patterns still present after scrub." >&2
     exit 1
 fi
