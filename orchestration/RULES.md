@@ -248,7 +248,6 @@ For the complete detailed list and rationale, see "Queen Read Permissions" above
 |-------|---------------|-----------|
 | Scout | `scout-organizer` | Custom agent: agent-organizer + Bash for bd CLI |
 | Pantry (impl) | `pantry-impl` | Custom agent: CCO-aligned implementation prompt composer (also assembles review skeletons via compose-review-skeletons.sh) |
-| ~~Pantry (review)~~ | ~~`pantry-review`~~ | **Deprecated**: replaced by `fill-review-slots.sh` bash script called directly by Queen in Step 3b |
 | Pest Control | `pest-control` | Custom agent: verification auditor, catches fabrication + scope creep |
 | Dirt Pushers | from Pantry verdict table | Specialist per task — Scout recommends via dynamic agent discovery, Pantry passes through |
 | Nitpickers | `nitpicker` | Custom agent: file:line specificity, calibrated severity, complete coverage |
@@ -262,7 +261,6 @@ Every `Task` tool call the Queen makes MUST include the `model` parameter from t
 |-------|-------------|-------|-------|
 | Scout | Task (`scout-organizer`) | opus | Orchestration role |
 | Pantry (impl) | Task (`pantry-impl`) | opus | Prompt composition + review skeleton assembly (Script 1) |
-| ~~Pantry (review)~~ | ~~Task (`pantry-review`)~~ | ~~opus~~ | **Deprecated**: use `fill-review-slots.sh` bash script instead (Step 3b) |
 | Dirt Pushers | Task (dynamic type) | sonnet | All dirt pushers regardless of subagent_type |
 | PC — CCO | Task (`pest-control`) | haiku | Mechanical checklist |
 | PC — WWD | Task (`pest-control`) | haiku | Mechanical file comparison |
