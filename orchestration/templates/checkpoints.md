@@ -450,7 +450,7 @@ Where:
 
 ## Colony Census Bureau (CCB): Consolidation Audit
 
-**When**: After Big Head consolidation (after all 4 review reports merged and beads filed)
+**When**: After Big Head consolidation (after all review reports merged and beads filed — 4 reports in round 1, 2 in round 2+)
 **Model**: `haiku` (mechanical counting + record-checking)
 **Agent type**: `code-reviewer`
 
@@ -464,27 +464,40 @@ You are **Pest Control**, the verification subagent. Your role is to audit Big H
 Audit the review consolidation for completeness, accuracy, and traceability.
 
 **Consolidated summary**: `{SESSION_DIR}/review-reports/review-consolidated-{timestamp}.md`
-**Individual reports**: (The Queen provides exact filenames in the consolidation prompt.)
+**Individual reports**: (The Queen provides exact filenames and the review round number in the consolidation prompt.)
+
+Round 1:
 - `{SESSION_DIR}/review-reports/clarity-review-{timestamp}.md`
 - `{SESSION_DIR}/review-reports/edge-cases-review-{timestamp}.md`
 - `{SESSION_DIR}/review-reports/correctness-review-{timestamp}.md`
 - `{SESSION_DIR}/review-reports/excellence-review-{timestamp}.md`
 
-Read all 5 documents, then perform these 8 checks:
+Round 2+:
+- `{SESSION_DIR}/review-reports/correctness-review-{timestamp}.md`
+- `{SESSION_DIR}/review-reports/edge-cases-review-{timestamp}.md`
+
+Read all documents (round 1: 5 total = 4 reports + consolidated; round 2+: 3 total = 2 reports + consolidated), then perform these 8 checks:
 
 ## Check 0: Report Existence Verification
-Verify exactly 4 report files exist at their expected paths (the Queen provides exact filenames):
+Verify the expected report files exist at their paths. The expected count depends on the review round:
+
+**Round 1** — verify exactly 4 report files:
 - `{SESSION_DIR}/review-reports/clarity-review-{timestamp}.md`
 - `{SESSION_DIR}/review-reports/edge-cases-review-{timestamp}.md`
 - `{SESSION_DIR}/review-reports/correctness-review-{timestamp}.md`
 - `{SESSION_DIR}/review-reports/excellence-review-{timestamp}.md`
-If any file is missing, FAIL immediately — consolidation should not have proceeded.
+
+**Round 2+** — verify exactly 2 report files:
+- `{SESSION_DIR}/review-reports/correctness-review-{timestamp}.md`
+- `{SESSION_DIR}/review-reports/edge-cases-review-{timestamp}.md`
+
+If any expected file is missing, FAIL immediately — consolidation should not have proceeded.
 
 ## Check 1: Finding Count Reconciliation
-Count total findings across all 4 individual reports.
+Count total findings across all individual reports (4 in round 1, 2 in round 2+).
 Count total findings referenced in the consolidated summary.
 Every finding must be accounted for — either standalone, merged into a group, or explicitly marked as duplicate in the deduplication log.
-Report the math: "Clarity: N, Edge Cases: N, Correctness: N, Excellence: N = TOTAL total. Consolidated references TOTAL findings across N root causes. N findings merged as duplicates. RECONCILED / NOT RECONCILED — {list orphaned findings}"
+Report the math: "Round 1: Clarity: N, Edge Cases: N, Correctness: N, Excellence: N = TOTAL total. Round 2+: Correctness: N, Edge Cases: N = TOTAL total. Consolidated references TOTAL findings across N root causes. N findings merged as duplicates. RECONCILED / NOT RECONCILED — {list orphaned findings}"
 
 ## Check 2: Bead Existence Check
 For each bead ID in the consolidated summary, run `bd show <id>`.
