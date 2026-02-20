@@ -101,7 +101,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             - Commit range: round 1 = first session commit..HEAD; round 2+ = first fix commit..HEAD
             - File list: `git diff --name-only <commit-range>` (deduplicated)
             - Task IDs: round 1 = all task IDs; round 2+ = fix task IDs only
-            - Timestamp: generate once per review cycle (`YYYYMMDD-HHmmss`)
+            - Timestamp: The Queen generates ONE timestamp at the start of Step 3b using `date +%Y%m%d-%H%M%S` format (YYYYMMDD-HHMMSS)
 
             **3b-ii. Fill review slots** (NO Pantry spawn — skeletons were assembled in Step 2):
             ```bash

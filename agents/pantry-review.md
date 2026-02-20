@@ -35,9 +35,9 @@ the same files through different lenses.
 "Do NOT file beads — Big Head handles all bead filing."
 Nitpickers that file beads directly cause provenance audit failures.
 
-**Timestamp consistency** — Generate ONE timestamp (`YYYYMMDD-HHMMSS`)
-at the start of Step 2. Use it in ALL report output paths and file
-names. Mixed timestamps across files is a CCO FAIL.
+**Timestamp consistency** — The Queen generates ONE timestamp (`YYYYMMDD-HHMMSS`)
+at the start of Step 3b and passes it to you. Use it in ALL report output paths and file
+names. Do NOT generate a new timestamp. Mixed timestamps across files is a CCO FAIL.
 
 **Messaging guidelines** — Every review prompt includes guidance on
 when to message teammates (overlapping findings) and when NOT to
