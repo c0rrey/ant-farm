@@ -95,12 +95,15 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             - Epic IDs: all epics worked on this session (for context only)
             Then: spawn the Pantry (`pantry-review`) for review prompts + previews.
             Spawn Pest Control for CCO on review previews.
-            Create Nitpicker team with 5 members: 4 reviewers
+            Create Nitpicker team with 6 members: 4 reviewers
             (→ orchestration/templates/nitpicker-skeleton.md) + Big Head
-            (→ orchestration/templates/big-head-skeleton.md). Big Head MUST be a team
-            member, NOT a separate Task agent.
-            After team completes, spawn Pest Control for DMVDC + Colony Census Bureau (CCB)
-            (pass report paths; Pest Control reads orchestration/templates/checkpoints.md itself).
+            (→ orchestration/templates/big-head-skeleton.md) + Pest Control.
+            Big Head MUST be a team member, NOT a separate Task agent.
+            Pest Control MUST be a team member so Big Head can SendMessage to it directly
+            for checkpoint validation before filing beads (see reviews.md Step 4 and
+            big-head-skeleton.md steps 8-9). No review content enters the Queen's window.
+            After team completes, the DMVDC and CCB checkpoints have already run inside
+            the team — no separate post-team Pest Control spawn is needed for those checks.
 
 **Step 3c:** User triage on P1/P2 findings — **MANDATORY if P1 or P2 issues found; SKIP if none**.
             After CCB PASS (and reviews.md Big Head consolidation completes):

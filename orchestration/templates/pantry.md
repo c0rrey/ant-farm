@@ -244,13 +244,14 @@ Files to write:
 
 ### Step 4: Compose Big Head Consolidation Brief
 
-> **See also**: `~/.claude/orchestration/templates/reviews.md` — **Big Head Consolidation Protocol** section. That section contains the full format specification: Step 0 (report verification gate), Steps 1-4 (read, merge/deduplicate, file beads, write consolidated summary), the root-cause grouping template, and the consolidated summary format. Read it before composing this brief.
+> **See also**: `~/.claude/orchestration/templates/reviews.md` — **Big Head Consolidation Protocol** section. That section contains the full format specification: Step 0 (report verification gate), Steps 1-2 (read, merge/deduplicate), Step 3 (write consolidated summary), Step 4 (await Pest Control checkpoint validation, then file beads), the root-cause grouping template, and the consolidated summary format. Read it before composing this brief.
 
 Write `{session-dir}/prompts/review-big-head-consolidation.md` containing:
 - All 4 report paths (with the timestamp)
 - Deduplication protocol (from reviews.md Big Head Consolidation Protocol)
-- Bead filing instructions
+- Bead filing instructions (note: Big Head must NOT file beads until Pest Control confirms via team message — see reviews.md Step 4 and big-head-skeleton.md steps 8-9)
 - Consolidated output path: `{session-dir}/review-reports/review-consolidated-{timestamp}.md`
+- Pest Control coordination note: after writing the consolidated summary, Big Head sends the report path to Pest Control (team member) via SendMessage and awaits verdict before filing any beads
 
 ### Step 5: Write Combined Review Previews
 

@@ -62,8 +62,12 @@ Your workflow:
 4. Deduplicate: merge findings about the same issue across reviewers
 5. Group by root cause: one group per underlying problem, not per occurrence
 6. For each merge, document WHY findings share a root cause
-7. File ONE bead per root cause: `bd create --type=bug --priority=<P> --title="<title>"`
-8. Write consolidated summary to {CONSOLIDATED_OUTPUT_PATH}
+7. Write consolidated summary to {CONSOLIDATED_OUTPUT_PATH}
+8. Send consolidated report path to Pest Control (SendMessage): "Consolidated report ready at {CONSOLIDATED_OUTPUT_PATH}. Please run DMVDC and CCB checkpoints and reply with verdict."
+   - Do NOT file any beads before receiving Pest Control's reply
+9. Await Pest Control verdict:
+   - **PASS**: File ONE bead per root cause: `bd create --type=bug --priority=<P> --title="<title>"`
+   - **FAIL**: Escalate to Queen with specifics (which findings failed, why); file beads ONLY for validated findings
 
 Your output MUST include (see brief for full format):
 - Root cause groups with all affected surfaces and merge rationale

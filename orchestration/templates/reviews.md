@@ -470,19 +470,7 @@ For each group of related findings across all 4 reviews:
 - **Acceptance criteria**: <how to verify across all surfaces>
 ```
 
-### Step 3: File Beads
-
-File ONE bead per root cause (not per finding, not per review).
-
-**Important**: Beads filed during session review are standalone. Do NOT assign them to a specific epic via `bd dep add --type parent-child`. They represent session-wide findings, not epic-specific work.
-
-```bash
-bd create --type=bug --priority=<combined-priority> --title="<root cause title>"
-# Then update with full description including all affected surfaces
-bd label add <id> <primary-review-type>
-```
-
-### Step 4: Write Consolidated Summary
+### Step 3: Write Consolidated Summary
 
 Write the consolidated summary to `<session-dir>/review-reports/review-consolidated-<timestamp>.md`:
 
@@ -532,6 +520,44 @@ Findings merged:
 <overall quality assessment>
 ```
 
+### Step 4: Checkpoint Gate — Await Pest Control Validation Before Filing Beads
+
+**Do NOT file any beads yet.** After writing the consolidated summary (Step 3), notify Pest Control and wait for its verdict before calling `bd create`.
+
+**Notification to Pest Control (SendMessage):**
+```
+SendMessage(
+  to="pest-control",
+  message="Consolidated report ready. Path: <session-dir>/review-reports/review-consolidated-<timestamp>.md. Please run DMVDC and CCB checkpoints and reply with PASS or FAIL + specifics."
+)
+```
+
+**Wait for Pest Control reply. Then act on verdict:**
+
+- **PASS**: File ONE bead per root cause. See bead filing instructions below.
+- **FAIL**: Big Head MUST escalate to the Queen with specifics. File beads ONLY for findings that passed. Do NOT file beads for flagged findings. Use this escalation format:
+
+```
+Big Head checkpoint escalation to Queen:
+- Pest Control verdict: FAIL
+- Findings that failed validation: <list with reasons per finding>
+- Findings that passed: <list>
+- Beads filed for validated findings: <ids or "none">
+- Action required: User decides whether to drop, adjust, or re-review failed findings.
+```
+
+**Bead filing (validated findings only):**
+
+File ONE bead per root cause (not per finding, not per review).
+
+**Important**: Beads filed during session review are standalone. Do NOT assign them to a specific epic via `bd dep add --type parent-child`. They represent session-wide findings, not epic-specific work.
+
+```bash
+bd create --type=bug --priority=<combined-priority> --title="<root cause title>"
+# Then update with full description including all affected surfaces
+bd label add <id> <primary-review-type>
+```
+
 ## The Queen's Checklists
 
 ### Nitpicker Checklist (verify before launching team)
@@ -544,6 +570,7 @@ Before launching the review agent team, confirm:
 - [ ] Each prompt says "Do NOT file beads — Big Head handles all bead filing"
 - [ ] Messaging guidelines included (what to share, what not to share)
 - [ ] Reports write to `<session-dir>/review-reports/<review-type>-review-<timestamp>.md`
+- [ ] Team has 6 members: 4 Nitpickers + Big Head + Pest Control (Pest Control must be a team member so Big Head can SendMessage to it for checkpoint validation)
 
 ### Big Head Consolidation Checklist (after all Nitpickers finish)
 
@@ -551,8 +578,11 @@ Before filing beads, confirm Big Head has:
 - [ ] Read all 4 Nitpicker reports
 - [ ] Merged duplicate findings across reviews
 - [ ] Grouped all findings by root cause (not per-occurrence)
-- [ ] Filed ONE bead per root cause with all affected surfaces listed
 - [ ] Written consolidated summary to `<session-dir>/review-reports/review-consolidated-<timestamp>.md`
+- [ ] Sent consolidated report path to Pest Control via SendMessage
+- [ ] Received Pest Control verdict (PASS or FAIL + specifics)
+- [ ] On PASS: filed ONE bead per root cause with all affected surfaces listed
+- [ ] On FAIL: escalated failed findings to Queen; filed beads only for validated findings
 
 ## After Consolidation Complete
 
