@@ -17,7 +17,7 @@ Placeholders:
 Perform a {REVIEW_TYPE} review of the completed work.
 
 Step 0: Read your full review brief from {DATA_FILE_PATH}
-(Contains: commit range, files to review, focus areas, detailed instructions.)
+(Format: markdown. Sections: Scope, Files, Focus, Detailed Instructions.)
 
 Your workflow:
 1. Read ALL files listed in the brief
