@@ -34,10 +34,29 @@ You absorb the cost of reading this template, not the Queen. The purpose of read
 - Scope boundary principle (agents should ONLY edit specified files, document adjacent issues without fixing them)
 - Information diet: what beads provide (root cause, affected surfaces, expected behavior, fix description, acceptance criteria)
 
-Read this file (you absorb the cost, not the Queen):
-- `~/.claude/orchestration/templates/implementation.md`
+Read `~/.claude/orchestration/templates/implementation.md` (you absorb the cost, not the Queen).
 
 ### Step 2: Compose Task Briefs
+
+**FAIL-FAST PRE-CHECK: Task-Metadata Directory Existence**
+
+Before iterating over any task IDs, verify the task-metadata directory exists:
+
+```bash
+[ -d "{session-dir}/task-metadata" ] || echo "MISSING: task-metadata directory"
+```
+
+**If the directory is absent or unreadable**:
+- Write a failure artifact to `{session-dir}/prompts/task-metadata-dir-FAILED.md`:
+  ```
+  # Task Brief Composition [INFRASTRUCTURE FAILURE]
+  **Status**: FAILED — task-metadata directory missing
+  **Path checked**: {session-dir}/task-metadata/
+  **Reason**: Directory does not exist. Scout may not have run or may have crashed before writing metadata.
+  **Recovery**: Re-run the Scout for all task IDs before invoking the Pantry. Do NOT retry Pantry.
+  ```
+- Return immediately to the Queen with: `PANTRY FAILED: task-metadata/ directory missing at {session-dir}/task-metadata/. Scout must be re-run.`
+- Do NOT proceed to per-task iteration.
 
 For each task ID in the input list:
 
@@ -257,7 +276,7 @@ Review skeletons (assembled in Step 2.5, filled by Queen via fill-review-slots.s
 >
 > See RULES.md Step 3b for the updated Queen workflow using `fill-review-slots.sh`.
 
-**Input from the Queen**: list of epic IDs (for context in review prompts), commit range (first-commit..last-commit), list of ALL changed files across all epics (deduplicated), list of ALL task IDs (for correctness review acceptance criteria), session dir path, review timestamp (format defined in **Timestamp format** in `checkpoints.md` Pest Control Overview), review round number (1, 2, 3, ...)
+**Input from the Queen**: list of epic IDs (for context in review prompts), commit range (first-commit..last-commit), list of ALL changed files across all epics (deduplicated), list of ALL task IDs (for correctness review acceptance criteria), session dir path, review timestamp as `{REVIEW_TIMESTAMP}` (format defined in **Timestamp format** in `checkpoints.md` Pest Control Overview), review round number as `{REVIEW_ROUND}` (1, 2, 3, ...)
 
 ### Step 1: Read Templates
 
@@ -266,7 +285,7 @@ Read this file:
 
 ### Step 2: Use Timestamp
 
-Use the review timestamp provided by the Queen. The Queen generates ONE timestamp at the start of Step 3b and passes it to you. Do NOT generate a new timestamp. Use this same timestamp for ALL review files in this cycle.
+Use `{REVIEW_TIMESTAMP}` — the review timestamp provided by the Queen. The Queen generates ONE timestamp at the start of Step 3b and passes it to you as `{REVIEW_TIMESTAMP}`. Do NOT generate a new timestamp. Use this same `{REVIEW_TIMESTAMP}` value for ALL review files in this cycle (report output paths, consolidated output path, and polling loop).
 
 ### Step 3: Compose Review Briefs
 
