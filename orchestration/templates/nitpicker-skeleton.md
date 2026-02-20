@@ -9,12 +9,16 @@ Placeholders:
 - {REVIEW_TYPE}: clarity / edge-cases / correctness / excellence
 - {DATA_FILE_PATH}: from the Pantry (review mode) verdict table
 - {REPORT_OUTPUT_PATH}: from the Pantry verdict table (session-scoped)
+- {REVIEW_ROUND}: 1, 2, 3, ... (determines scope instructions; filled by Pantry)
 
 ## Template (send everything below this line)
 
 ---
 
 Perform a {REVIEW_TYPE} review of the completed work.
+
+**Review round**: {REVIEW_ROUND}
+If round 2+: Your scope is limited to fix commits only. You may read full files for context, but your mandate is: did these fixes land correctly and not break anything? Out-of-scope findings are only reportable if they would cause a runtime failure or silently wrong results. Do NOT report naming, style, docs, or improvement opportunities outside fix scope.
 
 Step 0: Read your full review brief from {DATA_FILE_PATH}
 (Format: markdown. Sections: Scope, Files, Focus, Detailed Instructions.)
