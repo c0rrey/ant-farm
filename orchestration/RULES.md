@@ -130,6 +130,9 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             - File list: `git diff --name-only <commit-range>` (deduplicated)
             - Task IDs: round 1 = all task IDs; round 2+ = fix task IDs only
             - Timestamp: The Queen generates ONE timestamp at the start of Step 3b using `date +%Y%m%d-%H%M%S` format (YYYYMMDD-HHMMSS)
+              ```bash
+              TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+              ```
 
             **3b-ii. Fill review slots** (NO Pantry spawn — skeletons were assembled in Step 2):
             ```bash
