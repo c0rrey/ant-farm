@@ -70,8 +70,8 @@ SCRUB_SCRIPT="$REPO_ROOT/scripts/scrub-pii.sh"
 ISSUES_FILE="$REPO_ROOT/.beads/issues.jsonl"
 
 if [[ ! -x "$SCRUB_SCRIPT" ]]; then
-    echo "[ant-farm] WARNING: scrub-pii.sh not found or not executable — skipping PII scrub." >&2
-    exit 0
+    echo "[ant-farm] ERROR: scrub-pii.sh not found or not executable — cannot scrub PII. Commit blocked." >&2
+    exit 1
 fi
 
 # Only run the scrub if issues.jsonl is staged for this commit.
@@ -86,3 +86,12 @@ HOOK
 chmod +x "$PRECOMMIT_TARGET"
 echo "Installed pre-commit hook -> $PRECOMMIT_TARGET"
 echo "The hook will run scripts/scrub-pii.sh before committing .beads/issues.jsonl."
+
+# Ensure the scrub script is executable so the pre-commit hook can run it.
+SCRUB_SCRIPT_PATH="$REPO_ROOT/scripts/scrub-pii.sh"
+if [[ -f "$SCRUB_SCRIPT_PATH" ]]; then
+    chmod +x "$SCRUB_SCRIPT_PATH"
+    echo "Ensured scripts/scrub-pii.sh is executable."
+else
+    echo "WARNING: scripts/scrub-pii.sh not found — pre-commit hook will block commits until it is present." >&2
+fi
