@@ -77,7 +77,15 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             (`pest-control`, `model: "haiku"`) for Colony Cartography Office (CCO); Pest Control reads orchestration/templates/checkpoints.md itself.
             Only after all CCO PASS: spawn agents using skeleton
             (→ orchestration/templates/dirt-pusher-skeleton.md, using Agent Type from Pantry verdict table, `model: "sonnet"` for all Dirt Pushers regardless of subagent_type).
-            Prepare next wave (Pantry + Pest Control) WHILE current wave runs.
+            **Wave pipelining**: When spawning wave N Dirt Pushers, include the wave N+1 Pantry
+            (`pantry-impl`, `model: "opus"`) in the SAME message so they launch concurrently.
+            The Pantry reads from task-metadata (written by Scout) and has no dependency on wave N's output.
+            This eliminates the idle gap between waves. The flow per wave boundary:
+            1. Wave N CCO PASS → spawn wave N Dirt Pushers + wave N+1 Pantry (single message)
+            2. Wave N+1 Pantry returns → spawn wave N+1 CCO
+            3. Wave N Dirt Pushers finish → run WWD/DMVDC (Step 3)
+            4. Wave N+1 CCO PASS + wave N verification done → spawn wave N+1 Dirt Pushers + wave N+2 Pantry
+            For the final wave (no wave N+1), skip the Pantry — just spawn Dirt Pushers alone.
 
 **Step 3:** Verify — after each agent commits, spawn Pest Control (`model: "haiku"`) for Wandering Worker Detection (WWD)
             (scope check before next agent in the wave can proceed).
@@ -188,12 +196,12 @@ Every `Task` tool call the Queen makes MUST include the `model` parameter from t
 ## Concurrency Rules
 
 - Max 7 Dirt Pushers concurrent
-- Max 10 total agents (Dirt Pushers + support agents: Pantry, Pest Control, Scout)
+- Max 12 total agents (Dirt Pushers + support agents: Pantry, Pest Control, Scout)
 - No two agents edit the same file — queue conflicting tasks sequentially
 - Each agent runs `git pull --rebase` before committing
 - Only the Queen pushes to remote
 - Only the Queen updates documentation files (CHANGELOG, README, CLAUDE.md)
-- Prepare next wave prompts WHILE current wave runs (eliminates spawn latency)
+- Pipeline wave N Dirt Pushers with wave N+1 Pantry in a single message (see Step 2 wave pipelining)
 
 ## Session Directory
 
@@ -274,5 +282,5 @@ Project-specific overrides belong in the project's CLAUDE.md or QUALITY_PROCESS.
 
 - Token budget: finish with >50% remaining
 - File reads in the Queen: <10 for 40+ task sessions
-- Concurrent agents: typical 5-6 Dirt Pushers, max 10 total
+- Concurrent agents: typical 5-6 Dirt Pushers, max 12 total
 - Commits per session: <20 (batch related work)
