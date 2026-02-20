@@ -56,7 +56,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             generate SESSION_ID and SESSION_DIR. Store both as variables in your context.
             Then immediately proceed to Step 1.
             Do NOT examine, read, or query any task/issue details.
-            **Progress log:** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|step0|complete|session_dir=${SESSION_DIR}" >> ${SESSION_DIR}/progress.log`
+            **Progress log:** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SESSION_INIT|complete|session_dir=${SESSION_DIR}" >> ${SESSION_DIR}/progress.log`
 
             **Crash recovery detection (run BEFORE generating a new SESSION_ID):**
             Check whether the user's message contains a session directory path
@@ -95,7 +95,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             **On SSV FAIL**: Re-run Scout with the specific violations from the SSV report (do NOT present
             a failed strategy to the user). After Scout revises briefing.md, re-run SSV.
 
-            **Progress log (after SSV PASS and user approves strategy):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|step1|complete|briefing=${SESSION_DIR}/briefing.md|ssv=pass|tasks_approved=<N>" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after SSV PASS and user approves strategy):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SCOUT_COMPLETE|briefing=${SESSION_DIR}/briefing.md|ssv=pass|tasks_approved=<N>" >> ${SESSION_DIR}/progress.log`
 
 **Step 2:** Spawn — Spawn the Pantry (`pantry-impl`, `model: "opus"`) for task briefs + combined previews
             (→ orchestration/templates/pantry.md, Section 1). Include `Session directory: <value of SESSION_DIR>`
@@ -112,7 +112,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             3. Wave N Dirt Pushers finish → run WWD/DMVDC (Step 3)
             4. Wave N+1 CCO PASS + wave N verification done → spawn wave N+1 Dirt Pushers + wave N+2 Pantry
             For the final wave (no wave N+1), skip the Pantry — just spawn Dirt Pushers alone.
-            **Progress log (after each wave's Dirt Pushers are spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|step2|wave=<N>|spawned=<agent-ids>|previews_dir=${SESSION_DIR}/previews" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after each wave's Dirt Pushers are spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_SPAWNED|wave=<N>|spawned=<agent-ids>|previews_dir=${SESSION_DIR}/previews" >> ${SESSION_DIR}/progress.log`
 
 **Step 3:** Verify — after each agent commits, spawn Pest Control (`model: "haiku"`) for Wandering Worker Detection (WWD)
             (scope check before next agent in the wave can proceed).
@@ -120,7 +120,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             (pass task IDs, commit hashes, summary doc paths; Pest Control reads
             checkpoints.md + task-metadata/ + git diffs itself).
             Failed DMVDC → resume agent (max 2 retries).
-            **Progress log (after DMVDC PASS for each wave):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|step3|wave=<N>|dmvdc=pass|tasks_verified=<ids>|commits=<hashes>" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after DMVDC PASS for each wave):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_VERIFIED|wave=<N>|dmvdc=pass|tasks_verified=<ids>|commits=<hashes>" >> ${SESSION_DIR}/progress.log`
 
 **Step 3b:** Review — fill review slots and spawn Nitpickers.
 
@@ -163,6 +163,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 
             Step 2: Launch a new tmux window for the dummy reviewer:
             ```bash
+            # TIMESTAMP was assigned at the start of Step 3b-i: TIMESTAMP=$(date +%Y%m%d-%H%M%S)
             # TMUX_SESSION is the name of the tmux session the Queen is running in.
             # Resolve it at runtime: TMUX_SESSION=$(tmux display-message -p '#S')
             TMUX_SESSION=$(tmux display-message -p '#S')
@@ -183,7 +184,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             - Do NOT wait for the dummy reviewer to finish before proceeding with Step 3c. It runs concurrently.
             - Sunset clause: remove Step 3b-v after ~30 sessions of data collection or when a reliable file-budget threshold is established. Removal has no effect on the rest of the review workflow.
 
-            **Progress log (after Nitpicker team completes):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|step3b|round=<N>|team=complete|report=${SESSION_DIR}/review-reports/big-head-summary.md" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after Nitpicker team completes):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_COMPLETE|round=<N>|team=complete|report=${SESSION_DIR}/review-reports/review-consolidated-${TIMESTAMP}.md" >> ${SESSION_DIR}/progress.log`
 
 **Step 3c:** User triage — **after CCB PASS and Big Head consolidation completes**:
             1. Read the consolidated review summary
@@ -204,16 +205,16 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             - **If "fix now"**: Spawn fix tasks (see reviews.md), then re-run Step 3b with round N+1
               - Update session state: increment review round, record fix commit range
             - **If "defer"**: P1/P2 beads stay open; document in CHANGELOG; proceed to Step 4
-            **Progress log (after triage decision):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|step3c|round=<N>|p1=<count>|p2=<count>|decision=<fix_now|defer|terminated>" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after triage decision):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_TRIAGED|round=<N>|p1=<count>|p2=<count>|decision=<fix_now|defer|terminated>" >> ${SESSION_DIR}/progress.log`
 
 **Step 4:** Documentation — update CHANGELOG, README, CLAUDE.md in single commit
-            **Progress log (after doc commit):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|step4|complete|commit=<hash>" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after doc commit):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|DOCS_COMMITTED|complete|commit=<hash>" >> ${SESSION_DIR}/progress.log`
 
 **Step 5:** Verify — cross-references valid, all tasks have CHANGELOG entries
-            **Progress log (after cross-reference check):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|step5|complete|tasks_with_changelog=<ids>" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after cross-reference check):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|XREF_VERIFIED|complete|tasks_with_changelog=<ids>" >> ${SESSION_DIR}/progress.log`
 
 **Step 6:** Land the plane — git pull --rebase, bd sync, git push, clean up stashes and remote branches
-            **Progress log (after git push succeeds):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|step6|complete|pushed=true" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after git push succeeds):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SESSION_COMPLETE|pushed=true" >> ${SESSION_DIR}/progress.log`
 
 ## Hard Gates
 
