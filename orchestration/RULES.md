@@ -34,7 +34,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 - Agent notifications (as they complete)
 
 **PERMITTED (Queen reads once per phase, for context only):**
-- `orchestration/templates/dirt-pusher-skeleton.md` — Once per implementation wave (skeleton structure; see [Glossary: wave](orchestration/GLOSSARY.md#workflow-concepts))
+- `orchestration/templates/dirt-pusher-skeleton.md` — Once per implementation wave (skeleton structure; see [Glossary: wave](GLOSSARY.md#workflow-concepts))
 - `orchestration/templates/nitpicker-skeleton.md` — Once per review cycle (skeleton structure)
 - `orchestration/templates/big-head-skeleton.md` — Once per review cycle (skeleton structure)
 - Project's `CLAUDE.md` — Global project rules

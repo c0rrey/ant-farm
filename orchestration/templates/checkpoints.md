@@ -234,7 +234,7 @@ Where:
 
 ## Wandering Worker Detection (WWD): Post-Commit Scope Verification
 
-**When**: After agent commits, BEFORE spawning next agent in same wave (see [Glossary: wave](orchestration/GLOSSARY.md#workflow-concepts))
+**When**: After agent commits, BEFORE spawning next agent in same wave (see [Glossary: wave](../GLOSSARY.md#workflow-concepts))
 **Model**: `haiku` (mechanical file list comparison — cheap, fast)
 **Agent type**: `code-reviewer`
 
