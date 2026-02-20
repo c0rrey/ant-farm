@@ -8,7 +8,7 @@ The system has three layers: **the Queen** (the orchestrator that never touches 
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  The Queen (orchestrator)                               │
+│  the Queen (orchestrator)                               │
 │  - Reads briefing + verdict tables only                 │
 │  - Spawns Scout, Pantry, Pest Control directly          │
 │  - Only agent that pushes to remote                     │
@@ -22,9 +22,11 @@ The system has three layers: **the Queen** (the orchestrator that never touches 
 ├───────────┴─────────────┴───────────────────────────────┤
 │  Dirt Pushers (up to 7 concurrent)                      │
 ├─────────────────────────────────────────────────────────┤
-│  The Nitpickers (4 reviewers + Big Head)                │
+│  the Nitpickers (4 reviewers + Big Head)                │
 └─────────────────────────────────────────────────────────┘
 ```
+
+**CCO** = Colony Cartography Office | **WWD** = Wandering Worker Detection | **DMVDC** = Dirt Moved vs Dirt Claimed | **CCB** = Colony Census Bureau
 
 ## Workflow
 
@@ -316,16 +318,16 @@ Informal shorthand (e.g., "templates/scout.md") is informal and always refers to
 |------|---------|---------|
 | `CLAUDE.md` | Claude Code (all projects) | Global instructions: triggers, session completion rules |
 | `agents/*.md` | Claude Code (at startup) | Custom agent type definitions, synced to `~/.claude/agents/` on push |
-| `orchestration/RULES.md` | The Queen | Workflow steps, hard gates, concurrency rules, template lookup |
+| `orchestration/RULES.md` | the Queen | Workflow steps, hard gates, concurrency rules, template lookup |
 | `orchestration/SETUP.md` | User | How to wire orchestration into a new project |
 | `orchestration/templates/implementation.md` | the Pantry | Agent prompt template with 6 mandatory steps |
 | `orchestration/templates/checkpoints.md` | Pest Control | All checkpoint definitions (CCO, WWD, DMVDC, CCB) |
 | `orchestration/templates/reviews.md` | the Pantry (review mode) | Review protocol, 4 review types, report format, Big Head consolidation |
 | `orchestration/templates/pantry.md` | the Pantry (self-read at spawn) | the Pantry's own instructions |
-| `orchestration/templates/dirt-pusher-skeleton.md` | The Queen | Minimal agent spawn template |
-| `orchestration/templates/nitpicker-skeleton.md` | The Queen | Minimal review agent spawn template |
-| `orchestration/templates/big-head-skeleton.md` | The Queen | Minimal Big Head consolidation spawn template |
-| `orchestration/templates/queen-state.md` | The Queen | Session state file schema |
+| `orchestration/templates/dirt-pusher-skeleton.md` | the Queen | Minimal agent spawn template |
+| `orchestration/templates/nitpicker-skeleton.md` | the Queen | Minimal review agent spawn template |
+| `orchestration/templates/big-head-skeleton.md` | the Queen | Minimal Big Head consolidation spawn template |
+| `orchestration/templates/queen-state.md` | the Queen | Session state file schema |
 | `orchestration/templates/scout.md` | the Scout (self-read at spawn) | Pre-flight recon instructions |
-| `orchestration/reference/dependency-analysis.md` | The Scout | Pre-flight conflict analysis, spawn patterns |
+| `orchestration/reference/dependency-analysis.md` | the Scout | Pre-flight conflict analysis, spawn patterns |
 | `orchestration/reference/known-failures.md` | Post-mortem reference | Past failures and fixes applied |

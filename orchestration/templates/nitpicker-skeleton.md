@@ -1,6 +1,6 @@
 # Nitpicker Skeleton Template
 
-## Instructions for The Queen
+## Instructions for the Queen
 
 Fill in all `{PLACEHOLDER}` values (uppercase) and use the result as the Task tool `prompt` parameter.
 The agent-facing text starts below the `---` separator. Do NOT include this instruction block.

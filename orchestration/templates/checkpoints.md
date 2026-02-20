@@ -33,11 +33,11 @@ All checkpoints write to `{SESSION_DIR}/pc/`.
 
 **Timestamp format:** `YYYYMMDD-HHmmss` (UTC)
 
-**Directory creation**: The Queen creates `{SESSION_DIR}/pc/` at session start (Step 0 in RULES.md). Agents and Pest Control can write immediately without creating directories.
+**Directory creation**: the Queen creates `{SESSION_DIR}/pc/` at session start (Step 0 in RULES.md). Agents and Pest Control can write immediately without creating directories.
 
-**The Queen's responsibility**: The Queen MUST include `**Summary output path**` in Dirt Pusher prompt context. For review prompts, include the session-scoped review report paths and all participating epic IDs (for context). Reviewers write to `{SESSION_DIR}/review-reports/`, not per-epic directories.
+**The Queen's responsibility**: the Queen MUST include `**Summary output path**` in Dirt Pusher prompt context. For review prompts, include the session-scoped review report paths and all participating epic IDs (for context). Reviewers write to `{SESSION_DIR}/review-reports/`, not per-epic directories.
 
-**Review timestamp convention**: The Queen generates a single timestamp per review cycle (format: `YYYYMMDD-HHmmss`) and passes the exact output filenames to each reviewer and Big Head. This prevents reviewers from independently generating different timestamps.
+**Review timestamp convention**: the Queen generates a single timestamp per review cycle (format: `YYYYMMDD-HHmmss`) and passes the exact output filenames to each reviewer and Big Head. This prevents reviewers from independently generating different timestamps.
 
 ---
 
@@ -199,7 +199,7 @@ Both rounds — paste these 2 prompts:
 
 ## Verify each item (PASS or FAIL with evidence):
 
-1. **File list matches git diff**: The Queen provides the commit range (`<first-commit>..<last-commit>`) in the spawn prompt — use those exact values. This is session-wide, spanning all epics. Run `git diff --name-only <first-commit>..<last-commit>` and verify the prompt file list matches exactly. Every file in the diff must appear in the prompt, and every file in the prompt must appear in the diff. If there is a mismatch, FAIL with the list of missing/extra files.
+1. **File list matches git diff**: the Queen provides the commit range (`<first-commit>..<last-commit>`) in the spawn prompt — use those exact values. This is session-wide, spanning all epics. Run `git diff --name-only <first-commit>..<last-commit>` and verify the prompt file list matches exactly. Every file in the diff must appear in the prompt, and every file in the prompt must appear in the diff. If there is a mismatch, FAIL with the list of missing/extra files.
 2. **Same file list**: All prompts contain the same set of files to review (not different subsets)
 3. **Same commit range**: All prompts reference the same commit range
 4. **Correct focus areas**: Each prompt has focus areas specific to its review type:
@@ -234,7 +234,7 @@ Where:
 
 ## Wandering Worker Detection (WWD): Post-Commit Scope Verification
 
-**When**: After agent commits, BEFORE spawning next agent in same wave
+**When**: After agent commits, BEFORE spawning next agent in same wave (see [Glossary: wave](orchestration/GLOSSARY.md#workflow-concepts))
 **Model**: `haiku` (mechanical file list comparison — cheap, fast)
 **Agent type**: `code-reviewer`
 
@@ -470,7 +470,7 @@ You are **Pest Control**, the verification subagent. Your role is to audit Big H
 Audit the review consolidation for completeness, accuracy, and traceability.
 
 **Consolidated summary**: `{SESSION_DIR}/review-reports/review-consolidated-{timestamp}.md`
-**Individual reports**: (The Queen provides exact filenames and the review round number in the consolidation prompt.)
+**Individual reports**: (the Queen provides exact filenames and the review round number in the consolidation prompt.)
 
 Round 1:
 - `{SESSION_DIR}/review-reports/clarity-review-{timestamp}.md`

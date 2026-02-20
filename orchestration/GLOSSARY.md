@@ -4,6 +4,39 @@ Canonical definitions for all framework terms, checkpoint acronyms, and ant meta
 
 ---
 
+## Naming Conventions
+
+### Agent Names: Casing and Article Usage
+
+Agent role names are title-case proper nouns. When preceded by a definite article in prose, the article is lowercase:
+
+| Context | Correct | Incorrect |
+|---------|---------|-----------|
+| Mid-sentence prose | "the Queen spawns agents" | "The Queen spawns agents" |
+| Mid-sentence prose | "the Scout writes the briefing" | "The Scout writes the briefing" |
+| Mid-sentence prose | "the Pantry composes prompts" | "The Pantry composes prompts" |
+| Mid-sentence prose | "the Nitpickers review the work" | "The Nitpickers review the work" |
+| Sentence start | "The Queen reads the briefing" | n/a (sentence start is always capitalized) |
+| Section/document header | "The Queen's Session State" | n/a (headers use title case) |
+
+**Summary of the rule**: lowercase article ("the"), title-case role name ("Queen", "Scout", "Pantry", "Nitpickers", "Big Head"). The article is only capitalized when it begins a sentence or appears in a title or heading.
+
+### Filenames
+
+Agent definition files and orchestration template files use kebab-case:
+
+- Agent files: `scout-organizer.md`, `pantry-impl.md`, `pantry-review.md`, `pest-control.md`, `nitpicker.md`, `big-head.md`
+- Template files: `dirt-pusher-skeleton.md`, `nitpicker-skeleton.md`, `big-head-skeleton.md`, `queen-state.md`
+
+### Role Names Without Article
+
+In tables, diagrams, and other non-prose contexts where the article is omitted, role names are title-case without a preceding article:
+
+- Table column value: "Queen", "Scout", "Pantry", "Pest Control", "Big Head", "Nitpicker"
+- ASCII diagram labels: "the Queen (orchestrator)" — article included for readability; lowercase
+
+---
+
 ## Workflow Concepts
 
 | Term | Definition |
@@ -43,7 +76,7 @@ All four checkpoints are executed by Pest Control. Full definitions live in `orc
 
 | Name | Agent file | Model | Role description |
 |------|-----------|-------|-----------------|
-| **The Queen** | _(orchestrator — no agent file; runs as the top-level Claude Code session)_ | opus | The orchestrator. Reads only briefings, verdict tables, commit messages, and agent notifications. Never reads source code or implementation templates. The only agent that pushes to remote. Spawns all subagents and makes all go/no-go decisions. |
+| **Queen** | _(orchestrator — no agent file; runs as the top-level Claude Code session)_ | opus | The orchestrator. Reads only briefings, verdict tables, commit messages, and agent notifications. Never reads source code or implementation templates. The only agent that pushes to remote. Spawns all subagents and makes all go/no-go decisions. |
 | **Scout** | `agents/scout-organizer.md` | sonnet | Pre-flight reconnaissance agent. Discovers ready and blocked tasks, builds a file modification matrix, assesses conflict risk, recommends specialist agent types, proposes 2–3 execution strategies with wave groupings, and writes the session briefing. |
 | **Pantry** | `agents/pantry-impl.md` (implementation), `agents/pantry-review.md` (review) | sonnet | Prompt composition agent. Reads implementation or review templates, extracts per-task context from Scout metadata, writes data files and combined prompt previews, and returns a file-path table to the Queen. Keeps template content out of the Queen's context. |
 | **Pest Control** | `agents/pest-control.md` | haiku (CCO, WWD, CCB), sonnet (DMVDC) | Verification auditor. Runs all four checkpoints (CCO, WWD, DMVDC, CCB) and writes timestamped audit reports to `{session-dir}/pc/`. Cross-checks orchestrator and agent work against ground truth. |

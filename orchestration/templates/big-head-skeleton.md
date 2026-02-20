@@ -1,6 +1,6 @@
 # Big Head Consolidation Skeleton Template
 
-## Instructions for The Queen
+## Instructions for the Queen
 
 Big Head is a **member of the Nitpicker team** (spawned via TeamCreate, NOT as a separate Task agent).
 Do NOT use the Task tool for Big Head — it runs inside the same TeamCreate call as the Nitpickers (4 in round 1; 2 in round 2+).

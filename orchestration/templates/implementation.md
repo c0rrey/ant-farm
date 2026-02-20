@@ -63,7 +63,7 @@ After implementation, review EVERY file you changed or created:
 
 ## Step 6: Write Summary Doc (MANDATORY)
 Write a structured summary to `<session-dir>/summaries/<task-id>.md` using the Write tool.
-(The Queen creates this directory at session start.)
+(the Queen creates this directory at session start.)
 The summary MUST contain ALL of these sections — incomplete summaries will be rejected:
 
 ```markdown

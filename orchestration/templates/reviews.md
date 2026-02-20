@@ -63,7 +63,7 @@ The short name is the authoritative identifier. Any template using a review type
 
 **Pre-spawn requirement**: Before creating the Nitpickers, run **CCO** on all review prompts. See `templates/checkpoints.md`.
 
-**Round 1**: The Queen creates the Nitpicker team with **6 members** (4 reviewers + Big Head + Pest Control):
+**Round 1**: the Queen creates the Nitpicker team with **6 members** (4 reviewers + Big Head + Pest Control):
 
 ~~~markdown
 Create a team with these 6 members. The 4 reviewers work in parallel.
@@ -85,7 +85,7 @@ Task IDs for acceptance criteria: <list of all task IDs worked this session>
 6. Pest Control (checkpoint validator) — receives consolidated report path from Big Head via SendMessage; runs DMVDC and CCB checkpoints and replies with verdict
 ~~~
 
-**Round 2+**: The Queen creates the Nitpicker team with **4 members** (2 reviewers + Big Head + Pest Control):
+**Round 2+**: the Queen creates the Nitpicker team with **4 members** (2 reviewers + Big Head + Pest Control):
 
 ~~~markdown
 Create a team with these 4 members. The 2 reviewers work in parallel.
@@ -189,7 +189,7 @@ Read all files in scope. For each issue, note the file, line, and what's wrong.
 Group findings into preliminary root causes where possible.
 
 ## Report (MANDATORY)
-Write your report to `<session-dir>/review-reports/clarity-review-<timestamp>.md` using the format below. (The Queen provides the exact filename in your prompt.)
+Write your report to `<session-dir>/review-reports/clarity-review-<timestamp>.md` using the format below. (the Queen provides the exact filename in your prompt.)
 Do NOT file beads — Big Head handles all bead filing.
 
 If you find something that looks like an edge case or correctness bug, message the
@@ -223,7 +223,7 @@ Read all files in scope. For each issue, note the file, line, trigger condition,
 Group findings into preliminary root causes where possible.
 
 ## Report (MANDATORY)
-Write your report to `<session-dir>/review-reports/edge-cases-review-<timestamp>.md` using the format below. (The Queen provides the exact filename in your prompt.)
+Write your report to `<session-dir>/review-reports/edge-cases-review-<timestamp>.md` using the format below. (the Queen provides the exact filename in your prompt.)
 Do NOT file beads — Big Head handles all bead filing.
 
 Pay special attention to:
@@ -263,7 +263,7 @@ Read all files in scope. For each issue, note the file, line, expected vs actual
 Group findings into preliminary root causes where possible.
 
 ## Report (MANDATORY)
-Write your report to `<session-dir>/review-reports/correctness-review-<timestamp>.md` using the format below. (The Queen provides the exact filename in your prompt.)
+Write your report to `<session-dir>/review-reports/correctness-review-<timestamp>.md` using the format below. (the Queen provides the exact filename in your prompt.)
 Do NOT file beads — Big Head handles all bead filing.
 
 Review these files and their acceptance criteria:
@@ -309,7 +309,7 @@ Read all files in scope. For each issue, note the file, line, improvement detail
 Group findings into preliminary root causes where possible.
 
 ## Report (MANDATORY)
-Write your report to `<session-dir>/review-reports/excellence-review-<timestamp>.md` using the format below. (The Queen provides the exact filename in your prompt.)
+Write your report to `<session-dir>/review-reports/excellence-review-<timestamp>.md` using the format below. (the Queen provides the exact filename in your prompt.)
 Do NOT file beads — Big Head handles all bead filing.
 
 Look for opportunities to:
