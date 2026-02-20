@@ -46,6 +46,19 @@ After the transition gate passes, the Queen launches **the Nitpickers** using **
 
 (Big Head model is specified in the Big Head Consolidation Protocol section below.)
 
+### Review Type Canonical Names
+
+Each review type has one canonical short name used in template placeholders, file output paths, and report labels. The display title is the expanded form used in team setup listings and section headers.
+
+| Short Name | Display Title | Priority | File Output Pattern |
+|------------|---------------|----------|---------------------|
+| `clarity` | Clarity Review | P3 | `clarity-review-<timestamp>.md` |
+| `edge-cases` | Edge Cases Review | P2 | `edge-cases-review-<timestamp>.md` |
+| `correctness` | Correctness Review | P1-P2 | `correctness-review-<timestamp>.md` |
+| `excellence` | Excellence Review | P3 | `excellence-review-<timestamp>.md` |
+
+The short name is the authoritative identifier. Any template using a review type name that differs from the short name in this table without explanation is incorrect.
+
 ### Team Setup
 
 **Pre-spawn requirement**: Before creating the Nitpickers, run **CCO** on all review prompts. See `templates/checkpoints.md`.
@@ -66,7 +79,7 @@ Task IDs for acceptance criteria: <list of all task IDs worked this session>
 
 1. Clarity Review (P3) — see prompt below
 2. Edge Cases Review (P2) — see prompt below
-3. Correctness Redux Review (P1-P2) — see prompt below
+3. Correctness Review (P1-P2) — see prompt below
 4. Excellence Review (P3) — see prompt below
 5. Big Head (consolidation) — see prompt from big-head-skeleton.md; model specified in Big Head Consolidation Protocol section
 6. Pest Control (checkpoint validator) — receives consolidated report path from Big Head via SendMessage; runs DMVDC and CCB checkpoints and replies with verdict
@@ -87,7 +100,7 @@ Review scope: fix commits only — <first-fix-commit> through <HEAD>
 Files to review: <files changed in fix commits only>
 Task IDs for acceptance criteria: <list of fix task IDs>
 
-1. Correctness Redux Review (P1-P2) — see prompt below
+1. Correctness Review (P1-P2) — see prompt below
 2. Edge Cases Review (P2) — see prompt below
 3. Big Head (consolidation) — see prompt from big-head-skeleton.md
 4. Pest Control (checkpoint validator) — same role as round 1
@@ -224,14 +237,14 @@ Review these files:
 <list of files changed in session>
 ```
 
-## Review 3: Correctness Redux (P1-P2)
+## Review 3: Correctness (P1-P2)
 
 **Agent Type:** `code-reviewer`
 **Model:** `sonnet`
 **Priority:** P1-P2 (critical, must fix before deploy)
 
 ```markdown
-Perform a CORRECTNESS REDUX review of the completed work in this session.
+Perform a CORRECTNESS review of the completed work in this session.
 
 Review scope: commits <first-commit> through <last-commit> (<N> commits total)
 
