@@ -115,15 +115,16 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             - Update session state: `Termination: terminated (round N: 0 P1/P2)`
             - Proceed directly to Step 4 (documentation)
             **If P1 or P2 issues found**:
+            **Round cap — escalate after round 4** (check this FIRST before any fix decision):
+            - If current round >= 4 and P1/P2 findings are still present, do NOT start another round
+            - Present full round history to user (round numbers, finding counts, bead IDs)
+            - Ask user: "Review loop has not converged after 4 rounds. Continue or abort?"
+            - Await user decision before taking any further action
+            **Only if current round < 4**: proceed with fix-now/defer decision:
             - Present findings to user: "Reviews found X P1 and Y P2 issues. Fix now or defer?"
             - **If "fix now"**: Spawn fix tasks (see reviews.md), then re-run Step 3b with round N+1
               - Update session state: increment review round, record fix commit range
             - **If "defer"**: P1/P2 beads stay open; document in CHANGELOG; proceed to Step 4
-            **Round cap — escalate after round 4**:
-            - If round 4 completes and P1/P2 findings are still present, do NOT start round 5
-            - Present full round history to user (round numbers, finding counts, bead IDs)
-            - Ask user: "Review loop has not converged after 4 rounds. Continue or abort?"
-            - Await user decision before taking any further action
 
 **Step 4:** Documentation — update CHANGELOG, README, CLAUDE.md in single commit
 
