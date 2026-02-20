@@ -141,7 +141,7 @@ The review loop terminates when a round produces **zero P1 or P2 findings**. At 
 3. Queen proceeds directly to RULES.md Step 4 (documentation)
 4. No user prompt needed — the loop simply ends
 
-There is no hard cap on rounds. The reduced scope + reduced reviewers + P3 auto-filing make convergence fast.
+**Escalation cap**: After round 4 with no convergence (P1 or P2 findings still present), do NOT start round 5. Instead, escalate to the user with the full round history (round numbers, finding counts per round, bead IDs) and ask whether to continue or abort. The reduced scope + reduced reviewers + P3 auto-filing make convergence fast; if it has not converged by round 4, human judgment is required.
 
 ### Round 2+ Reviewer Instructions
 

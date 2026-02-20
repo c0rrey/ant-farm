@@ -32,6 +32,8 @@
 
 ## Review Rounds
 - **Current round**: <1 | 2 | 3 | ...>
+- **Max rounds**: 4 (escalate to user if P1/P2 still present after round 4)
+- **Escalation cap**: <not triggered | triggered (round 4: X P1, Y P2 — awaiting user decision)>
 - **Round 1 commit range**: <first-session-commit>..<last-impl-commit>
 - **Fix commit range**: <first-fix-commit>..<HEAD> (set after fix cycle)
 - **Termination**: <pending | terminated (round N: 0 P1/P2)>
