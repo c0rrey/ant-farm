@@ -51,10 +51,9 @@ All checkpoints use the following verdict states:
 
 **PASS**: Verification succeeded. No action required. Proceed to next phase.
 
-**WARN** (checkpoints: CCO, WWD, DMVDC only):
+**WARN** (checkpoints: CCO, WWD only):
 - CCO WARN: Small file exception approved. Queen reviews and approves before spawn.
 - WWD WARN: Legitimate extra files. Soft gate — does not block queue. Queen approves concurrently.
-- DMVDC WARN: Partial failures detected. Agent can repair and resubmit.
 
 **PARTIAL** (DMVDC and CCB only): Some checks failed. Agent can repair and resubmit, or consolidation can be amended. Does not escalate to user.
 
