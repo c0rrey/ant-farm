@@ -48,11 +48,11 @@ After the transition gate passes, the Queen launches **the Nitpickers** using **
 
 ### Team Setup
 
-**Pre-spawn requirement**: Before creating the Nitpickers, run **CCO** on all 4 review prompts. See `templates/checkpoints.md`.
+**Pre-spawn requirement**: Before creating the Nitpickers, run **CCO** on all review prompts. See `templates/checkpoints.md`.
 
-The Queen creates the Nitpicker team with **6 members** (4 reviewers + Big Head + Pest Control):
+**Round 1**: The Queen creates the Nitpicker team with **6 members** (4 reviewers + Big Head + Pest Control):
 
-```markdown
+~~~markdown
 Create a team with these 6 members. The 4 reviewers work in parallel.
 Big Head waits for all 4 reports, then consolidates.
 Pest Control is a team member so Big Head can SendMessage to it directly for checkpoint validation.
@@ -70,7 +70,28 @@ Task IDs for acceptance criteria: <list of all task IDs worked this session>
 4. Excellence Review (P3) — see prompt below
 5. Big Head (consolidation) — see prompt from big-head-skeleton.md; model specified in Big Head Consolidation Protocol section
 6. Pest Control (checkpoint validator) — receives consolidated report path from Big Head via SendMessage; runs DMVDC and CCB checkpoints and replies with verdict
-```
+~~~
+
+**Round 2+**: The Queen creates the Nitpicker team with **4 members** (2 reviewers + Big Head + Pest Control):
+
+~~~markdown
+Create a team with these 4 members. The 2 reviewers work in parallel.
+Big Head waits for both reports, then consolidates.
+Pest Control is a team member so Big Head can SendMessage to it directly for checkpoint validation.
+
+Nitpickers produce REPORTS ONLY — do NOT file beads (`bd create`).
+Big Head consolidates all reports, groups findings by root cause, and files beads.
+Big Head auto-files P3 findings to "Future Work" epic (no user prompt needed).
+
+Review scope: fix commits only — <first-fix-commit> through <HEAD>
+Files to review: <files changed in fix commits only>
+Task IDs for acceptance criteria: <list of fix task IDs>
+
+1. Correctness Redux Review (P1-P2) — see prompt below
+2. Edge Cases Review (P2) — see prompt below
+3. Big Head (consolidation) — see prompt from big-head-skeleton.md
+4. Pest Control (checkpoint validator) — same role as round 1
+~~~
 
 **Big Head is spawned as a team member using the big-head-skeleton.md template**, not as a separate Task agent. The Queen fills in the skeleton placeholders and uses the result as the teammate's prompt.
 
@@ -85,6 +106,52 @@ Task IDs for acceptance criteria: <list of all task IDs worked this session>
 - Status updates ("I'm 50% done")
 - General observations that don't help other reviewers
 - Questions that should go to Big Head
+
+## Round-Aware Review Protocol
+
+The review pipeline supports multiple rounds. The Queen passes `Review round: <N>` to the Pantry. Round number determines reviewer composition, scope, and P3 handling.
+
+### Round 1 (Full Review)
+
+- **Reviewers**: 4 (Clarity, Edge Cases, Correctness, Excellence)
+- **Scope**: All session commits (`<first-session-commit>..<HEAD>`)
+- **Findings**: All severities reported and presented to user
+- **Team size**: 6 (4 reviewers + Big Head + Pest Control)
+
+This is the existing protocol — no changes to round 1 behavior.
+
+### Round 2+ (Fix Verification)
+
+- **Reviewers**: 2 (Correctness, Edge Cases only — Clarity and Excellence are dropped)
+- **Scope**: Fix commits only (`<first-fix-commit>..<HEAD>`)
+- **Team size**: 4 (2 reviewers + Big Head + Pest Control)
+- **In-scope findings**: All severities reported
+- **Out-of-scope findings**: Only reportable if they would cause:
+  - **Runtime failure**: an agent, tool call, or workflow step would crash or error
+  - **Silently wrong results**: an agent would succeed but produce incorrect output (e.g., stale cross-references pointing the Queen to the wrong section)
+- **Not reportable out-of-scope**: naming conventions, style preferences, documentation gaps, improvement opportunities, hypothetical edge cases requiring unusual conditions
+- **P3 handling**: Big Head auto-files P3s to "Future Work" epic (no user prompt)
+
+### Termination Rule
+
+The review loop terminates when a round produces **zero P1 or P2 findings**. At termination:
+
+1. Big Head auto-files any P3 findings to "Future Work" epic (round 2+ only)
+2. In round 1, P3s are filed via the existing "Handle P3 Issues" flow in the Queen's Step 3c/Step 4 below
+3. Queen proceeds directly to RULES.md Step 4 (documentation)
+4. No user prompt needed — the loop simply ends
+
+There is no hard cap on rounds. The reduced scope + reduced reviewers + P3 auto-filing make convergence fast.
+
+### Round 2+ Reviewer Instructions
+
+Correctness and Edge Cases reviewers receive this additional scope constraint in round 2+. The Pantry includes this text in each reviewer's brief:
+
+> **Fix verification scope**: Review commits `<fix-start>..<HEAD>` only. You may read full files for context, but your mandate is: did these fixes land correctly and not break anything?
+>
+> **Out-of-scope findings**: If you notice something outside the fix commits that would cause a runtime failure, incorrect agent behavior, or silently wrong results (e.g., stale cross-references pointing to wrong sections), report it. Do NOT report naming conventions, style preferences, documentation gaps, or improvement opportunities outside the fix scope.
+
+The `[OUT-OF-SCOPE]` tag is for labeling only — it helps Big Head and human readers distinguish fix-scope findings from incidental discoveries. Big Head treats all findings identically for dedup and root-cause grouping regardless of tag.
 
 ## Review 1: Clarity (P3)
 
