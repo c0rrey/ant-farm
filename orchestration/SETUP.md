@@ -58,7 +58,7 @@ Follow orchestration docs for pre-flight planning.
 
 ```bash
 # Copy from reference project:
-cp ~/projects/hs_website/SESSION_PLAN_TEMPLATE.md .
+cp orchestration/SESSION_PLAN_TEMPLATE.md .
 
 # Customize:
 # - Line 30-35: List your high-conflict files
@@ -118,7 +118,7 @@ For projects needing customization:
 Copy reference template and customize for your project:
 
 ```bash
-cp ~/projects/hs_website/SESSION_PLAN_TEMPLATE.md .
+cp orchestration/SESSION_PLAN_TEMPLATE.md .
 ```
 
 Edit to match your project:
@@ -135,7 +135,7 @@ For unique requirements beyond standard reviews:
 
 ## Overview
 
-Uses standard session-scoped reviews from ~/.claude/orchestration/templates/reviews.md
+Uses standard session-scoped reviews from orchestration/templates/reviews.md
 (reviews run once per session across all epics) with these additions:
 
 ## Additional Quality Gates
