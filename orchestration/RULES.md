@@ -56,6 +56,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             generate SESSION_ID and SESSION_DIR. Store both as variables in your context.
             Then immediately proceed to Step 1.
             Do NOT examine, read, or query any task/issue details.
+            **Progress log:** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|step0|complete|session_dir=${SESSION_DIR}" >> ${SESSION_DIR}/progress.log`
 
 **Step 1:** Recon — Read `{SESSION_DIR}/briefing.md` written by the Scout's previous run, or spawn the Scout
             (`scout-organizer` subagent, `model: "opus"`) if this is the first session. Include in Scout's prompt:
@@ -70,6 +71,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             or any other `bd` commands — the Scout handles all task discovery and metadata gathering.
             WAIT for the Scout to return its briefing verdict (written to `{SESSION_DIR}/briefing.md`),
             then present the recommended strategy to the user for approval.
+            **Progress log (after user approves strategy):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|step1|complete|briefing=${SESSION_DIR}/briefing.md|tasks_approved=<N>" >> ${SESSION_DIR}/progress.log`
 
 **Step 2:** Spawn — Spawn the Pantry (`pantry-impl`, `model: "opus"`) for task briefs + combined previews
             (→ orchestration/templates/pantry.md, Section 1). Include `Session directory: <value of SESSION_DIR>`
@@ -86,6 +88,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             3. Wave N Dirt Pushers finish → run WWD/DMVDC (Step 3)
             4. Wave N+1 CCO PASS + wave N verification done → spawn wave N+1 Dirt Pushers + wave N+2 Pantry
             For the final wave (no wave N+1), skip the Pantry — just spawn Dirt Pushers alone.
+            **Progress log (after each wave's Dirt Pushers are spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|step2|wave=<N>|spawned=<agent-ids>|previews_dir=${SESSION_DIR}/previews" >> ${SESSION_DIR}/progress.log`
 
 **Step 3:** Verify — after each agent commits, spawn Pest Control (`model: "haiku"`) for Wandering Worker Detection (WWD)
             (scope check before next agent in the wave can proceed).
@@ -93,6 +96,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             (pass task IDs, commit hashes, summary doc paths; Pest Control reads
             checkpoints.md + task-metadata/ + git diffs itself).
             Failed DMVDC → resume agent (max 2 retries).
+            **Progress log (after DMVDC PASS for each wave):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|step3|wave=<N>|dmvdc=pass|tasks_verified=<ids>|commits=<hashes>" >> ${SESSION_DIR}/progress.log`
 
 **Step 3b:** Review — fill review slots and spawn Nitpickers.
 
@@ -122,6 +126,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             - Pest Control MUST be a team member so Big Head can SendMessage to it
             - Templates: `nitpicker-skeleton.md`, `big-head-skeleton.md`
             - After team completes, DMVDC and CCB have already run inside the team
+            **Progress log (after Nitpicker team completes):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|step3b|round=<N>|team=complete|report=${SESSION_DIR}/review-reports/big-head-summary.md" >> ${SESSION_DIR}/progress.log`
 
 **Step 3c:** User triage — **after CCB PASS and Big Head consolidation completes**:
             1. Read the consolidated review summary
@@ -142,12 +147,16 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             - **If "fix now"**: Spawn fix tasks (see reviews.md), then re-run Step 3b with round N+1
               - Update session state: increment review round, record fix commit range
             - **If "defer"**: P1/P2 beads stay open; document in CHANGELOG; proceed to Step 4
+            **Progress log (after triage decision):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|step3c|round=<N>|p1=<count>|p2=<count>|decision=<fix_now|defer|terminated>" >> ${SESSION_DIR}/progress.log`
 
 **Step 4:** Documentation — update CHANGELOG, README, CLAUDE.md in single commit
+            **Progress log (after doc commit):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|step4|complete|commit=<hash>" >> ${SESSION_DIR}/progress.log`
 
 **Step 5:** Verify — cross-references valid, all tasks have CHANGELOG entries
+            **Progress log (after cross-reference check):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|step5|complete|tasks_with_changelog=<ids>" >> ${SESSION_DIR}/progress.log`
 
 **Step 6:** Land the plane — git pull --rebase, bd sync, git push, clean up stashes and remote branches
+            **Progress log (after git push succeeds):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|step6|complete|pushed=true" >> ${SESSION_DIR}/progress.log`
 
 ## Hard Gates
 
@@ -230,6 +239,7 @@ All session-scoped artifacts go here:
 - `orchestrator-state*.md` — orchestrator snapshots
 - `step3b-transition-gate.md` — review transition gate
 - `HANDOFF-*.md` — handoff documents
+- `progress.log` — append-only milestone log; one pipe-delimited line per completed step; written by the Queen at each workflow milestone; never read or overwritten during normal operation; recovery sessions read this once to determine the resume point
 
 The `_session-` prefix distinguishes session directories from other entries in `agent-summaries/`.
 This prevents collisions when multiple Queens run in the same repo.
@@ -274,6 +284,8 @@ This prevents collisions when multiple Queens run in the same repo.
 | CCB fails | 1 | Present to user with verification report attached |
 | Agent stuck (no commit within 15 turns) | 0 | Check status; escalate to user |
 | Total retries per session | 5 | Pause all new spawns; triage with user |
+
+Counter interaction: each CCB re-run counts as 1 toward both the per-checkpoint limit (1) and the session total (5). A CCB re-run that hits the per-checkpoint limit also consumes one slot of the session total.
 
 Track retry count in the Queen's state file (→ templates/queen-state.md).
 
