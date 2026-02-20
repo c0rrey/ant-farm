@@ -695,7 +695,7 @@ Where:
 
 ### The Queen's Response
 
-**On PASS**: Proceed immediately to spawn Pantry (Step 2 in RULES.md). No human approval required.
+**On PASS**: Present the recommended strategy to the user for approval (Step 1b in RULES.md). Only after user approval, proceed to spawn Pantry (Step 2).
 
 **On FAIL**:
 1. Log the violation details from the SSV report.
