@@ -72,7 +72,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             then present the recommended strategy to the user for approval.
 
 **Step 2:** Spawn — Spawn the Pantry (`pantry-impl`, `model: "opus"`) for task briefs + combined previews
-            (→ orchestration/templates/pantry.md). Include `Session directory: <value of SESSION_DIR>`
+            (→ orchestration/templates/pantry.md, Section 1). Include `Session directory: <value of SESSION_DIR>`
             in Pantry's prompt. Pass preview file paths and SESSION_DIR to Pest Control
             (`pest-control`, `model: "haiku"`) for Colony Cartography Office (CCO); Pest Control reads orchestration/templates/checkpoints.md itself.
             Only after all CCO PASS: spawn agents using skeleton

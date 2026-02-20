@@ -108,6 +108,52 @@ Task IDs for acceptance criteria: <list of fix task IDs>
 
 **Big Head is spawned as a team member using the big-head-skeleton.md template**, not as a separate Task agent. The Queen fills in the skeleton placeholders and uses the result as the teammate's prompt.
 
+### Fallback: Sequential Reviews with File-Based Coordination (When TeamCreate Unavailable)
+
+**When to use this fallback**: If the runtime environment does not support TeamCreate (e.g., the team slot is already in use for another epic, or messaging is unavailable), use this alternative workflow.
+
+**Key difference from Team Protocol**: Reviewers are spawned as individual Task agents (not team members). Coordination happens via shared files instead of SendMessage.
+
+**Output**: Both paths produce the same 4 review reports (clarity, edge-cases, correctness, excellence) and Big Head consolidated summary.
+
+#### Fallback Workflow
+
+1. **Spawn reviewers sequentially or in batches** (no team):
+   ```
+   For each review type (clarity, edge-cases, correctness, excellence):
+   - Spawn as Task agent (model: sonnet)
+   - Provide review prompt from review-clarify.md, review-edge-cases.md, etc.
+   - Report output: {session-dir}/review-reports/{review-type}-review-{timestamp}.md
+   ```
+
+2. **File-based messaging (instead of SendMessage)**:
+   - No cross-reviewer messages via SendMessage
+   - Reviewers work independently
+   - Skip "Cross-Review Messages" section in report (messaging not available in fallback mode)
+
+3. **Spawn Big Head (after all 4 reviews complete)**:
+   - Spawn as Task agent (model: opus)
+   - Input: paths to all 4 review reports (copy from the reports directory)
+   - Use big-head-skeleton.md template (same as team mode)
+   - Output: consolidated summary to {session-dir}/review-reports/review-consolidated-{timestamp}.md
+
+4. **Quality assurance**:
+   - CCO still runs on all 4 review prompts (before spawning reviewers)
+   - DMVDC and CCB still run on review artifacts (after Big Head completes)
+   - Final output format identical to Team Protocol
+
+#### Trade-offs of Fallback Mode
+
+- **No parallel review execution**: Sequential or batched spawning is slower than team parallelism
+- **No cross-reviewer messaging**: Reviewers cannot flag overlaps or share context (Big Head deduplication handles this)
+- **Same consolidation logic**: Big Head still performs full deduplication, root-cause grouping, and bead filing
+- **Same output quality**: Final reports and consolidated summary are identical to Team Protocol
+
+#### When to Prefer Team Protocol Over Fallback
+
+- Team Protocol preferred when: TeamCreate is available, you want ~4x faster wall-clock time, you want cross-reviewer coordination during review phase
+- Fallback required when: TeamCreate unavailable (team slot exhausted by another epic, environment limitation, messaging unavailable)
+
 ### Messaging Guidelines
 
 **Nitpickers SHOULD message when:**

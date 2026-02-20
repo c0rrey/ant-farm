@@ -255,7 +255,7 @@ Use the review timestamp provided by the Queen. The Queen generates ONE timestam
 
 ### Step 3: Compose Review Briefs
 
-Create the prompts directory if needed: `{session-dir}/prompts/`
+Create the prompts directory if needed: `{session-dir}/prompts/` (The Queen pre-creates this directory at Step 0, but create if needed as a safety net for robustness.)
 
 **GUARD: Empty File List Check (SUBSTANCE FAILURE)**
 Before composing review briefs, verify that the "list of ALL changed files across all epics" provided by the Queen is non-empty.
