@@ -423,9 +423,9 @@ Big Head cannot proceed with consolidation without all 4 reports present. The pr
 4. Once all 4 reports are confirmed present, re-spawn Big Head consolidation
 
 **Re-spawn instruction:**
-```
+~~~
 Spawn Big Head again with all 4 report paths provided in the consolidation prompt.
-```
+~~~
 
 **Do not proceed** with partial or missing review data.
 ```
