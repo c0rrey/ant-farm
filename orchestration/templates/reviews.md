@@ -8,7 +8,7 @@
 Verify all 4 criteria before proceeding to team launch. These checks span ALL epics worked in this session:
 
 1. **All Dirt Pushers completed across ALL epics** — none stuck or errored (check the Queen's state file for every epic)
-2. **Dirt Moved vs Dirt Claimed (DMVDC) PASS for every agent** — verify artifact exists at `<session-dir>/pc/pc-<task-id>-dmvdc-*.md` with PASS verdict
+2. **Dirt Moved vs Dirt Claimed (DMVDC) PASS for every agent** — verify at least one artifact exists at `<session-dir>/pc/pc-<task-id>-dmvdc-*.md`; if multiple files match (e.g., after retries), check the most recent by timestamp — it must contain an explicit `PASS` verdict, not merely exist
 3. **The Queen's state file updated** — all completions tracked, checkpoint results recorded for all epics
 4. **Git log shows expected commits** — run `git log --oneline -N` (where N = total number of agents across all epics) to confirm commits exist
 
