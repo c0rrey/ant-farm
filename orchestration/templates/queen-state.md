@@ -30,6 +30,12 @@
 | Reviews | CCO | pending/completed/failed | All PASS / <details> |
 | Reviews | DMVDC + CCB | pending/completed/failed | All PASS / <details> |
 
+## Review Rounds
+- **Current round**: <1 | 2 | 3 | ...>
+- **Round 1 commit range**: <first-session-commit>..<last-impl-commit>
+- **Fix commit range**: <first-fix-commit>..<HEAD> (set after fix cycle)
+- **Termination**: <pending | terminated (round N: 0 P1/P2)>
+
 ## Queue Position
 - **Completed**: <N> of <total> tasks
 - **In progress**: <list>
