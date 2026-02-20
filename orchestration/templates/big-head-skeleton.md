@@ -3,7 +3,7 @@
 ## Instructions for The Queen
 
 Big Head is a **member of the Nitpicker team** (spawned via TeamCreate, NOT as a separate Task agent).
-Do NOT use the Task tool for Big Head — it runs inside the same TeamCreate call as the 4 Nitpickers.
+Do NOT use the Task tool for Big Head — it runs inside the same TeamCreate call as the Nitpickers (4 in round 1; 2 in round 2+).
 
 **Term definitions (canonical across all orchestration templates):**
 - `{TASK_ID}` — full bead ID including project prefix (e.g., `ant-farm-9oa`)
@@ -16,7 +16,7 @@ Do NOT use the Task tool for Big Head — it runs inside the same TeamCreate cal
 
 **Step 1 — Fill placeholders before building the TeamCreate call.**
 Replace `{PLACEHOLDER}` values (uppercase) in the agent-facing template below:
-- `{MODEL}`: Big Head model (specified in orchestration/templates/reviews.md line 322; currently `opus`)
+- `{MODEL}`: Big Head model (specified in the Big Head Consolidation Protocol section of orchestration/templates/reviews.md; currently `opus`)
 - `{DATA_FILE_PATH}`: Big Head consolidation data file written by the Pantry (review mode)
 - `{CONSOLIDATED_OUTPUT_PATH}`: `{SESSION_DIR}/review-reports/review-consolidated-{TIMESTAMP}.md`
 
@@ -71,13 +71,13 @@ Consolidate the Nitpicker reports into a unified summary.
 - Round 2+: expect 2 reports (correctness, edge-cases only)
 
 Step 0: Read your consolidation brief from {DATA_FILE_PATH}
-(Contains: all 4 report paths, dedup protocol, bead filing instructions, output path.)
+(Contains: round-appropriate report paths, dedup protocol, bead filing instructions, output path.)
 
 Your workflow:
-1. Verify all 4 report files exist — follow the missing-report handling protocol in your consolidation brief (Step 0a)
+1. Verify all expected report files exist (4 for round 1; 2 for round 2+) — follow the missing-report handling protocol in your consolidation brief (Step 0a)
    - The brief is authoritative for this step: it specifies the polling timeout, error return format, and failure conditions
    - Do NOT proceed to read reports or perform consolidation until the brief's Step 0a protocol completes successfully
-2. Read all 4 reports
+2. Read all expected reports
 3. Collect all findings into a single list
 4. Deduplicate: merge findings about the same issue across reviewers
 5. Group by root cause: one group per underlying problem, not per occurrence

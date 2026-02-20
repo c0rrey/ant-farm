@@ -24,7 +24,7 @@ The Queen handles directory creation in RULES.md Step 3b:
 mkdir -p ${SESSION_DIR}/review-reports
 ```
 
-This creates the session-scoped directory for review reports. All 4 reviewers write to `${SESSION_DIR}/review-reports/`. Verification artifacts (`pc/`) are already created at Step 0.
+This creates the session-scoped directory for review reports. All active reviewers write to `${SESSION_DIR}/review-reports/`. Verification artifacts (`pc/`) are already created at Step 0.
 
 ---
 
@@ -42,7 +42,7 @@ After the transition gate passes, the Queen launches **the Nitpickers** using **
 
 ### Model Assignments
 
-- **Nitpickers (all 4)**: `sonnet` — sufficient for code review and finding cataloging
+- **Nitpickers (all active reviewers)**: `sonnet` — sufficient for code review and finding cataloging
 
 (Big Head model is specified in the Big Head Consolidation Protocol section below.)
 
@@ -312,7 +312,7 @@ Review these files:
 <list of files changed in session>
 ```
 
-## Nitpicker Report Format (All 4 Reviewers)
+## Nitpicker Report Format (All Reviewers)
 
 Every reviewer MUST write their report to `<session-dir>/review-reports/<review-type>-review-<timestamp>.md` using this format. The Queen generates the timestamp once per review cycle and provides the exact output path in each reviewer's prompt.
 
@@ -391,15 +391,15 @@ List every in-scope file with its review status. Files with no findings MUST sti
 
 **Model:** `opus`
 
-After all 4 Nitpicker reports are complete, Big Head (a member of the same team) consolidates:
+After all Nitpicker reports are complete (4 in round 1; 2 in round 2+), Big Head (a member of the same team) consolidates:
 
 ### Verification Pipeline Design Rationale
 
 The Big Head consolidation process includes two distinct verification layers that work together:
 
-1. **Big Head Step 0 (Prerequisite Gate)**: A mandatory check performed by Big Head BEFORE reading any reports. This gate ensures all 4 expected reports exist before consolidation logic begins. This prevents wasted effort on reading partial report sets or proceeding with missing data.
+1. **Big Head Step 0 (Prerequisite Gate)**: A mandatory check performed by Big Head BEFORE reading any reports. This gate ensures all expected reports exist (4 in round 1; 2 in round 2+) before consolidation logic begins. This prevents wasted effort on reading partial report sets or proceeding with missing data.
 
-2. **Pest Control CCB Check 0 (Independent Audit)**: A separate, independent check performed AFTER Big Head consolidation is complete (see checkpoints.md). This audit verifies the same 4 reports but runs in a different context — it confirms that consolidation did not proceed in a degraded state (e.g., no reviewer failures during the review phase).
+2. **Pest Control CCB Check 0 (Independent Audit)**: A separate, independent check performed AFTER Big Head consolidation is complete (see checkpoints.md). This audit verifies the same round-appropriate reports but runs in a different context — it confirms that consolidation did not proceed in a degraded state (e.g., no reviewer failures during the review phase).
 
 **Why both?** The prerequisite gate (Big Head Step 0) is a blocker for Big Head's own work. The audit check (CCB Check 0) is an independent verification that consolidation ran on complete input — a safety check from a different agent with fresh eyes. The redundancy is intentional: different agents, different timing, different failure modes.
 
@@ -434,9 +434,9 @@ ls <session-dir>/review-reports/correctness-review-*.md \
 
 If any report file is missing after the initial check, do NOT wait indefinitely. Instead:
 
-**Timeout specification:** Wait a maximum of 30 seconds for all 4 reports to appear.
+**Timeout specification:** Wait a maximum of 30 seconds for all expected reports to appear (4 in round 1; 2 in round 2+).
 - Check once at T=0
-- If all 4 reports exist, proceed to Step 1
+- If all expected reports exist, proceed to Step 1
 - If any reports are missing, enter the polling loop below
 
 **Polling loop (if files missing):**
@@ -507,17 +507,17 @@ The following expected Nitpicker report files were not found:
 
 ## Remediation
 
-Big Head cannot proceed with consolidation without all 4 reports present. The prerequisite gate (Step 0) FAILED.
+Big Head cannot proceed with consolidation without all expected reports present. The prerequisite gate (Step 0) FAILED.
 
 **Action required from Queen:**
 1. Check review agent logs for errors or crashes
-2. Verify all 4 Nitpicker team members completed their reviews
+2. Verify all Nitpicker team members completed their reviews
 3. Confirm reports were written to: `<session-dir>/review-reports/`
-4. Once all 4 reports are confirmed present, re-spawn Big Head consolidation
+4. Once all expected reports are confirmed present, re-spawn Big Head consolidation
 
 **Re-spawn instruction:**
 ~~~
-Spawn Big Head again with all 4 report paths provided in the consolidation prompt.
+Spawn Big Head again with all expected report paths provided in the consolidation prompt.
 ~~~
 
 **Do not proceed** with partial or missing review data.
@@ -529,15 +529,21 @@ Once the error is returned:
 
 ### Step 1: Read All Reports
 
-Read all 4 reports from `<session-dir>/review-reports/` (the Queen provides exact filenames in the consolidation prompt):
+Read all expected reports from `<session-dir>/review-reports/` (the Queen provides exact filenames in the consolidation prompt):
+
+Round 1 (4 reports):
 - `clarity-review-<timestamp>.md`
 - `edge-cases-review-<timestamp>.md`
 - `correctness-review-<timestamp>.md`
 - `excellence-review-<timestamp>.md`
 
+Round 2+ (2 reports):
+- `correctness-review-<timestamp>.md`
+- `edge-cases-review-<timestamp>.md`
+
 ### Step 2: Merge and Deduplicate
 
-1. **Collect all findings** across all 4 reports into a single list
+1. **Collect all findings** across all reports into a single list
 2. **Identify duplicates** — findings reported by multiple reviewers about the same issue
 3. **Merge cross-referenced items** — where one reviewer flagged something for another's domain
 4. **Group by root cause** — apply the root-cause grouping principle across ALL review types:
@@ -549,7 +555,7 @@ Read all 4 reports from `<session-dir>/review-reports/` (the Queen provides exac
 ```markdown
 ## Root-Cause Grouping (Big Head Consolidation)
 
-For each group of related findings across all 4 reviews:
+For each group of related findings across all reviews:
 - **Root cause**: <what's systematically wrong>
 - **Affected surfaces**:
   - file1.html:L10 — <specific instance> (from clarity review)

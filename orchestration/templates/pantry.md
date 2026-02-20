@@ -232,7 +232,7 @@ Before composing review briefs, verify that the "list of ALL changed files acros
 
 Each brief contains:
 - Commit range
-- Full file list (identical across all 4, deduplicated across all epics)
+- Full file list (identical across all reviewers in this round, deduplicated across all epics)
 - Focus areas specific to that review type (from reviews.md)
 - Report output path: `{session-dir}/review-reports/{type}-review-{timestamp}.md`
 - "Do NOT file beads — Big Head handles all bead filing"
@@ -255,7 +255,7 @@ Files to write:
 > **See also**: `~/.claude/orchestration/templates/reviews.md` — **Big Head Consolidation Protocol** section. That section contains the full format specification: Step 0 (report verification gate), Steps 1-2 (read, merge/deduplicate), Step 3 (write consolidated summary), Step 4 (await Pest Control checkpoint validation, then file beads), the root-cause grouping template, and the consolidated summary format. Read it before composing this brief.
 
 Write `{session-dir}/prompts/review-big-head-consolidation.md` containing:
-- All 4 report paths (with the timestamp)
+- Round-appropriate report paths (with the timestamp): round 1: all 4; round 2+: 2 (correctness, edge-cases)
 - Deduplication protocol (from reviews.md Big Head Consolidation Protocol)
 - Bead filing instructions (note: Big Head must NOT file beads until Pest Control confirms via team message — see reviews.md Step 4 and big-head-skeleton.md steps 8-9)
 - Consolidated output path: `{session-dir}/review-reports/review-consolidated-{timestamp}.md`

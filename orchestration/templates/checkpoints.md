@@ -63,7 +63,7 @@ All checkpoints use three verdict states:
 | Checkpoint | Quantitative Threshold | Tie-Breaking Rule | Queue Blocking |
 |---|---|---|---|
 | **CCO (Dirt Pushers)** | Small file = <100 lines | First-listed section/function | WARN does not block; Queen approves before spawn |
-| **CCO (Nitpickers)** | All 4 prompts identical file list | (No tie-breaking) | FAIL blocks spawn |
+| **CCO (Nitpickers)** | All round-active prompts identical file list (round 1: 4; round 2+: 2) | (No tie-breaking) | FAIL blocks spawn |
 | **WWD** | Small file = <100 lines | First-listed changed file | WARN does not block queue; FAIL blocks queue |
 | **DMVDC (Dirt Pushers)** | Pick 2 criteria: first-listed OR identified-as-critical OR all if <2 | First-listed acceptance criterion | WARN allows resubmission; FAIL escalates |
 | **DMVDC (Nitpickers)** | Sample size = max(3, min(5, ceil(N/3))) | Include highest-severity + all tiers | WARN allows resubmission; FAIL escalates |
@@ -163,7 +163,7 @@ Where:
 
 ### The Nitpickers
 
-**When**: After composing all 4 review prompts, BEFORE creating the team
+**When**: After composing all review prompts (round 1: 4 prompts; round 2+: 2 prompts), BEFORE creating the team
 **Model**: `haiku`
 **Agent type**: `code-reviewer`
 
@@ -172,13 +172,22 @@ Where:
 
 You are **Pest Control**, the verification subagent. Your role is to audit the Nitpickers prompts before spawn.
 
-Audit the following 4 Nitpickers prompts for completeness and consistency.
+**Review round**: {REVIEW_ROUND}
+Audit the following Nitpicker prompts for completeness and consistency.
+Round 1: 4 prompts (clarity, edge-cases, correctness, excellence).
+Round 2+: 2 prompts (correctness, edge-cases only).
 Do NOT execute the prompts — only verify their contents.
 
+Round 1 — paste all 4 prompts:
 <prompt_clarity>
-{paste clarity review prompt}
+{paste clarity review prompt — round 1 only}
 </prompt_clarity>
 
+<prompt_excellence>
+{paste excellence review prompt — round 1 only}
+</prompt_excellence>
+
+Both rounds — paste these 2 prompts:
 <prompt_edge_cases>
 {paste edge cases review prompt}
 </prompt_edge_cases>
@@ -187,27 +196,23 @@ Do NOT execute the prompts — only verify their contents.
 {paste correctness review prompt}
 </prompt_correctness>
 
-<prompt_excellence>
-{paste excellence review prompt}
-</prompt_excellence>
-
 ## Verify each item (PASS or FAIL with evidence):
 
 1. **File list matches git diff**: The Queen provides the commit range (`<first-commit>..<last-commit>`) in the spawn prompt — use those exact values. This is session-wide, spanning all epics. Run `git diff --name-only <first-commit>..<last-commit>` and verify the prompt file list matches exactly. Every file in the diff must appear in the prompt, and every file in the prompt must appear in the diff. If there is a mismatch, FAIL with the list of missing/extra files.
-2. **Same file list**: All 4 prompts contain the same set of files to review (not different subsets)
-3. **Same commit range**: All 4 prompts reference the same commit range
+2. **Same file list**: All prompts contain the same set of files to review (not different subsets)
+3. **Same commit range**: All prompts reference the same commit range
 4. **Correct focus areas**: Each prompt has focus areas specific to its review type:
-   - Clarity: readability, naming, documentation, consistency, structure
+   - Clarity: readability, naming, documentation, consistency, structure (round 1 only)
    - Edge Cases: input validation, error handling, boundaries, file ops, concurrency
    - Correctness: acceptance criteria, logic errors, data integrity, regressions, cross-file
-   - Excellence: best practices, performance, security, maintainability, architecture
+   - Excellence: best practices, performance, security, maintainability, architecture (round 1 only)
    (Flag if focus areas are copy-pasted identically across prompts)
 5. **No bead filing instruction**: Each prompt contains "Do NOT file beads" or equivalent
 6. **Report format reference**: Each prompt specifies the output path `{SESSION_DIR}/review-reports/{type}-review-{timestamp}.md`
 7. **Messaging guidelines**: Each prompt includes guidance on when to message other Nitpickers
 
 ## Verdict
-- **PASS** — All 7 checks pass for all 4 prompts
+- **PASS** — All 7 checks pass for all prompts in scope for this round
 - **FAIL: <list each failing check, specifying which prompt(s)>**
 
 Write your verification report to:
