@@ -55,6 +55,15 @@ Step 0: Read your consolidation brief from {DATA_FILE_PATH}
 
 Your workflow:
 1. Verify all 4 report files exist (FAIL immediately if any missing)
+   - **If any report file is missing**: Write failure artifact to `{SESSION_DIR}/review-reports/review-consolidated-{TIMESTAMP}-FAILED.md`:
+     ```
+     # Big Head Consolidation [INFRASTRUCTURE FAILURE]
+     **Status**: FAILED — one or more Nitpicker report files missing
+     **Missing reports**: {list of missing file paths}
+     **Recovery**: Verify that all 4 Nitpickers (clarity, edge-cases, correctness, excellence) have completed and written their reports to the expected paths. Do NOT proceed with consolidation.
+     ```
+   - Return FAIL with error: "Report file(s) missing: {list}"
+   - Do NOT proceed to read reports or perform consolidation
 2. Read all 4 reports
 3. Collect all findings into a single list
 4. Deduplicate: merge findings about the same issue across reviewers

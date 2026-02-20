@@ -329,6 +329,13 @@ Compare the actual changes to the summary doc's "Files changed" and "Implementat
 ## Check 2: Acceptance Criteria Spot-Check
 Run `bd show {TASK_ID}` to get the task's acceptance criteria.
 
+**GUARD: bd show Failure Handling (INFRASTRUCTURE FAILURE)**
+If `bd show {TASK_ID}` fails (task not found, unreadable, or bd command error):
+- Record the infrastructure failure: "{TASK_ID} — bd show failed: {error details}"
+- Write a note in your review report: "Could not retrieve acceptance criteria for {TASK_ID} via `bd show`: {error}. Proceeding with criteria from summary doc only."
+- Do NOT abort the review; use the acceptance criteria listed in the agent's summary doc instead
+- Clearly mark this fallback in your findings: "[Note: Criteria from summary doc, not from `bd show`]"
+
 **Tie-breaking rule for selecting which criteria to verify** (when multiple criteria exist):
 1. Pick the first 2 criteria listed in the acceptance criteria section, OR
 2. If the summary doc identifies specific criteria as "critical," pick those 2, OR

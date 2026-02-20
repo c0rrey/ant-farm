@@ -29,18 +29,39 @@ For each task ID in the input list:
 1. Read `{session-dir}/task-metadata/{TASK_SUFFIX}.md`.
    **FAIL-FAST CHECK**: Halt and report for any of these conditions:
 
-   **Condition 1 — File missing or Scout error**: File is absent, unreadable, or contains `**Status**: error`.
+   **Condition 1 — File missing or Scout error (INFRASTRUCTURE FAILURE)**: File is absent, unreadable, or contains `**Status**: error`.
+   - **Failure artifact**: Write to `{session-dir}/prompts/task-{TASK_SUFFIX}-FAILED.md`:
+     ```
+     # Task Brief: {TASK_ID} [INFRASTRUCTURE FAILURE]
+     **Status**: FAILED — metadata file missing or Scout error
+     **Reason**: {detailed error from file read attempt or Status field}
+     **Recovery**: Scout must re-run for this task. Do NOT retry Pantry.
+     ```
    - Record the task ID and error details in a failure list
    - Do NOT write a task brief for this task
    - Report: `TASK FAILED: {TASK_ID} — Scout metadata error: {error details}`
    - Do not proceed with task brief composition for this task
 
-   **Condition 2 — Incomplete metadata**: Any required section is absent, empty, or contains only whitespace.
+   **Condition 2 — Incomplete metadata (SUBSTANCE FAILURE)**: Any required section is absent, empty, or contains only whitespace.
    Required sections: `**Title**`, `**Affected Files**`, `**Root Cause**`, `**Expected Behavior**`, `**Acceptance Criteria**`, `**Agent Type**`.
+   - **Failure artifact**: Write to `{session-dir}/prompts/task-{TASK_SUFFIX}-FAILED.md`:
+     ```
+     # Task Brief: {TASK_ID} [SUBSTANCE FAILURE]
+     **Status**: FAILED — metadata incomplete
+     **Missing sections**: {list of empty/absent required sections}
+     **Recovery**: Scout metadata needs manual review. Do NOT proceed with task brief composition.
+     ```
    - Report: `TASK FAILED: {TASK_ID} — Incomplete metadata: missing or empty section(s): {section names}`
    - Do NOT write a task brief for this task; skip to the next task
 
-   **Condition 3 — Placeholder-contaminated metadata**: The metadata contains unfilled placeholder text from the Scout template. Placeholders appear as `<angle-bracket text>` (e.g., `<copy from bead>`, `<list from bead>`) or as `[square-bracket text]` (e.g., `[root cause here]`). Note: `{UPPERCASE}` tokens in this Pantry template are Pantry instruction text, not Scout placeholders — do NOT treat them as contamination.
+   **Condition 3 — Placeholder-contaminated metadata (SUBSTANCE FAILURE)**: The metadata contains unfilled placeholder text from the Scout template. Placeholders appear as `<angle-bracket text>` (e.g., `<copy from bead>`, `<list from bead>`) or as `[square-bracket text]` (e.g., `[root cause here]`). Note: `{UPPERCASE}` tokens in this Pantry template are Pantry instruction text, not Scout placeholders — do NOT treat them as contamination.
+   - **Failure artifact**: Write to `{session-dir}/prompts/task-{TASK_SUFFIX}-FAILED.md`:
+     ```
+     # Task Brief: {TASK_ID} [SUBSTANCE FAILURE]
+     **Status**: FAILED — metadata contains unfilled placeholders
+     **Placeholders found**: {list of examples, e.g., `<copy from bead>`, `[root cause here]`}
+     **Recovery**: Scout metadata needs manual review to fill placeholders. Do NOT proceed.
+     ```
    - Report: `TASK FAILED: {TASK_ID} — Placeholder-contaminated metadata: found unfilled placeholders: {examples}`
    - Do NOT write a task brief for this task; skip to the next task
 
@@ -191,6 +212,19 @@ Use the review timestamp provided by the Queen. Do NOT generate a new timestamp.
 ### Step 3: Compose Review Briefs
 
 Create the prompts directory if needed: `{session-dir}/prompts/`
+
+**GUARD: Empty File List Check (SUBSTANCE FAILURE)**
+Before composing review briefs, verify that the "list of ALL changed files across all epics" provided by the Queen is non-empty.
+- **If the file list is empty or contains only whitespace**:
+  - Write failure artifact to `{session-dir}/prompts/review-FAILED.md`:
+    ```
+    # Review Briefs [SUBSTANCE FAILURE]
+    **Status**: FAILED — no changed files to review
+    **Issue**: Queen provided empty or whitespace-only file list
+    **Recovery**: Verify that the commit range contains actual changes. If all commits are no-ops, review mode should not proceed.
+    ```
+  - Return FAIL: "Review composition aborted: no changed files in commit range"
+  - Do NOT proceed to compose review briefs
 
 Compose 4 review briefs, each containing:
 - Commit range
