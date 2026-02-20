@@ -351,6 +351,78 @@ ls <session-dir>/review-reports/clarity-review-*.md \
 2. Check if the reviewer is still running, errored, or wrote to the wrong path
 3. Do NOT proceed with consolidation until all 4 reports are present
 
+### Step 0a: Remediation Path for Missing Reports (TIMEOUT + ERROR RETURN)
+
+If any report file is missing after the initial check, do NOT wait indefinitely. Instead:
+
+**Timeout specification:** Wait a maximum of 30 seconds for all 4 reports to appear.
+- Check once at T=0
+- If all 4 reports exist, proceed to Step 1
+- If any reports are missing, enter the polling loop below
+
+**Polling loop (if files missing):**
+```bash
+# Poll up to 30 seconds total for missing reports
+TIMEOUT=30
+ELAPSED=0
+POLL_INTERVAL=2
+
+while [ $ELAPSED -lt $TIMEOUT ]; do
+  MISSING_REPORTS=$(
+    ls <session-dir>/review-reports/clarity-review-*.md 2>/dev/null && \
+    ls <session-dir>/review-reports/edge-cases-review-*.md 2>/dev/null && \
+    ls <session-dir>/review-reports/correctness-review-*.md 2>/dev/null && \
+    ls <session-dir>/review-reports/excellence-review-*.md 2>/dev/null || true
+  )
+  if [ "$(echo "$MISSING_REPORTS" | wc -l)" -eq 4 ]; then
+    # All 4 reports now present, proceed
+    break
+  fi
+  sleep $POLL_INTERVAL
+  ELAPSED=$((ELAPSED + POLL_INTERVAL))
+done
+```
+
+**Error return (if timeout exceeded):**
+
+If timeout is reached and any reports are still missing, IMMEDIATELY return an error to the Queen:
+
+```markdown
+# Big Head Consolidation - BLOCKED: Missing Nitpicker Reports
+
+**Status**: FAILED (timeout after 30 seconds)
+**Timestamp**: <current ISO 8601 timestamp>
+
+## Missing Reports
+
+The following expected Nitpicker report files were not found:
+- Clarity review report (clarity-review-*.md) — MISSING
+- Edge cases review report (edge-cases-review-*.md) — MISSING [or: FOUND at <path>]
+- Correctness review report (correctness-review-*.md) — MISSING [or: FOUND at <path>]
+- Excellence review report (excellence-review-*.md) — MISSING [or: FOUND at <path>]
+
+## Remediation
+
+Big Head cannot proceed with consolidation without all 4 reports present. The prerequisite gate (Step 0) FAILED.
+
+**Action required from Queen:**
+1. Check review agent logs for errors or crashes
+2. Verify all 4 Nitpicker team members completed their reviews
+3. Confirm reports were written to: `<session-dir>/review-reports/`
+4. Once all 4 reports are confirmed present, re-spawn Big Head consolidation
+
+**Re-spawn instruction:**
+```
+Spawn Big Head again with all 4 report paths provided in the consolidation prompt.
+```
+
+**Do not proceed** with partial or missing review data.
+```
+
+Once the error is returned:
+- Return the error message and STOP (do not continue to Steps 1-4)
+- The Queen receives this error and must decide: retry with fresh Nitpicker spawn, or abort session
+
 ### Step 1: Read All Reports
 
 Read all 4 reports from `<session-dir>/review-reports/` (the Queen provides exact filenames in the consolidation prompt):
