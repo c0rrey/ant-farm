@@ -405,20 +405,28 @@ The Big Head consolidation process includes two distinct verification layers tha
 
 ### Step 0: Verify All Reports Exist (MANDATORY GATE)
 
-Before reading any reports, verify all 4 expected files exist:
+Before reading any reports, verify the expected files exist. The number of expected reports depends on the review round:
+
+**Round 1**: Verify all 4 report files exist:
 
 ```bash
-# Verify all 4 review types exist in the session review-reports directory
 ls <session-dir>/review-reports/clarity-review-*.md \
    <session-dir>/review-reports/edge-cases-review-*.md \
    <session-dir>/review-reports/correctness-review-*.md \
    <session-dir>/review-reports/excellence-review-*.md
 ```
 
-**All 4 files MUST exist.** If any file is missing:
+**Round 2+**: Verify 2 report files exist (correctness and edge-cases only):
+
+```bash
+ls <session-dir>/review-reports/correctness-review-*.md \
+   <session-dir>/review-reports/edge-cases-review-*.md
+```
+
+**All expected files MUST exist.** If any file is missing:
 1. Identify which reviewer failed to produce output
 2. Check if the reviewer is still running, errored, or wrote to the wrong path
-3. Do NOT proceed with consolidation until all 4 reports are present
+3. Do NOT proceed with consolidation until all expected reports are present
 
 ### Step 0a: Remediation Path for Missing Reports (TIMEOUT + ERROR RETURN)
 
@@ -442,16 +450,29 @@ ELAPSED=0
 POLL_INTERVAL=2
 TIMED_OUT=1
 
-while [ $ELAPSED -lt $TIMEOUT ]; do
-  # Check each report type individually with [ -f ] to avoid wc -l count fragility.
-  # head -1 ensures re-runs with multiple matching files don't break the check.
-  FOUND_CLARITY=$(ls <session-dir>/review-reports/clarity-review-*.md 2>/dev/null | head -1)
-  FOUND_EDGE=$(ls <session-dir>/review-reports/edge-cases-review-*.md 2>/dev/null | head -1)
-  FOUND_CORRECTNESS=$(ls <session-dir>/review-reports/correctness-review-*.md 2>/dev/null | head -1)
-  FOUND_EXCELLENCE=$(ls <session-dir>/review-reports/excellence-review-*.md 2>/dev/null | head -1)
+# The brief specifies which reports to expect (4 for round 1, 2 for round 2+).
+# Check only the expected reports. The Pantry writes the exact paths into the brief.
 
-  if [ -f "$FOUND_CLARITY" ] && [ -f "$FOUND_EDGE" ] && [ -f "$FOUND_CORRECTNESS" ] && [ -f "$FOUND_EXCELLENCE" ]; then
-    # All 4 reports now present, proceed
+while [ $ELAPSED -lt $TIMEOUT ]; do
+  # Round 1: check all 4
+  # Round 2+: check only correctness and edge-cases
+  # The brief lists the exact expected report paths. Check each with [ -f ].
+  # head -1 ensures re-runs with multiple matching files don't break the check.
+  ALL_FOUND=1
+
+  # Always expected (both rounds):
+  FOUND_CORRECTNESS=$(ls <session-dir>/review-reports/correctness-review-*.md 2>/dev/null | head -1)
+  FOUND_EDGE=$(ls <session-dir>/review-reports/edge-cases-review-*.md 2>/dev/null | head -1)
+  [ -f "$FOUND_CORRECTNESS" ] && [ -f "$FOUND_EDGE" ] || ALL_FOUND=0
+
+  # Round 1 only (skip these checks in round 2+):
+  # <IF ROUND 1>
+  FOUND_CLARITY=$(ls <session-dir>/review-reports/clarity-review-*.md 2>/dev/null | head -1)
+  FOUND_EXCELLENCE=$(ls <session-dir>/review-reports/excellence-review-*.md 2>/dev/null | head -1)
+  [ -f "$FOUND_CLARITY" ] && [ -f "$FOUND_EXCELLENCE" ] || ALL_FOUND=0
+  # </IF ROUND 1>
+
+  if [ $ALL_FOUND -eq 1 ]; then
     TIMED_OUT=0
     break
   fi
@@ -460,10 +481,11 @@ while [ $ELAPSED -lt $TIMEOUT ]; do
 done
 
 if [ $TIMED_OUT -eq 1 ]; then
-  # Timeout reached — fall through to the error return below
-  echo "TIMEOUT: Not all 4 reports arrived within ${TIMEOUT}s"
+  echo "TIMEOUT: Not all expected reports arrived within ${TIMEOUT}s"
 fi
 ```
+
+**Pantry responsibility**: When composing the Big Head brief, the Pantry writes the concrete version of this polling loop with the round-specific checks. In round 1, all 4 report checks are included. In round 2+, only the correctness and edge-cases checks are included (the `<IF ROUND 1>` block is omitted). The template above shows the full structure for reference; the Pantry adapts it per round.
 
 **Error return (if timeout exceeded):**
 
@@ -547,22 +569,21 @@ Write the consolidated summary to `<session-dir>/review-reports/review-consolida
 # Consolidated Review Summary
 
 **Scope**: <list of all files reviewed>
-**Reviews completed**: Clarity, Edge Cases, Correctness, Excellence
-**Reports verified**: clarity-review.md ✓, edge-cases-review.md ✓, correctness-review.md ✓, excellence-review.md ✓
+**Reviews completed**: <Round 1: Clarity, Edge Cases, Correctness, Excellence | Round 2+: Correctness, Edge Cases>
 **Total raw findings**: <N across all reviews>
 **Root causes identified**: <N after dedup>
 **Beads filed**: <N>
 
 ## Read Confirmation
 
-**All 4 reports read and processed by Big Head consolidation:**
+**Reports read and processed by Big Head consolidation:**
+
+Round 1: 4 reports (clarity, edge-cases, correctness, excellence)
+Round 2+: 2 reports (correctness, edge-cases)
 
 | Report Type | File | Status | Finding Count |
 |-------------|------|--------|----------------|
-| Clarity | clarity-review-<timestamp>.md | ✓ Read | <N> findings |
-| Edge Cases | edge-cases-review-<timestamp>.md | ✓ Read | <N> findings |
-| Correctness | correctness-review-<timestamp>.md | ✓ Read | <N> findings |
-| Excellence | excellence-review-<timestamp>.md | ✓ Read | <N> findings |
+| <for each report in this round> | <filename> | ✓ Read | <N> findings |
 
 **Total findings from all reports**: <N>
 
