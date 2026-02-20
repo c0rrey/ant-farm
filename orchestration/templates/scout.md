@@ -42,7 +42,9 @@ Based on input mode:
 Then (skip for `ready` mode — tasks are already unblocked):
 - Run `bd ready` to identify which discovered tasks are unblocked
 - Run `bd blocked` to map dependency chains
-- Separate tasks into "ready" and "blocked" lists
+- Separate tasks into "ready" (wave 1 candidates) and "blocked" (later wave candidates)
+- **Plan the full execution**: blocked tasks are NOT out of scope — they belong in later waves
+  based on their dependency chains. The goal is a complete multi-wave plan covering ALL tasks.
 
 ## Step 2.5: Discover Available Agents
 
@@ -73,7 +75,7 @@ the fallback when no discovered specialist fits.
 
 Create the metadata directory: `mkdir -p {SESSION_DIR}/task-metadata/`
 
-For each **ready** task:
+For each task (ready AND blocked):
 1. Run `bd show <task-id>`
 2. Write to `{SESSION_DIR}/task-metadata/{task-suffix}.md` using this exact format:
 
@@ -110,8 +112,8 @@ your Step 2.5 catalog. Consider in order:
 3. **Description match** — agent descriptions vs task root cause/title
 4. **Fallback** — `general-purpose` if no specialist clearly fits
 
-For each **blocked** task: note the blocker in the briefing but do NOT
-write a metadata file (the Pantry only needs metadata for tasks that will be worked on).
+For blocked tasks: include `**Blocked by**: {blocker-id-1}, {blocker-id-2}` in the metadata file,
+and note which wave the blockers are expected to complete in (based on Step 5 wave assignments).
 
 **Write each file immediately after extraction** — do not batch.
 
@@ -127,14 +129,17 @@ Using the decision matrix from dependency-analysis.md:
 
 ## Step 5: Propose Strategies
 
-Propose 2-3 execution strategies. **Each strategy is a complete, non-overlapping alternative where every ready task appears in exactly one strategy.** This ensures you haven't missed tasks or accidentally grouped them in multiple strategies.
+Propose 2-3 execution strategies. **Each strategy is a complete, non-overlapping alternative where every task (ready AND blocked) appears in exactly one wave.** This ensures the Queen sees the full execution plan upfront.
+
+**Wave ordering rule**: Wave 1 = currently unblocked tasks. Wave N+1 = tasks whose blockers are ALL assigned to waves 1..N. If a task's blockers span multiple waves, it goes in the wave after its latest blocker.
 
 Each strategy MUST include:
-- **Wave groupings**: which specific tasks go in each wave
+- **Wave groupings**: which specific tasks go in each wave (all waves, not just wave 1)
 - **Agent count per wave**: respecting the max 7 concurrent limit
 - **File conflict handling**: how conflicts are resolved (batching, serialization, rebase)
+- **Dependency gates**: which waves must complete before subsequent waves can start
 - **Risk assessment**: overall risk level and what could go wrong
-- **Coverage**: verify all ready tasks are assigned to exactly one wave across all strategies
+- **Coverage**: verify all tasks (ready + blocked) are assigned to exactly one wave
 
 Recommend one strategy with explicit rationale (reference specific conflict
 patterns or dependency chains that informed the recommendation).
@@ -143,16 +148,16 @@ patterns or dependency chains that informed the recommendation).
 
 **This is a mandatory gate. Do NOT proceed to Step 6 until it passes.**
 
-After proposing strategies, cross-check every strategy against the full ready task inventory
-from Step 2 to confirm no task was silently dropped.
+After proposing strategies, cross-check every strategy against the full task inventory
+(ready AND blocked) from Step 2 to confirm no task was silently dropped.
 
 1. **Collect assigned tasks**: For each proposed strategy, union all task IDs across
    every wave in that strategy. Build one flat list per strategy.
 
 2. **Compare against inventory**: For each strategy, compute:
    - `assigned_count` = number of unique task IDs in that strategy's wave groupings
-   - `inventory_count` = total number of ready tasks from Step 2
-   - `unassigned` = ready task IDs that appear in the inventory but NOT in this strategy
+   - `inventory_count` = total number of tasks from Step 2 (ready + blocked)
+   - `unassigned` = task IDs that appear in the inventory but NOT in this strategy
 
 3. **Pass condition**: `assigned_count == inventory_count` AND `unassigned` is empty
    for every proposed strategy.
@@ -163,9 +168,8 @@ from Step 2 to confirm no task was silently dropped.
      ERROR: Strategy A is missing 1 task(s): ant-farm-jv4
      ```
    - Add the missing tasks to the appropriate wave before continuing.
-     Small, conflict-free tasks that have no file overlaps with other tasks
-     should be placed in Wave 1 as solo agents unless that would exceed the
-     7-agent limit, in which case defer to the earliest wave with capacity.
+     Ready tasks with no file overlaps should go in Wave 1 (capacity permitting).
+     Blocked tasks should go in the wave after their latest blocker.
    - Re-verify after adding. Do NOT proceed until all strategies pass.
 
 5. **Record verification result** in a `## Coverage Verification` block immediately
@@ -173,10 +177,10 @@ from Step 2 to confirm no task was silently dropped.
 
    ```
    ## Coverage Verification
-   - Inventory: {N} ready tasks
-   - Strategy A: {N} assigned — PASS  (or: FAIL — missing: {id-list})
-   - Strategy B: {N} assigned — PASS
-   - Strategy C: {N} assigned — PASS
+   - Inventory: {N} total tasks ({X} ready + {Y} blocked)
+   - Strategy A: {N} assigned across {W} waves — PASS  (or: FAIL — missing: {id-list})
+   - Strategy B: {N} assigned across {W} waves — PASS
+   - Strategy C: {N} assigned across {W} waves — PASS
    ```
 
 ## Step 6: Write Briefing
@@ -191,7 +195,7 @@ Write `{SESSION_DIR}/briefing.md` using this exact format:
 |----|------|-------|----------|------|-------|-------|------|
 | {id} | {epic-id} | {title} | P{N} | {type} | {agent} | {file list} | HIGH/MED/LOW |
 
-**Ready**: {N} tasks | **Blocked**: {M} tasks ({list with reasons})
+**Total**: {N} tasks | **Wave 1 (ready)**: {X} tasks | **Later waves (blocked)**: {Y} tasks
 
 ## File Modification Matrix
 | File | Tasks | Risk |
@@ -217,10 +221,10 @@ Write `{SESSION_DIR}/briefing.md` using this exact format:
 ...
 
 ## Coverage Verification
-- Inventory: {N} ready tasks
-- Strategy A: {N} assigned — PASS
-- Strategy B: {N} assigned — PASS
-- Strategy C: {N} assigned — PASS
+- Inventory: {N} total tasks ({X} ready + {Y} blocked)
+- Strategy A: {N} assigned across {W} waves — PASS
+- Strategy B: {N} assigned across {W} waves — PASS
+- Strategy C: {N} assigned across {W} waves — PASS
 
 ## Metadata
 - Epics: {epic-id-1}, {epic-id-2}, ... (deduplicated list; use `none` for tasks with no epic parent)
@@ -235,8 +239,8 @@ Return a compact verdict to the Queen (this is ALL the Queen reads from you):
 ```
 Briefing: {SESSION_DIR}/briefing.md
 Epics: {epic-id-1}, {epic-id-2}, ...
-Tasks: {N} ready, {M} blocked
-Metadata: {SESSION_DIR}/task-metadata/ ({N} files)
+Tasks: {N} total ({X} ready, {Y} blocked) across {W} waves
+Metadata: {SESSION_DIR}/task-metadata/ ({N} files — all tasks)
 Agent types: {comma-separated unique types, e.g. python-pro, debugger}
 Highest risk: {HIGH/MEDIUM/LOW}
 Recommended strategy: {strategy name}
@@ -260,6 +264,6 @@ Recommended strategy: {strategy name}
   Do not proceed with analysis.
 - **If filter returns zero results**: Return a verdict noting zero tasks found.
   The Queen can re-prompt with a different filter.
-- **If all tasks are blocked**: Still write the briefing with the blocked task
-  list and dependency chains, but note "0 ready tasks" in the verdict.
-  Do not write metadata files.
+- **If all tasks are blocked**: Still write the briefing with all tasks and
+  dependency chains, write metadata files for all tasks, but note "0 ready tasks —
+  all tasks have unresolved external blockers" in the verdict.
