@@ -15,7 +15,7 @@ The system has three layers: **the Queen** (the orchestrator that never touches 
 ├───────────┬─────────────┬───────────────────────────────┤
 │  Scout    │  Pantry     │  Pest Control                 │
 │  - Recon  │  - Composes │  - CCO (prompt audit)         │
-│  - Writes │   data files│  - WWD (scope)                │
+│  - Writes │   task briefs│  - WWD (scope)                │
 │   briefing│  - Writes   │  - DMVDC (substance)          │
 │  - Writes │    previews │  - CCB (consolidation         │
 │   metadata│             │    audit)                     │
@@ -56,9 +56,9 @@ The Queen delegates prompt composition to **the Pantry**, a subagent that:
 1. Reads `orchestration/templates/implementation.md` (keeping it out of the Queen's context)
 2. Extracts pre-digested context from each task (affected files, root cause, acceptance criteria)
 3. Copies the agent type recommendation from the Scout's task metadata (the Scout selects agent types dynamically based on available agents)
-4. Writes a data file per task with scope boundaries, agent type, and explicit off-limits areas
-5. Writes combined prompt previews (skeleton + data file) to `{session-dir}/previews/`
-6. Returns a file path table — task IDs, agent types, data files, and preview files
+4. Writes a task brief per task with scope boundaries, agent type, and explicit off-limits areas
+5. Writes combined prompt previews (skeleton + task brief) to `{session-dir}/previews/`
+6. Returns a file path table — task IDs, agent types, task briefs, and preview files
 
 The Queen then spawns **Pest Control** to audit the preview files against the **Colony Cartography Office (CCO)** checkpoint. Pest Control reads `orchestration/templates/checkpoints.md` itself, audits each preview, writes reports, and returns a verdict table. The Queen only spawns agents with PASS verdicts.
 
@@ -69,7 +69,7 @@ Queen                          Pantry                    Pest Control
   │  "compose Wave N prompts"    │                           │
   │                              ├─read templates            │
   │                              ├─read task-metadata/       │
-  │                              ├─write data files to disk  │
+  │                              ├─write task briefs to disk  │
   │                              ├─write combined previews   │
   │  ◄──return paths + done──────┤                           │
   │  (~10 lines)                 │(agent dies, context freed)│
@@ -89,7 +89,7 @@ Queen                          Pantry                    Pest Control
   ├──spawn Dirt Pushers (up to 7)──►                         │
 ```
 
-The Queen then spawns agents using `orchestration/templates/dirt-pusher-skeleton.md`, a minimal template that points the agent to its data file. Each agent is spawned with the specialist `subagent_type` recommended by the Pantry (e.g., `python-pro` for `.py` files, `debugger` for investigation bugs). Each agent executes 6 mandatory steps:
+The Queen then spawns agents using `orchestration/templates/dirt-pusher-skeleton.md`, a minimal template that points the agent to its task brief. Each agent is spawned with the specialist `subagent_type` recommended by the Pantry (e.g., `python-pro` for `.py` files, `debugger` for investigation bugs). Each agent executes 6 mandatory steps:
 
 1. **Claim** — `bd show` + `bd update --status=in_progress`
 2. **Design** — 4+ genuinely distinct approaches with tradeoffs (not cosmetic variations)
@@ -98,7 +98,7 @@ The Queen then spawns agents using `orchestration/templates/dirt-pusher-skeleton
 5. **Commit** — `git pull --rebase` then commit with task ID in message
 6. **Summary doc** — structured artifact with approaches, rationale, review evidence, and test results
 
-Agents are constrained by **scope boundaries**: they may only edit the files and line ranges listed in their data file. If they notice adjacent issues, they document them in an "Adjacent Issues Found" section but do not fix them.
+Agents are constrained by **scope boundaries**: they may only edit the files and line ranges listed in their task brief. If they notice adjacent issues, they document them in an "Adjacent Issues Found" section but do not fix them.
 
 ### Step 3: Monitor and verify
 
@@ -171,9 +171,9 @@ Queen                          Pantry                    Pest Control
   │                              │                           │
   ├──spawn (review mode)──────►  │                           │
   │  "compose review prompts"    ├─read reviews.md           │
-  │                              ├─write 4 review data files │
+  │                              ├─write 4 review task briefs │
   │                              ├─write combined previews   │
-  │                              ├─write Big Head data file  │
+  │                              ├─write Big Head consolidation brief  │
   │  ◄──return paths─────────────┤                           │
   │  (~15 lines)                 │                           │
   │                                                          │
