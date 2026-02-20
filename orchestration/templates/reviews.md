@@ -703,25 +703,29 @@ In round 2+, Big Head auto-files P3 findings to the "Future Work" epic without u
 ### Nitpicker Checklist (verify before launching team)
 
 Before launching the review agent team, confirm:
-- [ ] All 4 Nitpicker prompts include review scope (list of all files to review)
+- [ ] Review round number passed to Pantry (`Review round: <N>`)
+- [ ] Round 1: All 4 Nitpicker prompts include review scope; Round 2+: 2 prompts (Correctness, Edge Cases)
 - [ ] Each Nitpicker has focus areas specific to their review type
+- [ ] Round 2+ reviewers include out-of-scope finding bar instructions from the Round 2+ Reviewer Instructions section
 - [ ] Catalog phase instructions included (find all, group preliminarily)
 - [ ] Report format instructions included (use standard Nitpicker report format)
 - [ ] Each prompt says "Do NOT file beads — Big Head handles all bead filing"
 - [ ] Messaging guidelines included (what to share, what not to share)
 - [ ] Reports write to `<session-dir>/review-reports/<review-type>-review-<timestamp>.md`
-- [ ] Team has 6 members: 4 Nitpickers + Big Head + Pest Control (Pest Control must be a team member so Big Head can SendMessage to it for checkpoint validation)
+- [ ] Round 1: Team has 6 members (4 Nitpickers + Big Head + Pest Control); Round 2+: 4 members (2 Nitpickers + Big Head + Pest Control)
+- [ ] Round 2+: Big Head prompt includes review round number and P3 auto-filing instructions
 
 ### Big Head Consolidation Checklist (after all Nitpickers finish)
 
 Before filing beads, confirm Big Head has:
-- [ ] Read all 4 Nitpicker reports
+- [ ] Round 1: Read all 4 Nitpicker reports; Round 2+: Read 2 reports (Correctness, Edge Cases)
 - [ ] Merged duplicate findings across reviews
 - [ ] Grouped all findings by root cause (not per-occurrence)
 - [ ] Written consolidated summary to `<session-dir>/review-reports/review-consolidated-<timestamp>.md`
 - [ ] Sent consolidated report path to Pest Control via SendMessage
 - [ ] Received Pest Control verdict (PASS or FAIL + specifics)
 - [ ] On PASS: filed ONE bead per root cause with all affected surfaces listed
+- [ ] Round 2+ on PASS: P3 beads auto-filed to "Future Work" epic (not presented to user)
 - [ ] On FAIL: escalated failed findings to Queen; filed beads only for validated findings
 
 ## After Consolidation Complete
