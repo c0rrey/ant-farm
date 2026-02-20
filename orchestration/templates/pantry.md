@@ -19,6 +19,21 @@ For detailed extraction rules and examples, see `~/.claude/orchestration/referen
 
 ### Step 1: Read Templates
 
+You absorb the cost of reading this template, not the Queen. The purpose of reading implementation.md is to understand the **context and workflow** that shapes how you compose task briefs and construct summary doc sections. Specifically, implementation.md defines the 6-step dirt-pusher workflow that agents will execute, the mandatory sections that must appear in task briefs, and the structure of summary docs that agents will write. By absorbing this template, you understand:
+
+1. The **6-step dirt-pusher workflow** (Claim → Design → Implement → Review → Commit → Summary Doc) — task briefs you compose will instruct agents to follow these exact steps
+2. The **mandatory summary doc sections** that agents must complete (Approaches Considered, Selected Approach, Implementation, Correctness Review, Build/Test Validation, Acceptance Criteria) — you must ensure task briefs reference this output format in their "Summary Doc Sections" field
+3. The **fail-safe guardrails** agents use (MANDATORY checkpoints for Design and Correctness Review) — task briefs must emphasize these checkpoints so agents don't skip them
+4. The **information diet principle** (extract pre-digested context from beads, don't make agents re-discover) — your briefs must be surgical and pre-contextual
+
+**Extract these items as you read implementation.md:**
+- Summary doc required sections (list them)
+- The 6 mandatory steps (understand their sequence and purpose)
+- Why Design (Step 2) and Correctness Review (Step 4) are MANDATORY
+- Why Summary Docs (Step 6) must include all sections and what "incomplete" means
+- Scope boundary principle (agents should ONLY edit specified files, document adjacent issues without fixing them)
+- Information diet: what beads provide (root cause, affected surfaces, expected behavior, fix description, acceptance criteria)
+
 Read this file (you absorb the cost, not the Queen):
 - `~/.claude/orchestration/templates/implementation.md`
 
@@ -388,7 +403,7 @@ Findings merged:
 
 ### Step 5: Write Combined Review Previews
 
-1. Read `~/.claude/orchestration/templates/nitpicker-skeleton.md`
+1. Read `~/.claude/orchestration/templates/nitpicker-skeleton.md` and `~/.claude/orchestration/templates/big-head-skeleton.md`
 2. **Round 1**: For each of 4 reviews, construct a combined prompt preview
    **Round 2+**: For each of 2 reviews (correctness, edge-cases), construct a combined prompt preview
 3. For each review:
@@ -396,6 +411,13 @@ Findings merged:
    b. Fill in `{UPPERCASE}` placeholders (including `{REVIEW_ROUND}`)
    c. Append the review brief content below it
    d. Write to `{session-dir}/previews/review-{type}-preview.md`
+
+4. **Big Head preview** (generated for all rounds): Construct a combined prompt preview for Big Head consolidation:
+   a. Take the big-head-skeleton.md template text (below the `---` separator)
+   b. Fill in `{DATA_FILE_PATH}` placeholder with `{session-dir}/prompts/review-big-head-consolidation.md`
+   c. Fill in `{CONSOLIDATED_OUTPUT_PATH}` placeholder with `{session-dir}/review-reports/review-consolidated-{timestamp}.md`
+   d. Append the Big Head consolidation brief content (read from `{session-dir}/prompts/review-big-head-consolidation.md`)
+   e. Write to `{session-dir}/previews/review-big-head-preview.md`
 
 These preview files are what Pest Control will audit against the CCO.
 
@@ -411,9 +433,7 @@ Return to the Queen:
 | edge-cases  | {session-dir}/prompts/review-edge-cases.md | {session-dir}/previews/review-edge-cases-preview.md | {session-dir}/review-reports/edge-cases-review-{timestamp}.md |
 | correctness | {session-dir}/prompts/review-correctness.md | {session-dir}/previews/review-correctness-preview.md | {session-dir}/review-reports/correctness-review-{timestamp}.md |
 | excellence  | {session-dir}/prompts/review-excellence.md | {session-dir}/previews/review-excellence-preview.md | {session-dir}/review-reports/excellence-review-{timestamp}.md |
-
-Big Head consolidation data: {session-dir}/prompts/review-big-head-consolidation.md (includes round number)
-Big Head consolidated output: {session-dir}/review-reports/review-consolidated-{timestamp}.md
+| big-head    | {session-dir}/prompts/review-big-head-consolidation.md | {session-dir}/previews/review-big-head-preview.md | {session-dir}/review-reports/review-consolidated-{timestamp}.md |
 ```
 
 **Round 2+ return table:**
@@ -422,9 +442,7 @@ Big Head consolidated output: {session-dir}/review-reports/review-consolidated-{
 |-------------|-------|--------------|-------------------|
 | correctness | {session-dir}/prompts/review-correctness.md | {session-dir}/previews/review-correctness-preview.md | {session-dir}/review-reports/correctness-review-{timestamp}.md |
 | edge-cases  | {session-dir}/prompts/review-edge-cases.md | {session-dir}/previews/review-edge-cases-preview.md | {session-dir}/review-reports/edge-cases-review-{timestamp}.md |
-
-Big Head consolidation data: {session-dir}/prompts/review-big-head-consolidation.md (includes round number)
-Big Head consolidated output: {session-dir}/review-reports/review-consolidated-{timestamp}.md
+| big-head    | {session-dir}/prompts/review-big-head-consolidation.md | {session-dir}/previews/review-big-head-preview.md | {session-dir}/review-reports/review-consolidated-{timestamp}.md |
 ```
 
 ---
