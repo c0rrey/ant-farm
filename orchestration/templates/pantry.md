@@ -437,6 +437,40 @@ if [ $TIMED_OUT -eq 1 ]; then
 fi
 ```
 
+**Step 0a: Remediation Path for Missing Reports (TIMEOUT + ERROR RETURN)**
+
+If timeout is reached (`TIMED_OUT=1`), Big Head must IMMEDIATELY return an error to the Queen. Include this error return specification in the Big Head brief:
+
+```markdown
+# Big Head Consolidation — BLOCKED: Missing Nitpicker Reports
+
+**Status**: FAILED (timeout after 30 seconds)
+**Timestamp**: <current ISO 8601 timestamp>
+
+## Missing Reports
+
+The following expected Nitpicker report files were not found within 30 seconds:
+- <list each missing report file by type and path>
+
+## Remediation
+
+Big Head cannot proceed with consolidation without all expected reports present.
+The prerequisite gate (Step 0) FAILED.
+
+**Action required from Queen:**
+1. Check review agent logs for errors or crashes
+2. Verify all Nitpicker team members completed their reviews
+3. Confirm reports were written to: `{session-dir}/review-reports/`
+4. Once all expected reports are confirmed present, re-spawn Big Head consolidation
+
+**Re-spawn instruction:**
+Spawn Big Head again with all expected report paths provided in the consolidation prompt.
+
+**Do not proceed** with partial or missing review data.
+```
+
+After returning this error, Big Head must STOP — do NOT continue to consolidation Steps 1-4. The Queen receives this error and must decide: retry with fresh Nitpicker spawn, or abort session.
+
 **Pantry responsibility**: When composing the Big Head brief, the Pantry must fill in the round-specific polling checks:
 - For `{REVIEW_ROUND}: 1` — include all 4 report checks (clarity, edge-cases, correctness, excellence). Replace the `{PANTRY_ROUND_1_CHECK_START}` and `{PANTRY_ROUND_1_CHECK_END}` markers with the actual check lines.
 - For `{REVIEW_ROUND}: 2` or higher — omit the clarity and excellence checks. Replace the markers with empty text (remove those two lines entirely).
