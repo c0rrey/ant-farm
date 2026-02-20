@@ -313,6 +313,7 @@ Files to write:
 
 Write `{session-dir}/prompts/review-big-head-consolidation.md` containing:
 - Round-appropriate report paths (with the timestamp): round 1: all 4; round 2+: 2 (correctness, edge-cases)
+- Big Head prerequisite polling gate (specified below)
 - Deduplication protocol (specified below)
 - Bead filing instructions (specified below; note: Big Head must NOT file beads until Pest Control confirms via team message)
 - Consolidated output path: `{session-dir}/review-reports/review-consolidated-{timestamp}.md`
@@ -320,6 +321,82 @@ Write `{session-dir}/prompts/review-big-head-consolidation.md` containing:
 - Review round number (so Big Head knows how many reports to expect and whether to auto-file P3s)
 - Round 1: all 4 report paths; Round 2+: 2 report paths (correctness, edge-cases)
 - Round 2+ P3 auto-filing instructions (specified below)
+
+**Big Head prerequisite polling gate** (inline specification for this file):
+
+Before composing any part of the Big Head brief, the Pantry must inline the polling loop that checks all expected report files exist. This is a mandatory gate that Big Head will execute before reading any reports — it prevents wasted effort on reading partial report sets.
+
+Include this specification in the Big Head consolidation brief:
+
+**Prerequisite Gate: Step 0 — Verify All Reports Exist (MANDATORY)**
+
+Before reading any reports, verify the expected files exist using a polling loop. The number of expected reports depends on the review round (provided in your prompt as `{REVIEW_ROUND}`):
+
+**Round 1**: Verify all 4 report files exist:
+```bash
+[ -f "{SESSION_DIR}/review-reports/clarity-review-{TIMESTAMP}.md" ] || echo "MISSING: clarity"
+[ -f "{SESSION_DIR}/review-reports/edge-cases-review-{TIMESTAMP}.md" ] || echo "MISSING: edge-cases"
+[ -f "{SESSION_DIR}/review-reports/correctness-review-{TIMESTAMP}.md" ] || echo "MISSING: correctness"
+[ -f "{SESSION_DIR}/review-reports/excellence-review-{TIMESTAMP}.md" ] || echo "MISSING: excellence"
+```
+
+**Round 2+**: Verify 2 report files exist:
+```bash
+[ -f "{SESSION_DIR}/review-reports/correctness-review-{TIMESTAMP}.md" ] || echo "MISSING: correctness"
+[ -f "{SESSION_DIR}/review-reports/edge-cases-review-{TIMESTAMP}.md" ] || echo "MISSING: edge-cases"
+```
+
+All expected files MUST exist. If any file is missing, execute the polling loop (specified below). If timeout occurs, return an error to the Queen immediately without proceeding to consolidation.
+
+**Polling loop specification** (execute if any reports are missing from the initial check):
+
+This entire block must execute in a single Bash invocation — shell state does not persist across separate Bash tool calls.
+
+```bash
+# Poll up to 30 seconds total for missing reports
+TIMEOUT=30
+ELAPSED=0
+POLL_INTERVAL=2
+TIMED_OUT=1
+
+# Determine which reports to expect based on review round
+# {REVIEW_ROUND} is passed in your prompt as either 1 or 2+ (e.g., 2, 3, 4)
+
+while [ $ELAPSED -lt $TIMEOUT ]; do
+  ALL_FOUND=1
+
+  # Always expected (both round 1 and round 2+):
+  [ -f "{SESSION_DIR}/review-reports/correctness-review-{TIMESTAMP}.md" ] || ALL_FOUND=0
+  [ -f "{SESSION_DIR}/review-reports/edge-cases-review-{TIMESTAMP}.md" ] || ALL_FOUND=0
+
+  # Round 1 only (skip these checks in round 2+):
+  # The Pantry uses conditional logic: if REVIEW_ROUND is 1, include the checks below
+  # Otherwise, omit them
+
+  # {PANTRY_ROUND_1_CHECK_START}
+  [ -f "{SESSION_DIR}/review-reports/clarity-review-{TIMESTAMP}.md" ] || ALL_FOUND=0
+  [ -f "{SESSION_DIR}/review-reports/excellence-review-{TIMESTAMP}.md" ] || ALL_FOUND=0
+  # {PANTRY_ROUND_1_CHECK_END}
+
+  if [ $ALL_FOUND -eq 1 ]; then
+    TIMED_OUT=0
+    break
+  fi
+  sleep $POLL_INTERVAL
+  ELAPSED=$((ELAPSED + POLL_INTERVAL))
+done
+
+if [ $TIMED_OUT -eq 1 ]; then
+  echo "TIMEOUT: Not all expected reports arrived within ${TIMEOUT}s"
+  exit 1
+fi
+```
+
+**Pantry responsibility**: When composing the Big Head brief, the Pantry must fill in the round-specific polling checks:
+- For `{REVIEW_ROUND}: 1` — include all 4 report checks (clarity, edge-cases, correctness, excellence). Replace the `{PANTRY_ROUND_1_CHECK_START}` and `{PANTRY_ROUND_1_CHECK_END}` markers with the actual check lines.
+- For `{REVIEW_ROUND}: 2` or higher — omit the clarity and excellence checks. Replace the markers with empty text (remove those two lines entirely).
+
+Also fill in `{SESSION_DIR}`, `{TIMESTAMP}`, and `{REVIEW_ROUND}` with the actual values provided by the Queen.
 
 **Big Head deduplication protocol** (inline specification for this file):
 1. Collect all findings across all 4 reports (round 1) or 2 reports (round 2+) into a single list

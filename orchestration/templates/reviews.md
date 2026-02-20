@@ -122,7 +122,7 @@ Task IDs for acceptance criteria: <list of fix task IDs>
    ```
    For each review type (clarity, edge-cases, correctness, excellence):
    - Spawn as Task agent (model: sonnet)
-   - Provide review prompt from review-clarify.md, review-edge-cases.md, etc.
+   - Provide review prompt from review-clarity.md, review-edge-cases.md, etc.
    - Report output: {session-dir}/review-reports/{review-type}-review-{timestamp}.md
    ```
 

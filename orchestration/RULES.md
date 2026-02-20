@@ -216,7 +216,7 @@ Every `Task` tool call the Queen makes MUST include the `model` parameter from t
 
 At session start (Step 0), generate a session ID and create the session artifact directory:
 
-    SESSION_ID=$(date +%s | shasum | head -c 6)
+    SESSION_ID=$(echo "$$-$(date +%s%N)" | shasum | head -c 8)
     SESSION_DIR=".beads/agent-summaries/_session-${SESSION_ID}"
     mkdir -p ${SESSION_DIR}/{task-metadata,previews,prompts,pc,summaries}
 

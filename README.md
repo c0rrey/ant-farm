@@ -272,7 +272,7 @@ Custom Claude Code agent types live in `agents/` and are synced to `~/.claude/ag
 | `scout-organizer` | Bash, Read, Write, Glob, Grep | Pre-flight recon: task discovery, dependency analysis, execution strategy |
 | `pest-control` | Bash, Read, Write, Glob, Grep | Verification auditor: checkpoint audits (CCO, WWD, DMVDC, CCB) |
 | `pantry-impl` | Read, Write, Glob, Grep | Implementation prompt composer: builds task briefs and combined previews |
-| `pantry-review` | Read, Write, Glob, Grep | Review prompt composer: builds review briefs and combined previews |
+| `pantry-review` | Read, Write, Glob, Grep | ~~Review prompt composer: builds review briefs and combined previews~~ **DEPRECATED** — replaced by `fill-review-slots.sh` bash script; see RULES.md Step 3b |
 | `nitpicker` | Read, Write, Edit, Bash, Glob, Grep | Code reviewer: finds issues with file:line specificity and calibrated severity |
 | `big-head` | Read, Write, Edit, Bash, Glob, Grep | Consolidation reviewer: merges and deduplicates findings across Nitpickers |
 

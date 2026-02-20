@@ -25,7 +25,7 @@ Agent role names are title-case proper nouns. When preceded by a definite articl
 
 Agent definition files and orchestration template files use kebab-case:
 
-- Agent files: `scout-organizer.md`, `pantry-impl.md`, `pantry-review.md`, `pest-control.md`, `nitpicker.md`, `big-head.md`
+- Agent files: `scout-organizer.md`, `pantry-impl.md`, ~~`pantry-review.md`~~ (deprecated; see RULES.md Step 3b), `pest-control.md`, `nitpicker.md`, `big-head.md`
 - Template files: `dirt-pusher-skeleton.md`, `nitpicker-skeleton.md`, `big-head-skeleton.md`, `queen-state.md`
 
 ### Role Names Without Article
@@ -78,7 +78,7 @@ All four checkpoints are executed by Pest Control. Full definitions live in `orc
 |------|-----------|-------|-----------------|
 | **Queen** | _(orchestrator — no agent file; runs as the top-level Claude Code session)_ | opus | The orchestrator. Reads only briefings, verdict tables, commit messages, and agent notifications. Never reads source code or implementation templates. The only agent that pushes to remote. Spawns all subagents and makes all go/no-go decisions. |
 | **Scout** | `agents/scout-organizer.md` | sonnet | Pre-flight reconnaissance agent. Discovers ready and blocked tasks, builds a file modification matrix, assesses conflict risk, recommends specialist agent types, proposes 2–3 execution strategies with wave groupings, and writes the session briefing. |
-| **Pantry** | `agents/pantry-impl.md` (implementation), `agents/pantry-review.md` (review) | sonnet | Prompt composition agent. Reads implementation or review templates, extracts per-task context from Scout metadata, writes data files and combined prompt previews, and returns a file-path table to the Queen. Keeps template content out of the Queen's context. |
+| **Pantry** | `agents/pantry-impl.md` (implementation), ~~`agents/pantry-review.md`~~ (deprecated; see RULES.md Step 3b) | sonnet | Prompt composition agent. Reads implementation or review templates, extracts per-task context from Scout metadata, writes data files and combined prompt previews, and returns a file-path table to the Queen. Keeps template content out of the Queen's context. |
 | **Pest Control** | `agents/pest-control.md` | haiku (CCO, WWD, CCB), sonnet (DMVDC) | Verification auditor. Runs all four checkpoints (CCO, WWD, DMVDC, CCB) and writes timestamped audit reports to `{session-dir}/pc/`. Cross-checks orchestrator and agent work against ground truth. |
 | **Dirt Pusher** | _(spawned via `orchestration/templates/dirt-pusher-skeleton.md` with a specialist `subagent_type`)_ | varies by task | Implementation agent. Executes exactly 6 mandatory steps: claim, design, implement, review, commit, summary doc. Constrained to its scope boundary. Documents adjacent issues without fixing them. |
 | **Nitpicker** | `agents/nitpicker.md` | sonnet | Code review agent. Reads all changed files, catalogs findings with file:line references and severity, groups findings into preliminary root causes, and writes a structured review report. There are four Nitpicker specializations: Clarity (P3), Edge Cases (P2), Correctness (P1–P2), and Excellence (P3). Does not file issues — only Big Head does. |
