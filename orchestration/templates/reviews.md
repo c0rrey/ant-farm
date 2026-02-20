@@ -353,6 +353,8 @@ ls <session-dir>/review-reports/clarity-review-*.md \
 
 ### Step 0a: Remediation Path for Missing Reports (TIMEOUT + ERROR RETURN)
 
+> **Authoritative source**: This section is the authoritative protocol for missing-report handling. The big-head-skeleton.md step 1 defers to this brief. If any apparent conflict exists between the skeleton and this brief, follow this brief.
+
 If any report file is missing after the initial check, do NOT wait indefinitely. Instead:
 
 **Timeout specification:** Wait a maximum of 30 seconds for all 4 reports to appear.
