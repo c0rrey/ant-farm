@@ -102,6 +102,54 @@ step_resume_action() {
 }
 
 # ---------------------------------------------------------------------------
+# POSIX-compatible key-value store using a temp directory.
+# Replaces bash 4+ declare -A associative arrays.
+# Each "map" is a subdirectory; each entry is a file named after the key.
+#
+# map_set  <dir> <key> <value>  — write value to file
+# map_get  <dir> <key>          — print value (empty string if not set)
+# map_has  <dir> <key>          — exit 0 if key exists, 1 otherwise
+# ---------------------------------------------------------------------------
+
+_MAP_DIR=""
+
+map_init() {
+    _MAP_DIR="$(mktemp -d)"
+    mkdir -p "${_MAP_DIR}/completed" "${_MAP_DIR}/timestamp" "${_MAP_DIR}/details"
+}
+
+map_cleanup() {
+    [ -n "$_MAP_DIR" ] && rm -rf "$_MAP_DIR"
+}
+
+# Sanitize key: replace characters that are invalid in filenames.
+# Step keys are alphanumeric+digits only (step0, step3b, etc.), so this is
+# a safety measure rather than a practical concern.
+_key_file() {
+    # $1=submap, $2=key
+    printf '%s/%s/%s' "$_MAP_DIR" "$1" "$2"
+}
+
+map_set() {
+    # $1=submap, $2=key, $3=value
+    printf '%s' "$3" > "$(_key_file "$1" "$2")"
+}
+
+map_get() {
+    # $1=submap, $2=key — prints value or empty string
+    local f
+    f="$(_key_file "$1" "$2")"
+    if [ -f "$f" ]; then
+        cat "$f"
+    fi
+}
+
+map_has() {
+    # $1=submap, $2=key — exit 0 if present, 1 if absent
+    [ -f "$(_key_file "$1" "$2")" ]
+}
+
+# ---------------------------------------------------------------------------
 # Parse progress.log
 # ---------------------------------------------------------------------------
 
@@ -110,25 +158,25 @@ step_resume_action() {
 # A step is "complete" when its log line is present.
 # Multi-occurrence steps (step2, step3, step3b, step3c) may appear multiple times (one per wave/round).
 
-declare -A STEP_COMPLETED
-declare -A STEP_TIMESTAMP
-declare -A STEP_DETAILS
+map_init
+trap 'map_cleanup' EXIT
 
 while IFS='|' read -r timestamp step_key rest; do
     # Skip blank lines or malformed lines
     [ -z "$step_key" ] && continue
-    STEP_COMPLETED["$step_key"]="yes"
-    STEP_TIMESTAMP["$step_key"]="$timestamp"
+    map_set "completed" "$step_key" "yes"
+    map_set "timestamp" "$step_key" "$timestamp"
     # Keep the last occurrence's details for multi-occurrence steps
-    STEP_DETAILS["$step_key"]="$rest"
+    map_set "details"   "$step_key" "$rest"
 done < "$PROGRESS_LOG"
 
 # ---------------------------------------------------------------------------
 # Check if the session already completed (step6 logged) — exit code 2
 # ---------------------------------------------------------------------------
 
-if [ "${STEP_COMPLETED[step6]+set}" = "set" ]; then
-    echo "INFO: Session already completed (step6 logged at ${STEP_TIMESTAMP[step6]})." >&2
+if map_has "completed" "step6"; then
+    ts="$(map_get "timestamp" "step6")"
+    echo "INFO: Session already completed (step6 logged at ${ts})." >&2
     echo "      No resume needed. Caller should treat this as a clean slate." >&2
     exit 2
 fi
@@ -139,7 +187,7 @@ fi
 
 RESUME_STEP=""
 for key in "${STEP_KEYS[@]}"; do
-    if [ "${STEP_COMPLETED[$key]+set}" != "set" ]; then
+    if ! map_has "completed" "$key"; then
         RESUME_STEP="$key"
         break
     fi
@@ -176,8 +224,8 @@ OUT_FILE="${SESSION_DIR}/resume-plan.md"
 
     for key in "${STEP_KEYS[@]}"; do
         label="$(step_label "$key")"
-        if [ "${STEP_COMPLETED[$key]+set}" = "set" ]; then
-            ts="${STEP_TIMESTAMP[$key]}"
+        if map_has "completed" "$key"; then
+            ts="$(map_get "timestamp" "$key")"
             echo "| COMPLETE (${ts}) | ${label} |"
         elif [ "$key" = "$RESUME_STEP" ]; then
             echo "| **RESUME HERE** | **${label}** |"
@@ -199,7 +247,7 @@ OUT_FILE="${SESSION_DIR}/resume-plan.md"
     # Surface any relevant details logged for the last completed step
     LAST_COMPLETED=""
     for key in "${STEP_KEYS[@]}"; do
-        if [ "${STEP_COMPLETED[$key]+set}" = "set" ]; then
+        if map_has "completed" "$key"; then
             LAST_COMPLETED="$key"
         fi
     done
@@ -210,9 +258,10 @@ OUT_FILE="${SESSION_DIR}/resume-plan.md"
         echo "## Last Completed Milestone"
         echo ""
         echo "- **Step**: $(step_label "$LAST_COMPLETED")"
-        echo "- **Logged at**: ${STEP_TIMESTAMP[$LAST_COMPLETED]}"
-        if [ -n "${STEP_DETAILS[$LAST_COMPLETED]:-}" ]; then
-            echo "- **Details**: \`${STEP_DETAILS[$LAST_COMPLETED]}\`"
+        echo "- **Logged at**: $(map_get "timestamp" "$LAST_COMPLETED")"
+        details="$(map_get "details" "$LAST_COMPLETED")"
+        if [ -n "$details" ]; then
+            echo "- **Details**: \`${details}\`"
         fi
         echo ""
     fi
