@@ -53,20 +53,22 @@ priority over global (`~/.claude/agents/*.md`) for same-name agents.
 
 For each `.md` file, read the YAML frontmatter (`---` delimiters).
 Extract `name` and first sentence of `description`. Skip files without
-valid frontmatter.
+valid frontmatter. **Also track the file path for each agent** — you will use these paths only on tie-breaking (Step 3, below).
 
 All agents appear in your internal catalog for reference, but implementation candidates are separate from orchestration agents. Orchestration agents (scout, pantry, pest-control, etc.) coordinate the work; they do not implement tasks. Therefore, they are excluded from Dirt Pusher recommendations. Implementation candidates are agents who will execute tasks (python-pro, debugger, etc.).
 
 **Exclusions from Dirt Pusher recommendations** (orchestration agents):
 scout-organizer, pantry-impl, pantry-review, pest-control, nitpicker, big-head
 
-Build an internal catalog (keep in context, do NOT write to disk):
+Build an internal two-tier catalog (keep in context, do NOT write to disk):
 
-| Agent Name | Description (first sentence) |
-|------------|------------------------------|
-| python-pro | Expert Python developer specializing in modern Python 3.11+. |
-| debugger   | Expert debugger specializing in complex issue diagnosis. |
-| ...        | ... |
+| Agent Name | Description (first sentence) | File Path |
+|------------|------------------------------|-----------|
+| python-pro | Expert Python developer specializing in modern Python 3.11+. | ~/.claude/agents/python-pro.md |
+| debugger   | Expert debugger specializing in complex issue diagnosis. | ~/.claude/agents/debugger.md |
+| ...        | ... | ... |
+
+**Tie-breaking preparation**: The catalog tracks file paths because when selection criteria (Step 3) produce a tie between multiple agents, you will read the full agent descriptions from their `.md` files as a tiebreaker. This two-tier approach ensures you read full text **only for tied candidates**, keeping context usage minimal when there are no ties (the common case).
 
 `general-purpose` is a built-in type with no `.md` file — use it as
 the fallback when no discovered specialist fits.
@@ -109,8 +111,14 @@ For each task (ready AND blocked):
 your Step 2.5 catalog. Consider in order:
 1. **File extensions** — .py → python-pro, .ts → typescript-pro, etc.
 2. **Task nature** — diagnostic → debugger, perf → performance-engineer
-3. **Description match** — agent descriptions vs task root cause/title
+3. **Description match** — agent descriptions vs task root cause/title (using frontmatter first-sentence only)
 4. **Fallback** — `general-purpose` if no specialist clearly fits
+
+**Tie-breaking on equal scores**: If criteria 1-3 result in a tie (multiple agents equally match), apply this two-step tie-breaking:
+- **Step A (Deep Read)**: For ONLY the tied candidates, read their full `.md` files (from the file paths recorded in Step 2.5). Re-evaluate the match against task root cause, title, and acceptance criteria using full descriptions.
+- **Step B (Explicit Fallback)**: If tie persists after Step A, record the agent type as: `PICK ONE: [type-a | type-b]` (pipe-separated list of tied types). This signals to the Queen that multiple agents are equally suitable for this task.
+
+**Important**: Do NOT read full agent `.md` files unless a tie occurs. Frontmatter-only reads are the default path, keeping context usage minimal for the common case.
 
 For blocked tasks: include `**Blocked by**: {blocker-id-1}, {blocker-id-2}` in the metadata file,
 and note which wave the blockers are expected to complete in (based on Step 5 wave assignments).
@@ -140,6 +148,12 @@ Each strategy MUST include:
 - **Dependency gates**: which waves must complete before subsequent waves can start
 - **Risk assessment**: overall risk level and what could go wrong
 - **Coverage**: verify all tasks (ready + blocked) are assigned to exactly one wave
+
+**Presenting tied agents**: When a task's agent type is `PICK ONE: [type-a | type-b]`, list it in the strategy with the full PICK ONE notation. Example:
+```
+**Wave 1** (6 agents): ant-farm-xyz (python-pro), ant-farm-abc (PICK ONE: [debugger | performance-engineer]), ant-farm-def (typescript-pro), ...
+```
+This makes it explicit to the Queen which tasks have agent ambiguity and what the alternatives are.
 
 Recommend one strategy with explicit rationale (reference specific conflict
 patterns or dependency chains that informed the recommendation).
