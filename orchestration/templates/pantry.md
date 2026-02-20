@@ -198,7 +198,7 @@ Session summary: {session-dir}/session-summary.md
 
 ## Section 2: Review Mode
 
-**Input from the Queen**: list of epic IDs (for context in review prompts), commit range (first-commit..last-commit), list of ALL changed files across all epics (deduplicated), list of ALL task IDs (for correctness review acceptance criteria), session dir path, review timestamp (YYYYMMDD-HHMMSS format)
+**Input from the Queen**: list of epic IDs (for context in review prompts), commit range (first-commit..last-commit), list of ALL changed files across all epics (deduplicated), list of ALL task IDs (for correctness review acceptance criteria), session dir path, review timestamp (YYYYMMDD-HHMMSS format), review round number (1, 2, 3, ...)
 
 ### Step 1: Read Templates
 
@@ -226,7 +226,11 @@ Before composing review briefs, verify that the "list of ALL changed files acros
   - Return FAIL: "Review composition aborted: no changed files in commit range"
   - Do NOT proceed to compose review briefs
 
-Compose 4 review briefs, each containing:
+**Round-aware composition:**
+- **Round 1**: Compose 4 review briefs (clarity, edge-cases, correctness, excellence)
+- **Round 2+**: Compose 2 review briefs (correctness, edge-cases only). Include the out-of-scope finding bar from the "Round 2+ Reviewer Instructions" section of reviews.md in each brief.
+
+Each brief contains:
 - Commit range
 - Full file list (identical across all 4, deduplicated across all epics)
 - Focus areas specific to that review type (from reviews.md)
@@ -237,10 +241,14 @@ Compose 4 review briefs, each containing:
 - For the **correctness** review brief: include the full list of ALL task IDs so the correctness reviewer can run `bd show <task-id>` for acceptance criteria verification across all epics
 
 Files to write:
-- `{session-dir}/prompts/review-clarity.md`
-- `{session-dir}/prompts/review-edge-cases.md`
-- `{session-dir}/prompts/review-correctness.md`
-- `{session-dir}/prompts/review-excellence.md`
+- **Round 1**:
+  - `{session-dir}/prompts/review-clarity.md`
+  - `{session-dir}/prompts/review-edge-cases.md`
+  - `{session-dir}/prompts/review-correctness.md`
+  - `{session-dir}/prompts/review-excellence.md`
+- **Round 2+**:
+  - `{session-dir}/prompts/review-edge-cases.md`
+  - `{session-dir}/prompts/review-correctness.md`
 
 ### Step 4: Compose Big Head Consolidation Brief
 
@@ -252,13 +260,20 @@ Write `{session-dir}/prompts/review-big-head-consolidation.md` containing:
 - Bead filing instructions (note: Big Head must NOT file beads until Pest Control confirms via team message — see reviews.md Step 4 and big-head-skeleton.md steps 8-9)
 - Consolidated output path: `{session-dir}/review-reports/review-consolidated-{timestamp}.md`
 - Pest Control coordination note: after writing the consolidated summary, Big Head sends the report path to Pest Control (team member) via SendMessage and awaits verdict before filing any beads
+- Review round number (so Big Head knows how many reports to expect and whether to auto-file P3s)
+- Round 1: all 4 report paths; Round 2+: 2 report paths (correctness, edge-cases)
+- Round 2+ P3 auto-filing instructions (from reviews.md "P3 Auto-Filing" section)
+
+**Polling loop adaptation**: When composing the Big Head brief, adapt the Step 0a polling loop from reviews.md for the current round. In round 1, include all 4 report checks. In round 2+, include only correctness and edge-cases checks (omit the clarity and excellence variables and their `[ -f ]` check).
 
 ### Step 5: Write Combined Review Previews
 
 1. Read `~/.claude/orchestration/templates/nitpicker-skeleton.md`
-2. For each review, construct a combined prompt preview:
+2. **Round 1**: For each of 4 reviews, construct a combined prompt preview
+   **Round 2+**: For each of 2 reviews (correctness, edge-cases), construct a combined prompt preview
+3. For each review:
    a. Take the skeleton template text (below the `---` separator)
-   b. Fill in `{UPPERCASE}` placeholders with the review's values
+   b. Fill in `{UPPERCASE}` placeholders (including `{REVIEW_ROUND}`)
    c. Append the review brief content below it
    d. Write to `{session-dir}/previews/review-{type}-preview.md`
 
@@ -268,15 +283,27 @@ These preview files are what Pest Control will audit against the CCO.
 
 Return to the Queen:
 
+**Round 1 return table:**
 ```
 | Review Type | Brief | Preview File | Report Output Path |
-|-------------|-----------|--------------|-------------------|
+|-------------|-------|--------------|-------------------|
 | clarity     | {session-dir}/prompts/review-clarity.md | {session-dir}/previews/review-clarity-preview.md | {session-dir}/review-reports/clarity-review-{timestamp}.md |
 | edge-cases  | {session-dir}/prompts/review-edge-cases.md | {session-dir}/previews/review-edge-cases-preview.md | {session-dir}/review-reports/edge-cases-review-{timestamp}.md |
 | correctness | {session-dir}/prompts/review-correctness.md | {session-dir}/previews/review-correctness-preview.md | {session-dir}/review-reports/correctness-review-{timestamp}.md |
 | excellence  | {session-dir}/prompts/review-excellence.md | {session-dir}/previews/review-excellence-preview.md | {session-dir}/review-reports/excellence-review-{timestamp}.md |
 
-Big Head consolidation data: {session-dir}/prompts/review-big-head-consolidation.md
+Big Head consolidation data: {session-dir}/prompts/review-big-head-consolidation.md (includes round number)
+Big Head consolidated output: {session-dir}/review-reports/review-consolidated-{timestamp}.md
+```
+
+**Round 2+ return table:**
+```
+| Review Type | Brief | Preview File | Report Output Path |
+|-------------|-------|--------------|-------------------|
+| correctness | {session-dir}/prompts/review-correctness.md | {session-dir}/previews/review-correctness-preview.md | {session-dir}/review-reports/correctness-review-{timestamp}.md |
+| edge-cases  | {session-dir}/prompts/review-edge-cases.md | {session-dir}/previews/review-edge-cases-preview.md | {session-dir}/review-reports/edge-cases-review-{timestamp}.md |
+
+Big Head consolidation data: {session-dir}/prompts/review-big-head-consolidation.md (includes round number)
 Big Head consolidated output: {session-dir}/review-reports/review-consolidated-{timestamp}.md
 ```
 
