@@ -20,7 +20,8 @@ fi
 cp "$REPO_ROOT/CLAUDE.md" ~/.claude/CLAUDE.md
 
 # Sync orchestration/ (--delete removes files from target that no longer exist in source)
-rsync -av --delete "$REPO_ROOT/orchestration/" ~/.claude/orchestration/
+# Exclude scripts/ — these live under $REPO_ROOT/scripts/ and are synced separately below
+rsync -av --delete --exclude='scripts/' "$REPO_ROOT/orchestration/" ~/.claude/orchestration/
 
 # Sync orchestration scripts (review slot-filling pipeline)
 mkdir -p ~/.claude/orchestration/scripts/
