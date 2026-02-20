@@ -560,10 +560,10 @@ If timeout is reached and any reports are still missing, IMMEDIATELY return an e
 ## Missing Reports
 
 The following expected Nitpicker report files were not found:
-- Clarity review report (clarity-review-*.md) — MISSING
-- Edge cases review report (edge-cases-review-*.md) — MISSING [or: FOUND at <path>]
-- Correctness review report (correctness-review-*.md) — MISSING [or: FOUND at <path>]
-- Excellence review report (excellence-review-*.md) — MISSING [or: FOUND at <path>]
+- Clarity review report (clarity-review-<timestamp>.md) — MISSING
+- Edge cases review report (edge-cases-review-<timestamp>.md) — MISSING [or: FOUND at <path>]
+- Correctness review report (correctness-review-<timestamp>.md) — MISSING [or: FOUND at <path>]
+- Excellence review report (excellence-review-<timestamp>.md) — MISSING [or: FOUND at <path>]
 
 ## Remediation
 
