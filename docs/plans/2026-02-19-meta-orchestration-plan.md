@@ -41,11 +41,36 @@ Queens run as full interactive Claude Code sessions in tmux panes. This eliminat
 The user can switch to any pane at any time to interact with a Queen or the meta-orchestrator directly.
 
 Spawning a Queen:
+
+iTerm2 compatibility: `tmux -CC` is how iTerm2 attaches as a tmux client, rendering each tmux
+window as a native iTerm2 tab. External scripts send commands to the tmux server via its socket —
+not through the control-mode client — so standard `tmux new-window` and `tmux send-keys` commands
+work identically whether a `-CC` client is attached or not.
+
 ```bash
+# Create a named window for the Queen
 tmux new-window -t session-name -n "queen-ant-farm-w7p"
+
+# Start Claude Code in the worktree
 tmux send-keys -t session-name:queen-ant-farm-w7p 'cd /path/to/worktree && claude' Enter
-# Wait for Claude Code to initialize
+
+# Wait for Claude Code to reach its input prompt (node process takes 3-8s to initialize)
+sleep 5
+
+# Send the initial prompt
 tmux send-keys -t session-name:queen-ant-farm-w7p "Let's get to work on ant-farm-w7p" Enter
+```
+
+Checking Queen status:
+```bash
+# What command is running in a window (Claude Code appears as 'node')
+tmux display-message -t session-name:queen-ant-farm-w7p -p '#{pane_current_command}'
+
+# List all windows with running commands (for pool status monitoring)
+tmux list-windows -t session-name -F '#{window_name}: #{pane_current_command}'
+
+# Kill a Queen window when done
+tmux kill-window -t session-name:queen-ant-farm-w7p
 ```
 
 ### Rolling Pool Model (Not Strict Waves)
@@ -236,9 +261,9 @@ Each phase delivers standalone value and is a prerequisite for subsequent phases
 ## Open Questions
 
 - **Trigger phrase**: Starting point is "meta-orchestrate epics X and Y with N queens". Final phrasing TBD.
-- **`claude` CLI invocation via tmux**: Needs testing to confirm `tmux send-keys` reliably starts Claude Code and sends the initial prompt. Edge cases: Claude Code startup time, prompt timing.
+- **`claude` CLI invocation via tmux**: Confirmed working. `tmux send-keys` reliably starts Claude Code and sends the initial prompt. Use `sleep 5` between starting `claude` and sending the initial prompt — the node process takes 3-8s to reach the input state. Claude Code shows as `node` in `#{pane_current_command}`.
 - **Dolt lock contention under load**: With 3 Queens sharing a Dolt DB, brief lock contention is expected. Needs testing to confirm 15s timeout is sufficient or if Queens need retry logic.
-- **iTerm2 alternative**: tmux is the primary approach. iTerm2 scripting (AppleScript or Python API) is an alternative if tmux doesn't meet UX needs. TBD based on user preference.
+- **iTerm2 alternative**: Not needed. Standard `tmux new-window` and `tmux send-keys` commands are fully compatible with iTerm2 control mode. External scripts communicate with the tmux server via its socket — independent of whether a `-CC` client is attached. iTerm2 renders the resulting windows as native tabs automatically.
 
 ## Related Beads
 
