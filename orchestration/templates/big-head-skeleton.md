@@ -20,9 +20,10 @@ Replace `{PLACEHOLDER}` values (uppercase) in the agent-facing template below:
 - `{CONSOLIDATED_OUTPUT_PATH}`: `{SESSION_DIR}/review-reports/review-consolidated-{TIMESTAMP}.md`
 
 **Step 2 — Create the Nitpicker team.**
-Big Head is the 5th member. Pass the filled-in template text as Big Head's `prompt`. Include all 4
+Big Head is the 5th member; Pest Control is the 6th member. Pass the filled-in template text as Big Head's `prompt`. Include all 4
 Nitpicker report paths directly in Big Head's spawn prompt so it can begin consolidation as soon as
-the reports are ready. Example:
+the reports are ready. Pest Control must be a team member so Big Head can SendMessage to it directly
+for checkpoint validation (see Step 4 in reviews.md). Example:
 
 ```
 TeamCreate(
@@ -32,7 +33,8 @@ TeamCreate(
     { "name": "edge-cases-reviewer",   "prompt": "<filled nitpicker template with REVIEW_TYPE=edge-cases>", "model": "sonnet" },
     { "name": "correctness-reviewer",  "prompt": "<filled nitpicker template with REVIEW_TYPE=correctness>", "model": "sonnet" },
     { "name": "excellence-reviewer",   "prompt": "<filled nitpicker template with REVIEW_TYPE=excellence>", "model": "sonnet" },
-    { "name": "big-head",              "prompt": "<filled big-head template with all 4 expected report paths embedded>", "model": "{MODEL}" }
+    { "name": "big-head",              "prompt": "<filled big-head template with all 4 expected report paths embedded>", "model": "{MODEL}" },
+    { "name": "pest-control",          "prompt": "<pest-control prompt: await SendMessage from big-head; run DMVDC and CCB on consolidated report; reply with verdict>", "model": "sonnet" }
   ]
 )
 ```
@@ -65,9 +67,11 @@ Your workflow:
 7. Write consolidated summary to {CONSOLIDATED_OUTPUT_PATH}
 8. Send consolidated report path to Pest Control (SendMessage): "Consolidated report ready at {CONSOLIDATED_OUTPUT_PATH}. Please run DMVDC and CCB checkpoints and reply with verdict."
    - Do NOT file any beads before receiving Pest Control's reply
-9. Await Pest Control verdict:
+9. Await Pest Control verdict — follow the timeout/retry protocol in reviews.md Step 4:
+   - Wait up to 60 seconds; retry once if no response; escalate to Queen after 120s total with no reply
    - **PASS**: File ONE bead per root cause: `bd create --type=bug --priority=<P> --title="<title>"`
    - **FAIL**: Escalate to Queen with specifics (which findings failed, why); file beads ONLY for validated findings
+   - **TIMEOUT/UNAVAILABLE**: Escalate to Queen with consolidated report path; do NOT file beads
 
 Your output MUST include (see brief for full format):
 - Root cause groups with all affected surfaces and merge rationale

@@ -30,7 +30,7 @@ This creates the session-scoped directory for review reports. All 4 reviewers wr
 
 ## Agent Teams Protocol
 
-After the transition gate passes, the Queen launches **the Nitpickers** using **TeamCreate** (NOT the Task tool) — four specialized reviewers plus **Big Head** (the consolidator), all as members of the same team. Reviewers produce **reports only** and do NOT file beads. Big Head consolidates all findings, deduplicates by root cause, and files beads.
+After the transition gate passes, the Queen launches **the Nitpickers** using **TeamCreate** (NOT the Task tool) — four specialized reviewers plus **Big Head** (the consolidator) plus **Pest Control** (checkpoint validator), all as members of the same team. Reviewers produce **reports only** and do NOT file beads. Big Head consolidates all findings, deduplicates by root cause, and files beads.
 
 **CRITICAL**: Reviews MUST use Agent Teams (TeamCreate + SendMessage), NOT plain Task tool subagents. The team structure enables cross-pollination between reviewers. **Big Head MUST be spawned as a team member** (not a separate Task agent) so it can receive messages from reviewers and coordinate within the team.
 
@@ -50,11 +50,12 @@ After the transition gate passes, the Queen launches **the Nitpickers** using **
 
 **Pre-spawn requirement**: Before creating the Nitpickers, run **CCO** on all 4 review prompts. See `templates/checkpoints.md`.
 
-The Queen creates the Nitpicker team with **5 members** (4 reviewers + Big Head):
+The Queen creates the Nitpicker team with **6 members** (4 reviewers + Big Head + Pest Control):
 
 ```markdown
-Create a team with these 5 members. The 4 reviewers work in parallel.
+Create a team with these 6 members. The 4 reviewers work in parallel.
 Big Head waits for all 4 reports, then consolidates.
+Pest Control is a team member so Big Head can SendMessage to it directly for checkpoint validation.
 
 Nitpickers produce REPORTS ONLY — do NOT file beads (`bd create`).
 Big Head consolidates all reports, groups findings by root cause, and files beads.
@@ -68,6 +69,7 @@ Task IDs for acceptance criteria: <list of all task IDs worked this session>
 3. Correctness Redux Review (P1-P2) — see prompt below
 4. Excellence Review (P3) — see prompt below
 5. Big Head (consolidation) — see prompt from big-head-skeleton.md; model specified in Big Head Consolidation Protocol section
+6. Pest Control (checkpoint validator) — receives consolidated report path from Big Head via SendMessage; runs DMVDC and CCB checkpoints and replies with verdict
 ```
 
 **Big Head is spawned as a team member using the big-head-skeleton.md template**, not as a separate Task agent. The Queen fills in the skeleton placeholders and uses the result as the teammate's prompt.
@@ -532,7 +534,27 @@ SendMessage(
 )
 ```
 
-**Wait for Pest Control reply. Then act on verdict:**
+**Wait for Pest Control reply (timeout: 60 seconds). Then act on verdict:**
+
+**Timeout and retry protocol:**
+- After sending the SendMessage, wait up to 60 seconds for Pest Control's reply.
+- If no response arrives within 60 seconds, send one retry message to Pest Control:
+  ```
+  SendMessage(
+    to="pest-control",
+    message="Retry request: Consolidated report ready at {CONSOLIDATED_OUTPUT_PATH}. Please run DMVDC and CCB checkpoints and reply with PASS or FAIL + specifics. (First message sent 60s ago — no reply received.)"
+  )
+  ```
+- Wait an additional 60 seconds after the retry.
+- If still no response after the retry window, **escalate to the Queen immediately**:
+  ```
+  Big Head checkpoint escalation to Queen:
+  - Pest Control verdict: UNAVAILABLE (no response after 2 attempts, 120s total)
+  - Consolidated report path: {CONSOLIDATED_OUTPUT_PATH}
+  - Action required: PC checkpoint could not be completed. User must decide: re-spawn Pest Control
+    manually, or accept consolidated findings without checkpoint validation.
+  ```
+  Do NOT file any beads when escalating due to Pest Control timeout.
 
 - **PASS**: File ONE bead per root cause. See bead filing instructions below.
 - **FAIL**: Big Head MUST escalate to the Queen with specifics. File beads ONLY for findings that passed. Do NOT file beads for flagged findings. Use this escalation format:

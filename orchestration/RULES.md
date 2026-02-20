@@ -110,7 +110,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             1. Read the consolidated review summary (written to {session-dir}/review-reports/)
             2. Present findings to user with priority breakdown (P1 count, P2 count, P3 count)
             3. Ask user: "Reviews found X P1 and Y P2 issues. Should we fix them now, or push and address later?"
-            - **If "fix now"**: Follow orchestration/templates/reviews.md L485-514 (test-writing + fix workflow)
+            - **If "fix now"**: Follow orchestration/templates/reviews.md L631-651 (test-writing + fix workflow)
             - **If "push and address later"**: P1/P2 beads stay open; document in CHANGELOG; proceed to Step 4
             - **If no P1/P2 issues**: Skip to Step 4 directly
 
