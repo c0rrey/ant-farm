@@ -362,25 +362,36 @@ If any report file is missing after the initial check, do NOT wait indefinitely.
 
 **Polling loop (if files missing):**
 ```bash
+# IMPORTANT: This entire block must execute in a single Bash invocation.
+# Shell state (variables) does not persist across separate Bash tool calls.
+
 # Poll up to 30 seconds total for missing reports
 TIMEOUT=30
 ELAPSED=0
 POLL_INTERVAL=2
+TIMED_OUT=1
 
 while [ $ELAPSED -lt $TIMEOUT ]; do
-  MISSING_REPORTS=$(
-    ls <session-dir>/review-reports/clarity-review-*.md 2>/dev/null && \
-    ls <session-dir>/review-reports/edge-cases-review-*.md 2>/dev/null && \
-    ls <session-dir>/review-reports/correctness-review-*.md 2>/dev/null && \
-    ls <session-dir>/review-reports/excellence-review-*.md 2>/dev/null || true
-  )
-  if [ "$(echo "$MISSING_REPORTS" | wc -l)" -eq 4 ]; then
+  # Check each report type individually with [ -f ] to avoid wc -l count fragility.
+  # head -1 ensures re-runs with multiple matching files don't break the check.
+  FOUND_CLARITY=$(ls <session-dir>/review-reports/clarity-review-*.md 2>/dev/null | head -1)
+  FOUND_EDGE=$(ls <session-dir>/review-reports/edge-cases-review-*.md 2>/dev/null | head -1)
+  FOUND_CORRECTNESS=$(ls <session-dir>/review-reports/correctness-review-*.md 2>/dev/null | head -1)
+  FOUND_EXCELLENCE=$(ls <session-dir>/review-reports/excellence-review-*.md 2>/dev/null | head -1)
+
+  if [ -f "$FOUND_CLARITY" ] && [ -f "$FOUND_EDGE" ] && [ -f "$FOUND_CORRECTNESS" ] && [ -f "$FOUND_EXCELLENCE" ]; then
     # All 4 reports now present, proceed
+    TIMED_OUT=0
     break
   fi
   sleep $POLL_INTERVAL
   ELAPSED=$((ELAPSED + POLL_INTERVAL))
 done
+
+if [ $TIMED_OUT -eq 1 ]; then
+  # Timeout reached — fall through to the error return below
+  echo "TIMEOUT: Not all 4 reports arrived within ${TIMEOUT}s"
+fi
 ```
 
 **Error return (if timeout exceeded):**
