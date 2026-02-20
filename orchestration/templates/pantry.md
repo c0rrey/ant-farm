@@ -123,6 +123,36 @@ Do NOT fix adjacent issues you notice.
 
 **Write each task brief immediately after composing it** — do not batch all files and write at the end.
 
+### Step 2.5: Assemble Review Skeletons (via bash script)
+
+After all task briefs are written, call Script 1 to assemble review skeleton files. This runs during
+Section 1 so that review skeletons are ready by the time dirt-pushers finish — no second Pantry
+invocation is needed for review prompt composition.
+
+```bash
+bash ~/.claude/orchestration/scripts/compose-review-skeletons.sh \
+  "{session-dir}" \
+  "~/.claude/orchestration/templates/reviews.md" \
+  "~/.claude/orchestration/templates/nitpicker-skeleton.md" \
+  "~/.claude/orchestration/templates/big-head-skeleton.md"
+```
+
+**On success**: the script writes 5 files to `{session-dir}/review-skeletons/` and exits 0.
+Record the following paths in the Section 1 return table (Step 5):
+- `{session-dir}/review-skeletons/skeleton-clarity.md`
+- `{session-dir}/review-skeletons/skeleton-edge-cases.md`
+- `{session-dir}/review-skeletons/skeleton-correctness.md`
+- `{session-dir}/review-skeletons/skeleton-excellence.md`
+- `{session-dir}/review-skeletons/skeleton-big-head.md`
+
+**On failure** (non-zero exit code): the script prints an error message to stderr. Report the error
+to the Queen in this format:
+```
+REVIEW SKELETON ASSEMBLY FAILED: {stderr output from script}
+Recovery: Re-run Pantry Section 1 or call compose-review-skeletons.sh directly.
+```
+Do NOT proceed to Step 3 if the script exits non-zero.
+
 ### Step 3: Write Combined Prompt Previews
 
 1. Read `~/.claude/orchestration/templates/dirt-pusher-skeleton.md`
@@ -192,11 +222,25 @@ Return to the Queen in this exact format:
 | {id}    | {type}     | {path}    | {path}       |
 
 Session summary: {session-dir}/session-summary.md
+
+Review skeletons (assembled in Step 2.5, filled by Queen via fill-review-slots.sh after dirt-pushers finish):
+- {session-dir}/review-skeletons/skeleton-clarity.md
+- {session-dir}/review-skeletons/skeleton-edge-cases.md
+- {session-dir}/review-skeletons/skeleton-correctness.md
+- {session-dir}/review-skeletons/skeleton-excellence.md
+- {session-dir}/review-skeletons/skeleton-big-head.md
 ```
 
 ---
 
 ## Section 2: Review Mode
+
+> **DEPRECATED**: Section 2 (Review Mode) is superseded by the two-script approach introduced in
+> Section 1 Step 2.5. The Pantry no longer needs a second invocation for review prompt composition.
+> Instead, the Queen calls `scripts/fill-review-slots.sh` directly after dirt-pushers finish.
+> This section is retained for reference only. Do NOT spawn `pantry-review` for a second invocation.
+>
+> See RULES.md Step 3b for the updated Queen workflow using `fill-review-slots.sh`.
 
 **Input from the Queen**: list of epic IDs (for context in review prompts), commit range (first-commit..last-commit), list of ALL changed files across all epics (deduplicated), list of ALL task IDs (for correctness review acceptance criteria), session dir path, review timestamp (format defined in **Timestamp format** in `checkpoints.md` Pest Control Overview), review round number (1, 2, 3, ...)
 

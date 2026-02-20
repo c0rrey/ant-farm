@@ -94,16 +94,28 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             checkpoints.md + task-metadata/ + git diffs itself).
             Failed DMVDC → resume agent (max 2 retries).
 
-**Step 3b:** Review — pre-spawn directory setup:
-              `mkdir -p ${SESSION_DIR}/review-reports`
+**Step 3b:** Review — fill review slots and spawn Nitpickers:
             Gather review inputs from the Queen's state file:
             - **Review round**: read from session state (default: 1)
             - **Round 1 commit range**: first commit of the session through HEAD
             - **Round 2+ commit range**: first fix commit through HEAD (set after fix cycle in Step 3c)
             - File list: `git diff --name-only <commit-range>` (deduplicated)
             - Task IDs: round 1 = all task IDs; round 2+ = fix task IDs only
-            - Epic IDs: all epics worked on this session (for context only)
-            Then: spawn the Pantry (`pantry-review`, `model: "opus"`) with `Review round: <N>` in its prompt.
+            - Timestamp: generate once per review cycle in YYYYMMDD-HHmmss format
+            Then call the slot-filling script (NO Pantry spawn needed — skeletons were assembled in Step 2):
+            ```bash
+            bash ~/.claude/orchestration/scripts/fill-review-slots.sh \
+              "${SESSION_DIR}" \
+              "<commit-range>" \
+              "<newline-separated changed files>" \
+              "<space-separated task IDs>" \
+              "<YYYYMMDD-HHmmss timestamp>" \
+              "<review round number>"
+            ```
+            The script writes review prompts and previews to `${SESSION_DIR}/prompts/` and
+            `${SESSION_DIR}/previews/` and exits 0 on success, printing file paths to stdout.
+            On non-zero exit: surface the script's stderr as an error to the user — do NOT proceed.
+            Then: mkdir -p ${SESSION_DIR}/review-reports
             Spawn Pest Control (`model: "haiku"`) for CCO on review previews.
             **Round 1**: Create Nitpicker team with 6 members: 4 reviewers
             (→ orchestration/templates/nitpicker-skeleton.md) + Big Head
@@ -167,8 +179,8 @@ For the complete detailed list and rationale, see "Queen Read Permissions" above
 | Agent | subagent_type | Rationale |
 |-------|---------------|-----------|
 | Scout | `scout-organizer` | Custom agent: agent-organizer + Bash for bd CLI |
-| Pantry (impl) | `pantry-impl` | Custom agent: CCO-aligned implementation prompt composer |
-| Pantry (review) | `pantry-review` | Custom agent: CCO-aligned review prompt composer |
+| Pantry (impl) | `pantry-impl` | Custom agent: CCO-aligned implementation prompt composer (also assembles review skeletons via compose-review-skeletons.sh) |
+| ~~Pantry (review)~~ | ~~`pantry-review`~~ | **Deprecated**: replaced by `fill-review-slots.sh` bash script called directly by Queen in Step 3b |
 | Pest Control | `pest-control` | Custom agent: verification auditor, catches fabrication + scope creep |
 | Dirt Pushers | from Pantry verdict table | Specialist per task — Scout recommends via dynamic agent discovery, Pantry passes through |
 | Nitpickers | `nitpicker` | Custom agent: file:line specificity, calibrated severity, complete coverage |
@@ -181,8 +193,8 @@ Every `Task` tool call the Queen makes MUST include the `model` parameter from t
 | Agent | Spawn Method | Model | Notes |
 |-------|-------------|-------|-------|
 | Scout | Task (`scout-organizer`) | opus | Orchestration role |
-| Pantry (impl) | Task (`pantry-impl`) | opus | Prompt composition |
-| Pantry (review) | Task (`pantry-review`) | opus | Prompt composition |
+| Pantry (impl) | Task (`pantry-impl`) | opus | Prompt composition + review skeleton assembly (Script 1) |
+| ~~Pantry (review)~~ | ~~Task (`pantry-review`)~~ | ~~opus~~ | **Deprecated**: use `fill-review-slots.sh` bash script instead (Step 3b) |
 | Dirt Pushers | Task (dynamic type) | sonnet | All dirt pushers regardless of subagent_type |
 | PC — CCO | Task (`pest-control`) | haiku | Mechanical checklist |
 | PC — WWD | Task (`pest-control`) | haiku | Mechanical file comparison |

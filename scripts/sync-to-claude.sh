@@ -22,6 +22,16 @@ cp "$REPO_ROOT/CLAUDE.md" ~/.claude/CLAUDE.md
 # Sync orchestration/ (--delete removes files from target that no longer exist in source)
 rsync -av --delete "$REPO_ROOT/orchestration/" ~/.claude/orchestration/
 
+# Sync orchestration scripts (review slot-filling pipeline)
+mkdir -p ~/.claude/orchestration/scripts/
+for script in "$REPO_ROOT/scripts/compose-review-skeletons.sh" "$REPO_ROOT/scripts/fill-review-slots.sh"; do
+    [ -f "$script" ] || continue
+    dest=~/.claude/orchestration/scripts/"$(basename "$script")"
+    cp "$script" "$dest"
+    chmod +x "$dest"
+    echo "[ant-farm] Synced script: $dest"
+done
+
 # Sync custom agents to ~/.claude/agents/
 AGENTS_CHANGED=false
 for agent in "$REPO_ROOT/agents/"*.md; do
