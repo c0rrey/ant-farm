@@ -234,8 +234,8 @@ write_big_head_brief() {
     for rt in "${ACTIVE_REVIEW_TYPES[@]}"; do
         expected_paths="${expected_paths}- ${SESSION_DIR}/review-reports/${rt}-review-${TIMESTAMP}.md\n"
     done
-    # Remove trailing newline
-    expected_paths="$(printf '%b' "$expected_paths" | sed '$d')"
+    # Remove trailing \n left by the loop
+    expected_paths="$(printf '%b' "$expected_paths" | sed '/^$/d')"
 
     cp "$skeleton_file" "$out_file" || {
         echo "ERROR: Failed to copy Big Head skeleton: $skeleton_file -> $out_file" >&2
