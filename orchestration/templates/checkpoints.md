@@ -12,11 +12,12 @@ For detailed extraction rules and examples, see `~/.claude/orchestration/referen
 
 ## Pest Control Overview
 
-All checkpoint verifications (CCO, WWD, DMVDC, CCB) are executed by **Pest Control**, a dedicated verification subagent that cross-checks orchestrator and agent work against ground truth.
+All checkpoint verifications (SSV, CCO, WWD, DMVDC, CCB) are executed by **Pest Control**, a dedicated verification subagent that cross-checks orchestrator and agent work against ground truth.
 
 **Role distinction**: Pest Control is the orchestrator — the Queen spawns it to run a checkpoint. Pest Control then spawns a `code-reviewer` agent to execute the actual checks. The **Agent type (spawned by Pest Control)** fields in each section below specify the type of agent that Pest Control spawns, not Pest Control itself.
 
 **Pest Control responsibilities:**
+- Pre-implementation Scout strategy verification (SSV)
 - Pre-spawn prompt audits (CCO)
 - Post-commit scope verification (WWD)
 - Post-completion substance verification (DMVDC)
@@ -26,7 +27,8 @@ All checkpoint verifications (CCO, WWD, DMVDC, CCB) are executed by **Pest Contr
 - **Task-specific checkpoints (CCO, WWD, DMVDC for Dirt Pushers):** `pc-{TASK_SUFFIX}-{checkpoint}-{timestamp}.md`
   - Example: `pc-74g1-cco-20260215-001145.md`
   - Example: `pc-74g1-dmvdc-20260215-003422.md`
-- **Session-wide checkpoints (CCO-review, CCB):** `pc-session-{checkpoint}-{timestamp}.md`
+- **Session-wide checkpoints (SSV, CCO-review, CCB):** `pc-session-{checkpoint}-{timestamp}.md`
+  - Example: `pc-session-ssv-20260215-001045.md`
   - Example: `pc-session-cco-review-20260215-001145.md`
   - Example: `pc-session-ccb-20260215-010520.md`
 
@@ -66,6 +68,7 @@ All checkpoints use the following verdict states:
 
 | Checkpoint | Quantitative Threshold | Tie-Breaking Rule | Queue Blocking |
 |---|---|---|---|
+| **SSV** | All 3 checks must pass | First-listed violation per check | FAIL blocks Pantry spawn and all downstream steps |
 | **CCO (Dirt Pushers)** | Small file = <100 lines | First-listed section/function | WARN does not block; Queen approves before spawn |
 | **CCO (Nitpickers)** | All round-active prompts identical file list (round 1: 4; round 2+: 2) | (No tie-breaking) | FAIL blocks spawn |
 | **WWD** | Small file = <100 lines | First-listed changed file | WARN does not block queue; FAIL blocks queue |
@@ -74,6 +77,10 @@ All checkpoints use the following verdict states:
 | **CCB** | Finding count must reconcile to 100% | Earliest-filed bead per root cause | PARTIAL: fix and re-run; FAIL blocks user presentation |
 
 ### Details by Checkpoint
+
+**SSV Verdict Specifics:**
+- PASS: All 3 checks pass (no file overlaps within a wave, file lists match bead descriptions, no intra-wave dependency violations)
+- FAIL: Any check fails. Blocks Pantry spawn and all downstream spawning until Scout re-runs or issue is resolved.
 
 **CCO Verdict Specifics:**
 - PASS: All 7 checks pass
@@ -590,3 +597,114 @@ Where:
 1. Fix consolidation gaps (re-read reports, file missing beads, update dedup log)
 2. Re-run CCB
 3. If it fails a second time, present to user with the verification report attached so they can see what was flagged
+
+---
+
+## Scout Strategy Verification (SSV): Pre-Implementation Strategy Audit
+
+**When**: After Scout returns `{SESSION_DIR}/briefing.md` and BEFORE spawning Pantry (Step 2 in RULES.md)
+**Model**: `haiku` (pure set comparisons — no judgment required)
+**Agent type (spawned by Pest Control)**: `code-reviewer`
+
+**Why**: The Scout's strategy (wave groupings, task-to-wave assignments, file conflict analysis) is currently validated only by human approval, which misses mechanical errors like file/task mismatches or intra-wave dependency violations. A lightweight automated check before Pantry is spawned catches strategy defects at the cheapest possible point — before any implementation prompts are composed.
+
+**Why haiku**: All three checks are set comparisons and dependency graph traversals with no ambiguity. No judgment or code comprehension is required. Haiku handles this class of verification faster and cheaper than sonnet.
+
+```markdown
+**Pest Control verification - SSV (Scout Strategy Verification)**
+
+You are **Pest Control**, the verification subagent. Your role is to verify the Scout's execution strategy for mechanical correctness before any implementation work begins. See "Pest Control Overview" section above for full conventions.
+
+**Briefing file**: `{SESSION_DIR}/briefing.md`
+**Session directory**: `{SESSION_DIR}`
+
+Read the briefing file first to extract the full wave plan (wave numbers, task IDs per wave, affected files per task, and inter-task dependencies). Then run all three checks below.
+
+## Check 1: No File Overlaps Within a Wave
+
+For each wave in the strategy:
+1. Collect all affected files listed for every task in that wave.
+2. Check whether any file appears in two or more tasks within the same wave.
+3. Report each violation as: "Wave N: file `<path>` appears in tasks <id1> AND <id2> — parallel edits would conflict."
+
+A file overlap within a wave means two agents would edit the same file simultaneously, causing merge conflicts or lost changes. Tasks sharing a file must be serialized into separate waves.
+
+**PASS condition**: No file appears in more than one task within any single wave.
+**FAIL condition**: One or more files appear in multiple tasks within the same wave. List every violation.
+
+## Check 2: File Lists Match Bead Descriptions
+
+For each task in the strategy:
+1. Run `bd show {TASK_ID}` to retrieve the bead's recorded affected files.
+2. Compare the Scout's reported affected files (from briefing.md) against the bead's actual affected files.
+3. Report each mismatch as: "Task {TASK_ID}: Scout lists `<file>` but bead does not — OR — bead lists `<file>` but Scout omits it."
+
+**GUARD: bd show Failure Handling (INFRASTRUCTURE FAILURE)**
+If `bd show {TASK_ID}` fails (task not found, unreadable, or bd command error):
+- Record the failure: "{TASK_ID} — bd show failed: {error details}"
+- Write a note in your verification report: "Could not verify file list for {TASK_ID} via `bd show`: {error}. Skipping this task's file list check."
+- Continue with the remaining tasks — do NOT abort the entire check.
+- Clearly mark skipped tasks in your findings: "[SKIPPED: bd show failed]"
+- If more than half the tasks fail `bd show`, FAIL the check with: "Infrastructure failure: could not verify file lists for majority of tasks."
+
+**PASS condition**: For every task where `bd show` succeeds, the Scout's file list exactly matches the bead's recorded affected files (same set, order-insensitive).
+**FAIL condition**: Any file list mismatch detected, or infrastructure failure threshold exceeded. List every discrepancy.
+
+## Check 3: No Intra-Wave Dependency Violations
+
+For each wave in the strategy:
+1. Identify all tasks in that wave.
+2. Check whether any task in wave N is listed as blocking (or blocked by) another task in the same wave N.
+3. To retrieve dependencies: run `bd show {TASK_ID}` for each task and examine its DEPENDENCIES section.
+4. Report each violation as: "Wave N: task <id1> blocks task <id2> — both are in wave N; <id2> must move to a later wave."
+
+An intra-wave dependency means an agent that is supposed to start in parallel actually depends on another agent finishing first. This defeats the purpose of wave grouping and may cause incorrect ordering.
+
+**GUARD: bd show Failure Handling**: Same as Check 2 — if `bd show` fails for a task, skip dependency check for that task and note the skip.
+
+**PASS condition**: No task in wave N has a "blocks" or "blocked-by" relationship with another task in the same wave N.
+**FAIL condition**: One or more intra-wave dependency violations detected. List every violation.
+
+## Verdict
+
+**PASS** — All 3 checks pass. Proceed to spawn Pantry.
+
+**FAIL: <list each failing check>** — One or more checks failed. Do NOT spawn Pantry. Report specific violations so Scout can revise the strategy.
+
+**Example FAIL verdict:**
+
+> **Verdict: FAIL**
+>
+> Check 1 (File Overlaps): FAIL
+> - Wave 2: file `src/api/routes.py` appears in tasks ant-farm-abc AND ant-farm-def — parallel edits would conflict.
+>
+> Check 2 (File List Match): PASS
+>
+> Check 3 (Intra-Wave Dependencies): FAIL
+> - Wave 1: task ant-farm-xyz blocks task ant-farm-uvw — both are in Wave 1; ant-farm-uvw must move to Wave 2.
+>
+> Recommendation: Re-run Scout with these violations noted. Move ant-farm-def or ant-farm-abc to a different wave (file conflict), and move ant-farm-uvw to Wave 2 or later (dependency ordering).
+
+Write your verification report to:
+`{SESSION_DIR}/pc/pc-session-ssv-{timestamp}.md`
+
+Where:
+- `{SESSION_DIR}`: session artifact directory (e.g., `.beads/agent-summaries/_session-abc123`)
+- timestamp: format defined in **Timestamp format** (Pest Control Overview)
+```
+
+### The Queen's Response
+
+**On PASS**: Proceed immediately to spawn Pantry (Step 2 in RULES.md). No human approval required.
+
+**On FAIL**:
+1. Log the violation details from the SSV report.
+2. Do NOT spawn Pantry.
+3. Re-run Scout with a prompt that includes the specific violations:
+   ```
+   SSV found strategy errors that must be corrected before implementation can begin:
+   <paste specific violations from SSV report>
+   Please revise the wave plan to resolve these issues and rewrite {SESSION_DIR}/briefing.md.
+   ```
+4. After Scout revises `{SESSION_DIR}/briefing.md`, re-run SSV.
+5. If SSV fails a second time, escalate to user with the full violation report.

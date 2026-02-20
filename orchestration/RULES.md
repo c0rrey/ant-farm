@@ -69,9 +69,20 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             (3) the path `orchestration/templates/scout.md` as its instruction file.
             Do NOT read the scout template yourself. Do NOT run `bd show`, `bd ready`, `bd blocked`,
             or any other `bd` commands — the Scout handles all task discovery and metadata gathering.
-            WAIT for the Scout to return its briefing verdict (written to `{SESSION_DIR}/briefing.md`),
-            then present the recommended strategy to the user for approval.
-            **Progress log (after user approves strategy):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|step1|complete|briefing=${SESSION_DIR}/briefing.md|tasks_approved=<N>" >> ${SESSION_DIR}/progress.log`
+            WAIT for the Scout to return its briefing verdict (written to `{SESSION_DIR}/briefing.md`).
+
+**Step 1b:** SSV gate — After Scout writes `{SESSION_DIR}/briefing.md`, spawn Pest Control
+            (`pest-control`, `model: "haiku"`) for Scout Strategy Verification (SSV) before presenting to user.
+            Pass `Session directory: <value of SESSION_DIR>` and the path `orchestration/templates/checkpoints.md`
+            as its instruction file. Pest Control reads `{SESSION_DIR}/briefing.md` itself and runs all three
+            mechanical checks (file overlap within waves, file list match against beads, intra-wave dependency
+            ordering). **SSV must PASS before proceeding.**
+
+            **On SSV PASS**: Present the recommended strategy to the user for approval.
+            **On SSV FAIL**: Re-run Scout with the specific violations from the SSV report (do NOT present
+            a failed strategy to the user). After Scout revises briefing.md, re-run SSV.
+
+            **Progress log (after SSV PASS and user approves strategy):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|step1|complete|briefing=${SESSION_DIR}/briefing.md|ssv=pass|tasks_approved=<N>" >> ${SESSION_DIR}/progress.log`
 
 **Step 2:** Spawn — Spawn the Pantry (`pantry-impl`, `model: "opus"`) for task briefs + combined previews
             (→ orchestration/templates/pantry.md, Section 1). Include `Session directory: <value of SESSION_DIR>`
@@ -162,6 +173,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 
 | Gate | Blocks | Artifact |
 |------|--------|----------|
+| SSV PASS | Pantry spawn (and all downstream steps) | ${SESSION_DIR}/pc/pc-session-ssv-{timestamp}.md |
 | CCO PASS (impl) | Agent spawn | ${SESSION_DIR}/pc/*-cco-*.md |
 | CCO PASS (review) | Nitpicker team spawn | ${SESSION_DIR}/pc/pc-session-cco-review-{timestamp}.md |
 | WWD PASS | Next agent in wave | ${SESSION_DIR}/pc/*-wwd-*.md |
