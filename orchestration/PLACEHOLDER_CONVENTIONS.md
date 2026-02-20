@@ -86,7 +86,7 @@ These placeholders represent **bash/shell variables** and appear ONLY in code bl
 - `${SESSION_DIR}` — Session directory path for bash mkdir/mkdir operations
 **Usage pattern**:
 ```bash
-SESSION_ID=$(date +%s | shasum | head -c 6)
+SESSION_ID=$(echo "$$-$(date +%s%N)-$RANDOM" | shasum | head -c 8)
 SESSION_DIR=".beads/agent-summaries/_session-${SESSION_ID}"
 mkdir -p ${SESSION_DIR}/{task-metadata,previews,prompts}
 ```
