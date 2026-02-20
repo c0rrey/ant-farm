@@ -58,6 +58,19 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             Do NOT examine, read, or query any task/issue details.
             **Progress log:** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|step0|complete|session_dir=${SESSION_DIR}" >> ${SESSION_DIR}/progress.log`
 
+            **Crash recovery detection (run BEFORE generating a new SESSION_ID):**
+            Check whether the user's message contains a session directory path
+            (e.g. `.beads/agent-summaries/_session-<id>`). If a prior SESSION_DIR is
+            supplied or you can identify an incomplete session from context:
+            1. Run `bash scripts/parse-progress-log.sh <prior_SESSION_DIR>`
+            2. On exit 0: read `<prior_SESSION_DIR>/resume-plan.md` and present it verbatim to the user.
+               Wait for the user to reply `resume` or `fresh start` before taking any further action.
+               - `resume`: restore SESSION_DIR to the prior value and continue from the indicated step.
+               - `fresh start`: generate a new SESSION_ID and proceed normally.
+            3. On exit 2: the prior session completed — proceed normally with a new SESSION_ID.
+            4. On exit 1: surface the error to the user and await instruction.
+            If no prior session is indicated, skip crash recovery and proceed normally.
+
 **Step 1:** Recon — Read `{SESSION_DIR}/briefing.md` written by the Scout's previous run, or spawn the Scout
             (`scout-organizer` subagent, `model: "opus"`) if this is the first session. Include in Scout's prompt:
             (1) `Session directory: <value of SESSION_DIR>`,
@@ -137,6 +150,39 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             - Pest Control MUST be a team member so Big Head can SendMessage to it
             - Templates: `nitpicker-skeleton.md`, `big-head-skeleton.md`
             - After team completes, DMVDC and CCB have already run inside the team
+
+            **3b-v. Spawn dummy reviewer** (context usage instrumentation — sunset after ~30 sessions):
+            The dummy reviewer mirrors the correctness reviewer to produce empirical context-usage data.
+            Its report is discarded — Big Head does NOT read or consolidate it.
+
+            Step 1: Copy the correctness prompt as the dummy data file:
+            ```bash
+            cp "${SESSION_DIR}/prompts/review-correctness.md" \
+               "${SESSION_DIR}/prompts/review-dummy.md"
+            ```
+
+            Step 2: Launch a new tmux window for the dummy reviewer:
+            ```bash
+            # TMUX_SESSION is the name of the tmux session the Queen is running in.
+            # Resolve it at runtime: TMUX_SESSION=$(tmux display-message -p '#S')
+            TMUX_SESSION=$(tmux display-message -p '#S')
+            DUMMY_WINDOW="dummy-reviewer-round-<N>"
+
+            tmux new-window -t "${TMUX_SESSION}" -n "${DUMMY_WINDOW}"
+            tmux send-keys -t "${TMUX_SESSION}:${DUMMY_WINDOW}" \
+              "cd $(pwd) && claude" Enter
+            sleep 5
+            tmux send-keys -t "${TMUX_SESSION}:${DUMMY_WINDOW}" \
+              "Perform a correctness review of the completed work. Step 0: Read your full review brief from ${SESSION_DIR}/prompts/review-dummy.md (Format: markdown. Sections: Scope, Files, Focus, Detailed Instructions.) Follow the instructions in the brief exactly, including the report format and output path. Write your report to ${SESSION_DIR}/review-reports/dummy-review-${TIMESTAMP}.md" Enter
+            ```
+
+            Notes:
+            - Replace `<N>` in `DUMMY_WINDOW` with the actual round number.
+            - The dummy reviewer runs in its own tmux pane; the user observes context usage via the Claude Code UI.
+            - The dummy reviewer's report path (`dummy-review-${TIMESTAMP}.md`) is intentionally excluded from the Big Head consolidation brief and from all CCB/DMVDC checks — it is measurement-only.
+            - Do NOT wait for the dummy reviewer to finish before proceeding with Step 3c. It runs concurrently.
+            - Sunset clause: remove Step 3b-v after ~30 sessions of data collection or when a reliable file-budget threshold is established. Removal has no effect on the rest of the review workflow.
+
             **Progress log (after Nitpicker team completes):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|step3b|round=<N>|team=complete|report=${SESSION_DIR}/review-reports/big-head-summary.md" >> ${SESSION_DIR}/progress.log`
 
 **Step 3c:** User triage — **after CCB PASS and Big Head consolidation completes**:

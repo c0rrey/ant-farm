@@ -309,6 +309,32 @@ Files to write:
   - `{session-dir}/prompts/review-edge-cases.md`
   - `{session-dir}/prompts/review-correctness.md`
 
+### Step 3.5: Compose Dummy Reviewer Data File (context instrumentation)
+
+> **Sunset clause**: Remove this step after ~30 sessions of data collection or when a reliable
+> file-budget threshold is established. Removal requires no other changes to this workflow.
+
+The dummy reviewer mirrors the correctness reviewer to produce empirical context-usage data.
+Its report is NOT wired into Big Head consolidation — it is measurement-only.
+
+Compose `{session-dir}/prompts/review-dummy.md` as an **exact copy** of the correctness brief
+(`{session-dir}/prompts/review-correctness.md`), with two fields changed:
+
+1. **Report output path**: `{session-dir}/review-reports/dummy-review-{timestamp}.md`
+   (so the dummy report goes to a distinct file that Big Head never reads)
+2. **Header comment** (prepend to the top of the file):
+   ```
+   <!-- DUMMY REVIEWER — context usage instrumentation only. Report is NOT consolidated by Big Head. -->
+   ```
+
+All other content — file list, task IDs, focus areas, commit range, report format — must be
+**identical** to the correctness brief. This ensures the dummy reviewer's context load matches the
+correctness reviewer exactly, giving a valid measurement baseline.
+
+Do NOT include `{session-dir}/prompts/review-dummy.md` in the Big Head consolidation brief's
+expected report paths. The dummy report path must not appear in the polling gate or the
+Read Confirmation table.
+
 ### Step 4: Compose Big Head Consolidation Brief
 
 Write `{session-dir}/prompts/review-big-head-consolidation.md` containing:
