@@ -668,6 +668,36 @@ bd create --type=bug --priority=<combined-priority> --title="<root cause title>"
 bd label add <id> <primary-review-type>
 ```
 
+### P3 Auto-Filing (Round 2+ Only)
+
+In round 2+, Big Head auto-files P3 findings to the "Future Work" epic without user involvement:
+
+1. Find or create the "Future Work" epic:
+   ```bash
+   # Check if future-work epic exists
+   bd list --status=open | grep -i "future work"
+   # If not found:
+   bd epic create --title="Future Work" --description="Low-priority polish and improvements from review sessions"
+   ```
+
+2. For each P3 root cause:
+   ```bash
+   bd create --type=bug --priority=3 --title="<root cause title>"
+   bd dep add <bead-id> <future-work-epic-id> --type parent-child
+   ```
+
+3. In the consolidated summary, list P3 beads in a separate section:
+   ~~~markdown
+   ## Auto-Filed P3s (Future Work)
+   | Bead ID | Title | Epic |
+   |---------|-------|------|
+   | <id> | <title> | Future Work |
+   ~~~
+
+4. Do NOT include P3 findings in the fix-or-defer prompt to the Queen. They appear only in the consolidated summary for the record.
+
+**Round 1**: P3s are NOT auto-filed by Big Head. They follow the existing "Handle P3 Issues" flow in the Queen's Step 3c below.
+
 ## The Queen's Checklists
 
 ### Nitpicker Checklist (verify before launching team)
@@ -707,6 +737,17 @@ The Queen reads Big Head's consolidated summary and follows the procedures below
 
 **Prerequisite**: CCB PASS + consolidated summary written by Big Head
 
+### Termination Check (zero P1/P2 findings)
+
+If the consolidated summary shows zero P1 and zero P2 findings, the review loop has converged:
+
+1. **Round 2+**: Big Head has already auto-filed any P3 findings to "Future Work" epic — no action needed
+2. **Round 1**: P3 findings follow the existing "Handle P3 Issues" flow below — the Queen files them to Future Work
+3. Queen updates session state: `Termination: terminated (round N: 0 P1/P2)`
+4. Proceed to RULES.md Step 4 (Documentation — update CHANGELOG, README, CLAUDE.md)
+
+No user prompt needed — the loop simply ends.
+
 ### If P1 or P2 issues found:
 
 1. **Present findings to user** with consolidated summary showing:
@@ -734,9 +775,10 @@ The Queen reads Big Head's consolidated summary and follows the procedures below
       - Run DMVDC on each fix agent
       - Run `bd close` on fix tasks after DMVDC passes
 
-   c. **Re-run reviews** (optional):
-      - If fixes touched >3 files or made significant changes, consider re-running Step 3b (the Nitpickers)
-      - Otherwise, rely on test verification + DMVDC
+   c. **Re-run reviews** (MANDATORY):
+      - After fix agents complete and pass DMVDC, re-run Step 3b with `Review round: <N+1>`
+      - Round 2+ uses only Correctness + Edge Cases reviewers, scoped to fix commits
+      - The loop continues until a round produces zero P1/P2 findings
 
 4. **If user chooses "push and address later"**:
    - P1/P2 beads already filed during consolidation — they stay open
@@ -744,6 +786,8 @@ The Queen reads Big Head's consolidated summary and follows the procedures below
    - Proceed to Step 4 (Handle P3 Issues and Documentation)
 
 ### Handle P3 Issues (Queen's Step 4)
+
+> **Round 1 only.** In round 2+, P3s are auto-filed by Big Head during consolidation (see "P3 Auto-Filing" above). This section applies only when round 1 terminates with P3 findings.
 
 **Create "Future Work" epic if needed**:
 ```bash
