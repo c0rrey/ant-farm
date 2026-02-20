@@ -294,12 +294,37 @@ This prevents collisions when multiple Queens run in the same repo.
 |-----------|-------------|-------------|
 | Agent fails DMVDC | 2 | Escalate to user with full context |
 | CCB fails | 1 | Present to user with verification report attached |
-| Agent stuck (no commit within 15 turns) | 0 | Check status; escalate to user |
+| Agent stuck (no commit within 15 turns) | 0 | Run stuck-agent diagnostic (see below); escalate to user |
+| Pantry CCO fails | 1 | Escalate to user; do not spawn Dirt Pushers without verified prompts |
+| Scout fails or returns no tasks | 1 | Escalate to user; do not proceed to Step 2 without task list |
 | Total retries per session | 5 | Pause all new spawns; triage with user |
 
 Counter interaction: each CCB re-run counts as 1 toward both the per-checkpoint limit (1) and the session total (5). A CCB re-run that hits the per-checkpoint limit also consumes one slot of the session total.
 
 Track retry count in the Queen's state file (→ templates/queen-state.md).
+
+### Stuck-Agent Diagnostic Procedure
+
+When an agent has not produced a commit within 15 turns, follow these steps before escalating:
+
+1. Read the agent's task brief to confirm the scope and acceptance criteria were unambiguous.
+2. Check `.beads/agent-summaries/_session-*/` for any partial summary the agent may have written, which can reveal how far it progressed before stalling.
+3. Check `git log --oneline -10` to determine whether a commit was made but not reported back correctly.
+4. If the agent is still running, check its most recent output for a blocking question, permission error, or tool failure message.
+5. If the agent exited without a commit and no diagnostic information is available, escalate to the user with: the task ID, the agent type, the turn count, and any last-known output.
+
+Do not re-spawn the agent or attempt a fix without user approval after the stuck-agent limit (0 retries) is reached.
+
+### Wave Failure Threshold
+
+If more than 50% of agents in a single wave fail (DMVDC failure, stuck, or unrecoverable error), the Queen must:
+
+1. Stop spawning new agents for the remainder of the current wave.
+2. Collect failure summaries from all failed agents in the wave.
+3. Notify the user immediately: list each failed task ID, the failure type, and retry count consumed.
+4. Await explicit user instruction before continuing — options include: re-run the failed subset, abort the session, or manually resolve blockers and resume.
+
+A wave is defined as a set of agents spawned concurrently in a single Step 2 batch. Failures from earlier waves do not carry over into the threshold calculation for a new wave.
 
 ## Priority Calibration
 
