@@ -75,10 +75,10 @@ Create the metadata directory: `mkdir -p {SESSION_DIR}/task-metadata/`
 
 For each **ready** task:
 1. Run `bd show <task-id>`
-2. Write to `{SESSION_DIR}/task-metadata/{task-id-suffix}.md` using this exact format:
+2. Write to `{SESSION_DIR}/task-metadata/{task-suffix}.md` using this exact format:
 
 ```markdown
-# Task: {full-task-id}
+# Task: {task-id}
 **Status**: success
 **Title**: {title}
 **Type**: {bug/feature/task}
@@ -251,7 +251,7 @@ Recommended strategy: {strategy name}
 
   Example error metadata file:
   ```markdown
-  # Task: {full-task-id}
+  # Task: {task-id}
   **Status**: error
   **Error Details**: {exact error message from bd show}
   ```
