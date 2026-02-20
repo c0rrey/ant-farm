@@ -208,7 +208,7 @@ After all implementation agents complete:
    - Output: P2 edge case bugs
    - Estimated: 20 min
 
-3. **Correctness Redux Review**
+3. **Correctness Review**
    - Agent: code-reviewer (sonnet)
    - Files: All changed files + acceptance criteria
    - Output: P1-P2 correctness bugs

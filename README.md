@@ -146,7 +146,7 @@ The Queen creates an **agent team** (TeamCreate, not Task) with 4 parallel revie
 |--------|----------|-------|
 | **Clarity** | P3 | Readability, naming, documentation, consistency |
 | **Edge Cases** | P2 | Input validation, error handling, boundary conditions, concurrency |
-| **Correctness Redux** | P1-P2 | Acceptance criteria verification, logic errors, regressions, cross-file consistency |
+| **Correctness** | P1-P2 | Acceptance criteria verification, logic errors, regressions, cross-file consistency |
 | **Excellence** | P3 | Best practices, performance, security, maintainability, architecture |
 
 Each reviewer reads all changed files, catalogs findings with file:line references and severity, groups them into preliminary root causes, and writes a structured report. Reviewers **do not file issues** — only Big Head does.
@@ -215,7 +215,6 @@ git pull --rebase
 bd sync
 git push
 git status  # must show "up to date with origin"
-rm -rf .beads/agent-summaries/_session-*/
 ```
 
 Work is not complete until `git push` succeeds.
