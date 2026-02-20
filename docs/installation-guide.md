@@ -17,17 +17,38 @@ This guide covers installing and managing the ant-farm orchestration system's pr
 - Bash shell or compatible shell environment
 - Read/write permissions to `.git/hooks/` and `~/.claude/`
 
-### Step 1: Install the Pre-Push Hook
+### Step 1: Install the Hooks
 
-The pre-push hook automates syncing on every `git push`. Run this command from your project root:
+`install-hooks.sh` installs two hooks into `.git/hooks/`. Run this command from your project root:
 
 ```bash
 ./scripts/install-hooks.sh
 ```
 
+#### Pre-Push Hook (`pre-push`)
+
+**Purpose**: Automatically syncs agent definitions, templates, and configuration to `~/.claude/` on every `git push`.
+
 This script:
 - Creates `.git/hooks/pre-push` with the hook code
 - Backs up any existing hook to `.git/hooks/pre-push.bak` (safe to re-run)
+- Makes the hook executable
+
+#### Pre-Commit Hook (`pre-commit`)
+
+**Purpose**: Scrubs PII (personally identifiable information) from `.beads/issues.jsonl` before each commit.
+
+`bd sync` exports raw email addresses from the database into `.beads/issues.jsonl`. The pre-commit hook runs `scripts/scrub-pii.sh` automatically to strip those addresses before the file enters git history.
+
+**Behavior**:
+- Runs only when `.beads/issues.jsonl` is staged for a commit
+- Calls `scripts/scrub-pii.sh` to redact email addresses in place
+- Re-stages the scrubbed file so the clean version is what gets committed
+- Skips silently if `scrub-pii.sh` is not found or not executable
+
+This script:
+- Creates `.git/hooks/pre-commit` with the hook code
+- Backs up any existing hook to `.git/hooks/pre-commit.bak` (safe to re-run)
 - Makes the hook executable
 
 ### Step 2: Perform Initial Sync
@@ -58,7 +79,17 @@ Then **fully quit and reopen Claude Code**. Agent types are loaded at startup an
 
 ### Verification
 
-To verify the installation works:
+To verify both hooks are installed and executable:
+
+```bash
+# Confirm both hook files exist and are executable
+ls -la .git/hooks/pre-push
+ls -la .git/hooks/pre-commit
+```
+
+Both should show `-rwxr-xr-x` permissions.
+
+**Verify the pre-push hook** (syncs `~/.claude/` on push):
 
 ```bash
 # Make a small change to a file
@@ -75,6 +106,16 @@ ls -la ~/.claude/agents/
 ```
 
 You should see the current date/time in the file modification times.
+
+**Verify the pre-commit hook** (scrubs PII from issues.jsonl):
+
+```bash
+# Stage issues.jsonl and commit — the hook should run automatically
+git add .beads/issues.jsonl
+git commit -m "test: verify pre-commit scrub hook"
+```
+
+You should see the message: `[ant-farm] PII scrub applied and re-staged: .beads/issues.jsonl`
 
 ## Understanding Sync Behavior
 
@@ -147,14 +188,18 @@ ls -la ~/.claude/CLAUDE.md.bak.*
 cp ~/.claude/CLAUDE.md.bak.20260217T214523 ~/.claude/CLAUDE.md
 ```
 
-**Hook Backup** (if you had a previous hook)
+**Hook Backups** (if you had previous hooks)
 
-If you re-run `install-hooks.sh` and a `.git/hooks/pre-push` already exists, it's backed up to `.git/hooks/pre-push.bak`.
+If you re-run `install-hooks.sh` and an existing hook is found, it is backed up before being replaced:
 
-This is stored in your local git directory (not synced to remote):
+- Pre-push hook backup: `.git/hooks/pre-push.bak`
+- Pre-commit hook backup: `.git/hooks/pre-commit.bak`
+
+These are stored in your local git directory (not synced to remote):
 
 ```
 .git/hooks/pre-push.bak
+.git/hooks/pre-commit.bak
 ```
 
 ### Manual Backups
@@ -182,18 +227,22 @@ If you need to recover orchestration files, use git:
 git show HEAD:orchestration/RULES.md > /tmp/recovered-RULES.md
 ```
 
-## Uninstalling the Hook
+## Uninstalling the Hooks
 
-If you want to remove the orchestration hook and stop syncing to `~/.claude/`, follow these steps.
+If you want to remove the orchestration hooks and stop syncing to `~/.claude/`, follow these steps. Run all commands from your project root.
 
-### Step 1: Remove the Hook
+### Step 1: Remove the Hooks
 
 ```bash
-# Delete the hook (the backup is preserved if you re-run install-hooks.sh later)
-rm ~/.git/hooks/pre-push
+# Delete the pre-push hook (runs from repo root — not from home directory)
+rm .git/hooks/pre-push
 
-# Alternatively, restore your previous hook if one existed
+# Delete the pre-commit hook
+rm .git/hooks/pre-commit
+
+# Alternatively, restore your previous hooks if backups exist
 cp .git/hooks/pre-push.bak .git/hooks/pre-push
+cp .git/hooks/pre-commit.bak .git/hooks/pre-commit
 ```
 
 ### Step 2: Clean Up `~/.claude/` (Optional)
@@ -225,8 +274,9 @@ cp ~/.claude/CLAUDE.md.bak.XXXXXXX ~/.claude/CLAUDE.md
 Verify removal:
 
 ```bash
-# Hook should not exist
+# Both hooks should no longer exist (commands below should return errors)
 ls -la .git/hooks/pre-push
+ls -la .git/hooks/pre-commit
 
 # This should show error or be empty (depending on your cleanup choice)
 ls -la ~/.claude/orchestration/
