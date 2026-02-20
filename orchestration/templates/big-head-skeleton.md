@@ -17,7 +17,7 @@ Do NOT use the Task tool for Big Head — it runs inside the same TeamCreate cal
 **Step 1 — Fill placeholders before building the TeamCreate call.**
 Replace `{PLACEHOLDER}` values (uppercase) in the agent-facing template below:
 - `{MODEL}`: Big Head model (specified in the Big Head Consolidation Protocol section of orchestration/templates/reviews.md; currently `opus`)
-- `{DATA_FILE_PATH}`: Big Head consolidation data file written by the Pantry (review mode)
+- `{DATA_FILE_PATH}`: Big Head consolidation brief written by the Pantry (review mode)
 - `{CONSOLIDATED_OUTPUT_PATH}`: `{SESSION_DIR}/review-reports/review-consolidated-{TIMESTAMP}.md`
 
 **Step 2 — Create the Nitpicker team.**
@@ -73,10 +73,30 @@ Consolidate the Nitpicker reports into a unified summary.
 Step 0: Read your consolidation brief from {DATA_FILE_PATH}
 (Contains: round-appropriate report paths, dedup protocol, bead filing instructions, output path.)
 
+**Failure Artifact Convention** (applies to ALL failure conditions in this workflow):
+When any step reaches a FAIL condition, write a brief failure artifact to the expected output path before returning an error. Standard format:
+```
+# [COMPONENT] — [FAILURE TYPE]
+**Status**: FAILED — <one-line description>
+**Timestamp**: <ISO 8601>
+**Reason**: <what went wrong>
+**Recovery**: <what to do next>
+```
+This ensures downstream consumers (Queen, Pest Control) have a written record of the failure at the path they expect — even if the output is a FAILED file rather than a consolidated summary.
+
 Your workflow:
 1. Verify all expected report files exist (4 for round 1; 2 for round 2+) — follow the missing-report handling protocol in your consolidation brief (Step 0a)
    - The brief is authoritative for this step: it specifies the polling timeout, error return format, and failure conditions
-   - Do NOT proceed to read reports or perform consolidation until the brief's Step 0a protocol completes successfully
+   - **On timeout (TIMED_OUT=1)**: Before returning the error to the Queen, write a failure artifact to `{CONSOLIDATED_OUTPUT_PATH}`:
+     ```
+     # Big Head Consolidation — BLOCKED: Missing Nitpicker Reports
+     **Status**: FAILED — prerequisite gate timeout
+     **Timestamp**: <current ISO 8601 timestamp>
+     **Reason**: Not all expected Nitpicker reports arrived within 30 seconds. <list missing reports>
+     **Recovery**: Check reviewer logs. Once all expected reports are present, re-spawn Big Head consolidation.
+     ```
+   - After writing the failure artifact, return the error to the Queen as specified in the brief
+   - Do NOT proceed to read reports or perform consolidation
 2. Read all expected reports
 3. Collect all findings into a single list
 4. Deduplicate: merge findings about the same issue across reviewers
