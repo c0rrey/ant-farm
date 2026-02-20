@@ -198,7 +198,7 @@ Session summary: {session-dir}/session-summary.md
 
 ## Section 2: Review Mode
 
-**Input from the Queen**: list of epic IDs (for context in review prompts), commit range (first-commit..last-commit), list of ALL changed files across all epics (deduplicated), list of ALL task IDs (for correctness review acceptance criteria), session dir path, review timestamp (YYYYMMDD-HHmmss format), review round number (1, 2, 3, ...)
+**Input from the Queen**: list of epic IDs (for context in review prompts), commit range (first-commit..last-commit), list of ALL changed files across all epics (deduplicated), list of ALL task IDs (for correctness review acceptance criteria), session dir path, review timestamp (format defined in **Timestamp format** in `checkpoints.md` Pest Control Overview), review round number (1, 2, 3, ...)
 
 ### Step 1: Read Templates
 

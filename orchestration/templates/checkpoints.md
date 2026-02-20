@@ -37,7 +37,7 @@ All checkpoints write to `{SESSION_DIR}/pc/`.
 
 **The Queen's responsibility**: the Queen MUST include `**Summary output path**` in Dirt Pusher prompt context. For review prompts, include the session-scoped review report paths and all participating epic IDs (for context). Reviewers write to `{SESSION_DIR}/review-reports/`, not per-epic directories.
 
-**Review timestamp convention**: the Queen generates a single timestamp per review cycle (format: `YYYYMMDD-HHmmss`) and passes the exact output filenames to each reviewer and Big Head. This prevents reviewers from independently generating different timestamps.
+**Review timestamp convention**: the Queen generates a single timestamp per review cycle (format defined in **Timestamp format** above) and passes the exact output filenames to each reviewer and Big Head. This prevents reviewers from independently generating different timestamps.
 
 ---
 
@@ -159,7 +159,7 @@ Write your verification report to:
 Where:
 - `{TASK_SUFFIX}`: suffix portion of bead ID with no project prefix (e.g., `74g1` from `hs_website-74g.1`)
 - `{SESSION_DIR}`: session artifact directory (e.g., `.beads/agent-summaries/_session-abc123`)
-- timestamp: YYYYMMDD-HHmmss format
+- timestamp: format defined in **Timestamp format** (Pest Control Overview)
 ```
 
 ### The Nitpickers
@@ -221,7 +221,7 @@ Write your verification report to:
 
 Where:
 - `{SESSION_DIR}`: session artifact directory (e.g., `.beads/agent-summaries/_session-abc123`)
-- timestamp: YYYYMMDD-HHmmss format
+- timestamp: format defined in **Timestamp format** (Pest Control Overview)
 ```
 
 ### The Queen's Response
@@ -376,7 +376,7 @@ Write your verification report to:
 Where:
 - `{TASK_SUFFIX}`: suffix portion of bead ID with no project prefix (e.g., `74g1` from `hs_website-74g.1`)
 - `{SESSION_DIR}`: session artifact directory (e.g., `.beads/agent-summaries/_session-abc123`)
-- timestamp: YYYYMMDD-HHmmss format
+- timestamp: format defined in **Timestamp format** (Pest Control Overview)
 ```
 
 ### Nitpickers
@@ -434,7 +434,7 @@ Write your verification report to:
 Where:
 - `{TASK_SUFFIX}`: Nitpicker task suffix (e.g., `review-clarity`, `review-edge`)
 - `{SESSION_DIR}`: session artifact directory (e.g., `.beads/agent-summaries/_session-abc123`)
-- timestamp: YYYYMMDD-HHmmss format
+- timestamp: format defined in **Timestamp format** (Pest Control Overview)
 ```
 
 ### The Queen's Response
@@ -556,7 +556,7 @@ Write your verification report to:
 
 Where:
 - `{SESSION_DIR}`: session artifact directory (e.g., `.beads/agent-summaries/_session-abc123`)
-- timestamp: YYYYMMDD-HHmmss format
+- timestamp: format defined in **Timestamp format** (Pest Control Overview)
 
 **CRITICAL FIX**: The timestamp ensures each CCB audit is preserved. Previous versions used static filename `consolidation-audit.md` which caused overwrites on repeated consolidations. Now each audit has a unique timestamped filename, preserving complete audit history.
 ```
