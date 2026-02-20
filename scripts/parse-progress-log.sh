@@ -19,7 +19,7 @@
 # Exit codes:
 #   0 — resume-plan.md written successfully; recovery is possible
 #   1 — argument error, progress.log missing or unreadable, or write failure
-#   2 — progress.log exists but shows the session already completed (step6 present)
+#   2 — progress.log exists but shows the session already completed (SESSION_COMPLETE present)
 #       resume-plan.md is NOT written; caller should treat this as a fresh-start signal
 
 set -euo pipefail
@@ -60,44 +60,44 @@ fi
 
 # Ordered step definitions: step_key | display_label | description
 STEP_KEYS=(
-    "step0"
-    "step1"
-    "step2"
-    "step3"
-    "step3b"
-    "step3c"
-    "step4"
-    "step5"
-    "step6"
+    "SESSION_INIT"
+    "SCOUT_COMPLETE"
+    "WAVE_SPAWNED"
+    "WAVE_VERIFIED"
+    "REVIEW_COMPLETE"
+    "REVIEW_TRIAGED"
+    "DOCS_COMMITTED"
+    "XREF_VERIFIED"
+    "SESSION_COMPLETE"
 )
 
 step_label() {
     case "$1" in
-        step0)  echo "Step 0: Session setup" ;;
-        step1)  echo "Step 1: Recon (Scout + SSV gate + user approval)" ;;
-        step2)  echo "Step 2: Spawn (Pantry + CCO + Dirt Pushers)" ;;
-        step3)  echo "Step 3: Verify (WWD + DMVDC)" ;;
-        step3b) echo "Step 3b: Review (Nitpicker team)" ;;
-        step3c) echo "Step 3c: Triage (P1/P2 decision)" ;;
-        step4)  echo "Step 4: Documentation (CHANGELOG/README/CLAUDE.md)" ;;
-        step5)  echo "Step 5: Cross-reference verification" ;;
-        step6)  echo "Step 6: Land the plane (git push)" ;;
-        *)      echo "$1" ;;
+        SESSION_INIT)     echo "Session Init: Session setup" ;;
+        SCOUT_COMPLETE)   echo "Scout Complete: Recon (Scout + SSV gate + user approval)" ;;
+        WAVE_SPAWNED)     echo "Wave Spawned: Spawn (Pantry + CCO + Dirt Pushers)" ;;
+        WAVE_VERIFIED)    echo "Wave Verified: Verify (WWD + DMVDC)" ;;
+        REVIEW_COMPLETE)  echo "Review Complete: Review (Nitpicker team)" ;;
+        REVIEW_TRIAGED)   echo "Review Triaged: Triage (P1/P2 decision)" ;;
+        DOCS_COMMITTED)   echo "Docs Committed: Documentation (CHANGELOG/README/CLAUDE.md)" ;;
+        XREF_VERIFIED)    echo "Xref Verified: Cross-reference verification" ;;
+        SESSION_COMPLETE) echo "Session Complete: Land the plane (git push)" ;;
+        *)                echo "$1" ;;
     esac
 }
 
 step_resume_action() {
     case "$1" in
-        step0)  echo "Re-run Step 0 to regenerate SESSION_ID and SESSION_DIR (fresh start recommended)." ;;
-        step1)  echo "Re-run Step 1: check for existing briefing.md; if absent, re-spawn the Scout." ;;
-        step2)  echo "Re-run Step 2: re-read briefing.md and re-spawn Pantry + Dirt Pushers for unfinished waves." ;;
-        step3)  echo "Re-run Step 3: re-spawn Pest Control for WWD/DMVDC on any unverified waves." ;;
-        step3b) echo "Re-run Step 3b: re-spawn the Nitpicker team (check for existing review reports first)." ;;
-        step3c) echo "Re-run Step 3c: re-read the Big Head summary and re-present findings to the user." ;;
-        step4)  echo "Re-run Step 4: update CHANGELOG, README, CLAUDE.md in a single commit." ;;
-        step5)  echo "Re-run Step 5: verify cross-references and CHANGELOG entries for all tasks." ;;
-        step6)  echo "Re-run Step 6: git pull --rebase, bd sync, git push." ;;
-        *)      echo "Resume from this step." ;;
+        SESSION_INIT)     echo "Re-run SESSION_INIT to regenerate SESSION_ID and SESSION_DIR (fresh start recommended)." ;;
+        SCOUT_COMPLETE)   echo "Re-run SCOUT_COMPLETE: check for existing briefing.md; if absent, re-spawn the Scout." ;;
+        WAVE_SPAWNED)     echo "Re-run WAVE_SPAWNED: re-read briefing.md and re-spawn Pantry + Dirt Pushers for unfinished waves." ;;
+        WAVE_VERIFIED)    echo "Re-run WAVE_VERIFIED: re-spawn Pest Control for WWD/DMVDC on any unverified waves." ;;
+        REVIEW_COMPLETE)  echo "Re-run REVIEW_COMPLETE: re-spawn the Nitpicker team (check for existing review reports first)." ;;
+        REVIEW_TRIAGED)   echo "Re-run REVIEW_TRIAGED: re-read the Big Head summary and re-present findings to the user." ;;
+        DOCS_COMMITTED)   echo "Re-run DOCS_COMMITTED: update CHANGELOG, README, CLAUDE.md in a single commit." ;;
+        XREF_VERIFIED)    echo "Re-run XREF_VERIFIED: verify cross-references and CHANGELOG entries for all tasks." ;;
+        SESSION_COMPLETE) echo "Re-run SESSION_COMPLETE: git pull --rebase, bd sync, git push." ;;
+        *)                echo "Resume from this step." ;;
     esac
 }
 
@@ -123,8 +123,8 @@ map_cleanup() {
 }
 
 # Sanitize key: replace characters that are invalid in filenames.
-# Step keys are alphanumeric+digits only (step0, step3b, etc.), so this is
-# a safety measure rather than a practical concern.
+# Step keys are uppercase alphanumeric+underscore only (SESSION_INIT, WAVE_SPAWNED, etc.),
+# so this is a safety measure rather than a practical concern.
 _key_file() {
     # $1=submap, $2=key
     printf '%s/%s/%s' "$_MAP_DIR" "$1" "$2"
@@ -156,7 +156,7 @@ map_has() {
 # Build a set of completed step keys by reading each log line.
 # Format: TIMESTAMP|step_key|field=value|...
 # A step is "complete" when its log line is present.
-# Multi-occurrence steps (step2, step3, step3b, step3c) may appear multiple times (one per wave/round).
+# Multi-occurrence steps (WAVE_SPAWNED, WAVE_VERIFIED, REVIEW_COMPLETE, REVIEW_TRIAGED) may appear multiple times (one per wave/round).
 
 map_init
 trap 'map_cleanup' EXIT
@@ -171,12 +171,12 @@ while IFS='|' read -r timestamp step_key rest; do
 done < "$PROGRESS_LOG"
 
 # ---------------------------------------------------------------------------
-# Check if the session already completed (step6 logged) — exit code 2
+# Check if the session already completed (SESSION_COMPLETE logged) — exit code 2
 # ---------------------------------------------------------------------------
 
-if map_has "completed" "step6"; then
-    ts="$(map_get "timestamp" "step6")"
-    echo "INFO: Session already completed (step6 logged at ${ts})." >&2
+if map_has "completed" "SESSION_COMPLETE"; then
+    ts="$(map_get "timestamp" "SESSION_COMPLETE")"
+    echo "INFO: Session already completed (SESSION_COMPLETE logged at ${ts})." >&2
     echo "      No resume needed. Caller should treat this as a clean slate." >&2
     exit 2
 fi
@@ -193,9 +193,9 @@ for key in "${STEP_KEYS[@]}"; do
     fi
 done
 
-# If every step except step6 is done but step6 is absent, resume at step6
+# If every step except SESSION_COMPLETE is done but SESSION_COMPLETE is absent, resume at SESSION_COMPLETE
 if [ -z "$RESUME_STEP" ]; then
-    RESUME_STEP="step6"
+    RESUME_STEP="SESSION_COMPLETE"
 fi
 
 # ---------------------------------------------------------------------------
