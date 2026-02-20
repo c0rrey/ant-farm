@@ -8,10 +8,13 @@ For detailed extraction rules and examples, see `~/.claude/orchestration/referen
 - `{TASK_ID}` — full bead ID including project prefix (e.g., `ant-farm-9oa` or `my-project-74g.1`)
 - `{TASK_SUFFIX}` — suffix portion only; extracted by splitting on the LAST hyphen (e.g., `9oa` from `ant-farm-9oa`, or `74g1` from `my-project-74g.1`)
 - `{SESSION_DIR}` — session artifact directory path (e.g., `.beads/agent-summaries/_session-abc123`)
+- `{checkpoint}` — lowercase checkpoint abbreviation used in artifact filenames (e.g., `cco`, `wwd`, `dmvdc`, `ccb`, `cco-review`, `dmvdc-review`)
 
 ## Pest Control Overview
 
 All checkpoint verifications (CCO, WWD, DMVDC, CCB) are executed by **Pest Control**, a dedicated verification subagent that cross-checks orchestrator and agent work against ground truth.
+
+**Role distinction**: Pest Control is the orchestrator — the Queen spawns it to run a checkpoint. Pest Control then spawns a `code-reviewer` agent to execute the actual checks. The **Agent type (spawned by Pest Control)** fields in each section below specify the type of agent that Pest Control spawns, not Pest Control itself.
 
 **Pest Control responsibilities:**
 - Pre-spawn prompt audits (CCO)
@@ -67,7 +70,7 @@ All checkpoints use the following verdict states:
 | **CCO (Nitpickers)** | All round-active prompts identical file list (round 1: 4; round 2+: 2) | (No tie-breaking) | FAIL blocks spawn |
 | **WWD** | Small file = <100 lines | First-listed changed file | WARN does not block queue; FAIL blocks queue |
 | **DMVDC (Dirt Pushers)** | Pick 2 criteria: first-listed OR identified-as-critical OR all if <2 | First-listed acceptance criterion | PARTIAL allows resubmission; FAIL escalates |
-| **DMVDC (Nitpickers)** | Sample size = max(3, min(5, ceil(N/3))) | Include highest-severity + all tiers | PARTIAL allows resubmission; FAIL escalates |
+| **DMVDC (Nitpickers)** | Sample size = max(3, min(5, ceil(N/3))) — see Check 1 for worked examples | Include highest-severity + all tiers | PARTIAL allows resubmission; FAIL escalates |
 | **CCB** | Finding count must reconcile to 100% | Earliest-filed bead per root cause | PARTIAL: fix and re-run; FAIL blocks user presentation |
 
 ### Details by Checkpoint
@@ -100,7 +103,7 @@ All checkpoints use the following verdict states:
 
 **When**: After orchestrator composes agent prompt(s), BEFORE spawning
 **Model**: `haiku` (mechanical checklist — cheap, fast)
-**Agent type**: `code-reviewer`
+**Agent type (spawned by Pest Control)**: `code-reviewer`
 
 **Why**: The orchestrator has a self-policing checklist, but nobody audits the orchestrator. Catching prompt defects before spawn is 100x cheaper than catching them after.
 
@@ -153,6 +156,18 @@ Do NOT execute the prompt — only verify its contents.
 - **WARN** — Check 7 is WARN but file is small (<100 lines) and has context. Queen reviews and approves before spawn.
 - **FAIL** — One or more checks fail, or Check 7 is WARN and file is large (≥100 lines). Rewrite prompt.
 
+**Example FAIL verdict:**
+
+> **Verdict: FAIL**
+>
+> Failed checks:
+> - Check 2 (Real file paths): FAIL — prompt contains placeholder `<list from bead>` instead of actual file paths with line numbers.
+> - Check 5 (Scope boundaries): FAIL — no explicit file or directory limits; prompt says "explore the codebase for related issues."
+>
+> Passing checks: 1, 3, 4, 6, 7
+>
+> Recommendation: Rewrite prompt with actual file paths (e.g., `build.py:L200-215`) and explicit scope boundaries before re-running CCO.
+
 Write your verification report to:
 `{SESSION_DIR}/pc/pc-{TASK_SUFFIX}-cco-{timestamp}.md`
 
@@ -166,7 +181,7 @@ Where:
 
 **When**: After composing all review prompts (round 1: 4 prompts; round 2+: 2 prompts), BEFORE creating the team
 **Model**: `haiku`
-**Agent type**: `code-reviewer`
+**Agent type (spawned by Pest Control)**: `code-reviewer`
 
 ```markdown
 **Pest Control verification - CCO (Pre-Spawn Nitpickers Audit)**
@@ -200,6 +215,7 @@ Both rounds — paste these 2 prompts:
 ## Verify each item (PASS or FAIL with evidence):
 
 1. **File list matches git diff**: the Queen provides the commit range (`<first-commit>..<last-commit>`) in the spawn prompt — use those exact values. This is session-wide, spanning all epics. Run `git diff --name-only <first-commit>..<last-commit>` and verify the prompt file list matches exactly. Every file in the diff must appear in the prompt, and every file in the prompt must appear in the diff. If there is a mismatch, FAIL with the list of missing/extra files.
+   > **Known limitation**: The commit range is Queen-provided. If the Queen passes incorrect commit hashes (e.g., too narrow or too broad), this check validates against wrong ground truth. There is no independent way for Pest Control to derive the "correct" commit range. Mitigation: WWD (Post-Commit Scope Verification) independently validates per-task scope after each agent commits, catching scope errors that slip through here.
 2. **Same file list**: All prompts contain the same set of files to review (not different subsets)
 3. **Same commit range**: All prompts reference the same commit range
 4. **Correct focus areas**: Each prompt has focus areas specific to its review type:
@@ -236,7 +252,7 @@ Where:
 
 **When**: After agent commits, BEFORE spawning next agent in same wave (see [Glossary: wave](../GLOSSARY.md#workflow-concepts))
 **Model**: `haiku` (mechanical file list comparison — cheap, fast)
-**Agent type**: `code-reviewer`
+**Agent type (spawned by Pest Control)**: `code-reviewer`
 
 **Why**: Catches scope creep in real-time between agents, before DMVDC runs. Prevents cascading work attribution errors when multiple agents work on related files.
 
@@ -309,7 +325,7 @@ Note: FAIL blocks queue progression because scope creep may invalidate queued ta
 
 **When**: After each agent completes
 **Model**: `sonnet` (needs judgment to compare claims against actual code)
-**Agent type**: `code-reviewer`
+**Agent type (spawned by Pest Control)**: `code-reviewer`
 
 **Why sonnet not haiku**: This checkpoint reads actual source code and compares it to report claims. "Is this finding description accurate for what's at build.py:L200?" requires understanding both the code and the claim. Haiku can check format; sonnet can check truth.
 
@@ -383,7 +399,7 @@ Where:
 
 **When**: After each Nitpicker completes its report
 **Model**: `sonnet`
-**Agent type**: `code-reviewer`
+**Agent type (spawned by Pest Control)**: `code-reviewer`
 
 ```markdown
 **Pest Control verification - DMVDC (Nitpicker Substance Verification)**
@@ -398,7 +414,22 @@ Verify the substance of a Nitpicker's report by cross-checking findings against 
 Read the report first, then perform these 4 checks:
 
 ## Check 1: Code Pointer Verification
-Pick `max(3, min(5, ceil(N/3)))` random findings from the report (where N = total findings; minimum 3, or all findings if fewer than 3). Always include the highest-severity finding and at least one finding from each severity tier present in the report.
+Pick a sample of findings to verify. The sample size formula is `max(3, min(5, ceil(N/3)))` where N is the total number of findings in the report.
+
+**Plain English**: Take one-third of all findings (rounded up), but never fewer than 3 and never more than 5. If the report has fewer than 3 findings, verify all of them.
+
+**Worked examples:**
+
+| Total findings (N) | ceil(N/3) | min(5, ceil(N/3)) | max(3, ...) | Sample size |
+|---|---|---|---|---|
+| 2 | 1 | 1 | 3 | 3 (all findings -- fewer than minimum) |
+| 6 | 2 | 2 | 3 | 3 (floor of 3 applies) |
+| 9 | 3 | 3 | 3 | 3 |
+| 12 | 4 | 4 | 4 | 4 |
+| 15 | 5 | 5 | 5 | 5 |
+| 30 | 10 | 5 | 5 | 5 (cap of 5 applies) |
+
+Always include the highest-severity finding and at least one finding from each severity tier present in the report.
 For each finding:
 - Read the actual code at the referenced file:line
 - Verify the finding description matches what's actually there
@@ -458,7 +489,7 @@ Where:
 
 **When**: After Big Head consolidation (after all review reports merged and beads filed — 4 reports in round 1, 2 in round 2+)
 **Model**: `haiku` (mechanical counting + record-checking)
-**Agent type**: `code-reviewer`
+**Agent type (spawned by Pest Control)**: `code-reviewer`
 
 **CCB must PASS before presenting results to the user.**
 
@@ -485,17 +516,7 @@ Round 2+:
 Read all documents (round 1: 5 total = 4 reports + consolidated; round 2+: 3 total = 2 reports + consolidated), then perform these 8 checks:
 
 ## Check 0: Report Existence Verification
-Verify the expected report files exist at their paths. The expected count depends on the review round:
-
-**Round 1** — verify exactly 4 report files:
-- `{SESSION_DIR}/review-reports/clarity-review-{timestamp}.md`
-- `{SESSION_DIR}/review-reports/edge-cases-review-{timestamp}.md`
-- `{SESSION_DIR}/review-reports/correctness-review-{timestamp}.md`
-- `{SESSION_DIR}/review-reports/excellence-review-{timestamp}.md`
-
-**Round 2+** — verify exactly 2 report files:
-- `{SESSION_DIR}/review-reports/correctness-review-{timestamp}.md`
-- `{SESSION_DIR}/review-reports/edge-cases-review-{timestamp}.md`
+Verify that every report file listed in **Individual reports** above exists at its path. The expected count depends on the review round (round 1: 4 files; round 2+: 2 files).
 
 If any expected file is missing, FAIL immediately — consolidation should not have proceeded.
 
