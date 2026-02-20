@@ -298,6 +298,12 @@ All session-scoped artifacts go here:
 - `step3b-transition-gate.md` — review transition gate
 - `HANDOFF-*.md` — handoff documents
 - `progress.log` — append-only milestone log; one pipe-delimited line per completed step; written by the Queen at each workflow milestone; never read or overwritten during normal operation; recovery sessions read this once to determine the resume point
+- `resume-plan.md` — written by `scripts/parse-progress-log.sh` on crash recovery; structured markdown resume plan presented to the user for approval before any action is taken
+
+**Crash recovery script**: `scripts/parse-progress-log.sh <SESSION_DIR>`
+- Exit 0: resume-plan.md written; present to user and await `resume` or `fresh start`
+- Exit 1: error (missing log, unreadable); surface to user and await instruction
+- Exit 2: session already completed (step6 logged); no resume-plan written; proceed with fresh start
 
 The `_session-` prefix distinguishes session directories from other entries in `agent-summaries/`.
 This prevents collisions when multiple Queens run in the same repo.
