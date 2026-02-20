@@ -89,30 +89,36 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 **Step 3b:** Review — pre-spawn directory setup:
               `mkdir -p ${SESSION_DIR}/review-reports`
             Gather review inputs from the Queen's state file:
-            - Commit range: first commit of the session through HEAD
-            - File list: `git diff --name-only <first-session-commit>..HEAD` (deduplicated)
-            - Task IDs: all task IDs worked on this session (from Queen's state file)
+            - **Review round**: read from session state (default: 1)
+            - **Round 1 commit range**: first commit of the session through HEAD
+            - **Round 2+ commit range**: first fix commit through HEAD (set after fix cycle in Step 3c)
+            - File list: `git diff --name-only <commit-range>` (deduplicated)
+            - Task IDs: round 1 = all task IDs; round 2+ = fix task IDs only
             - Epic IDs: all epics worked on this session (for context only)
-            Then: spawn the Pantry (`pantry-review`) for review prompts + previews.
+            Then: spawn the Pantry (`pantry-review`) with `Review round: <N>` in its prompt.
             Spawn Pest Control for CCO on review previews.
-            Create Nitpicker team with 6 members: 4 reviewers
+            **Round 1**: Create Nitpicker team with 6 members: 4 reviewers
             (→ orchestration/templates/nitpicker-skeleton.md) + Big Head
             (→ orchestration/templates/big-head-skeleton.md) + Pest Control.
+            **Round 2+**: Create Nitpicker team with 4 members: 2 reviewers
+            (Correctness + Edge Cases only) + Big Head + Pest Control.
             Big Head MUST be a team member, NOT a separate Task agent.
-            Pest Control MUST be a team member so Big Head can SendMessage to it directly
-            for checkpoint validation before filing beads (see reviews.md Step 4 and
-            big-head-skeleton.md steps 8-9). No review content enters the Queen's window.
-            After team completes, the DMVDC and CCB checkpoints have already run inside
-            the team — no separate post-team Pest Control spawn is needed for those checks.
+            Pest Control MUST be a team member so Big Head can SendMessage to it directly.
+            After team completes, DMVDC and CCB have already run inside the team.
 
-**Step 3c:** User triage on P1/P2 findings — **MANDATORY if P1 or P2 issues found; SKIP if none**.
-            After CCB PASS (and reviews.md Big Head consolidation completes):
-            1. Read the consolidated review summary (written to {session-dir}/review-reports/)
-            2. Present findings to user with priority breakdown (P1 count, P2 count, P3 count)
-            3. Ask user: "Reviews found X P1 and Y P2 issues. Should we fix them now, or push and address later?"
-            - **If "fix now"**: Follow orchestration/templates/reviews.md L631-651 (test-writing + fix workflow)
-            - **If "push and address later"**: P1/P2 beads stay open; document in CHANGELOG; proceed to Step 4
-            - **If no P1/P2 issues**: Skip to Step 4 directly
+**Step 3c:** User triage — **after CCB PASS and Big Head consolidation completes**:
+            1. Read the consolidated review summary
+            2. Check finding counts: P1, P2, P3
+            **Termination check**: If zero P1 and zero P2 findings:
+            - Round 2+: P3s already auto-filed by Big Head to "Future Work" epic
+            - Round 1: P3s filed via "Handle P3 Issues" flow in reviews.md
+            - Update session state: `Termination: terminated (round N: 0 P1/P2)`
+            - Proceed directly to Step 4 (documentation)
+            **If P1 or P2 issues found**:
+            - Present findings to user: "Reviews found X P1 and Y P2 issues. Fix now or defer?"
+            - **If "fix now"**: Spawn fix tasks (see reviews.md), then re-run Step 3b with round N+1
+              - Update session state: increment review round, record fix commit range
+            - **If "defer"**: P1/P2 beads stay open; document in CHANGELOG; proceed to Step 4
 
 **Step 4:** Documentation — update CHANGELOG, README, CLAUDE.md in single commit
 
@@ -129,7 +135,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 | WWD PASS | Next agent in wave | ${SESSION_DIR}/pc/*-wwd-*.md |
 | DMVDC PASS | Task closure (bd close) | ${SESSION_DIR}/pc/*-dmvdc-*.md |
 | CCB PASS | Presenting results | ${SESSION_DIR}/pc/pc-session-ccb-{timestamp}.md |
-| Reviews | Mandatory after ALL implementation completes — do NOT ask user, do NOT skip |
+| Reviews | Mandatory after ALL implementation completes; re-runs after fix cycles with reduced scope (round 2+) |
 
 ## Information Diet (The Queen's Window)
 
