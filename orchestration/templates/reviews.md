@@ -786,7 +786,7 @@ No user prompt needed — the loop simply ends.
       - Run DMVDC on each fix agent
       - Run `bd close` on fix tasks after DMVDC passes
 
-   c. **Re-run reviews** (MANDATORY):
+   c. **Re-run reviews** (MANDATORY) —
       - After fix agents complete and pass DMVDC, re-run Step 3b with `Review round: <N+1>`
       - Round 2+ uses only Correctness + Edge Cases reviewers, scoped to fix commits
       - The loop continues until a round produces zero P1/P2 findings

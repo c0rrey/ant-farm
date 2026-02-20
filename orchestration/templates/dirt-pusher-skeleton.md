@@ -32,12 +32,12 @@ Step 0: Read your task context from {DATA_FILE_PATH}
 Execute these 6 steps in order:
 
 1. **Claim**: `bd show {TASK_ID}` + `bd update {TASK_ID} --status=in_progress`
-2. **Design** (MANDATORY): 4+ genuinely distinct approaches with tradeoffs. Document choice before coding.
+2. **Design** (MANDATORY) — 4+ genuinely distinct approaches with tradeoffs. Document choice before coding.
 3. **Implement**: Write clean, minimal code satisfying acceptance criteria.
-4. **Review** (MANDATORY): Re-read EVERY changed file. Verify acceptance criteria. Assumptions audit.
+4. **Review** (MANDATORY) — Re-read EVERY changed file. Verify acceptance criteria. Assumptions audit.
 5. **Commit**: `git pull --rebase && git add <changed-files> && git commit -m "<type>: <description> ({TASK_ID})"`
    Use conventional commit type (fix/feat/refactor/etc). Record commit hash in summary doc.
-6. **Summary doc** (MANDATORY): Write to {SUMMARY_OUTPUT_PATH} with all required sections
+6. **Summary doc** (MANDATORY) — Write to {SUMMARY_OUTPUT_PATH} with all required sections
    (see data file for section list). Only after the summary doc is successfully written:
    `bd close {TASK_ID}`
 

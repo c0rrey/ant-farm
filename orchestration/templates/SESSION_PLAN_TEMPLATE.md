@@ -301,7 +301,7 @@ Before declaring session complete:
 
 - [ ] `git pull --rebase` (check for remote changes)
 - [ ] `bd sync` (sync beads with remote)
-- [ ] `git push` (**MANDATORY** - not done until pushed!)
+- [ ] `git push` (MANDATORY - not done until pushed!)
 - [ ] `git status` shows "up to date with origin/main"
 - [ ] Beads sync status clean (bd sync --status)
 

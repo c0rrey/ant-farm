@@ -3,7 +3,7 @@
 
 ## Agent Prompt Template
 
-⚠️ **MANDATORY**: Every spawned Dirt Pusher MUST receive ALL sections below. All 6 steps are required — skipping Step 2 (Design), Step 4 (Correctness Review), or Step 6 (Summary Doc) is a process failure. Copy this template verbatim and fill in the placeholders.
+⚠️ (MANDATORY): Every spawned Dirt Pusher MUST receive ALL sections below. All 6 steps are required — skipping Step 2 (Design), Step 4 (Correctness Review), or Step 6 (Summary Doc) is a process failure. Copy this template verbatim and fill in the placeholders.
 
 ```markdown
 Execute <task-type> for <file-or-component>:
@@ -25,7 +25,7 @@ For each task, execute these 6 steps in order:
 - Run `bd show <id>` to get full details and acceptance criteria
 - Run `bd update <id> --status=in_progress` to claim
 
-## Step 2: Design (MANDATORY — do not skip)
+## Step 2: Design (MANDATORY)
 Design at least 4 **genuinely distinct** approaches to solve the problem.
 
 **"Distinct" means**: approaches must differ in **algorithm, data structure, or architectural pattern**. Cosmetic variations (same algorithm with different parameters or names) do not count. Example: QuickSort and MergeSort are distinct (different algorithms). QuickSort with different pivot strategies is not distinct (same algorithm, different implementation detail).
@@ -41,7 +41,7 @@ Then select the best approach (or create a hybrid that combines strengths from m
 ## Step 3: Implement
 Implement the chosen approach. Write clean, minimal code that satisfies the acceptance criteria.
 
-## Step 4: Per-File Correctness Review (MANDATORY — do not skip)
+## Step 4: Per-File Correctness Review (MANDATORY)
 After implementation, review EVERY file you changed or created:
 - Re-read each file in full
 - Verify it meets all acceptance criteria from `bd show`
@@ -50,18 +50,18 @@ After implementation, review EVERY file you changed or created:
 - Run any available build/test commands to validate
 - If you find issues, fix them before proceeding
 
-**Assumptions audit** (MANDATORY): Document in your summary:
+**Assumptions audit** (MANDATORY) — Document in your summary:
 1. **Assumptions stated**: List what you assumed about input format, execution context, and dependencies
 2. **What could go wrong**: List 3 specific failure scenarios for your implementation (not generic risks — scenarios specific to your code changes)
 3. **Mitigation**: For each failure scenario, explain why your implementation handles it or why it's acceptable
 
 ## Step 5: Commit
 - `git pull --rebase && git add <files> && git commit -m "<type>: <description> (<task-id>)"`
-- **MANDATORY**: Include the task ID in parentheses at the end of the commit message (e.g., `fix: handle None input (hs_website-abc)`)
-- **MANDATORY — Conditional Re-Review**: If `git pull --rebase` resolves any merge conflicts, you MUST repeat Step 4 (Per-File Correctness Review) on all files affected by the conflict resolution before committing. Conflict resolution can silently change code semantics. Verify the merged files are correct before proceeding.
+- (MANDATORY): Include the task ID in parentheses at the end of the commit message (e.g., `fix: handle None input (hs_website-abc)`)
+- (MANDATORY) **Conditional Re-Review**: If `git pull --rebase` resolves any merge conflicts, you MUST repeat Step 4 (Per-File Correctness Review) on all files affected by the conflict resolution before committing. Conflict resolution can silently change code semantics. Verify the merged files are correct before proceeding.
 - Record your commit hash in the summary doc (Step 6) so Dirt Moved vs Dirt Claimed (DMVDC) can identify your commits without scanning `git log`
 
-## Step 6: Write Summary Doc (MANDATORY — do not skip)
+## Step 6: Write Summary Doc (MANDATORY)
 Write a structured summary to `<session-dir>/summaries/<task-id>.md` using the Write tool.
 (The Queen creates this directory at session start.)
 The summary MUST contain ALL of these sections — incomplete summaries will be rejected:
