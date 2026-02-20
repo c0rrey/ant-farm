@@ -134,6 +134,28 @@ The Queen's window is restricted to prevent context bloat, but certain files are
               TIMESTAMP=$(date +%Y%m%d-%H%M%S)
               ```
 
+            **3b-i.5. Validate review inputs** before proceeding:
+            ```bash
+            # REVIEW_ROUND: must be a positive integer
+            if ! echo "${REVIEW_ROUND}" | grep -qE '^[1-9][0-9]*$'; then
+              echo "ERROR: REVIEW_ROUND is missing or non-numeric (got: '${REVIEW_ROUND}'). Expected: integer >= 1." >&2
+              exit 1
+            fi
+
+            # CHANGED_FILES: must be non-empty (at least one changed file)
+            if [ -z "$(echo "${CHANGED_FILES}" | tr -s ' \n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')" ]; then
+              echo "ERROR: CHANGED_FILES is empty. git diff returned no files for the commit range. Verify the commit range contains actual changes." >&2
+              exit 1
+            fi
+
+            # TASK_IDS: must be non-empty (at least one task ID)
+            if [ -z "$(echo "${TASK_IDS}" | tr -s ' \n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')" ]; then
+              echo "ERROR: TASK_IDS is empty. Round 1 requires all task IDs; round 2+ requires fix task IDs. Verify session state is populated." >&2
+              exit 1
+            fi
+            ```
+            On any validation failure: surface the error to the user and do NOT proceed to 3b-ii.
+
             **3b-ii. Fill review slots** (NO Pantry spawn — skeletons were assembled in Step 2):
             ```bash
             bash ~/.claude/orchestration/scripts/fill-review-slots.sh \

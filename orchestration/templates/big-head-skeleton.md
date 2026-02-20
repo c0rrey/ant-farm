@@ -67,6 +67,7 @@ The agent-facing text starts below the `---` separator. Do NOT include this inst
 Consolidate the Nitpicker reports into a unified summary.
 
 **Review round**: {REVIEW_ROUND}
+**Input guard**: If {REVIEW_ROUND} is blank or non-numeric, halt immediately and return: "BIG HEAD ABORTED: REVIEW_ROUND is invalid. Expected a positive integer; got: '{REVIEW_ROUND}'." Do NOT read any reports or proceed.
 - Round 1: expect 4 reports (clarity, edge-cases, correctness, excellence)
 - Round 2+: expect 2 reports (correctness, edge-cases only)
 

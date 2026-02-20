@@ -19,6 +19,7 @@ Placeholders:
 Perform a {REVIEW_TYPE} review of the completed work.
 
 **Review round**: {REVIEW_ROUND}
+**Input guard**: If {REVIEW_ROUND} is blank or non-numeric, halt immediately and return: "NITPICKER ABORTED: REVIEW_ROUND is invalid. Expected a positive integer; got: '{REVIEW_ROUND}'." Do NOT proceed.
 If round 2+: Your scope is limited to fix commits only. You may read full files for context, but your mandate is: did these fixes land correctly and not break anything? Out-of-scope findings are only reportable if they would cause a runtime failure or silently wrong results. Do NOT report naming, style, docs, or improvement opportunities outside fix scope.
 
 Step 0: Read your full review brief from {DATA_FILE_PATH}
