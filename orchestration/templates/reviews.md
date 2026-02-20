@@ -407,20 +407,20 @@ The Big Head consolidation process includes two distinct verification layers tha
 
 Before reading any reports, verify the expected files exist. The number of expected reports depends on the review round:
 
-**Round 1**: Verify all 4 report files exist:
+**Round 1**: Verify all 4 report files exist using the exact paths provided in your prompt:
 
 ```bash
-ls <session-dir>/review-reports/clarity-review-*.md \
-   <session-dir>/review-reports/edge-cases-review-*.md \
-   <session-dir>/review-reports/correctness-review-*.md \
-   <session-dir>/review-reports/excellence-review-*.md
+[ -f "<session-dir>/review-reports/clarity-review-<timestamp>.md" ] || echo "MISSING: clarity"
+[ -f "<session-dir>/review-reports/edge-cases-review-<timestamp>.md" ] || echo "MISSING: edge-cases"
+[ -f "<session-dir>/review-reports/correctness-review-<timestamp>.md" ] || echo "MISSING: correctness"
+[ -f "<session-dir>/review-reports/excellence-review-<timestamp>.md" ] || echo "MISSING: excellence"
 ```
 
-**Round 2+**: Verify 2 report files exist (correctness and edge-cases only):
+**Round 2+**: Verify 2 report files exist using exact paths:
 
 ```bash
-ls <session-dir>/review-reports/correctness-review-*.md \
-   <session-dir>/review-reports/edge-cases-review-*.md
+[ -f "<session-dir>/review-reports/correctness-review-<timestamp>.md" ] || echo "MISSING: correctness"
+[ -f "<session-dir>/review-reports/edge-cases-review-<timestamp>.md" ] || echo "MISSING: edge-cases"
 ```
 
 **All expected files MUST exist.** If any file is missing:
@@ -456,20 +456,20 @@ TIMED_OUT=1
 while [ $ELAPSED -lt $TIMEOUT ]; do
   # Round 1: check all 4
   # Round 2+: check only correctness and edge-cases
-  # The brief lists the exact expected report paths. Check each with [ -f ].
-  # head -1 ensures re-runs with multiple matching files don't break the check.
+  # The Pantry writes the exact file paths (with timestamp) into this brief.
+  # Use [ -f "$EXACT_PATH" ] — no globs. Globs match stale reports from prior rounds.
   ALL_FOUND=1
 
   # Always expected (both rounds):
-  FOUND_CORRECTNESS=$(ls <session-dir>/review-reports/correctness-review-*.md 2>/dev/null | head -1)
-  FOUND_EDGE=$(ls <session-dir>/review-reports/edge-cases-review-*.md 2>/dev/null | head -1)
-  [ -f "$FOUND_CORRECTNESS" ] && [ -f "$FOUND_EDGE" ] || ALL_FOUND=0
+  # The Pantry replaces <session-dir>/review-reports/correctness-review-<timestamp>.md
+  # with the actual path before delivering this brief to Big Head.
+  [ -f "<session-dir>/review-reports/correctness-review-<timestamp>.md" ] || ALL_FOUND=0
+  [ -f "<session-dir>/review-reports/edge-cases-review-<timestamp>.md" ] || ALL_FOUND=0
 
   # Round 1 only (skip these checks in round 2+):
   # <IF ROUND 1>
-  FOUND_CLARITY=$(ls <session-dir>/review-reports/clarity-review-*.md 2>/dev/null | head -1)
-  FOUND_EXCELLENCE=$(ls <session-dir>/review-reports/excellence-review-*.md 2>/dev/null | head -1)
-  [ -f "$FOUND_CLARITY" ] && [ -f "$FOUND_EXCELLENCE" ] || ALL_FOUND=0
+  [ -f "<session-dir>/review-reports/clarity-review-<timestamp>.md" ] || ALL_FOUND=0
+  [ -f "<session-dir>/review-reports/excellence-review-<timestamp>.md" ] || ALL_FOUND=0
   # </IF ROUND 1>
 
   if [ $ALL_FOUND -eq 1 ]; then
@@ -482,6 +482,7 @@ done
 
 if [ $TIMED_OUT -eq 1 ]; then
   echo "TIMEOUT: Not all expected reports arrived within ${TIMEOUT}s"
+  exit 1
 fi
 ```
 
