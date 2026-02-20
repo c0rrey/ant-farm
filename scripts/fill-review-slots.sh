@@ -172,8 +172,10 @@ fill_slot() {
     }
     {
         # Replace all occurrences of slot in each line
-        while (index($0, slot) > 0) {
-            sub(slot, val)
+        # Use index() + substr() instead of sub() to avoid & and \ being
+        # treated as special characters in the replacement string
+        while ((pos = index($0, slot)) > 0) {
+            $0 = substr($0, 1, pos - 1) val substr($0, pos + length(slot))
         }
         print
     }
