@@ -43,8 +43,8 @@ After the transition gate passes, the Queen launches **the Nitpickers** using **
 ### Model Assignments
 
 - **Nitpickers (all active reviewers)**: `sonnet` — sufficient for code review and finding cataloging
-
-(Big Head model is specified in the Big Head Consolidation Protocol section below.)
+- **Big Head**: `opus` — consolidation requires high-judgment dedup and root-cause grouping
+- **Pest Control (team member)**: `sonnet` — runs DMVDC (judgment-heavy) inside the team; sonnet needed for substance verification
 
 ### Review Type Canonical Names
 

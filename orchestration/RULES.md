@@ -58,7 +58,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             Do NOT examine, read, or query any task/issue details.
 
 **Step 1:** Recon — Read `{SESSION_DIR}/briefing.md` written by the Scout's previous run, or spawn the Scout
-            (`scout-organizer` subagent) if this is the first session. Include in Scout's prompt:
+            (`scout-organizer` subagent, `model: "opus"`) if this is the first session. Include in Scout's prompt:
             (1) `Session directory: <value of SESSION_DIR>`,
             (2) `Mode: <mode>` — derive from the user's message:
                 - User specifies an epic → `epic <epic-id>`
@@ -71,17 +71,17 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             WAIT for the Scout to return its briefing verdict (written to `{SESSION_DIR}/briefing.md`),
             then present the recommended strategy to the user for approval.
 
-**Step 2:** Spawn — Spawn the Pantry (`pantry-impl`) for task briefs + combined previews
+**Step 2:** Spawn — Spawn the Pantry (`pantry-impl`, `model: "opus"`) for task briefs + combined previews
             (→ orchestration/templates/pantry.md). Include `Session directory: <value of SESSION_DIR>`
             in Pantry's prompt. Pass preview file paths and SESSION_DIR to Pest Control
-            (`pest-control`) for Colony Cartography Office (CCO); Pest Control reads orchestration/templates/checkpoints.md itself.
+            (`pest-control`, `model: "haiku"`) for Colony Cartography Office (CCO); Pest Control reads orchestration/templates/checkpoints.md itself.
             Only after all CCO PASS: spawn agents using skeleton
-            (→ orchestration/templates/dirt-pusher-skeleton.md, using Agent Type from Pantry verdict table).
+            (→ orchestration/templates/dirt-pusher-skeleton.md, using Agent Type from Pantry verdict table, `model: "sonnet"` for all Dirt Pushers regardless of subagent_type).
             Prepare next wave (Pantry + Pest Control) WHILE current wave runs.
 
-**Step 3:** Verify — after each agent commits, spawn Pest Control for Wandering Worker Detection (WWD)
+**Step 3:** Verify — after each agent commits, spawn Pest Control (`model: "haiku"`) for Wandering Worker Detection (WWD)
             (scope check before next agent in the wave can proceed).
-            After the full wave completes, spawn Pest Control for Dirt Moved vs Dirt Claimed (DMVDC)
+            After the full wave completes, spawn Pest Control (`model: "sonnet"`) for Dirt Moved vs Dirt Claimed (DMVDC)
             (pass task IDs, commit hashes, summary doc paths; Pest Control reads
             checkpoints.md + task-metadata/ + git diffs itself).
             Failed DMVDC → resume agent (max 2 retries).
@@ -95,8 +95,8 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             - File list: `git diff --name-only <commit-range>` (deduplicated)
             - Task IDs: round 1 = all task IDs; round 2+ = fix task IDs only
             - Epic IDs: all epics worked on this session (for context only)
-            Then: spawn the Pantry (`pantry-review`) with `Review round: <N>` in its prompt.
-            Spawn Pest Control for CCO on review previews.
+            Then: spawn the Pantry (`pantry-review`, `model: "opus"`) with `Review round: <N>` in its prompt.
+            Spawn Pest Control (`model: "haiku"`) for CCO on review previews.
             **Round 1**: Create Nitpicker team with 6 members: 4 reviewers
             (→ orchestration/templates/nitpicker-skeleton.md) + Big Head
             (→ orchestration/templates/big-head-skeleton.md) + Pest Control.
@@ -165,6 +165,25 @@ For the complete detailed list and rationale, see "Queen Read Permissions" above
 | Dirt Pushers | from Pantry verdict table | Specialist per task — Scout recommends via dynamic agent discovery, Pantry passes through |
 | Nitpickers | `nitpicker` | Custom agent: file:line specificity, calibrated severity, complete coverage |
 | Big Head | `big-head` | Custom agent: deduplication, root-cause grouping, issue filing |
+
+## Model Assignments
+
+Every `Task` tool call the Queen makes MUST include the `model` parameter from this table. Omitting `model` causes the agent to inherit the Queen's opus model, wasting tokens on agents that don't need it.
+
+| Agent | Spawn Method | Model | Notes |
+|-------|-------------|-------|-------|
+| Scout | Task (`scout-organizer`) | opus | Orchestration role |
+| Pantry (impl) | Task (`pantry-impl`) | opus | Prompt composition |
+| Pantry (review) | Task (`pantry-review`) | opus | Prompt composition |
+| Dirt Pushers | Task (dynamic type) | sonnet | All dirt pushers regardless of subagent_type |
+| PC — CCO | Task (`pest-control`) | haiku | Mechanical checklist |
+| PC — WWD | Task (`pest-control`) | haiku | Mechanical file comparison |
+| PC — DMVDC | Task (`pest-control`) | sonnet | Judgment: claims vs actual code |
+| PC — CCB | Task (`pest-control`) | haiku | Mechanical counting |
+| Nitpickers (all 4) | TeamCreate member | sonnet | Set in big-head-skeleton.md |
+| Big Head | TeamCreate member | opus | Set in big-head-skeleton.md (`{MODEL}`) |
+| PC (team member) | TeamCreate member | sonnet | Runs DMVDC inside team; needs sonnet |
+| Fix Dirt Pushers | Task (dynamic type) | sonnet | Same rule as regular Dirt Pushers |
 
 ## Concurrency Rules
 
