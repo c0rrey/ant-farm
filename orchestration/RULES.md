@@ -307,7 +307,7 @@ All session-scoped artifacts go here:
 **Crash recovery script**: `scripts/parse-progress-log.sh <SESSION_DIR>`
 - Exit 0: resume-plan.md written; present to user and await `resume` or `fresh start`
 - Exit 1: error (missing log, unreadable); surface to user and await instruction
-- Exit 2: session already completed (step6 logged); no resume-plan written; proceed with fresh start
+- Exit 2: session already completed (SESSION_COMPLETE logged); no resume-plan written; proceed with fresh start
 
 The `_session-` prefix distinguishes session directories from other entries in `agent-summaries/`.
 This prevents collisions when multiple Queens run in the same repo.
