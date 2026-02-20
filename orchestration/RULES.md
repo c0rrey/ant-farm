@@ -94,37 +94,34 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             checkpoints.md + task-metadata/ + git diffs itself).
             Failed DMVDC → resume agent (max 2 retries).
 
-**Step 3b:** Review — fill review slots and spawn Nitpickers:
-            Gather review inputs from the Queen's state file:
-            - **Review round**: read from session state (default: 1)
-            - **Round 1 commit range**: first commit of the session through HEAD
-            - **Round 2+ commit range**: first fix commit through HEAD (set after fix cycle in Step 3c)
+**Step 3b:** Review — fill review slots and spawn Nitpickers.
+
+            **3b-i. Gather inputs** from the Queen's state file:
+            - Review round: read from session state (default: 1)
+            - Commit range: round 1 = first session commit..HEAD; round 2+ = first fix commit..HEAD
             - File list: `git diff --name-only <commit-range>` (deduplicated)
             - Task IDs: round 1 = all task IDs; round 2+ = fix task IDs only
-            - Timestamp: generate once per review cycle in YYYYMMDD-HHmmss format
-            Then call the slot-filling script (NO Pantry spawn needed — skeletons were assembled in Step 2):
+            - Timestamp: generate once per review cycle (`YYYYMMDD-HHmmss`)
+
+            **3b-ii. Fill review slots** (NO Pantry spawn — skeletons were assembled in Step 2):
             ```bash
             bash ~/.claude/orchestration/scripts/fill-review-slots.sh \
-              "${SESSION_DIR}" \
-              "<commit-range>" \
-              "<newline-separated changed files>" \
-              "<space-separated task IDs>" \
-              "<YYYYMMDD-HHmmss timestamp>" \
-              "<review round number>"
+              "${SESSION_DIR}" "<commit-range>" "<changed-files>" \
+              "<task-IDs>" "<timestamp>" "<round>"
             ```
-            The script writes review prompts and previews to `${SESSION_DIR}/prompts/` and
-            `${SESSION_DIR}/previews/` and exits 0 on success, printing file paths to stdout.
-            On non-zero exit: surface the script's stderr as an error to the user — do NOT proceed.
-            Then: mkdir -p ${SESSION_DIR}/review-reports
-            Spawn Pest Control (`model: "haiku"`) for CCO on review previews.
-            **Round 1**: Create Nitpicker team with 6 members: 4 reviewers
-            (→ orchestration/templates/nitpicker-skeleton.md) + Big Head
-            (→ orchestration/templates/big-head-skeleton.md) + Pest Control.
-            **Round 2+**: Create Nitpicker team with 4 members: 2 reviewers
-            (Correctness + Edge Cases only) + Big Head + Pest Control.
-            Big Head MUST be a team member, NOT a separate Task agent.
-            Pest Control MUST be a team member so Big Head can SendMessage to it directly.
-            After team completes, DMVDC and CCB have already run inside the team.
+            On exit 0: prompts/previews written to `${SESSION_DIR}/prompts/` and `${SESSION_DIR}/previews/`.
+            On non-zero: surface stderr to user — do NOT proceed.
+
+            **3b-iii. CCO gate**: `mkdir -p ${SESSION_DIR}/review-reports`, then spawn
+            Pest Control (`model: "haiku"`) for CCO on review previews. Must PASS before spawning team.
+
+            **3b-iv. Spawn Nitpicker team**:
+            - Round 1: 6 members — 4 reviewers + Big Head + Pest Control
+            - Round 2+: 4 members — 2 reviewers (Correctness + Edge Cases) + Big Head + Pest Control
+            - Big Head MUST be a team member, NOT a separate Task agent
+            - Pest Control MUST be a team member so Big Head can SendMessage to it
+            - Templates: `nitpicker-skeleton.md`, `big-head-skeleton.md`
+            - After team completes, DMVDC and CCB have already run inside the team
 
 **Step 3c:** User triage — **after CCB PASS and Big Head consolidation completes**:
             1. Read the consolidated review summary
