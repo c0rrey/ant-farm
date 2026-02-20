@@ -41,7 +41,9 @@ if [[ ! -x "$SYNC_SCRIPT" ]]; then
     exit 1
 fi
 
-"$SYNC_SCRIPT"
+if ! "$SYNC_SCRIPT"; then
+    echo "[ant-farm] WARNING: sync-to-claude.sh failed — push continuing without sync." >&2
+fi
 HOOK
 
 chmod +x "$HOOK_TARGET"
