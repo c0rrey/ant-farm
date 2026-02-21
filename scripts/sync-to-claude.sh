@@ -24,7 +24,7 @@ cp "$REPO_ROOT/CLAUDE.md" ~/.claude/CLAUDE.md
 # under ~/.claude/orchestration/. If you need to remove a stale source file from the target,
 # delete it manually from ~/.claude/orchestration/.
 # Exclude scripts/ — these live under $REPO_ROOT/scripts/ and are synced separately below.
-rsync -av --exclude='scripts/' "$REPO_ROOT/orchestration/" ~/.claude/orchestration/
+rsync -av --exclude='scripts/' --exclude='_archive/' "$REPO_ROOT/orchestration/" ~/.claude/orchestration/
 
 # Sync orchestration scripts (review slot-filling pipeline).
 # Only compose-review-skeletons.sh and fill-review-slots.sh are synced here because they are
