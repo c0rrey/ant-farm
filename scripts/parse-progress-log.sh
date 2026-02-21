@@ -102,8 +102,9 @@ step_resume_action() {
 }
 
 # ---------------------------------------------------------------------------
-# POSIX-compatible key-value store using a temp directory.
-# Replaces bash 4+ declare -A associative arrays.
+# Bash 3+-compatible key-value store (replaces bash 4+ `declare -A`) using a temp directory.
+# Note: the rest of this script uses bash-only constructs (e.g. [[ =~ ]]) — portability
+# target is bash 3+, not POSIX sh.
 # Each "map" is a subdirectory; each entry is a file named after the key.
 #
 # map_set  <dir> <key> <value>  — write value to file
