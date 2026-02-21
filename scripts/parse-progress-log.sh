@@ -162,8 +162,14 @@ map_init
 trap 'map_cleanup' EXIT
 
 while IFS='|' read -r timestamp step_key rest; do
-    # Skip blank lines or malformed lines
+    # Skip blank lines or malformed lines (missing step_key)
     [ -z "$step_key" ] && continue
+    # Validate timestamp format: must match YYYY-MM-DDTHH:MM:SS (ISO 8601 prefix).
+    # Lines with a missing or malformed timestamp are rejected as corrupted/malformed.
+    if ! [[ "$timestamp" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2} ]]; then
+        echo "WARNING: Skipping malformed log line (invalid timestamp '${timestamp}'): ${step_key}|${rest}" >&2
+        continue
+    fi
     map_set "completed" "$step_key" "yes"
     map_set "timestamp" "$step_key" "$timestamp"
     # Keep the last occurrence's details for multi-occurrence steps
@@ -193,7 +199,9 @@ for key in "${STEP_KEYS[@]}"; do
     fi
 done
 
-# If every step except SESSION_COMPLETE is done but SESSION_COMPLETE is absent, resume at SESSION_COMPLETE
+# UNREACHABLE: RESUME_STEP is always set by the loop above because SESSION_COMPLETE is in
+# STEP_KEYS. If SESSION_COMPLETE were completed, the early-exit guard above (exit 2) would
+# have already terminated the script. This branch can never be reached during normal execution.
 if [ -z "$RESUME_STEP" ]; then
     RESUME_STEP="SESSION_COMPLETE"
 fi
@@ -203,6 +211,11 @@ fi
 # ---------------------------------------------------------------------------
 
 OUT_FILE="${SESSION_DIR}/resume-plan.md"
+
+# Warn if overwriting an existing resume plan (e.g. script re-run after partial failure).
+if [ -f "$OUT_FILE" ]; then
+    echo "WARNING: Overwriting existing resume plan: $OUT_FILE" >&2
+fi
 
 {
     echo "# Session Resume Plan"
