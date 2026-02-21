@@ -147,7 +147,10 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             fi
 
             # CHANGED_FILES: must be non-empty (at least one changed file)
-            if [ -z "$(echo "${CHANGED_FILES}" | tr -s ' \n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')" ]; then
+            # Use bash parameter expansion to strip all whitespace — simpler and
+            # more portable than the tr+sed pipeline (no subprocesses, no
+            # platform-specific tr/sed behavior differences).
+            if [[ -z "${CHANGED_FILES//[[:space:]]/}" ]]; then
               echo "ERROR: CHANGED_FILES is empty. git diff returned no files for the commit range. Verify the commit range contains actual changes." >&2
               exit 1
             fi

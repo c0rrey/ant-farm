@@ -27,7 +27,13 @@ HOOK_TARGET="$HOOKS_DIR/pre-push"
 if [[ -f "$HOOK_TARGET" ]]; then
     BACKUP="$HOOK_TARGET.bak.$(date +%Y%m%d_%H%M%S)"
     echo "Existing pre-push hook found — backing up to $BACKUP"
-    cp "$HOOK_TARGET" "$BACKUP"
+    # Wrap cp in explicit error handling: set -e would terminate the script on
+    # cp failure (e.g. permission denied, disk full) with no diagnostic. An
+    # explicit check produces a clear, actionable error message instead.
+    if ! cp "$HOOK_TARGET" "$BACKUP"; then
+        echo "ERROR: Failed to back up $HOOK_TARGET to $BACKUP — aborting. Check permissions and disk space." >&2
+        exit 1
+    fi
 fi
 
 cat > "$HOOK_TARGET" <<'HOOK'

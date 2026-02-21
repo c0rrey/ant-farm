@@ -63,7 +63,11 @@ fi
 perl -i -pe 's/("(?:owner|created_by)"\s*:\s*")[a-zA-Z0-9._%+\-]+\@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}(")/${1}[REDACTED]$2/g' "$ISSUES_FILE"
 
 if grep -qE "$PII_FIELD_PATTERN" "$ISSUES_FILE" 2>/dev/null; then
-    REMAINING=$(grep -cE "$PII_FIELD_PATTERN" "$ISSUES_FILE" 2>/dev/null)
+    # grep -c returns exit code 1 when the match count is zero, which would
+    # trigger set -e. The outer grep -q already confirmed at least one match
+    # exists, so grep -c will return 0 here in practice — but assign with
+    # || true to make the set -e interaction explicit and safe regardless.
+    REMAINING=$(grep -cE "$PII_FIELD_PATTERN" "$ISSUES_FILE" 2>/dev/null) || true
     echo "[scrub-pii] WARNING: $REMAINING email patterns still present in owner/created_by fields after scrub." >&2
     exit 1
 fi
