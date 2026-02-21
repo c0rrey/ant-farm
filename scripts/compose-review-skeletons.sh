@@ -100,12 +100,13 @@ write_nitpicker_skeleton() {
     skeleton_body="$(extract_agent_section "$NITPICKER_SKELETON")"
 
     # Convert single-brace uppercase placeholders to double-brace slot markers.
-    # Pattern: {WORD} → {{WORD}} where WORD matches [A-Z][A-Z_]* (2+ chars, all-caps with underscores).
+    # Pattern: {WORD} → {{WORD}} where WORD matches [A-Z][A-Z_]+ (2+ chars, all-caps with underscores).
     # Single-char tokens like {X} do NOT match and are left unchanged.
     # ASSUMPTION: template prose does not use {UPPERCASE_WORD} syntax for non-slot purposes.
-    # Known slot names this converts: REVIEW_TYPE, DATA_FILE_PATH, REPORT_OUTPUT_PATH,
-    #   REVIEW_ROUND, COMMIT_RANGE, CHANGED_FILES, TIMESTAMP, TASK_IDS.
-    skeleton_body="$(printf '%s\n' "$skeleton_body" | sed 's/{\([A-Z][A-Z_]*\)}/{{\1}}/g')"
+    # Canonical slot names this regex is expected to convert (nitpicker skeletons):
+    #   REVIEW_TYPE, REVIEW_ROUND, DATA_FILE_PATH, REPORT_OUTPUT_PATH,
+    #   COMMIT_RANGE, CHANGED_FILES, TASK_IDS, TIMESTAMP.
+    skeleton_body="$(printf '%s\n' "$skeleton_body" | sed -E 's/\{([A-Z][A-Z_]+)\}/{{\1}}/g')"
 
     # Then substitute the now-double-braced {{REVIEW_TYPE}} with the actual value.
     skeleton_body="$(printf '%s\n' "$skeleton_body" | sed "s/{{REVIEW_TYPE}}/${review_type}/g")"
@@ -155,12 +156,13 @@ write_big_head_skeleton() {
     skeleton_body="$(extract_agent_section "$BIG_HEAD_SKELETON")"
 
     # Convert single-brace uppercase placeholders to double-brace slot markers.
-    # Pattern: {WORD} → {{WORD}} where WORD matches [A-Z][A-Z_]* (2+ chars, all-caps with underscores).
+    # Pattern: {WORD} → {{WORD}} where WORD matches [A-Z][A-Z_]+ (2+ chars, all-caps with underscores).
     # Single-char tokens like {X} do NOT match and are left unchanged.
     # ASSUMPTION: template prose does not use {UPPERCASE_WORD} syntax for non-slot purposes.
-    # Known slot names this converts: DATA_FILE_PATH, CONSOLIDATED_OUTPUT_PATH,
-    #   REVIEW_ROUND, TIMESTAMP, EXPECTED_REPORT_PATHS.
-    skeleton_body="$(printf '%s\n' "$skeleton_body" | sed 's/{\([A-Z][A-Z_]*\)}/{{\1}}/g')"
+    # Canonical slot names this regex is expected to convert (Big Head skeleton):
+    #   DATA_FILE_PATH, CONSOLIDATED_OUTPUT_PATH, REVIEW_ROUND, TIMESTAMP,
+    #   EXPECTED_REPORT_PATHS.
+    skeleton_body="$(printf '%s\n' "$skeleton_body" | sed -E 's/\{([A-Z][A-Z_]+)\}/{{\1}}/g')"
 
     {
         printf '<!-- Big Head skeleton | Assembled by compose-review-skeletons.sh -->\n'
