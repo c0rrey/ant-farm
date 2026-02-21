@@ -33,6 +33,7 @@ These placeholders are filled in by the Queen agent **before spawning a subagent
 - `{AGENT_TYPE}` — subagent type for Task tool (e.g., `python-pro`, `general-purpose`)
 - `{DATA_FILE_PATH}` — full path to data file pre-written by Pantry
 - `{SUMMARY_OUTPUT_PATH}` — full path where agent should write summary doc (e.g., `{SESSION_DIR}/summaries/{TASK_SUFFIX}.md`)
+- `{REVIEW_TIMESTAMP}` — UTC timestamp in YYYYMMDD-HHmmss format, generated once at the start of Step 3b; used in review report filenames and the dummy reviewer output path to ensure all artifacts from the same review round share a consistent timestamp
 
 **Term Definition Block Template**:
 Every template that uses `{UPPERCASE}` placeholders MUST include this block at the top:
@@ -84,6 +85,8 @@ These placeholders represent **bash/shell variables** and appear ONLY in code bl
 **Examples**:
 - `${SESSION_ID}` — Session ID value for bash commands
 - `${SESSION_DIR}` — Session directory path for bash mkdir/mkdir operations
+- `${TIMESTAMP}` — Shell variable holding the `{REVIEW_TIMESTAMP}` value; assigned once at the start of Step 3b via `TIMESTAMP=$(date +%Y%m%d-%H%M%S)` and used in review artifact filenames
+
 **Usage pattern**:
 ```bash
 SESSION_ID=$(echo "$$-$(date +%s%N)-$RANDOM" | shasum | head -c 8)
@@ -101,7 +104,7 @@ All files audited. No violations found. All files use the Tiered convention corr
 |------|---|---|---|---|---------|
 | `scout.md` | `{SESSION_DIR}` (L10,62,66,129,175,178), `{MODE}` (L11) | `{session-dir}` (L166-167), `{task-id}` (L81,254), `{task-suffix}` (L78), `{id}`, `{epic-id}`, `{title}`, `{N}`, `{M}`, `{name}`, `{task-list}`, `{task-A/B/C}` (L137-198) | None | No (uses examples inline) | PASS |
 | `pantry.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{SESSION_DIR}` | `{session-dir}` (review output paths, previews, prompts), `{id}`, `{type}`, `{path}`, `{timestamp}` | None | Yes (L5-8) | PASS |
-| `RULES.md` | `${SESSION_DIR}` (all gates) | None | `${SESSION_ID}` (L119), `${SESSION_DIR}` (L119-120) | No (references other term defs) | PASS |
+| `RULES.md` | `{REVIEW_TIMESTAMP}` (Step 3b-i, via `${TIMESTAMP}` shell var), `${SESSION_DIR}` (all gates) | None | `${SESSION_ID}` (L119), `${SESSION_DIR}` (L119-120), `${TIMESTAMP}` (Step 3b-i) | No (references other term defs) | PASS |
 | `checkpoints.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{SESSION_DIR}` (term def L4-6, used throughout) | `{checkpoint}`, `{path}`, `{N}`, `{M}`, `{before-commit}`, `{after-commit}`, `{commit}`, `{file}`, `{line}`, `{description}`, `{list}` (in examples) | None | Yes (L4-6) | PASS |
 | `dirt-pusher-skeleton.md` | `{TASK_TYPE}`, `{TASK_ID}`, `{TASK_SUFFIX}`, `{AGENT_TYPE}`, `{DATA_FILE_PATH}`, `{SUMMARY_OUTPUT_PATH}`, `{SESSION_DIR}` | None | None | Yes (L8-11) | PASS |
 | `nitpicker-skeleton.md` | `{REVIEW_TYPE}`, `{DATA_FILE_PATH}`, `{REPORT_OUTPUT_PATH}` | None | None | Partial (L8-11, missing EPOCH/timestamp defs) | PASS |

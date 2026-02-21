@@ -129,7 +129,10 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             - Commit range: round 1 = first session commit..HEAD; round 2+ = first fix commit..HEAD
             - File list: `git diff --name-only <commit-range>` (deduplicated)
             - Task IDs: round 1 = all task IDs; round 2+ = fix task IDs only
-            - Timestamp: The Queen generates ONE timestamp at the start of Step 3b using `date +%Y%m%d-%H%M%S` format (YYYYMMDD-HHMMSS)
+            - Timestamp: The Queen generates ONE timestamp at the start of Step 3b using `date +%Y%m%d-%H%M%S` format (YYYYMMDD-HHMMSS).
+              This shell variable corresponds to the canonical `{REVIEW_TIMESTAMP}` placeholder defined in
+              `orchestration/PLACEHOLDER_CONVENTIONS.md` (Tier 1 uppercase). Use `${TIMESTAMP}` in bash
+              code blocks; use `{REVIEW_TIMESTAMP}` when referencing the placeholder in prose or templates.
               ```bash
               TIMESTAMP=$(date +%Y%m%d-%H%M%S)
               ```
