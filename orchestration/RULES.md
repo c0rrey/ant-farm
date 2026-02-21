@@ -195,7 +195,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             # TIMESTAMP was assigned at the start of Step 3b-i: TIMESTAMP=$(date +%Y%m%d-%H%M%S)
             # TMUX_SESSION is the name of the tmux session the Queen is running in.
             # Resolve it at runtime: TMUX_SESSION=$(tmux display-message -p '#S')
-            if [ -n "$TMUX" ]; then
+            if command -v tmux > /dev/null 2>&1 && [ -n "$TMUX" ]; then
               TMUX_SESSION=$(tmux display-message -p '#S')
               DUMMY_WINDOW="dummy-reviewer-round-<N>"
 
