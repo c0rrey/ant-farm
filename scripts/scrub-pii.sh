@@ -57,8 +57,8 @@ fi
 # extension argument; perl -i works cross-platform).
 perl -i -pe 's/("(?:owner|created_by)"\s*:\s*")[a-zA-Z0-9._%+\-]+\@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}(")/${1}[REDACTED]$2/g' "$ISSUES_FILE"
 
-if grep -qE '"(owner|created_by)"\s*:\s*"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"' "$ISSUES_FILE" 2>/dev/null; then
-    REMAINING=$(grep -cE '"(owner|created_by)"\s*:\s*"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"' "$ISSUES_FILE" 2>/dev/null)
+if grep -qE "$PII_FIELD_PATTERN" "$ISSUES_FILE" 2>/dev/null; then
+    REMAINING=$(grep -cE "$PII_FIELD_PATTERN" "$ISSUES_FILE" 2>/dev/null)
     echo "[scrub-pii] WARNING: $REMAINING email patterns still present in owner/created_by fields after scrub." >&2
     exit 1
 fi
