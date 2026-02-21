@@ -43,7 +43,7 @@ fi
 # (e.g. "user name"@example.com) and uncommon special characters are intentionally
 # excluded — they do not appear in this codebase's typical data sources and
 # broadening the pattern adds maintenance complexity for negligible real-world gain.
-PII_FIELD_PATTERN='"(owner|created_by)"\s*:\s*"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"'
+PII_FIELD_PATTERN='"(owner|created_by)"[[:space:]]*:[[:space:]]*"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"'
 
 if $CHECK_ONLY; then
     if grep -qE "$PII_FIELD_PATTERN" "$ISSUES_FILE" 2>/dev/null; then
