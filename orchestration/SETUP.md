@@ -74,8 +74,8 @@ bd create --title="Test orchestration" --type=task --priority=3
 # Start session:
 # "Let's get to work on: <task-id>"
 
-# Verify Claude:
-# 1. Spawns the Scout, which runs bd show
+# Verify Claude (the Queen):
+# 1. Delegates to the Scout subagent (Scout runs bd show — Queen does NOT run bd show directly)
 # 2. Analyzes conflicts
 # 3. Presents strategy
 # 4. Waits for approval
