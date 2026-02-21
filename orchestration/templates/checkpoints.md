@@ -73,7 +73,7 @@ All checkpoints use the following verdict states:
 | **CCO (Nitpickers)** | All round-active prompts identical file list (round 1: 4; round 2+: 2) | (No tie-breaking) | FAIL blocks spawn |
 | **WWD** | Small file = <100 lines | First-listed changed file | WARN does not block queue; FAIL blocks queue |
 | **DMVDC (Dirt Pushers)** | Pick 2 criteria: first-listed OR identified-as-critical OR all if <2 | First-listed acceptance criterion | PARTIAL allows resubmission; FAIL escalates |
-| **DMVDC (Nitpickers)** | Sample size = max(3, min(5, ceil(N/3))) — see Check 1 for worked examples | Include highest-severity + all tiers | PARTIAL allows resubmission; FAIL escalates |
+| **DMVDC (Nitpickers)** | Sample size = min(N, max(3, min(5, ceil(N/3)))) — see Check 1 for worked examples | Include highest-severity + all tiers | PARTIAL allows resubmission; FAIL escalates |
 | **CCB** | Finding count must reconcile to 100% | Earliest-filed bead per root cause | PARTIAL: fix and re-run; FAIL blocks user presentation |
 
 ### Details by Checkpoint
@@ -120,7 +120,7 @@ All checkpoints use the following verdict states:
 
 **WARN verdict** (acceptable for small files only):
 - Check 7 is WARN instead of PASS, AND
-- The file in question is "small": fewer than 100 lines of code OR fewer than 5 logical sections/functions, AND
+- The file in question is "small": fewer than 100 lines, AND
 - The prompt includes specific context about what the agent should modify (e.g., "update the error message on line 15")
 - Example WARN: "Edit config.json (update API endpoint)" is WARN if config.json is 45 lines. The Queen reviews and approves.
 - Example FAIL: "Edit templates/macros/jsonld.html" is FAIL because it provides no line specificity and the file is likely >100 lines. Needs rewrite.
@@ -422,20 +422,21 @@ Verify the substance of a Nitpicker's report by cross-checking findings against 
 Read the report first, then perform these 4 checks:
 
 ## Check 1: Code Pointer Verification
-Pick a sample of findings to verify. The sample size formula is `max(3, min(5, ceil(N/3)))` where N is the total number of findings in the report.
+Pick a sample of findings to verify. The sample size formula is `min(N, max(3, min(5, ceil(N/3))))` where N is the total number of findings in the report.
 
-**Plain English**: Take one-third of all findings (rounded up), but never fewer than 3 and never more than 5. If the report has fewer than 3 findings, verify all of them.
+**Plain English**: Take one-third of all findings (rounded up), but never fewer than 3 and never more than 5. If N is less than 3, verify all of them (sample size = N).
 
 **Worked examples:**
 
-| Total findings (N) | ceil(N/3) | min(5, ceil(N/3)) | max(3, ...) | Sample size |
-|---|---|---|---|---|
-| 2 | 1 | 1 | 3 | 3 (all findings -- fewer than minimum) |
-| 6 | 2 | 2 | 3 | 3 (floor of 3 applies) |
-| 9 | 3 | 3 | 3 | 3 |
-| 12 | 4 | 4 | 4 | 4 |
-| 15 | 5 | 5 | 5 | 5 |
-| 30 | 10 | 5 | 5 | 5 (cap of 5 applies) |
+| Total findings (N) | ceil(N/3) | min(5, ceil(N/3)) | max(3, ...) | min(N, ...) | Sample size |
+|---|---|---|---|---|---|
+| 1 | 1 | 1 | 3 | 1 | 1 (fewer findings than minimum — verify all) |
+| 2 | 1 | 1 | 3 | 2 | 2 (fewer findings than minimum — verify all) |
+| 6 | 2 | 2 | 3 | 3 | 3 (floor of 3 applies) |
+| 9 | 3 | 3 | 3 | 3 | 3 |
+| 12 | 4 | 4 | 4 | 4 | 4 |
+| 15 | 5 | 5 | 5 | 5 | 5 |
+| 30 | 10 | 5 | 5 | 5 | 5 (cap of 5 applies) |
 
 Always include the highest-severity finding and at least one finding from each severity tier present in the report.
 For each finding:
@@ -510,6 +511,7 @@ Audit the review consolidation for completeness, accuracy, and traceability.
 
 **Consolidated summary**: `{SESSION_DIR}/review-reports/review-consolidated-{timestamp}.md`
 **Individual reports**: (the Queen provides exact filenames and the review round number in the consolidation prompt.)
+**Session start date**: `{SESSION_START_DATE}` (ISO 8601 date, e.g., `2026-02-20` — Queen-supplied; used to scope bead list in Check 7)
 
 Round 1:
 - `{SESSION_DIR}/review-reports/clarity-review-{timestamp}.md`
@@ -570,8 +572,9 @@ Spot-check 2 merged groups by reading the actual code at each finding's location
 - Report: "Group '<title>' merges N findings across files {list}. Common pattern: {yes/no — explanation}. CONFIRMED / SUSPECT"
 
 ## Check 7: Bead Provenance Audit
-Run `bd list --status=open` and cross-reference against the consolidated summary's "Beads filed" list.
-- Every open bead should trace back to the consolidation step
+Run `bd list --status=open --after={SESSION_START_DATE}` and cross-reference against the consolidated summary's "Beads filed" list.
+- `{SESSION_START_DATE}`: the Queen-supplied session start date (ISO 8601 format, e.g., `2026-02-20`). This scopes results to beads filed during this session only and prevents pulling thousands of unrelated open beads from earlier sessions.
+- Every open bead from this session should trace back to the consolidation step
 - Flag any beads that were filed during the review phase (not consolidation) — these are unauthorized
 - Verify bead count matches the consolidated summary's count
 
