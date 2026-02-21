@@ -273,7 +273,14 @@ Recommended strategy: {strategy name}
   ```markdown
   # Task: {task-id}
   **Status**: error
+  **Title**: {title from bd list, or "unknown — not in listing"}
+  **Type**: {type from bd list, or "unknown"}
+  **Priority**: {priority from bd list, or "unknown"}
+  **Epic**: {epic-id from bd list, or "unknown"}
   **Error Details**: {exact error message from bd show}
+
+  Note: Affected Files, Root Cause, Agent Type, Dependencies, and Acceptance Criteria
+  could not be populated — bd show failed.
   ```
 - **If `bd show <epic-id> --children` or `bd list` fails**: Return an error
   verdict to the Queen immediately: `ERROR: {command} failed — {error message}`.
