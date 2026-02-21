@@ -501,14 +501,19 @@ If any report file is missing after the initial check, do NOT wait indefinitely.
 # It is a shell integer (1, 2, 3, ...) used to gate round-1-only checks below.
 REVIEW_ROUND={{REVIEW_ROUND}}
 
-# Poll up to 30 seconds total for missing reports
-TIMEOUT=30
+# --- Timing constants (document rationale, not just values) ---
+# 30 seconds: enough for a slow reviewer to write its report; short enough to
+# return a clear error rather than block the Queen indefinitely.
+POLL_TIMEOUT_SECS=30
+# 2 seconds: balances responsiveness against unnecessary busy-polling.
+POLL_INTERVAL_SECS=2
 ELAPSED=0
-POLL_INTERVAL=2
-TIMED_OUT=1
 
-# The brief specifies which reports to expect (4 for round 1, 2 for round 2+).
-# Check only the expected reports. The Pantry writes the exact paths into the brief.
+# --- CONSTRAINT: which reports to expect per round ---
+# Round 1:  correctness, edge-cases, clarity, excellence (4 reports)
+# Round 2+: correctness, edge-cases only (2 reports)
+# The Pantry writes the exact file paths (with timestamp) into this brief.
+# Use [ -f "$EXACT_PATH" ] — no globs. Globs match stale reports from prior rounds.
 
 # Placeholder substitution guard: verify the Pantry replaced all template placeholders
 # before entering the polling loop. Unsubstituted placeholders (angle brackets or curly
@@ -547,14 +552,11 @@ if [ $PLACEHOLDER_ERROR -eq 1 ]; then
   exit 1
 fi
 
-while [ $ELAPSED -lt $TIMEOUT ]; do
-  # The Pantry writes the exact file paths (with timestamp) into this brief.
-  # Use [ -f "$EXACT_PATH" ] — no globs. Globs match stale reports from prior rounds.
+REPORTS_FOUND=0  # set to 1 when all expected reports are present
+while [ $ELAPSED -lt $POLL_TIMEOUT_SECS ]; do
   ALL_FOUND=1
 
   # Always expected (both rounds):
-  # The Pantry replaces <session-dir>/review-reports/correctness-review-<timestamp>.md
-  # with the actual path before delivering this brief to Big Head.
   [ -f "<session-dir>/review-reports/correctness-review-<timestamp>.md" ] || ALL_FOUND=0
   [ -f "<session-dir>/review-reports/edge-cases-review-<timestamp>.md" ] || ALL_FOUND=0
 
@@ -565,15 +567,15 @@ while [ $ELAPSED -lt $TIMEOUT ]; do
   fi
 
   if [ $ALL_FOUND -eq 1 ]; then
-    TIMED_OUT=0
+    REPORTS_FOUND=1
     break
   fi
-  sleep $POLL_INTERVAL
-  ELAPSED=$((ELAPSED + POLL_INTERVAL))
+  sleep $POLL_INTERVAL_SECS
+  ELAPSED=$((ELAPSED + POLL_INTERVAL_SECS))
 done
 
-if [ $TIMED_OUT -eq 1 ]; then
-  echo "TIMEOUT: Not all expected reports arrived within ${TIMEOUT}s"
+if [ $REPORTS_FOUND -eq 0 ]; then
+  echo "TIMEOUT: Not all expected reports arrived within ${POLL_TIMEOUT_SECS}s"
   exit 1
 fi
 ```
