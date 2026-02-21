@@ -96,9 +96,12 @@ write_nitpicker_skeleton() {
     local skeleton_body
     skeleton_body="$(extract_agent_section "$NITPICKER_SKELETON")"
 
-    # First convert ALL single-brace uppercase placeholders to double-brace format:
-    # {WORD} → {{WORD}} (where WORD is all-caps with underscores)
-    # This marks them as slot markers for fill-review-slots.sh.
+    # Convert single-brace uppercase placeholders to double-brace slot markers.
+    # Pattern: {WORD} → {{WORD}} where WORD matches [A-Z][A-Z_]* (2+ chars, all-caps with underscores).
+    # Single-char tokens like {X} do NOT match and are left unchanged.
+    # ASSUMPTION: template prose does not use {UPPERCASE_WORD} syntax for non-slot purposes.
+    # Known slot names this converts: REVIEW_TYPE, DATA_FILE_PATH, REPORT_OUTPUT_PATH,
+    #   REVIEW_ROUND, COMMIT_RANGE, CHANGED_FILES, TIMESTAMP, TASK_IDS.
     skeleton_body="$(printf '%s\n' "$skeleton_body" | sed 's/{\([A-Z][A-Z_]*\)}/{{\1}}/g')"
 
     # Then substitute the now-double-braced {{REVIEW_TYPE}} with the actual value.
@@ -149,6 +152,11 @@ write_big_head_skeleton() {
     skeleton_body="$(extract_agent_section "$BIG_HEAD_SKELETON")"
 
     # Convert single-brace uppercase placeholders to double-brace slot markers.
+    # Pattern: {WORD} → {{WORD}} where WORD matches [A-Z][A-Z_]* (2+ chars, all-caps with underscores).
+    # Single-char tokens like {X} do NOT match and are left unchanged.
+    # ASSUMPTION: template prose does not use {UPPERCASE_WORD} syntax for non-slot purposes.
+    # Known slot names this converts: DATA_FILE_PATH, CONSOLIDATED_OUTPUT_PATH,
+    #   REVIEW_ROUND, TIMESTAMP, EXPECTED_REPORT_PATHS.
     skeleton_body="$(printf '%s\n' "$skeleton_body" | sed 's/{\([A-Z][A-Z_]*\)}/{{\1}}/g')"
 
     {
