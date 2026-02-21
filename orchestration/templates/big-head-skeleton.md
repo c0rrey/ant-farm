@@ -88,7 +88,7 @@ This ensures downstream consumers (Queen, Pest Control) have a written record of
 Your workflow:
 1. Verify all expected report files exist (4 for round 1; 2 for round 2+) — follow the missing-report handling protocol in your consolidation brief (Step 0a)
    - The brief is authoritative for this step: it specifies the polling timeout, error return format, and failure conditions
-   - **On timeout (TIMED_OUT=1)**: Before returning the error to the Queen, write a failure artifact to `{CONSOLIDATED_OUTPUT_PATH}`:
+   - **On timeout (REPORTS_FOUND=0)**: Before returning the error to the Queen, write a failure artifact to `{CONSOLIDATED_OUTPUT_PATH}`:
      ```
      # Big Head Consolidation — BLOCKED: Missing Nitpicker Reports
      **Status**: FAILED — prerequisite gate timeout
