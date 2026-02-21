@@ -26,7 +26,12 @@ cp "$REPO_ROOT/CLAUDE.md" ~/.claude/CLAUDE.md
 # Exclude scripts/ — these live under $REPO_ROOT/scripts/ and are synced separately below.
 rsync -av --exclude='scripts/' "$REPO_ROOT/orchestration/" ~/.claude/orchestration/
 
-# Sync orchestration scripts (review slot-filling pipeline)
+# Sync orchestration scripts (review slot-filling pipeline).
+# Only compose-review-skeletons.sh and fill-review-slots.sh are synced here because they are
+# the two user-facing pipeline tools that Claude Code subagents invoke at runtime from
+# ~/.claude/orchestration/scripts/. Other scripts in scripts/ (e.g. sync-to-claude.sh itself,
+# install-hooks.sh, scrub-pii.sh) are developer/maintainer tools that run from the repo
+# checkout and are not needed inside the ~/.claude/ tree.
 mkdir -p ~/.claude/orchestration/scripts/
 for script in "$REPO_ROOT/scripts/compose-review-skeletons.sh" "$REPO_ROOT/scripts/fill-review-slots.sh"; do
     if [ ! -f "$script" ]; then
