@@ -83,6 +83,10 @@ resolve_arg() {
             echo "ERROR: @file argument not found: $fpath" >&2
             exit 1
         fi
+        if [ ! -s "$fpath" ]; then
+            echo "ERROR: @file argument is empty (0 bytes): $fpath" >&2
+            exit 1
+        fi
         cat "$fpath"
     else
         printf '%s' "$val"
