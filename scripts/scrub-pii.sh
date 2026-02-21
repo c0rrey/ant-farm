@@ -5,7 +5,7 @@
 #   ./scripts/scrub-pii.sh [--check]
 #
 # By default, replaces email addresses in the "owner" and "created_by" fields
-# of .beads/issues.jsonl with the non-PII token "ctc".
+# of .beads/issues.jsonl with the self-documenting token "[REDACTED]".
 #
 # --check mode: exit 0 if no PII found, exit 1 if PII is present (for CI).
 #
@@ -45,11 +45,11 @@ if $CHECK_ONLY; then
 fi
 
 # Replace email addresses in "owner" and "created_by" field values with the
-# non-PII token "ctc". Scoped substitution prevents touching emails that
-# legitimately appear in other fields (titles, descriptions, URLs).
+# self-documenting token "[REDACTED]". Scoped substitution prevents touching
+# emails that legitimately appear in other fields (titles, descriptions, URLs).
 # Uses perl for reliable in-place editing on macOS (BSD sed -i requires an
 # extension argument; perl -i works cross-platform).
-perl -i -pe 's/("(?:owner|created_by)"\s*:\s*")[a-zA-Z0-9._%+\-]+\@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}(")/$1ctc$2/g' "$ISSUES_FILE"
+perl -i -pe 's/("(?:owner|created_by)"\s*:\s*")[a-zA-Z0-9._%+\-]+\@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}(")/${1}[REDACTED]$2/g' "$ISSUES_FILE"
 
 if grep -qE '"(owner|created_by)"\s*:\s*"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"' "$ISSUES_FILE" 2>/dev/null; then
     REMAINING=$(grep -cE '"(owner|created_by)"\s*:\s*"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"' "$ISSUES_FILE" 2>/dev/null)
