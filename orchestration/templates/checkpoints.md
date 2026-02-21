@@ -261,7 +261,7 @@ Where:
 
 ## Wandering Worker Detection (WWD): Post-Commit Scope Verification
 
-**When**: After agent commits, BEFORE spawning next agent in same wave (see [Glossary: wave](../GLOSSARY.md#workflow-concepts))
+**When**: After agent commits, BEFORE spawning next agent in same wave (a "wave" is a group of agents spawned in parallel for the same execution round — e.g. all Nitpickers in round 1 constitute one wave)
 **Model**: `haiku` (mechanical file list comparison — cheap, fast)
 **Agent type (spawned by Pest Control)**: `code-reviewer`
 
