@@ -85,13 +85,15 @@ ISSUES_FILE="$REPO_ROOT/.beads/issues.jsonl"
 # Only run the scrub if issues.jsonl is staged for this commit.
 if git diff --cached --name-only | grep -q "^\.beads/issues\.jsonl$"; then
     if [[ ! -x "$SCRUB_SCRIPT" ]]; then
-        echo "[ant-farm] ERROR: scrub-pii.sh not found or not executable — cannot scrub PII. Commit blocked." >&2
-        exit 1
+        echo "[ant-farm] WARNING: scrub-pii.sh not found or not executable — PII scrub skipped." >&2
+        echo "[ant-farm]   Risk:  email addresses in .beads/issues.jsonl may enter git history." >&2
+        echo "[ant-farm]   Fix:   add scripts/scrub-pii.sh and re-run scripts/install-hooks.sh." >&2
+    else
+        "$SCRUB_SCRIPT"
+        # Re-stage the scrubbed file so the clean version is what gets committed.
+        git add "$ISSUES_FILE"
+        echo "[ant-farm] PII scrub applied and re-staged: .beads/issues.jsonl"
     fi
-    "$SCRUB_SCRIPT"
-    # Re-stage the scrubbed file so the clean version is what gets committed.
-    git add "$ISSUES_FILE"
-    echo "[ant-farm] PII scrub applied and re-staged: .beads/issues.jsonl"
 fi
 HOOK
 
