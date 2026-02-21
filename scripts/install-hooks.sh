@@ -41,6 +41,9 @@ if [[ ! -x "$SYNC_SCRIPT" ]]; then
     exit 1
 fi
 
+# Sync failure is intentionally non-fatal: the push should never be blocked
+# by a local sync tool — keeping developer flow uninterrupted takes priority
+# over guaranteed sync consistency.
 if ! "$SYNC_SCRIPT"; then
     echo "[ant-farm] WARNING: sync-to-claude.sh failed — push continuing without sync." >&2
     echo "[ant-farm]   Cause: the sync script exited non-zero (check its output above for details)." >&2
