@@ -29,7 +29,10 @@ rsync -av --exclude='scripts/' "$REPO_ROOT/orchestration/" ~/.claude/orchestrati
 # Sync orchestration scripts (review slot-filling pipeline)
 mkdir -p ~/.claude/orchestration/scripts/
 for script in "$REPO_ROOT/scripts/compose-review-skeletons.sh" "$REPO_ROOT/scripts/fill-review-slots.sh"; do
-    [ -f "$script" ] || continue
+    if [ ! -f "$script" ]; then
+        echo "[ant-farm] WARNING: expected script not found, skipping: $script" >&2
+        continue
+    fi
     dest=~/.claude/orchestration/scripts/"$(basename "$script")"
     cp "$script" "$dest"
     chmod +x "$dest"
