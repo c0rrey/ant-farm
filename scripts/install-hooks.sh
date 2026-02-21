@@ -43,6 +43,8 @@ fi
 
 if ! "$SYNC_SCRIPT"; then
     echo "[ant-farm] WARNING: sync-to-claude.sh failed — push continuing without sync." >&2
+    echo "[ant-farm]   Cause: the sync script exited non-zero (check its output above for details)." >&2
+    echo "[ant-farm]   Fix:   run 'scripts/sync-to-claude.sh' manually to diagnose, then re-push." >&2
 fi
 HOOK
 
