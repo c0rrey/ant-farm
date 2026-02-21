@@ -30,13 +30,13 @@ if [[ ! -f "$ISSUES_FILE" ]]; then
     exit 0
 fi
 
-# Pattern: email addresses in any JSON string value.
-# Using a conservative pattern that matches the known PII format.
-PII_PATTERN='[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}'
+# Pattern: email addresses in "owner" or "created_by" JSON field values only.
+# Scoped to prevent accidental redaction of emails in titles, descriptions, or URLs.
+PII_FIELD_PATTERN='"(owner|created_by)"\s*:\s*"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"'
 
 if $CHECK_ONLY; then
-    if grep -qE "$PII_PATTERN" "$ISSUES_FILE" 2>/dev/null; then
-        echo "[scrub-pii] FAIL: PII (email addresses) found in $ISSUES_FILE" >&2
+    if grep -qE "$PII_FIELD_PATTERN" "$ISSUES_FILE" 2>/dev/null; then
+        echo "[scrub-pii] FAIL: PII (email addresses) found in owner/created_by fields in $ISSUES_FILE" >&2
         exit 1
     else
         echo "[scrub-pii] OK: No PII found in $ISSUES_FILE"
@@ -44,14 +44,16 @@ if $CHECK_ONLY; then
     fi
 fi
 
-# Replace email addresses in JSON string values with the non-PII token "ctc".
+# Replace email addresses in "owner" and "created_by" field values with the
+# non-PII token "ctc". Scoped substitution prevents touching emails that
+# legitimately appear in other fields (titles, descriptions, URLs).
 # Uses perl for reliable in-place editing on macOS (BSD sed -i requires an
 # extension argument; perl -i works cross-platform).
-perl -i -pe 's/[a-zA-Z0-9._%+\-]+\@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/ctc/g' "$ISSUES_FILE"
+perl -i -pe 's/("(?:owner|created_by)"\s*:\s*")[a-zA-Z0-9._%+\-]+\@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}(")/$1ctc$2/g' "$ISSUES_FILE"
 
-if grep -qE '[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}' "$ISSUES_FILE" 2>/dev/null; then
-    REMAINING=$(grep -cE '[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}' "$ISSUES_FILE" 2>/dev/null)
-    echo "[scrub-pii] WARNING: $REMAINING email patterns still present after scrub." >&2
+if grep -qE '"(owner|created_by)"\s*:\s*"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"' "$ISSUES_FILE" 2>/dev/null; then
+    REMAINING=$(grep -cE '"(owner|created_by)"\s*:\s*"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"' "$ISSUES_FILE" 2>/dev/null)
+    echo "[scrub-pii] WARNING: $REMAINING email patterns still present in owner/created_by fields after scrub." >&2
     exit 1
 fi
 
