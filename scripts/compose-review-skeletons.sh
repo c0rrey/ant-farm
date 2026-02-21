@@ -65,8 +65,11 @@ mkdir -p "$SKELETON_DIR" || {
 }
 
 # ---------------------------------------------------------------------------
-# Helper: extract agent-facing section from a skeleton template file
-# (everything after the line containing only "---")
+# Helper: extract agent-facing section from a skeleton template file.
+# Prints all lines after the first line containing only "---" (the delimiter
+# line itself is excluded). Skeleton template files are expected to contain
+# exactly one such delimiter separating the instruction block from the
+# agent-facing content.
 # ---------------------------------------------------------------------------
 extract_agent_section() {
     local file="$1"

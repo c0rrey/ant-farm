@@ -172,7 +172,11 @@ while IFS='|' read -r timestamp step_key rest; do
     fi
     map_set "completed" "$step_key" "yes"
     map_set "timestamp" "$step_key" "$timestamp"
-    # Keep the last occurrence's details for multi-occurrence steps
+    # Keep the last occurrence's details for multi-occurrence steps.
+    # NOTE: Log ordering is not validated here. A corrupt log with SESSION_COMPLETE
+    # appearing out of order (before earlier steps) will still trigger the
+    # early-exit guard below and report the session as complete. This is intentional:
+    # a SESSION_COMPLETE entry is treated as authoritative regardless of position.
     map_set "details"   "$step_key" "$rest"
 done < "$PROGRESS_LOG"
 
@@ -201,7 +205,7 @@ done
 
 # UNREACHABLE: RESUME_STEP is always set by the loop above because SESSION_COMPLETE is in
 # STEP_KEYS. If SESSION_COMPLETE were completed, the early-exit guard above (exit 2) would
-# have already terminated the script. This branch can never be reached during normal execution.
+# have already terminated the script. This branch can never be reached.
 if [ -z "$RESUME_STEP" ]; then
     RESUME_STEP="SESSION_COMPLETE"
 fi

@@ -35,7 +35,7 @@ cd /path/to/your/project
 
 Add this section:
 
-```markdown
+````markdown
 ## Orchestration
 
 Global workflows: `~/.claude/orchestration/` (RULES.md, templates/, reference/)
@@ -52,7 +52,7 @@ Follow orchestration docs for pre-flight planning.
 - [ ] Tests pass: [your test command]
 - [ ] Linter clean: [your lint command]
 - [ ] Build succeeds: [your build command]
-```
+````
 
 **Step 3: Copy session template (optional)**
 
