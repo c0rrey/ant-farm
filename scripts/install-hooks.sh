@@ -71,13 +71,12 @@ REPO_ROOT="$(git rev-parse --show-toplevel)"
 SCRUB_SCRIPT="$REPO_ROOT/scripts/scrub-pii.sh"
 ISSUES_FILE="$REPO_ROOT/.beads/issues.jsonl"
 
-if [[ ! -x "$SCRUB_SCRIPT" ]]; then
-    echo "[ant-farm] ERROR: scrub-pii.sh not found or not executable — cannot scrub PII. Commit blocked." >&2
-    exit 1
-fi
-
 # Only run the scrub if issues.jsonl is staged for this commit.
 if git diff --cached --name-only | grep -q "^\.beads/issues\.jsonl$"; then
+    if [[ ! -x "$SCRUB_SCRIPT" ]]; then
+        echo "[ant-farm] ERROR: scrub-pii.sh not found or not executable — cannot scrub PII. Commit blocked." >&2
+        exit 1
+    fi
     "$SCRUB_SCRIPT"
     # Re-stage the scrubbed file so the clean version is what gets committed.
     git add "$ISSUES_FILE"

@@ -44,7 +44,7 @@ This script:
 - Runs only when `.beads/issues.jsonl` is staged for a commit
 - Calls `scripts/scrub-pii.sh` to redact email addresses in place
 - Re-stages the scrubbed file so the clean version is what gets committed
-- Skips silently if `scrub-pii.sh` is not found or not executable
+- Blocks the commit with an error if `scrub-pii.sh` is not found or not executable (only when `issues.jsonl` is staged)
 
 This script:
 - Creates `.git/hooks/pre-commit` with the hook code
