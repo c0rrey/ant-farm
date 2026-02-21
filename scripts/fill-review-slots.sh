@@ -142,46 +142,80 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Helper: safe sed substitution for multiline values.
-# Uses a temp file to avoid issues with special characters in sed replacement strings.
-# Strategy: write slot value to a temp file, use Python for the substitution if available,
-# otherwise fall back to a safe awk-based replacement.
+# Helper: safe multiline slot substitution — single awk pass per file.
+#
+# fill_all_slots <file> <slot1> <value1> [<slot2> <value2> ...]
+#
+# Applies all slot substitutions in ONE awk invocation per file, replacing
+# multiple fill_slot calls (one awk process each) with a single pass.
+# Each replacement value is written to a temp file to avoid awk -v multiline
+# and special-character limitations; all temp files share one map file that
+# awk reads in its BEGIN block.
+#
+# Map file format (one entry per slot, values separated by a NUL-terminated
+# sentinel so multiline values are preserved):
+#   <slot_name>\t<tmpfile_path>\n
 # ---------------------------------------------------------------------------
 
-fill_slot() {
-    local slot="$1"     # e.g. {{COMMIT_RANGE}}
-    local value="$2"    # the value to substitute
-    local file="$3"     # file to perform in-place substitution on
+fill_all_slots() {
+    local file="$1"
+    shift
 
-    # Use a temp file for the replacement value to avoid sed special-char issues
-    local tmpval
-    tmpval="$(mktemp)"
-    printf '%s' "$value" > "$tmpval"
+    # Build a map file: slot TAB tmpfile, one per line
+    local mapfile
+    mapfile="$(mktemp)"
 
-    # Use awk for safe multiline substitution
-    # awk reads the replacement from the temp file, avoids regex escaping issues
-    awk -v slot="$slot" -v valfile="$tmpval" '
+    # Track temp files for cleanup
+    local -a tmpfiles=()
+
+    while [ $# -ge 2 ]; do
+        local slot="$1"
+        local value="$2"
+        shift 2
+
+        local tmpval
+        tmpval="$(mktemp)"
+        printf '%s' "$value" > "$tmpval"
+        tmpfiles+=("$tmpval")
+
+        printf '%s\t%s\n' "$slot" "$tmpval" >> "$mapfile"
+    done
+
+    # Single awk pass: read all slot→value mappings, then substitute
+    awk -v mapfile="$mapfile" '
     BEGIN {
-        # Read the full replacement value from file
-        val = ""
-        while ((getline line < valfile) > 0) {
-            if (val != "") val = val "\n"
-            val = val line
+        # Load all slot→value pairs from the map file
+        while ((getline entry < mapfile) > 0) {
+            n = index(entry, "\t")
+            slot_name = substr(entry, 1, n - 1)
+            valfile   = substr(entry, n + 1)
+
+            # Read multiline value from its temp file
+            val = ""
+            while ((getline line < valfile) > 0) {
+                if (val != "") val = val "\n"
+                val = val line
+            }
+            close(valfile)
+            slots[slot_name] = val
         }
-        close(valfile)
+        close(mapfile)
     }
     {
-        # Replace all occurrences of slot in each line
-        # Use index() + substr() instead of sub() to avoid & and \ being
-        # treated as special characters in the replacement string
-        while ((pos = index($0, slot)) > 0) {
-            $0 = substr($0, 1, pos - 1) val substr($0, pos + length(slot))
+        line = $0
+        # Apply every slot substitution on this line
+        for (slot_name in slots) {
+            val = slots[slot_name]
+            while ((pos = index(line, slot_name)) > 0) {
+                line = substr(line, 1, pos - 1) val substr(line, pos + length(slot_name))
+            }
         }
-        print
+        print line
     }
     ' "$file" > "${file}.tmp" && mv "${file}.tmp" "$file"
 
-    rm -f "$tmpval"
+    # Clean up all temp files
+    rm -f "$mapfile" "${tmpfiles[@]}"
 }
 
 # ---------------------------------------------------------------------------
@@ -202,14 +236,15 @@ write_filled_review() {
         exit 1
     }
 
-    # Fill all slot markers
-    fill_slot "{{COMMIT_RANGE}}"        "$COMMIT_RANGE"          "$out_prompt"
-    fill_slot "{{CHANGED_FILES}}"       "$CHANGED_FILES"         "$out_prompt"
-    fill_slot "{{TASK_IDS}}"            "$TASK_IDS"              "$out_prompt"
-    fill_slot "{{TIMESTAMP}}"           "$TIMESTAMP"             "$out_prompt"
-    fill_slot "{{REVIEW_ROUND}}"        "$REVIEW_ROUND"          "$out_prompt"
-    fill_slot "{{REPORT_OUTPUT_PATH}}"  "$report_output_path"    "$out_prompt"
-    fill_slot "{{DATA_FILE_PATH}}"      "$data_file_path"        "$out_prompt"
+    # Fill all slot markers in a single awk pass
+    fill_all_slots "$out_prompt" \
+        "{{COMMIT_RANGE}}"        "$COMMIT_RANGE" \
+        "{{CHANGED_FILES}}"       "$CHANGED_FILES" \
+        "{{TASK_IDS}}"            "$TASK_IDS" \
+        "{{TIMESTAMP}}"           "$TIMESTAMP" \
+        "{{REVIEW_ROUND}}"        "$REVIEW_ROUND" \
+        "{{REPORT_OUTPUT_PATH}}"  "$report_output_path" \
+        "{{DATA_FILE_PATH}}"      "$data_file_path"
 
     # Write combined preview (same content — the Nitpicker skeleton is already the combined format)
     cp "$out_prompt" "$out_preview" || {
@@ -244,11 +279,12 @@ write_big_head_brief() {
         exit 1
     }
 
-    fill_slot "{{REVIEW_ROUND}}"              "$REVIEW_ROUND"          "$out_file"
-    fill_slot "{{TIMESTAMP}}"                 "$TIMESTAMP"             "$out_file"
-    fill_slot "{{DATA_FILE_PATH}}"            "$out_file"              "$out_file"
-    fill_slot "{{CONSOLIDATED_OUTPUT_PATH}}"  "$consolidated_output"   "$out_file"
-    fill_slot "{{EXPECTED_REPORT_PATHS}}"     "$expected_paths"        "$out_file"
+    fill_all_slots "$out_file" \
+        "{{REVIEW_ROUND}}"              "$REVIEW_ROUND" \
+        "{{TIMESTAMP}}"                 "$TIMESTAMP" \
+        "{{DATA_FILE_PATH}}"            "$out_file" \
+        "{{CONSOLIDATED_OUTPUT_PATH}}"  "$consolidated_output" \
+        "{{EXPECTED_REPORT_PATHS}}"     "$expected_paths"
 
     echo "  Big Head brief: $out_file"
     echo "  Consolidated output will be: $consolidated_output"
