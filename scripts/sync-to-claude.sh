@@ -19,9 +19,12 @@ fi
 # Sync CLAUDE.md (single file copy)
 cp "$REPO_ROOT/CLAUDE.md" ~/.claude/CLAUDE.md
 
-# Sync orchestration/ (--delete removes files from target that no longer exist in source)
-# Exclude scripts/ — these live under $REPO_ROOT/scripts/ and are synced separately below
-rsync -av --delete --exclude='scripts/' "$REPO_ROOT/orchestration/" ~/.claude/orchestration/
+# Sync orchestration/ — adds/updates files from source without deleting user-created files in target.
+# --delete is intentionally omitted: removing it preserves any custom files adopters have placed
+# under ~/.claude/orchestration/. If you need to remove a stale source file from the target,
+# delete it manually from ~/.claude/orchestration/.
+# Exclude scripts/ — these live under $REPO_ROOT/scripts/ and are synced separately below.
+rsync -av --exclude='scripts/' "$REPO_ROOT/orchestration/" ~/.claude/orchestration/
 
 # Sync orchestration scripts (review slot-filling pipeline)
 mkdir -p ~/.claude/orchestration/scripts/
