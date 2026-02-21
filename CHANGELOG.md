@@ -1,5 +1,36 @@
 # Changelog
 
+## 2026-02-21 — Session 068ecc83 (Documentation Cleanup + Pantry-Review Deprecation)
+
+### Summary
+
+6 tasks completed (3 original P3 doc bugs + 3 P2 review fixes) across 8 files. Reviews converged at round 2 (0 P1/P2). 16 P3 findings filed to Future Work epic. 6 commits, +30/-19 lines.
+
+### Implementation (Wave 1: 3 tasks)
+
+- **6jxn**: fix: update stale pantry-review references across 4 documentation surfaces (reviews.md, README.md, pantry.md, _archive/pantry-review.md)
+- **oc9v**: docs: remove stale pantry-review from Scout exclusion list (scout.md)
+- **n0or**: docs: clarify comments and fix code fence nesting (SETUP.md, parse-progress-log.sh, compose-review-skeletons.sh)
+
+### Review Fixes (Round 2)
+
+- **xybg**: fix: re-add pantry-review to Scout exclusion list (P2 — stale agent on disk unguarded)
+- **aqlp**: fix: tighten sed regex from * to + and document canonical slot names (P2 — blanket uppercase conversion)
+- **wzno**: fix: correct POSIX-compatible comment to Bash 3+-compatible (P2 — misleading portability claim)
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 8 files, 3 tasks | 0 | 3 | 16 | PASS WITH ISSUES |
+| 2 | 3 files, 3 fix tasks | 0 | 0 | 0 | PASS |
+
+19 review beads filed (round 1: 3 P2 + 16 P3; round 2: 0). P3s filed to Future Work epic (ant-farm-bkco).
+
+### Epics
+
+- **ant-farm-bkco** (Future Work): 16 new P3 children added from review findings
+
 ## 2026-02-21 — Session 7edaafbb (Shell Script Hardening + P2 Bugs)
 
 ### Summary
