@@ -25,7 +25,7 @@ fi
 HOOK_TARGET="$HOOKS_DIR/pre-push"
 
 if [[ -f "$HOOK_TARGET" ]]; then
-    BACKUP="$HOOK_TARGET.bak"
+    BACKUP="$HOOK_TARGET.bak.$(date +%Y%m%d_%H%M%S)"
     echo "Existing pre-push hook found — backing up to $BACKUP"
     cp "$HOOK_TARGET" "$BACKUP"
 fi
@@ -55,7 +55,7 @@ echo "The hook will run scripts/sync-to-claude.sh on every git push."
 PRECOMMIT_TARGET="$HOOKS_DIR/pre-commit"
 
 if [[ -f "$PRECOMMIT_TARGET" ]]; then
-    BACKUP="$PRECOMMIT_TARGET.bak"
+    BACKUP="$PRECOMMIT_TARGET.bak.$(date +%Y%m%d_%H%M%S)"
     echo "Existing pre-commit hook found — backing up to $BACKUP"
     cp "$PRECOMMIT_TARGET" "$BACKUP"
 fi
