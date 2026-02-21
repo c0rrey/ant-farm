@@ -32,6 +32,12 @@ fi
 
 # Pattern: email addresses in "owner" or "created_by" JSON field values only.
 # Scoped to prevent accidental redaction of emails in titles, descriptions, or URLs.
+#
+# Coverage note: local-part matches common characters used by machine-generated
+# addresses (GitHub, GitLab, CI systems, bd sync). RFC 5321 quoted local parts
+# (e.g. "user name"@example.com) and uncommon special characters are intentionally
+# excluded — they do not appear in this codebase's typical data sources and
+# broadening the pattern adds maintenance complexity for negligible real-world gain.
 PII_FIELD_PATTERN='"(owner|created_by)"\s*:\s*"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"'
 
 if $CHECK_ONLY; then
