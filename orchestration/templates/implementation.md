@@ -57,7 +57,7 @@ After implementation, review EVERY file you changed or created:
 
 ## Step 5: Commit
 - `git pull --rebase && git add <files> && git commit -m "<type>: <description> (<task-id>)"`
-- (MANDATORY): Include the task ID in parentheses at the end of the commit message (e.g., `fix: handle None input (hs_website-abc)`)
+- (MANDATORY): Include the task ID in parentheses at the end of the commit message (e.g., `fix: handle None input (my-project-abc)`)
 - (MANDATORY) **Conditional Re-Review**: If `git pull --rebase` resolves any merge conflicts, you MUST repeat Step 4 (Per-File Correctness Review) on all files affected by the conflict resolution before committing. Conflict resolution can silently change code semantics. Verify the merged files are correct before proceeding.
 - Record your commit hash in the summary doc (Step 6) so Dirt Moved vs Dirt Claimed (DMVDC) can identify your commits without scanning `git log`
 
@@ -219,13 +219,13 @@ bd show <task-id>  # Read ONCE in the Queen's window
 
 **❌ BEFORE (wasteful):**
 ```markdown
-Fix contact validation bug (hs_website-gat).
+Fix contact validation bug (my-project-gat).
 Read the codebase and understand what fields are missing from validation.
 ```
 
 **✅ AFTER (surgical):**
 ```markdown
-Fix contact validation bug (hs_website-gat).
+Fix contact validation bug (my-project-gat).
 
 **Scope**: build.py line 621 only
 **Problem**: required_contact_fields missing 3 fields: sms_number, email_subject, message_template

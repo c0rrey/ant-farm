@@ -14,7 +14,7 @@ Full bead ID including project prefix.
 
 **Examples**:
 - `ant-farm-9oa` — full ID, no sub-ID
-- `hs_website-74g.1` — full ID with sub-ID
+- `my-project-74g.1` — full ID with sub-ID
 
 ### {TASK_SUFFIX}
 
@@ -34,7 +34,7 @@ Suffix portion only, extracted from {TASK_ID} by splitting on the LAST hyphen an
 - `ant-farm-9oa` → `9oa` (no hyphens in project name; remove project prefix)
 - `ant-farm-b61` → `b61` (no hyphens in project name; remove project prefix)
 - `ant-farm-74g.1` → `74g1` (with dotted sub-ID; remove project prefix, normalize dot)
-- `hs_website-74g.1` → `74g1` (no hyphens in project; remove prefix, normalize dot)
+- `my-project-74g.1` → `74g1` (hyphen in project name; split on last hyphen, normalize dot)
 - `my-project-abc.10` → `abc10` (hyphen in project name; split on last hyphen, normalize dot)
 
 **Usage context**:

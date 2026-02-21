@@ -34,7 +34,7 @@ All checkpoint verifications (SSV, CCO, WWD, DMVDC, CCB) are executed by **Pest 
 
 All checkpoints write to `{SESSION_DIR}/pc/`.
 
-**Task suffix derivation:** See `~/.claude/orchestration/reference/dependency-analysis.md` (Term Definitions section) for extraction algorithm. Example: `74g1` from `hs_website-74g.1`.
+**Task suffix derivation:** See `~/.claude/orchestration/reference/dependency-analysis.md` (Term Definitions section) for extraction algorithm. Example: `74g1` from `my-project-74g.1`.
 
 **Timestamp format:** `YYYYMMDD-HHmmss` (UTC)
 
@@ -141,7 +141,7 @@ Do NOT execute the prompt — only verify its contents.
 
 ## Verify each item (PASS or FAIL with evidence):
 
-1. **Real task IDs**: Contains actual task IDs (e.g., `hs_website-abc`), NOT placeholders like `<task-id>` or `<id>`
+1. **Real task IDs**: Contains actual task IDs (e.g., `my-project-abc`), NOT placeholders like `<task-id>` or `<id>`
 2. **Real file paths**: Contains actual file paths with line numbers (e.g., `build.py:L200`), NOT placeholders like `<list from bead>` or `<file>`
 3. **Root cause text**: Contains a specific root cause description, NOT `<copy from bead>` or similar placeholders
 4. **All 6 mandatory steps present**:
@@ -179,7 +179,7 @@ Write your verification report to:
 `{SESSION_DIR}/pc/pc-{TASK_SUFFIX}-cco-{timestamp}.md`
 
 Where:
-- `{TASK_SUFFIX}`: suffix portion of bead ID with no project prefix (e.g., `74g1` from `hs_website-74g.1`)
+- `{TASK_SUFFIX}`: suffix portion of bead ID with no project prefix (e.g., `74g1` from `my-project-74g.1`)
 - `{SESSION_DIR}`: session artifact directory (e.g., `.beads/agent-summaries/_session-abc123`)
 - timestamp: format defined in **Timestamp format** (Pest Control Overview)
 ```
@@ -401,7 +401,7 @@ Write your verification report to:
 `{SESSION_DIR}/pc/pc-{TASK_SUFFIX}-dmvdc-{timestamp}.md`
 
 Where:
-- `{TASK_SUFFIX}`: suffix portion of bead ID with no project prefix (e.g., `74g1` from `hs_website-74g.1`)
+- `{TASK_SUFFIX}`: suffix portion of bead ID with no project prefix (e.g., `74g1` from `my-project-74g.1`)
 - `{SESSION_DIR}`: session artifact directory (e.g., `.beads/agent-summaries/_session-abc123`)
 - timestamp: format defined in **Timestamp format** (Pest Control Overview)
 ```
@@ -461,7 +461,7 @@ For each finding, check that it is actionable:
 - List any findings that fail the specificity bar
 
 ## Check 4: Process Compliance
-Search the report for `bd create`, `bd update`, `bd close`, or bead ID patterns (e.g., `hs_website-xxx`).
+Search the report for `bd create`, `bd update`, `bd close`, or bead ID patterns (e.g., `my-project-xxx`).
 - Nitpickers must NOT file beads
 - If any bead-filing commands or IDs are found, FAIL this check
 - If unauthorized bead filing is detected, this is a FAIL (not just a flag). The remediation step is: delete the unauthorized bead (`bd close <id> --reason="unauthorized filing during review"`) and document the violation in the verification report.
