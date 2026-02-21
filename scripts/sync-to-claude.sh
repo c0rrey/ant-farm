@@ -11,7 +11,7 @@ mkdir -p ~/.claude/agents/
 
 # Back up existing CLAUDE.md before overwrite
 if [ -f ~/.claude/CLAUDE.md ]; then
-    BACKUP_PATH="${HOME}/.claude/CLAUDE.md.bak.$(date +%Y%m%dT%H%M%S)"
+    BACKUP_PATH="${HOME}/.claude/CLAUDE.md.bak.$(date +%Y%m%dT%H%M%S).$$"
     cp ~/.claude/CLAUDE.md "$BACKUP_PATH"
     echo "[ant-farm] Backed up ~/.claude/CLAUDE.md -> $BACKUP_PATH"
 fi
