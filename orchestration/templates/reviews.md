@@ -497,6 +497,10 @@ If any report file is missing after the initial check, do NOT wait indefinitely.
 # IMPORTANT: This entire block must execute in a single Bash invocation.
 # Shell state (variables) does not persist across separate Bash tool calls.
 
+# REVIEW_ROUND is filled in by fill-review-slots.sh before this brief is delivered.
+# It is a shell integer (1, 2, 3, ...) used to gate round-1-only checks below.
+REVIEW_ROUND={{REVIEW_ROUND}}
+
 # Poll up to 30 seconds total for missing reports
 TIMEOUT=30
 ELAPSED=0
@@ -524,7 +528,7 @@ for _path in \
       ;;
   esac
 done
-# <IF ROUND 1>
+if [ "$REVIEW_ROUND" -eq 1 ]; then
 for _path in \
   "<session-dir>/review-reports/clarity-review-<timestamp>.md" \
   "<session-dir>/review-reports/excellence-review-<timestamp>.md"; do
@@ -538,14 +542,12 @@ for _path in \
       ;;
   esac
 done
-# </IF ROUND 1>
+fi
 if [ $PLACEHOLDER_ERROR -eq 1 ]; then
   exit 1
 fi
 
 while [ $ELAPSED -lt $TIMEOUT ]; do
-  # Round 1: check all 4
-  # Round 2+: check only correctness and edge-cases
   # The Pantry writes the exact file paths (with timestamp) into this brief.
   # Use [ -f "$EXACT_PATH" ] — no globs. Globs match stale reports from prior rounds.
   ALL_FOUND=1
@@ -556,11 +558,11 @@ while [ $ELAPSED -lt $TIMEOUT ]; do
   [ -f "<session-dir>/review-reports/correctness-review-<timestamp>.md" ] || ALL_FOUND=0
   [ -f "<session-dir>/review-reports/edge-cases-review-<timestamp>.md" ] || ALL_FOUND=0
 
-  # Round 1 only (skip these checks in round 2+):
-  # <IF ROUND 1>
+  # Round 1 only: clarity and excellence reports are also expected.
+  if [ "$REVIEW_ROUND" -eq 1 ]; then
   [ -f "<session-dir>/review-reports/clarity-review-<timestamp>.md" ] || ALL_FOUND=0
   [ -f "<session-dir>/review-reports/excellence-review-<timestamp>.md" ] || ALL_FOUND=0
-  # </IF ROUND 1>
+  fi
 
   if [ $ALL_FOUND -eq 1 ]; then
     TIMED_OUT=0
@@ -576,7 +578,7 @@ if [ $TIMED_OUT -eq 1 ]; then
 fi
 ```
 
-**Pantry responsibility**: When composing the Big Head brief, the Pantry writes the concrete version of this polling loop with the round-specific checks. In round 1, all 4 report checks are included. In round 2+, only the correctness and edge-cases checks are included (the `<IF ROUND 1>` block is omitted). The template above shows the full structure for reference; the Pantry adapts it per round.
+**Script responsibility**: `fill-review-slots.sh` substitutes `{{REVIEW_ROUND}}` with the actual round integer before delivering this brief to Big Head. The `if [ "$REVIEW_ROUND" -eq 1 ]; then ... fi` blocks execute in shell — they do not depend on LLM interpretation. Round 2+ behavior is reliable regardless of whether an LLM reads the template.
 
 **Error return (if timeout exceeded):**
 
