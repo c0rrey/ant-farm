@@ -46,14 +46,18 @@ done
 
 # Sync custom agents to ~/.claude/agents/
 AGENTS_CHANGED=false
-for agent in "$REPO_ROOT/agents/"*.md; do
-    [ -f "$agent" ] || continue
-    name="$(basename "$agent")"
-    if ! cmp -s "$agent" ~/.claude/agents/"$name"; then
-        AGENTS_CHANGED=true
-    fi
-    cp "$agent" ~/.claude/agents/"$name"
-done
+if [ ! -d "$REPO_ROOT/agents" ]; then
+    echo "[ant-farm] WARNING: agents/ directory not found, skipping agent sync: $REPO_ROOT/agents" >&2
+else
+    for agent in "$REPO_ROOT/agents/"*.md; do
+        [ -f "$agent" ] || continue
+        name="$(basename "$agent")"
+        if ! cmp -s "$agent" ~/.claude/agents/"$name"; then
+            AGENTS_CHANGED=true
+        fi
+        cp "$agent" ~/.claude/agents/"$name"
+    done
+fi
 
 echo "[ant-farm] Sync complete."
 
