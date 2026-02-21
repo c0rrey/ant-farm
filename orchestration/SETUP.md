@@ -208,7 +208,7 @@ Fix: Be explicit in kickoff:
 Let's get to work on: <task-ids>
 
 IMPORTANT: Before spawning any agents:
-1. Gather all task metadata (bd show <id>)
+1. Spawn the Scout subagent to gather all task metadata (do NOT run bd show directly as Queen)
 2. Analyze file conflicts (create file modification matrix)
 3. Present 2-3 execution strategies (Serial/Balanced/Parallel)
 4. Wait for my approval
