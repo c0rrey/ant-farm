@@ -519,7 +519,19 @@ TIMED_OUT=1
 PLACEHOLDER_ERROR=0
 for _path in \
   "<session-dir>/review-reports/correctness-review-<timestamp>.md" \
-  "<session-dir>/review-reports/edge-cases-review-<timestamp>.md" \
+  "<session-dir>/review-reports/edge-cases-review-<timestamp>.md"; do
+  case "$_path" in
+    *'<'*|*'>'*|*'{'*|*'}'*)
+      echo "PLACEHOLDER ERROR: path was not substituted by Pantry: $_path"
+      echo "This brief was delivered with unresolved template placeholders."
+      echo "Root cause: upstream substitution failure in Pantry prompt composition."
+      echo "Do NOT proceed. Return this error to the Queen immediately."
+      PLACEHOLDER_ERROR=1
+      ;;
+  esac
+done
+# <IF ROUND 1>
+for _path in \
   "<session-dir>/review-reports/clarity-review-<timestamp>.md" \
   "<session-dir>/review-reports/excellence-review-<timestamp>.md"; do
   case "$_path" in
@@ -532,6 +544,7 @@ for _path in \
       ;;
   esac
 done
+# </IF ROUND 1>
 if [ $PLACEHOLDER_ERROR -eq 1 ]; then
   exit 1
 fi
