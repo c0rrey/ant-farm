@@ -36,6 +36,25 @@
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
+# Temp file registry and EXIT trap for cleanup on abnormal exit.
+# All mktemp files created by fill_all_slots are registered here so the
+# EXIT trap can remove them even if the script exits early due to set -e.
+# Normal execution also calls rm -f directly for prompt cleanup, making the
+# trap a safety net rather than the primary cleanup path.
+# ---------------------------------------------------------------------------
+
+_TMPFILES=()
+
+_cleanup_tmpfiles() {
+    # rm -f is silent on already-deleted files, so this is safe on normal exit
+    if [ ${#_TMPFILES[@]} -gt 0 ]; then
+        rm -f "${_TMPFILES[@]}"
+    fi
+}
+
+trap '_cleanup_tmpfiles' EXIT
+
+# ---------------------------------------------------------------------------
 # Argument validation
 # ---------------------------------------------------------------------------
 
@@ -164,8 +183,10 @@ fill_all_slots() {
     # Build a map file: slot TAB tmpfile, one per line
     local mapfile
     mapfile="$(mktemp)"
+    # Register with global EXIT trap so it is cleaned up on abnormal exit
+    _TMPFILES+=("$mapfile")
 
-    # Track temp files for cleanup
+    # Track temp files for local cleanup after success
     local -a tmpfiles=()
 
     while [ $# -ge 2 ]; do
@@ -177,9 +198,14 @@ fill_all_slots() {
         tmpval="$(mktemp)"
         printf '%s' "$value" > "$tmpval"
         tmpfiles+=("$tmpval")
+        # Register each value temp file with the EXIT trap
+        _TMPFILES+=("$tmpval")
 
         printf '%s\t%s\n' "$slot" "$tmpval" >> "$mapfile"
     done
+
+    # Register the awk atomic-write temp so it is removed on abnormal exit
+    _TMPFILES+=("${file}.tmp")
 
     # Single awk pass: read all slot→value mappings, then substitute
     awk -v mapfile="$mapfile" '
@@ -214,7 +240,7 @@ fill_all_slots() {
     }
     ' "$file" > "${file}.tmp" && mv "${file}.tmp" "$file"
 
-    # Clean up all temp files
+    # Prompt cleanup on normal exit (EXIT trap handles abnormal exit)
     rm -f "$mapfile" "${tmpfiles[@]}"
 }
 
