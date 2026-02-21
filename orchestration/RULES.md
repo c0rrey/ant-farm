@@ -195,15 +195,17 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             # TIMESTAMP was assigned at the start of Step 3b-i: TIMESTAMP=$(date +%Y%m%d-%H%M%S)
             # TMUX_SESSION is the name of the tmux session the Queen is running in.
             # Resolve it at runtime: TMUX_SESSION=$(tmux display-message -p '#S')
-            TMUX_SESSION=$(tmux display-message -p '#S')
-            DUMMY_WINDOW="dummy-reviewer-round-<N>"
+            if [ -n "$TMUX" ]; then
+              TMUX_SESSION=$(tmux display-message -p '#S')
+              DUMMY_WINDOW="dummy-reviewer-round-<N>"
 
-            tmux new-window -t "${TMUX_SESSION}" -n "${DUMMY_WINDOW}"
-            tmux send-keys -t "${TMUX_SESSION}:${DUMMY_WINDOW}" \
-              "cd $(pwd) && claude" Enter
-            sleep 5
-            tmux send-keys -t "${TMUX_SESSION}:${DUMMY_WINDOW}" \
-              "Perform a correctness review of the completed work. Step 0: Read your full review brief from ${SESSION_DIR}/prompts/review-dummy.md (Format: markdown. Sections: Scope, Files, Focus, Detailed Instructions.) Follow the instructions in the brief exactly, including the report format and output path. Write your report to ${SESSION_DIR}/review-reports/dummy-review-${TIMESTAMP}.md" Enter
+              tmux new-window -t "${TMUX_SESSION}" -n "${DUMMY_WINDOW}"
+              tmux send-keys -t "${TMUX_SESSION}:${DUMMY_WINDOW}" \
+                "cd $(pwd) && claude" Enter
+              sleep 5
+              tmux send-keys -t "${TMUX_SESSION}:${DUMMY_WINDOW}" \
+                "Perform a correctness review of the completed work. Step 0: Read your full review brief from ${SESSION_DIR}/prompts/review-dummy.md (Format: markdown. Sections: Scope, Files, Focus, Detailed Instructions.) Follow the instructions in the brief exactly, including the report format and output path. Write your report to ${SESSION_DIR}/review-reports/dummy-review-${TIMESTAMP}.md" Enter
+            fi
             ```
 
             Notes:
