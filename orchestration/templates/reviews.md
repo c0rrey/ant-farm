@@ -500,6 +500,15 @@ If any report file is missing after the initial check, do NOT wait indefinitely.
 # REVIEW_ROUND is filled in by fill-review-slots.sh before this brief is delivered.
 # It is a shell integer (1, 2, 3, ...) used to gate round-1-only checks below.
 REVIEW_ROUND={{REVIEW_ROUND}}
+case "$REVIEW_ROUND" in
+  *'{'*|*'}'*)
+    echo "PLACEHOLDER ERROR: REVIEW_ROUND was not substituted by fill-review-slots.sh (got: $REVIEW_ROUND)"
+    echo "This brief was delivered with an unresolved {{REVIEW_ROUND}} placeholder."
+    echo "Root cause: fill-review-slots.sh was bypassed or failed during prompt composition."
+    echo "Do NOT proceed. Return this error to the Queen immediately."
+    exit 1
+    ;;
+esac
 
 # --- Timing constants (document rationale, not just values) ---
 # 30 seconds: enough for a slow reviewer to write its report; short enough to
