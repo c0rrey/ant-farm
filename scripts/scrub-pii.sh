@@ -14,6 +14,11 @@
 
 set -euo pipefail
 
+command -v perl >/dev/null 2>&1 || {
+    echo "[scrub-pii] ERROR: perl is required but not found. Install perl and retry." >&2
+    exit 1
+}
+
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ISSUES_FILE="$REPO_ROOT/.beads/issues.jsonl"
 CHECK_ONLY=false
