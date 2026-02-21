@@ -359,12 +359,24 @@ for review_type in "${ACTIVE_REVIEW_TYPES[@]}"; do
         elif [ ! -s "$f" ]; then
             echo "ERROR: Output file is empty: $f" >&2
             ALL_OK=false
+        elif grep -qE '\{\{[A-Z_]+\}\}' "$f"; then
+            echo "ERROR: Unfilled slot markers remain in: $f" >&2
+            grep -oE '\{\{[A-Z_]+\}\}' "$f" | sort -u | while read -r marker; do
+                echo "  Unfilled: $marker" >&2
+            done
+            ALL_OK=false
         fi
     done
 done
 
 if [ ! -f "${SESSION_DIR}/prompts/review-big-head-consolidation.md" ]; then
     echo "ERROR: Big Head consolidation brief not found: ${SESSION_DIR}/prompts/review-big-head-consolidation.md" >&2
+    ALL_OK=false
+elif grep -qE '\{\{[A-Z_]+\}\}' "${SESSION_DIR}/prompts/review-big-head-consolidation.md"; then
+    echo "ERROR: Unfilled slot markers remain in Big Head brief: ${SESSION_DIR}/prompts/review-big-head-consolidation.md" >&2
+    grep -oE '\{\{[A-Z_]+\}\}' "${SESSION_DIR}/prompts/review-big-head-consolidation.md" | sort -u | while read -r marker; do
+        echo "  Unfilled: $marker" >&2
+    done
     ALL_OK=false
 fi
 
