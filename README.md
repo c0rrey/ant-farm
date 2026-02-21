@@ -201,15 +201,15 @@ An opus-model Big Head reads all 4 reports and:
 After the Nitpicker team completes, the Queen spawns **Pest Control** for DMVDC (substance verification on each reviewer's report) and **Colony Census Bureau (CCB)** (consolidation audit on Big Head's output).
 
 ```
-Queen                          Pantry                    Pest Control
+Queen                       fill-review-slots.sh          Pest Control
   │                              │                           │
-  ├──spawn (review mode)──────►  │                           │
-  │  "compose review prompts"    ├─read reviews.md           │
+  ├──run script────────────────► │                           │
+  │  (replaces pantry-review)    ├─read reviews.md           │
   │                              ├─write 4 review task briefs │
   │                              ├─write combined previews   │
   │                              ├─write Big Head consolidation brief  │
-  │  ◄──return paths─────────────┤                           │
-  │  (~15 lines)                 │                           │
+  │  ◄──exit (files on disk)─────┤                           │
+  │                              │                           │
   │                                                          │
   ├──spawn─────────────────────────────────────────────────► │
   │  "audit review prompts, CCO"                             │

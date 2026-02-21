@@ -1,6 +1,7 @@
 ---
 name: pantry-review
-description: Review prompt composer that builds CCO-compliant Nitpicker and Big Head prompts from templates and commit metadata. Use for Step 3b review cycles.
+status: archived
+description: "[ARCHIVED] Superseded by fill-review-slots.sh. Review prompt composer that built CCO-compliant Nitpicker and Big Head prompts from templates and commit metadata. Do NOT use for Step 3b review cycles — use fill-review-slots.sh instead."
 tools: Read, Write, Glob, Grep
 ---
 

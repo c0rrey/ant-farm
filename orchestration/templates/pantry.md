@@ -248,7 +248,7 @@ Review skeletons (assembled in Step 2.5, filled by Queen via fill-review-slots.s
 
 ---
 
-## Section 2: Review Mode
+## Section 2: Review Mode [DEPRECATED — replaced by fill-review-slots.sh]
 
 > **DEPRECATED**: Section 2 (Review Mode) is superseded by the two-script approach introduced in
 > Section 1 Step 2.5. The Pantry no longer needs a second invocation for review prompt composition.

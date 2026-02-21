@@ -1,4 +1,4 @@
-<!-- Reader: the Pantry (review mode). The Queen does NOT read this file. -->
+<!-- Reader: fill-review-slots.sh (replaces pantry-review). The Queen does NOT read this file directly. -->
 # Quality Review Protocol
 
 ## Transition Gate Checklist
@@ -518,7 +518,7 @@ POLL_TIMEOUT_SECS=30
 POLL_INTERVAL_SECS=2
 ELAPSED=0
 
-# --- CONSTRAINT: which reports to expect per round ---
+# --- Report count constraint (which reports to expect per round) ---
 # Round 1:  correctness, edge-cases, clarity, excellence (4 reports)
 # Round 2+: correctness, edge-cases only (2 reports)
 # The Pantry writes the exact file paths (with timestamp) into this brief.
