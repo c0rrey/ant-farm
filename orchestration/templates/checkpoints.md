@@ -196,7 +196,10 @@ Where:
 You are **Pest Control**, the verification subagent. Your role is to audit the Nitpickers prompts before spawn.
 
 **Review round**: {REVIEW_ROUND}
-**Input guard**: If {REVIEW_ROUND} is missing, blank, or non-numeric (not a positive integer), return: "CCO ABORTED: REVIEW_ROUND is invalid (got: '{REVIEW_ROUND}'). Queen must validate inputs before spawning CCO." Do NOT proceed with the audit.
+**Input guard**: If {REVIEW_ROUND} still appears as the literal text `{REVIEW_ROUND}` (curly braces present), or is missing, blank, or non-numeric (not a positive integer), return the following message and do NOT proceed with the audit:
+
+"CCO ABORTED: REVIEW_ROUND placeholder was not substituted before spawning CCO (got: '{REVIEW_ROUND}'). Root cause: upstream substitution failure — the Queen or Pantry did not replace `{REVIEW_ROUND}` in the CCO prompt before dispatch. Fix: ensure the prompt-composition step fills in REVIEW_ROUND as a plain integer (e.g. `1`) before spawning Pest Control."
+
 Audit the following Nitpicker prompts for completeness and consistency.
 Round 1: 4 prompts (clarity, edge-cases, correctness, excellence).
 Round 2+: 2 prompts (correctness, edge-cases only).

@@ -512,6 +512,30 @@ TIMED_OUT=1
 # The brief specifies which reports to expect (4 for round 1, 2 for round 2+).
 # Check only the expected reports. The Pantry writes the exact paths into the brief.
 
+# Placeholder substitution guard: verify the Pantry replaced all template placeholders
+# before entering the polling loop. Unsubstituted placeholders (angle brackets or curly
+# braces) in file paths cause every [ -f ] test to fail silently, producing a misleading
+# timeout error instead of a clear diagnosis.
+PLACEHOLDER_ERROR=0
+for _path in \
+  "<session-dir>/review-reports/correctness-review-<timestamp>.md" \
+  "<session-dir>/review-reports/edge-cases-review-<timestamp>.md" \
+  "<session-dir>/review-reports/clarity-review-<timestamp>.md" \
+  "<session-dir>/review-reports/excellence-review-<timestamp>.md"; do
+  case "$_path" in
+    *'<'*|*'>'*|*'{'*|*'}'*)
+      echo "PLACEHOLDER ERROR: path was not substituted by Pantry: $_path"
+      echo "This brief was delivered with unresolved template placeholders."
+      echo "Root cause: upstream substitution failure in Pantry prompt composition."
+      echo "Do NOT proceed. Return this error to the Queen immediately."
+      PLACEHOLDER_ERROR=1
+      ;;
+  esac
+done
+if [ $PLACEHOLDER_ERROR -eq 1 ]; then
+  exit 1
+fi
+
 while [ $ELAPSED -lt $TIMEOUT ]; do
   # Round 1: check all 4
   # Round 2+: check only correctness and edge-cases
