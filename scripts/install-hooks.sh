@@ -96,3 +96,12 @@ if [[ -f "$SCRUB_SCRIPT_PATH" ]]; then
 else
     echo "WARNING: scripts/scrub-pii.sh not found — pre-commit hook will block commits until it is present." >&2
 fi
+
+# Ensure the sync script is executable so the pre-push hook can run it.
+SYNC_SCRIPT_PATH="$REPO_ROOT/scripts/sync-to-claude.sh"
+if [[ -f "$SYNC_SCRIPT_PATH" ]]; then
+    chmod +x "$SYNC_SCRIPT_PATH"
+    echo "Ensured scripts/sync-to-claude.sh is executable."
+else
+    echo "WARNING: scripts/sync-to-claude.sh not found — pre-push hook will fail until it is present." >&2
+fi
