@@ -100,8 +100,8 @@ TASK_IDS="$(resolve_arg "$TASK_IDS_RAW")"
 # Validate review round
 # ---------------------------------------------------------------------------
 
-if ! echo "$REVIEW_ROUND" | grep -qE '^[0-9]+$'; then
-    echo "ERROR: REVIEW_ROUND must be a positive integer, got: $REVIEW_ROUND" >&2
+if ! echo "$REVIEW_ROUND" | grep -qE '^[1-9][0-9]*$'; then
+    echo "ERROR: REVIEW_ROUND must be a positive integer (>= 1), got: $REVIEW_ROUND" >&2
     exit 1
 fi
 
