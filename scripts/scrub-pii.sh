@@ -69,3 +69,10 @@ if grep -qE "$PII_FIELD_PATTERN" "$ISSUES_FILE" 2>/dev/null; then
 fi
 
 echo "[scrub-pii] PII scrub complete: $ISSUES_FILE"
+
+# When run standalone (outside a git hook), git will not re-stage the modified
+# file automatically. Remind the user to stage it before committing.
+# GIT_INDEX_FILE is set by git when invoking hooks; its absence means standalone.
+if [[ -z "${GIT_INDEX_FILE:-}" ]]; then
+    echo "[scrub-pii] Reminder: run 'git add .beads/issues.jsonl' to stage the scrubbed file before committing." >&2
+fi
