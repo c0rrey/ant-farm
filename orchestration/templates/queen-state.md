@@ -1,8 +1,12 @@
 # The Queen's Session State
-**Updated**: <timestamp>
+
+> **Timestamp format**: All timestamps in this file use ISO 8601 / RFC 3339: `YYYY-MM-DDTHH:MM:SSZ`
+> (e.g., `2026-02-20T14:35:07Z`). Generate via `date -u +%Y-%m-%dT%H:%M:%SZ`.
+
+**Updated**: <YYYY-MM-DDTHH:MM:SSZ>
 **Session ID**: <session-id>
 **Session dir**: .beads/agent-summaries/_session-<session-id>
-**Session start**: <timestamp>
+**Session start**: <YYYY-MM-DDTHH:MM:SSZ>
 **Strategy**: <chosen execution strategy>
 
 ## The Scout
@@ -21,14 +25,16 @@
 | 1    | pending/completed/failed | <task-ids> | All PASS / <details> |
 
 ## Pest Control
-| Phase | Checkpoint | Status | Verdict |
-|-------|------------|--------|---------|
-| Wave 1 prompts | CCO | pending/completed/failed | All PASS / <details> |
-| Wave 1 post | WWD + DMVDC | pending/completed/failed | All PASS / <details> |
-| Wave 2 prompts | CCO | pending/completed/failed | All PASS / <details> |
-| Wave 2 post | WWD + DMVDC | pending/completed/failed | All PASS / <details> |
-| Reviews | CCO | pending/completed/failed | All PASS / <details> |
-| Reviews | DMVDC + CCB | pending/completed/failed | All PASS / <details> |
+
+<!-- One row per RULES.md hard gate. Add rows for each wave (N=1,2,...) and review round (R=1,2,...). -->
+
+| Step | Phase | Checkpoint | Status | Verdict |
+|------|-------|------------|--------|---------|
+| Step 2 | Wave N impl prompts | CCO | pending/completed/failed | All PASS / <details> |
+| Step 3 | Wave N per-agent | WWD | pending/completed/failed | All PASS / <details> |
+| Step 3 | Wave N post | DMVDC | pending/completed/failed | All PASS / <details> |
+| Step 3b | Round R review prompts | CCO | pending/completed/failed | All PASS / <details> |
+| Step 3b | Round R review post | DMVDC + CCB | pending/completed/failed | All PASS / <details> |
 
 ## Review Rounds
 - **Current round**: <1 | 2 | 3 | ...>
@@ -45,4 +51,19 @@
 - **Retry budget**: <used>/<max 5>
 
 ## Error Log
-- <timestamp>: <agent> — <error summary>
+- <YYYY-MM-DDTHH:MM:SSZ>: <agent> — <error summary>
+
+## Source of Truth
+
+When queen-state.md conflicts with other state sources, precedence is:
+
+| State Domain | Authoritative Source | Queen-state.md Role |
+|--------------|---------------------|---------------------|
+| Commits (hashes, ranges, authorship) | `git log` / `git diff` | Cache — refresh from git if stale |
+| Artifact content (previews, reports, verdicts) | Artifact files on disk (`${SESSION_DIR}/...`) | Pointer — references paths, does not duplicate content |
+| Session workflow state (current step, wave, review round, retry budget, queue position) | **queen-state.md** | Authoritative — this file is the single source of truth |
+| Task status (open, closed, blocked) | `bd` database (via Scout) | Cache — may lag behind bd; Scout re-syncs on next run |
+
+**Recovery rule**: If queen-state.md is lost or corrupted, rebuild workflow state from git log
+(commit messages encode task IDs and step transitions) and artifact files (verdict tables encode
+checkpoint pass/fail). Task status must be re-queried via a fresh Scout spawn.

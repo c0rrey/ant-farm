@@ -18,13 +18,7 @@ Verify all 4 criteria before proceeding to team launch. These checks span ALL ep
 
 ### Pre-Spawn Directory Setup
 
-The Queen handles directory creation in RULES.md Step 3b:
-
-```bash
-mkdir -p ${SESSION_DIR}/review-reports
-```
-
-This creates the session-scoped directory for review reports. All active reviewers write to `${SESSION_DIR}/review-reports/`. Verification artifacts (`pc/`) are already created at Step 0.
+Directory creation is handled by the Queen in RULES.md Step 3b-iii. All active reviewers write to `${SESSION_DIR}/review-reports/`. Verification artifacts (`pc/`) are already created at Step 0.
 
 ---
 

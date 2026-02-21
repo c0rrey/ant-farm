@@ -47,6 +47,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 - `orchestration/templates/reviews.md` — Review protocol (read by Pantry in review mode)
 - `orchestration/reference/dependency-analysis.md` — Used by Scout for conflict analysis
 - `orchestration/reference/known-failures.md` — Reference material; for post-mortem only
+- `orchestration/_archive/*` — Deprecated documents; stale instructions that contradict current workflows. **No agent should read these.**
 - Source code files, tests, project configs, application data files
 - Raw `bd show`, `bd ready`, `bd blocked`, `bd list` output (let the Scout digest this)
 
@@ -168,7 +169,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             On exit 0: prompts/previews written to `${SESSION_DIR}/prompts/` and `${SESSION_DIR}/previews/`.
             On non-zero: surface stderr to user — do NOT proceed.
 
-            **3b-iii. CCO gate**: `mkdir -p ${SESSION_DIR}/review-reports`, then spawn
+            **3b-iii. CCO gate**: `mkdir -p "${SESSION_DIR}"/review-reports`, then spawn
             Pest Control (`model: "haiku"`) for CCO on review previews. Must PASS before spawning team.
 
             **3b-iv. Spawn Nitpicker team**:
@@ -263,6 +264,7 @@ The Queen's read permissions are defined explicitly in the "Queen Read Permissio
 **Quick summary**:
 - **READ**: Briefing, verdict tables, skeleton files, orchestration artifacts from session dir, git log
 - **DO NOT READ**: Agent instruction files, source code, tests, configs, implementation details
+- **NEVER READ**: `orchestration/_archive/` — contains deprecated documents that contradict current workflows. A glob like `orchestration/**/*.md` will match these stale files. Exclude `_archive/` from all searches and reads.
 - **Permitted**: Pre-digested artifacts written by Pantry/Scout to session directories
 
 For the complete detailed list and rationale, see "Queen Read Permissions" above.
@@ -306,13 +308,27 @@ Every `Task` tool call the Queen makes MUST include the `model` parameter from t
 - Only the Queen updates documentation files (CHANGELOG, README, CLAUDE.md)
 - Pipeline wave N Dirt Pushers with wave N+1 Pantry in a single message (see Step 2 wave pipelining)
 
+### Wave Management
+
+**7-agent limit rationale**: Claude Code's Task tool runs concurrent calls from a single message. 7 Dirt Pushers is the practical ceiling for context-window pressure from interleaved agent outputs and API rate limits in a single orchestration session.
+
+**Retry counting**: Retry spawns count against the concurrent agent limit. A failed-and-respawned Dirt Pusher occupies a slot.
+
+**Mid-wave decision tree**:
+
+| Scenario | Action |
+|----------|--------|
+| Agent failure | Log failure, file a beads issue for the failed task, continue with remaining agents. Re-attempt in next wave if slots available. |
+| Early completion | Do NOT backfill mid-wave. Wait for the full wave to complete before starting the next. Rationale: backfilling creates interleaved commits that complicate review scope tracking. |
+| All agents fail | Stop. Surface failures to user. Do not auto-retry the entire wave. |
+
 ## Session Directory
 
 At session start (Step 0), generate a session ID and create the session artifact directory:
 
     SESSION_ID=$(echo "$$-$(date +%s%N)-$RANDOM" | shasum | head -c 8)
     SESSION_DIR=".beads/agent-summaries/_session-${SESSION_ID}"
-    mkdir -p ${SESSION_DIR}/{task-metadata,previews,prompts,pc,summaries}
+    mkdir -p "${SESSION_DIR}"/{task-metadata,previews,prompts,pc,summaries}
 
 Store SESSION_DIR in your context. Pass it explicitly to every agent that needs to write artifacts:
 Scout receives it as "Session directory: <SESSION_DIR>".

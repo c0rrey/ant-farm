@@ -91,7 +91,7 @@ These placeholders represent **bash/shell variables** and appear ONLY in code bl
 ```bash
 SESSION_ID=$(echo "$$-$(date +%s%N)-$RANDOM" | shasum | head -c 8)
 SESSION_DIR=".beads/agent-summaries/_session-${SESSION_ID}"
-mkdir -p ${SESSION_DIR}/{task-metadata,previews,prompts}
+mkdir -p "${SESSION_DIR}"/{task-metadata,previews,prompts}
 ```
 
 ---

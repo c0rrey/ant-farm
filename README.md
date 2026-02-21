@@ -2,6 +2,40 @@
 
 A multi-agent orchestration and quality review system for Claude Code. Coordinates parallel agent work across projects with structured verification gates that prevent the failure modes inherent to AI-generated code: skipped design steps, scope creep, fabricated review claims, and unverified acceptance criteria.
 
+## Quick Start
+
+1. **Clone and install hooks**
+   ```bash
+   git clone <repo-url> && cd ant-farm
+   ./scripts/install-hooks.sh
+   ./scripts/sync-to-claude.sh
+   ```
+
+2. **Restart Claude Code** so the custom agent types in `agents/` are loaded.
+
+3. **Wire up a target project** -- add an orchestration section to the project's `CLAUDE.md` (see `orchestration/SETUP.md` for the full recipe):
+   ```markdown
+   ## Orchestration
+   Global: `~/.claude/orchestration/` (RULES.md, templates/, reference/)
+   Kickoff: "Let's get to work on: <task-ids>."
+   Quality Gates:
+   - [ ] Tests pass
+   - [ ] Linter clean
+   - [ ] Build succeeds
+   ```
+
+4. **Create a task and run your first session**
+   ```bash
+   bd create --title="My first task" --type=task --priority=3
+   ```
+   Then tell Claude Code:
+   ```
+   Let's get to work on: ant-farm-XXXX
+   ```
+   Claude will spawn the Scout for recon, present 2-3 execution strategies, and wait for your approval before spawning any implementation agents.
+
+5. **Approve and watch** -- pick a strategy, and the Queen orchestrates the full workflow: prompt composition, checkpoint audits, implementation, and quality review.
+
 ## Architecture
 
 The system has three layers: **the Queen** (the orchestrator that never touches source code), **Dirt Pushers** (implementation and review subagents), and **Pest Control** (an independent verification agent that audits both).
@@ -317,16 +351,19 @@ Informal shorthand (e.g., "templates/scout.md") is informal and always refers to
 |------|---------|---------|
 | `CLAUDE.md` | Claude Code (all projects) | Global instructions: triggers, session completion rules |
 | `agents/*.md` | Claude Code (at startup) | Custom agent type definitions, synced to `~/.claude/agents/` on push |
-| `orchestration/RULES.md` | the Queen | Workflow steps, hard gates, concurrency rules, template lookup |
+| `orchestration/RULES.md` | The Queen | Workflow steps, hard gates, concurrency rules, template lookup |
 | `orchestration/SETUP.md` | User | How to wire orchestration into a new project |
-| `orchestration/templates/implementation.md` | the Pantry | Agent prompt template with 6 mandatory steps |
+| `orchestration/GLOSSARY.md` | Reference | Term definitions used across orchestration docs |
+| `orchestration/PLACEHOLDER_CONVENTIONS.md` | The Pantry, Pest Control | Placeholder syntax rules for templates and checkpoints |
+| `orchestration/templates/implementation.md` | The Pantry | Agent prompt template with 6 mandatory steps |
 | `orchestration/templates/checkpoints.md` | Pest Control | All checkpoint definitions (CCO, WWD, DMVDC, CCB) |
-| `orchestration/templates/reviews.md` | the Pantry (review mode) | Review protocol, 4 review types, report format, Big Head consolidation |
-| `orchestration/templates/pantry.md` | the Pantry (self-read at spawn) | the Pantry's own instructions |
-| `orchestration/templates/dirt-pusher-skeleton.md` | the Queen | Minimal agent spawn template |
-| `orchestration/templates/nitpicker-skeleton.md` | the Queen | Minimal review agent spawn template |
-| `orchestration/templates/big-head-skeleton.md` | the Queen | Minimal Big Head consolidation spawn template |
-| `orchestration/templates/queen-state.md` | the Queen | Session state file schema |
-| `orchestration/templates/scout.md` | the Scout (self-read at spawn) | Pre-flight recon instructions |
-| `orchestration/reference/dependency-analysis.md` | the Scout | Pre-flight conflict analysis, spawn patterns |
+| `orchestration/templates/reviews.md` | The Pantry (review mode) | Review protocol, 4 review types, report format, Big Head consolidation |
+| `orchestration/templates/pantry.md` | The Pantry (self-read at spawn) | The Pantry's own instructions |
+| `orchestration/templates/dirt-pusher-skeleton.md` | The Queen | Minimal agent spawn template |
+| `orchestration/templates/nitpicker-skeleton.md` | The Queen | Minimal review agent spawn template |
+| `orchestration/templates/big-head-skeleton.md` | The Queen | Minimal Big Head consolidation spawn template |
+| `orchestration/templates/queen-state.md` | The Queen | Session state template with placeholder fields |
+| `orchestration/templates/scout.md` | The Scout (self-read at spawn) | Pre-flight recon instructions |
+| `orchestration/templates/SESSION_PLAN_TEMPLATE.md` | User (copied to target project) | Session planning template for project customization |
+| `orchestration/reference/dependency-analysis.md` | The Scout | Pre-flight conflict analysis, spawn patterns |
 | `orchestration/reference/known-failures.md` | Post-mortem reference | Past failures and fixes applied |

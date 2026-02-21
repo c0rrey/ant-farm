@@ -34,29 +34,10 @@ You absorb the cost of reading this template, not the Queen. The purpose of read
 - Scope boundary principle (agents should ONLY edit specified files, document adjacent issues without fixing them)
 - Information diet: what beads provide (root cause, affected surfaces, expected behavior, fix description, acceptance criteria)
 
-Read `~/.claude/orchestration/templates/implementation.md` (you absorb the cost, not the Queen).
+Read this file (you absorb the cost, not the Queen):
+- `~/.claude/orchestration/templates/implementation.md`
 
 ### Step 2: Compose Task Briefs
-
-**FAIL-FAST PRE-CHECK: Task-Metadata Directory Existence**
-
-Before iterating over any task IDs, verify the task-metadata directory exists:
-
-```bash
-[ -d "{session-dir}/task-metadata" ] || echo "MISSING: task-metadata directory"
-```
-
-**If the directory is absent or unreadable**:
-- Write a failure artifact to `{session-dir}/prompts/task-metadata-dir-FAILED.md`:
-  ```
-  # Task Brief Composition [INFRASTRUCTURE FAILURE]
-  **Status**: FAILED — task-metadata directory missing
-  **Path checked**: {session-dir}/task-metadata/
-  **Reason**: Directory does not exist. Scout may not have run or may have crashed before writing metadata.
-  **Recovery**: Re-run the Scout for all task IDs before invoking the Pantry. Do NOT retry Pantry.
-  ```
-- Return immediately to the Queen with: `PANTRY FAILED: task-metadata/ directory missing at {session-dir}/task-metadata/. Scout must be re-run.`
-- Do NOT proceed to per-task iteration.
 
 For each task ID in the input list:
 
@@ -269,12 +250,200 @@ Review skeletons (assembled in Step 2.5, filled by Queen via fill-review-slots.s
 
 ## Section 2: Review Mode
 
-> **DEPRECATED**: Section 2 is superseded by `scripts/fill-review-slots.sh`. The Queen calls that
-> script directly after dirt-pushers finish (see RULES.md Step 3b). Do NOT use this section or
-> spawn a `pantry-review` agent. Full historical content archived at
-> `orchestration/_archive/pantry-review.md`.
+> **DEPRECATED**: Section 2 (Review Mode) is superseded by the two-script approach introduced in
+> Section 1 Step 2.5. The Pantry no longer needs a second invocation for review prompt composition.
+> Instead, the Queen calls `scripts/fill-review-slots.sh` directly after dirt-pushers finish.
+> This section is retained for reference only. Do NOT spawn `pantry-review` for a second invocation.
+>
+> See RULES.md Step 3b for the updated Queen workflow using `fill-review-slots.sh`.
 
-<!-- Section 2 body removed. See orchestration/_archive/pantry-review.md for historical content. -->
+**Input from the Queen**: list of epic IDs (for context in review prompts), commit range (first-commit..last-commit), list of ALL changed files across all epics (deduplicated), list of ALL task IDs (for correctness review acceptance criteria), session dir path, review timestamp (format defined in **Timestamp format** in `checkpoints.md` Pest Control Overview), review round number (1, 2, 3, ...)
+
+### Step 1: Read Templates
+
+Read this file:
+- `~/.claude/orchestration/templates/reviews.md`
+
+### Step 2: Use Timestamp
+
+Use the review timestamp provided by the Queen. The Queen generates ONE timestamp at the start of Step 3b and passes it to you. Do NOT generate a new timestamp. Use this same timestamp for ALL review files in this cycle.
+
+### Step 3: Compose Review Briefs
+
+Create the prompts directory if needed: `{session-dir}/prompts/` (The Queen pre-creates this directory at Step 0, but create if needed as a safety net for robustness.)
+
+**GUARD: Empty File List Check (SUBSTANCE FAILURE)**
+Before composing review briefs, verify that the "list of ALL changed files across all epics" provided by the Queen is non-empty.
+- **If the file list is empty or contains only whitespace**:
+  - Write failure artifact to `{session-dir}/prompts/review-FAILED.md`:
+    ```
+    # Review Briefs [SUBSTANCE FAILURE]
+    **Status**: FAILED — no changed files to review
+    **Issue**: Queen provided empty or whitespace-only file list
+    **Recovery**: Verify that the commit range contains actual changes. If all commits are no-ops, review mode should not proceed.
+    ```
+  - Return FAIL: "Review composition aborted: no changed files in commit range"
+  - Do NOT proceed to compose review briefs
+
+**Round-aware composition:**
+- **Round 1**: Compose 4 review briefs (clarity, edge-cases, correctness, excellence)
+- **Round 2+**: Compose 2 review briefs (correctness, edge-cases only). Include the out-of-scope finding bar from the "Round 2+ Reviewer Instructions" section of reviews.md in each brief.
+
+Each brief contains:
+- Commit range
+- Full file list (identical across all reviewers in this round, deduplicated across all epics)
+- Focus areas specific to that review type (from reviews.md)
+- Report output path: `{session-dir}/review-reports/{type}-review-{timestamp}.md`
+- "Do NOT file beads — Big Head handles all bead filing"
+- Messaging guidelines (when to message teammates, when not to)
+- Full report format (from reviews.md Nitpicker Report Format section)
+- For the **correctness** review brief: include the full list of ALL task IDs so the correctness reviewer can run `bd show <task-id>` for acceptance criteria verification across all epics
+
+Files to write:
+- **Round 1**:
+  - `{session-dir}/prompts/review-clarity.md`
+  - `{session-dir}/prompts/review-edge-cases.md`
+  - `{session-dir}/prompts/review-correctness.md`
+  - `{session-dir}/prompts/review-excellence.md`
+- **Round 2+**:
+  - `{session-dir}/prompts/review-edge-cases.md`
+  - `{session-dir}/prompts/review-correctness.md`
+
+### Step 4: Compose Big Head Consolidation Brief
+
+Write `{session-dir}/prompts/review-big-head-consolidation.md` containing:
+- Round-appropriate report paths (with the timestamp): round 1: all 4; round 2+: 2 (correctness, edge-cases)
+- Deduplication protocol (specified below)
+- Bead filing instructions (specified below; note: Big Head must NOT file beads until Pest Control confirms via team message)
+- Consolidated output path: `{session-dir}/review-reports/review-consolidated-{timestamp}.md`
+- Pest Control coordination note: after writing the consolidated summary, Big Head sends the report path to Pest Control (team member) via SendMessage and awaits verdict before filing any beads
+- Review round number (so Big Head knows how many reports to expect and whether to auto-file P3s)
+- Round 1: all 4 report paths; Round 2+: 2 report paths (correctness, edge-cases)
+- Round 2+ P3 auto-filing instructions (specified below)
+
+**Big Head deduplication protocol** (inline specification for this file):
+1. Collect all findings across all 4 reports (round 1) or 2 reports (round 2+) into a single list
+2. Identify duplicates — findings reported by multiple reviewers about the same issue
+3. Merge cross-referenced items — where one reviewer flagged something for another's domain
+4. Group by root cause — apply root-cause grouping principle across ALL review types in the current round
+5. Document merge rationale — for EVERY merge (two or more findings combined into one root cause), state:
+   - WHY these findings share a root cause (not just that they do)
+   - What the common code path, pattern, or design flaw is
+   - If merged findings span unrelated files or functions, provide extra justification
+
+**Root-cause grouping template** (use this format for each grouped issue):
+```markdown
+## Root-Cause Grouping (Big Head Consolidation)
+
+For each group of related findings across reports in the current round:
+- **Root cause**: <what's systematically wrong>
+- **Affected surfaces**:
+  - file1:L10 — <specific instance> (from clarity review)
+  - file2:L25 — <specific instance> (from edge-cases review)
+  - file3:L100 — <specific instance> (from correctness review)
+- **Combined priority**: <highest priority from any contributing finding>
+- **Fix**: <one fix that covers all surfaces>
+- **Merge rationale**: <why these specific findings share this root cause>
+- **Acceptance criteria**: <how to verify across all surfaces>
+```
+
+**Big Head bead filing instructions** (inline specification for this file):
+- File ONE bead per root cause (not per finding, not per review)
+- Beads filed during session review are standalone
+- Do NOT assign them to a specific epic via `bd dep add --type parent-child`
+- They represent session-wide findings, not epic-specific work
+- Command: `bd create --type=bug --priority=<combined-priority> --title="<root cause title>"`
+- Then update with full description including all affected surfaces
+- Add labels: `bd label add <id> <primary-review-type>`
+- For round 2+: P3 findings may be auto-filed if Pest Control confirms via checkpoint validation
+
+**Big Head consolidated summary output format**:
+Write consolidated summary to `{session-dir}/review-reports/review-consolidated-{timestamp}.md` with this structure:
+```markdown
+# Consolidated Review Summary
+
+**Scope**: <list of all files reviewed>
+**Reviews completed**: Clarity, Edge Cases, Correctness, Excellence (round 1) or Correctness, Edge Cases (round 2+)
+**Reports verified**: <timestamp-marked report files>
+**Total raw findings**: <N across all reports>
+**Root causes identified**: <N after dedup>
+**Beads filed**: <N>
+
+## Read Confirmation
+**All reports read and processed by Big Head consolidation:**
+| Report Type | File | Status | Finding Count |
+|-------------|------|--------|----------------|
+| Clarity | clarity-review-<timestamp>.md | ✓ Read | <N> findings |
+| Edge Cases | edge-cases-review-<timestamp>.md | ✓ Read | <N> findings |
+| Correctness | correctness-review-<timestamp>.md | ✓ Read | <N> findings |
+| Excellence | excellence-review-<timestamp>.md | ✓ Read | <N> findings |
+
+**Total findings from all reports**: <N>
+
+## Root Causes Filed
+| Bead ID | Priority | Title | Contributing Reviews | Surfaces |
+|---------|----------|-------|---------------------|----------|
+| <id> | P<N> | <title> | clarity, edge-cases | <N> files |
+
+## Deduplication Log
+Findings merged:
+- <Finding X from clarity> + <Finding Y from edge-cases> → Root Cause A
+
+## Priority Breakdown
+- P1 (blocking): <N> beads
+- P2 (important): <N> beads
+- P3 (polish): <N> beads
+
+## Verdict
+<PASS / PASS WITH ISSUES / NEEDS WORK>
+<overall quality assessment>
+```
+
+**Polling loop adaptation**: When composing the Big Head brief, include report path checks for the current round: round 1 includes all 4 reports (clarity, edge-cases, correctness, excellence); round 2+ includes only correctness and edge-cases reports.
+
+### Step 5: Write Combined Review Previews
+
+1. Read `~/.claude/orchestration/templates/nitpicker-skeleton.md` and `~/.claude/orchestration/templates/big-head-skeleton.md`
+2. **Round 1**: For each of 4 reviews, construct a combined prompt preview
+   **Round 2+**: For each of 2 reviews (correctness, edge-cases), construct a combined prompt preview
+3. For each review:
+   a. Take the skeleton template text (below the `---` separator)
+   b. Fill in `{UPPERCASE}` placeholders (including `{REVIEW_ROUND}`)
+   c. Append the review brief content below it
+   d. Write to `{session-dir}/previews/review-{type}-preview.md`
+
+4. **Big Head preview** (generated for all rounds): Construct a combined prompt preview for Big Head consolidation:
+   a. Take the big-head-skeleton.md template text (below the `---` separator)
+   b. Fill in `{DATA_FILE_PATH}` placeholder with `{session-dir}/prompts/review-big-head-consolidation.md`
+   c. Fill in `{CONSOLIDATED_OUTPUT_PATH}` placeholder with `{session-dir}/review-reports/review-consolidated-{timestamp}.md`
+   d. Append the Big Head consolidation brief content (read from `{session-dir}/prompts/review-big-head-consolidation.md`)
+   e. Write to `{session-dir}/previews/review-big-head-preview.md`
+
+These preview files are what Pest Control will audit against the CCO.
+
+### Step 6: Return File Paths
+
+Return to the Queen:
+
+**Round 1 return table:**
+```
+| Review Type | Brief | Preview File | Report Output Path | Data File Path (Big Head {DATA_FILE_PATH}) |
+|-------------|-------|--------------|-------------------|---------------------------------------------|
+| clarity     | {session-dir}/prompts/review-clarity.md | {session-dir}/previews/review-clarity-preview.md | {session-dir}/review-reports/clarity-review-{timestamp}.md | — |
+| edge-cases  | {session-dir}/prompts/review-edge-cases.md | {session-dir}/previews/review-edge-cases-preview.md | {session-dir}/review-reports/edge-cases-review-{timestamp}.md | — |
+| correctness | {session-dir}/prompts/review-correctness.md | {session-dir}/previews/review-correctness-preview.md | {session-dir}/review-reports/correctness-review-{timestamp}.md | — |
+| excellence  | {session-dir}/prompts/review-excellence.md | {session-dir}/previews/review-excellence-preview.md | {session-dir}/review-reports/excellence-review-{timestamp}.md | — |
+| big-head    | {session-dir}/prompts/review-big-head-consolidation.md | {session-dir}/previews/review-big-head-preview.md | {session-dir}/review-reports/review-consolidated-{timestamp}.md | {session-dir}/prompts/review-big-head-consolidation.md |
+```
+
+**Round 2+ return table:**
+```
+| Review Type | Brief | Preview File | Report Output Path | Data File Path (Big Head {DATA_FILE_PATH}) |
+|-------------|-------|--------------|-------------------|---------------------------------------------|
+| correctness | {session-dir}/prompts/review-correctness.md | {session-dir}/previews/review-correctness-preview.md | {session-dir}/review-reports/correctness-review-{timestamp}.md | — |
+| edge-cases  | {session-dir}/prompts/review-edge-cases.md | {session-dir}/previews/review-edge-cases-preview.md | {session-dir}/review-reports/edge-cases-review-{timestamp}.md | — |
+| big-head    | {session-dir}/prompts/review-big-head-consolidation.md | {session-dir}/previews/review-big-head-preview.md | {session-dir}/review-reports/review-consolidated-{timestamp}.md | {session-dir}/prompts/review-big-head-consolidation.md |
+```
 
 ---
 
