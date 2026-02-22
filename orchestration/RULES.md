@@ -115,9 +115,22 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             For the final wave (no wave N+1), skip the Pantry — just spawn Dirt Pushers alone.
             **Progress log (after each wave's Dirt Pushers are spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_SPAWNED|wave=<N>|spawned=<agent-ids>|previews_dir=${SESSION_DIR}/previews" >> ${SESSION_DIR}/progress.log`
 
-**Step 3:** Verify — after each agent commits, spawn Pest Control (`model: "haiku"`) for Wandering Worker Detection (WWD)
-            (scope check before next agent in the wave can proceed).
-            After the full wave completes, spawn Pest Control (`model: "sonnet"`) for Dirt Moved vs Dirt Claimed (DMVDC)
+**Step 3:** Verify — Run WWD, then DMVDC, for each wave.
+
+            **WWD execution mode depends on how agents in the wave were spawned:**
+            - **Serial mode** (agents spawned sequentially, one at a time): After each agent commits, spawn
+              one Pest Control (`model: "haiku"`) instance for that agent's commit. This is a true per-agent
+              gate — the next agent must not be spawned until WWD PASS is received for the previous one.
+            - **Batch mode** (agents spawned in parallel in a single message): After ALL wave agents have
+              committed, spawn one Pest Control (`model: "haiku"`) instance per committed task (can be
+              concurrent). Wait for ALL WWD reports before proceeding to DMVDC. This is a post-hoc batch
+              check — per-agent serial gating is mechanically impossible when commits arrive nearly
+              simultaneously.
+            **Mode selection rule**: If you spawned agents in a single message (parallel wave), use batch
+            mode. If you spawned agents individually in separate messages, use serial mode.
+            **Progress log (after all WWD reports PASS for the wave):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_WWD_PASS|wave=<N>|mode=<serial|batch>|tasks_checked=<ids>" >> ${SESSION_DIR}/progress.log`
+
+            After all WWD reports PASS, spawn Pest Control (`model: "sonnet"`) for Dirt Moved vs Dirt Claimed (DMVDC)
             (pass task IDs, commit hashes, summary doc paths; Pest Control reads
             checkpoints.md + task-metadata/ + git diffs itself).
             Failed DMVDC → resume agent (max 2 retries).
@@ -257,7 +270,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 | SSV PASS | Pantry spawn (and all downstream steps) | ${SESSION_DIR}/pc/pc-session-ssv-{timestamp}.md |
 | CCO PASS (impl) | Agent spawn | ${SESSION_DIR}/pc/*-cco-*.md |
 | CCO PASS (review) | Nitpicker team spawn | ${SESSION_DIR}/pc/pc-session-cco-review-{timestamp}.md |
-| WWD PASS | Next agent in wave | ${SESSION_DIR}/pc/*-wwd-*.md |
+| WWD PASS | Serial mode: next agent spawn; Batch mode: DMVDC spawn (all wave agents checked before DMVDC) | ${SESSION_DIR}/pc/*-wwd-*.md |
 | DMVDC PASS | Task closure (bd close) | ${SESSION_DIR}/pc/*-dmvdc-*.md |
 | CCB PASS | Presenting results | ${SESSION_DIR}/pc/pc-session-ccb-{timestamp}.md |
 | Reviews | Mandatory after ALL implementation completes; re-runs after fix cycles with reduced scope (round 2+) |

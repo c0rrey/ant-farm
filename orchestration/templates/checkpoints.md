@@ -259,7 +259,9 @@ Where:
 
 ## Wandering Worker Detection (WWD): Post-Commit Scope Verification
 
-**When**: After agent commits, BEFORE spawning next agent in same wave (a "wave" is a group of agents spawned in parallel for the same execution round — e.g. all Nitpickers in round 1 constitute one wave)
+**When**: Two execution modes depending on how agents were spawned (a "wave" is a group of agents spawned for the same execution round):
+- **Serial mode**: After each individual agent commits, BEFORE spawning the next agent in the wave. Agents were spawned one at a time; true per-agent gating is possible.
+- **Batch mode**: After ALL agents in the wave have committed (agents were spawned in parallel in a single message, so per-agent serial gating is mechanically impossible). One WWD instance per committed task, run concurrently. All WWD reports must PASS before DMVDC runs.
 **Model**: `haiku` (mechanical file list comparison — cheap, fast)
 
 **Why**: Catches scope creep in real-time between agents, before DMVDC runs. Prevents cascading work attribution errors when multiple agents work on related files.
