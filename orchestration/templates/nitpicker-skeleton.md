@@ -6,7 +6,7 @@ Fill in all `{PLACEHOLDER}` values (uppercase) and use the result as the Task to
 The agent-facing text starts below the `---` separator. Do NOT include this instruction block.
 
 Placeholders:
-- {REVIEW_TYPE}: clarity / edge-cases / correctness / excellence
+- {REVIEW_TYPE}: clarity / edge-cases / correctness / drift
   (These are the canonical short names. See "Review Type Canonical Names" in reviews.md for the full short-name → display-title mapping.)
 - {DATA_FILE_PATH}: from the Pantry (review mode) verdict table
 - {REPORT_OUTPUT_PATH}: from the Pantry verdict table (session-scoped)
@@ -37,7 +37,7 @@ When you find something that clearly belongs to another reviewer's domain, messa
 - To Clarity: "Found misleading comment in file.py:L42 — may want to review."
 - To Edge Cases: "Found unvalidated external input at script.sh:L88 — could be boundary issue."
 - To Correctness: "Logic at rules.md:L120 may not satisfy acceptance criterion 3 — check bd show <task-id>."
-- To Excellence: "Function at pantry.md:L200 is 80 lines and deeply nested — worth an excellence look."
+- To Drift: "Function signature at api.py:L42 changed arity — check if callers in routes.py still match."
 Do NOT message for status updates. Do NOT report the finding yourself AND message — pick one owner.
 Log all sent/received messages in your report's Cross-Review Messages section.
 

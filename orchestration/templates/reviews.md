@@ -49,7 +49,7 @@ Each review type has one canonical short name used in template placeholders, fil
 | `clarity` | Clarity Review | P3 | `clarity-review-<timestamp>.md` |
 | `edge-cases` | Edge Cases Review | P2 | `edge-cases-review-<timestamp>.md` |
 | `correctness` | Correctness Review | P1-P2 | `correctness-review-<timestamp>.md` |
-| `excellence` | Excellence Review | P3 | `excellence-review-<timestamp>.md` |
+| `drift` | Drift Review | P3 | `drift-review-<timestamp>.md` |
 
 The short name is the authoritative identifier. Any template using a review type name that differs from the short name in this table without explanation is incorrect.
 
@@ -74,7 +74,7 @@ Task IDs for acceptance criteria: <list of all task IDs worked this session>
 1. Clarity Review (P3) — see prompt below
 2. Edge Cases Review (P2) — see prompt below
 3. Correctness Review (P1-P2) — see prompt below
-4. Excellence Review (P3) — see prompt below
+4. Drift Review (P3) — see prompt below
 5. Big Head (consolidation) — see prompt from big-head-skeleton.md; model specified in Big Head Consolidation Protocol section
 6. Pest Control (checkpoint validator) — receives consolidated report path from Big Head via SendMessage; runs DMVDC and CCB checkpoints and replies with verdict
 ~~~
@@ -108,13 +108,13 @@ Task IDs for acceptance criteria: <list of fix task IDs>
 
 **Key difference from Team Protocol**: Reviewers are spawned as individual Task agents (not team members). Coordination happens via shared files instead of SendMessage.
 
-**Output**: Both paths produce the same 4 review reports (clarity, edge-cases, correctness, excellence) and Big Head consolidated summary.
+**Output**: Both paths produce the same 4 review reports (clarity, edge-cases, correctness, drift) and Big Head consolidated summary.
 
 #### Fallback Workflow
 
 1. **Spawn reviewers sequentially or in batches** (no team):
    ```
-   For each review type (clarity, edge-cases, correctness, excellence):
+   For each review type (clarity, edge-cases, correctness, drift):
    - Spawn as Task agent (model: sonnet)
    - Provide review prompt from review-clarity.md, review-edge-cases.md, etc.
    - Report output: {session-dir}/review-reports/{review-type}-review-{timestamp}.md
@@ -166,7 +166,7 @@ The review pipeline supports multiple rounds. The Queen passes `Review round: <N
 
 ### Round 1 (Full Review)
 
-- **Reviewers**: 4 (Clarity, Edge Cases, Correctness, Excellence)
+- **Reviewers**: 4 (Clarity, Edge Cases, Correctness, Drift)
 - **Scope**: All session commits (`<first-session-commit>..<HEAD>`)
 - **Findings**: All severities reported and presented to user
 - **Team size**: 6 (4 reviewers + Big Head + Pest Control)
@@ -175,7 +175,7 @@ This is the existing protocol — no changes to round 1 behavior.
 
 ### Round 2+ (Fix Verification)
 
-- **Reviewers**: 2 (Correctness, Edge Cases only — Clarity and Excellence are dropped)
+- **Reviewers**: 2 (Correctness, Edge Cases only — Clarity and Drift are dropped)
 - **Scope**: Fix commits only (`<first-fix-commit>..<HEAD>`)
 - **Team size**: 4 (2 reviewers + Big Head + Pest Control)
 - **In-scope findings**: All severities reported
@@ -322,44 +322,42 @@ For each completed task, verify:
 - Tests would pass (if tests exist)
 ```
 
-## Review 4: Excellence (P3)
+## Review 4: Drift (P3)
 
 **Agent Type:** `code-reviewer`
 **Model:** `sonnet`
-**Priority:** P3 (nice-to-have, future work)
+**Priority:** P3 (stale assumptions, incomplete propagation)
 
 ```markdown
-Perform an EXCELLENCE review of the completed work in this session.
+Perform a DRIFT review of the completed work in this session.
 
 Review scope: commits <first-commit> through <last-commit> (<N> commits total)
 
-This is the final quality gate focusing on best practices and opportunities.
+This review checks whether all changes propagated consistently across the codebase.
 
 Focus areas:
-1. **Best practices** - Does code follow language/framework best practices?
-2. **Performance** - Are there inefficiencies? Unnecessary operations? N+1 queries?
-3. **Security** - Any vulnerabilities? Path traversal? XSS? Code injection?
-4. **Maintainability** - Will future developers understand this easily?
-5. **Architecture** - Does this fit the project's design principles?
-6. **Scalability** - Will this perform well at 10x scale?
-7. **Modern features** - Could we use newer language features for clarity?
+1. **Value propagation** - Did changed values, names, counts, or paths get updated everywhere?
+2. **Caller/consumer updates** - When a function signature or type changed, do all call sites match?
+3. **Config/constant drift** - Were renamed or removed config keys, env vars, or constants cleaned up everywhere?
+4. **Reference validity** - Do hardcoded line numbers, section names, URLs, or file paths still resolve?
+5. **Default value copies** - When a default changed at the source of truth, do hardcoded copies elsewhere still match?
+6. **Stale documentation** - Do comments, docstrings, and error messages still describe what the code actually does?
 
 ## Catalog Phase
-Read all files in scope. For each issue, note the file, line, improvement details.
+Read all files in scope. For each meaningful change in the diff, ask: "what else assumes the old behavior?"
+Grep for old values. Trace callers. Check documentation references.
 Group findings into preliminary root causes where possible.
 
 ## Report (MANDATORY)
-Write your report to `<session-dir>/review-reports/excellence-review-<timestamp>.md` using the format below. (the Queen provides the exact filename in your prompt.)
+Write your report to `<session-dir>/review-reports/drift-review-<timestamp>.md` using the format below. (the Queen provides the exact filename in your prompt.)
 Do NOT file beads — Big Head handles all bead filing.
 
-Look for opportunities to:
-- Reduce complexity (cyclomatic complexity, nesting depth)
-- Add caching where appropriate
-- Improve type safety
-- Use modern language patterns
-- Enhance security posture
-- Add missing tests
-- Improve error messages
+For each change in scope, check:
+- Old value still present elsewhere in scoped files
+- Callers/consumers still match the new contract
+- Hardcoded references still resolve
+- Documentation still describes current behavior
+- Default copies still match the source of truth
 
 Review these files:
 <list of files changed in session>
@@ -380,7 +378,7 @@ Every reviewer MUST write their report to `<session-dir>/review-reports/<review-
 ### Finding 1: <short title>
 - **File(s)**: <file:line references>
 - **Severity**: P1 / P2 / P3
-- **Category**: <clarity|edge-case|correctness|excellence>
+- **Category**: <clarity|edge-case|correctness|drift>
 - **Description**: <what's wrong>
 - **Suggested fix**: <how to fix>
 - **Cross-reference**: <if related to another reviewer's domain, note it>
@@ -466,7 +464,7 @@ Before reading any reports, verify the expected files exist. The number of expec
 [ -f "<session-dir>/review-reports/clarity-review-<timestamp>.md" ] || echo "MISSING: clarity"
 [ -f "<session-dir>/review-reports/edge-cases-review-<timestamp>.md" ] || echo "MISSING: edge-cases"
 [ -f "<session-dir>/review-reports/correctness-review-<timestamp>.md" ] || echo "MISSING: correctness"
-[ -f "<session-dir>/review-reports/excellence-review-<timestamp>.md" ] || echo "MISSING: excellence"
+[ -f "<session-dir>/review-reports/drift-review-<timestamp>.md" ] || echo "MISSING: drift"
 ```
 
 **Round 2+**: Verify 2 report files exist using exact paths:
@@ -519,7 +517,7 @@ POLL_INTERVAL_SECS=2
 ELAPSED=0
 
 # --- Report count constraint (which reports to expect per round) ---
-# Round 1:  correctness, edge-cases, clarity, excellence (4 reports)
+# Round 1:  correctness, edge-cases, clarity, drift (4 reports)
 # Round 2+: correctness, edge-cases only (2 reports)
 # The Pantry writes the exact file paths (with timestamp) into this brief.
 # Use [ -f "$EXACT_PATH" ] — no globs. Globs match stale reports from prior rounds.
@@ -545,7 +543,7 @@ done
 if [ "$REVIEW_ROUND" -eq 1 ]; then
 for _path in \
   "<session-dir>/review-reports/clarity-review-<timestamp>.md" \
-  "<session-dir>/review-reports/excellence-review-<timestamp>.md"; do
+  "<session-dir>/review-reports/drift-review-<timestamp>.md"; do
   case "$_path" in
     *'<'*|*'>'*|*'{'*|*'}'*)
       echo "PLACEHOLDER ERROR: path was not substituted by Pantry: $_path"
@@ -569,10 +567,10 @@ while [ $ELAPSED -lt $POLL_TIMEOUT_SECS ]; do
   [ -f "<session-dir>/review-reports/correctness-review-<timestamp>.md" ] || ALL_FOUND=0
   [ -f "<session-dir>/review-reports/edge-cases-review-<timestamp>.md" ] || ALL_FOUND=0
 
-  # Round 1 only: clarity and excellence reports are also expected.
+  # Round 1 only: clarity and drift reports are also expected.
   if [ "$REVIEW_ROUND" -eq 1 ]; then
   [ -f "<session-dir>/review-reports/clarity-review-<timestamp>.md" ] || ALL_FOUND=0
-  [ -f "<session-dir>/review-reports/excellence-review-<timestamp>.md" ] || ALL_FOUND=0
+  [ -f "<session-dir>/review-reports/drift-review-<timestamp>.md" ] || ALL_FOUND=0
   fi
 
   if [ $ALL_FOUND -eq 1 ]; then
@@ -614,7 +612,7 @@ The following expected Nitpicker report files were not found:
 - Clarity review report (clarity-review-<timestamp>.md) — MISSING
 - Edge cases review report (edge-cases-review-<timestamp>.md) — MISSING [or: FOUND at <path>]
 - Correctness review report (correctness-review-<timestamp>.md) — MISSING [or: FOUND at <path>]
-- Excellence review report (excellence-review-<timestamp>.md) — MISSING [or: FOUND at <path>]
+- Drift review report (drift-review-<timestamp>.md) — MISSING [or: FOUND at <path>]
 
 ## Remediation
 
@@ -646,7 +644,7 @@ Round 1 (4 reports):
 - `clarity-review-<timestamp>.md`
 - `edge-cases-review-<timestamp>.md`
 - `correctness-review-<timestamp>.md`
-- `excellence-review-<timestamp>.md`
+- `drift-review-<timestamp>.md`
 
 Round 2+ (2 reports):
 - `correctness-review-<timestamp>.md`
@@ -707,7 +705,7 @@ Write the consolidated summary to `<session-dir>/review-reports/review-consolida
 # Consolidated Review Summary
 
 **Scope**: <list of all files reviewed>
-**Reviews completed**: <Round 1: Clarity, Edge Cases, Correctness, Excellence | Round 2+: Correctness, Edge Cases>
+**Reviews completed**: <Round 1: Clarity, Edge Cases, Correctness, Drift | Round 2+: Correctness, Edge Cases>
 **Total raw findings**: <N across all reviews>
 **Root causes identified**: <N after dedup>
 **Beads filed**: <N>
@@ -716,7 +714,7 @@ Write the consolidated summary to `<session-dir>/review-reports/review-consolida
 
 **Reports read and processed by Big Head consolidation:**
 
-Round 1: 4 reports (clarity, edge-cases, correctness, excellence)
+Round 1: 4 reports (clarity, edge-cases, correctness, drift)
 Round 2+: 2 reports (correctness, edge-cases)
 
 | Report Type | File | Status | Finding Count |

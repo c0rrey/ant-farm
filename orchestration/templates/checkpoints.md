@@ -209,7 +209,7 @@ You are **Pest Control**, the verification subagent. Your role is to audit the N
 "CCO ABORTED: REVIEW_ROUND placeholder was not substituted before spawning CCO (got: '{REVIEW_ROUND}'). Root cause: upstream substitution failure — the Queen or Pantry did not replace `{REVIEW_ROUND}` in the CCO prompt before dispatch. Fix: ensure the prompt-composition step fills in REVIEW_ROUND as a plain integer (e.g. `1`) before spawning Pest Control."
 
 Audit the following Nitpicker prompts for completeness and consistency.
-Round 1: 4 prompts (clarity, edge-cases, correctness, excellence).
+Round 1: 4 prompts (clarity, edge-cases, correctness, drift).
 Round 2+: 2 prompts (correctness, edge-cases only).
 Do NOT execute the prompts — only verify their contents.
 
@@ -218,9 +218,9 @@ Round 1 — paste all 4 prompts:
 {paste clarity review prompt — round 1 only}
 </prompt_clarity>
 
-<prompt_excellence>
-{paste excellence review prompt — round 1 only}
-</prompt_excellence>
+<prompt_drift>
+{paste drift review prompt — round 1 only}
+</prompt_drift>
 
 Both rounds — paste these 2 prompts:
 <prompt_edge_cases>
@@ -241,7 +241,7 @@ Both rounds — paste these 2 prompts:
    - Clarity: readability, naming, documentation, consistency, structure (round 1 only)
    - Edge Cases: input validation, error handling, boundaries, file ops, concurrency
    - Correctness: acceptance criteria, logic errors, data integrity, regressions, cross-file
-   - Excellence: best practices, performance, security, maintainability, architecture (round 1 only)
+   - Drift: stale cross-file references, incomplete propagation, broken assumptions (round 1 only)
    (Flag if focus areas are copy-pasted identically across prompts)
 5. **No bead filing instruction**: Each prompt contains "Do NOT file beads" or equivalent
 6. **Report format reference**: Each prompt specifies the output path `{SESSION_DIR}/review-reports/{type}-review-{timestamp}.md`
@@ -427,7 +427,7 @@ You are **Pest Control**, the verification subagent. Your role is to cross-check
 Verify the substance of a Nitpicker's report by cross-checking findings against actual code.
 
 **Report path**: `{SESSION_DIR}/review-reports/{review-type}-review-{timestamp}.md`
-**Review type**: {clarity|edge-cases|correctness|excellence}
+**Review type**: {clarity|edge-cases|correctness|drift}
 
 Read the report first, then perform these 4 checks:
 
@@ -482,7 +482,7 @@ Write your verification report to:
 `{SESSION_DIR}/pc/pc-{TASK_SUFFIX}-dmvdc-{timestamp}.md`
 
 Where:
-- `{TASK_SUFFIX}`: Nitpicker review type (e.g., `review-correctness`, `review-edge-cases`, `review-clarity`, `review-excellence`)
+- `{TASK_SUFFIX}`: Nitpicker review type (e.g., `review-correctness`, `review-edge-cases`, `review-clarity`, `review-drift`)
 - `{SESSION_DIR}`: session artifact directory (e.g., `.beads/agent-summaries/_session-abc123`)
 - timestamp: format defined in **Timestamp format** (Pest Control Overview)
 ```
@@ -526,7 +526,7 @@ Round 1:
 - `{SESSION_DIR}/review-reports/clarity-review-{timestamp}.md`
 - `{SESSION_DIR}/review-reports/edge-cases-review-{timestamp}.md`
 - `{SESSION_DIR}/review-reports/correctness-review-{timestamp}.md`
-- `{SESSION_DIR}/review-reports/excellence-review-{timestamp}.md`
+- `{SESSION_DIR}/review-reports/drift-review-{timestamp}.md`
 
 Round 2+:
 - `{SESSION_DIR}/review-reports/correctness-review-{timestamp}.md`
@@ -543,7 +543,7 @@ If any expected file is missing, FAIL immediately — consolidation should not h
 Count total findings across all individual reports (4 in round 1, 2 in round 2+).
 Count total findings referenced in the consolidated summary.
 Every finding must be accounted for — either standalone, merged into a group, or explicitly marked as duplicate in the deduplication log.
-Report the math: "Round 1: Clarity: N, Edge Cases: N, Correctness: N, Excellence: N = TOTAL total. Round 2+: Correctness: N, Edge Cases: N = TOTAL total. Consolidated references TOTAL findings across N root causes. N findings merged as duplicates. RECONCILED / NOT RECONCILED — {list orphaned findings}"
+Report the math: "Round 1: Clarity: N, Edge Cases: N, Correctness: N, Drift: N = TOTAL total. Round 2+: Correctness: N, Edge Cases: N = TOTAL total. Consolidated references TOTAL findings across N root causes. N findings merged as duplicates. RECONCILED / NOT RECONCILED — {list orphaned findings}"
 
 ## Check 2: Bead Existence Check
 For each bead ID in the consolidated summary, run `bd show <id>`.

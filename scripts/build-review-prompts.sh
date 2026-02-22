@@ -119,7 +119,7 @@ mkdir -p "${SESSION_DIR}/review-reports" || {
 # ---------------------------------------------------------------------------
 
 if [ "$REVIEW_ROUND" -eq 1 ]; then
-    ACTIVE_REVIEW_TYPES=(clarity edge-cases correctness excellence)
+    ACTIVE_REVIEW_TYPES=(clarity edge-cases correctness drift)
 else
     # Round 2+: correctness and edge-cases only
     ACTIVE_REVIEW_TYPES=(correctness edge-cases)

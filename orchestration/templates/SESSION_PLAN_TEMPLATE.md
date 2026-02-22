@@ -214,10 +214,10 @@ After all implementation agents complete:
    - Output: P1-P2 correctness bugs
    - Estimated: 25 min
 
-4. **Excellence Review**
+4. **Drift Review**
    - Agent: code-reviewer (sonnet)
    - Files: All changed files
-   - Output: P3 excellence features
+   - Output: P3 stale cross-file references
    - Estimated: 30 min
 
 **Total review time:** ~90 minutes

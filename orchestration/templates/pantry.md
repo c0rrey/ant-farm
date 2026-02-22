@@ -249,7 +249,7 @@ Before composing review briefs, verify that the "list of ALL changed files acros
   - Do NOT proceed to compose review briefs
 
 **Round-aware composition:**
-- **Round 1**: Compose 4 review briefs (clarity, edge-cases, correctness, excellence)
+- **Round 1**: Compose 4 review briefs (clarity, edge-cases, correctness, drift)
 - **Round 2+**: Compose 2 review briefs (correctness, edge-cases only). Include the out-of-scope finding bar from the "Round 2+ Reviewer Instructions" section of reviews.md in each brief.
 
 Each brief contains:
@@ -267,7 +267,7 @@ Files to write:
   - `{session-dir}/prompts/review-clarity.md`
   - `{session-dir}/prompts/review-edge-cases.md`
   - `{session-dir}/prompts/review-correctness.md`
-  - `{session-dir}/prompts/review-excellence.md`
+  - `{session-dir}/prompts/review-drift.md`
 - **Round 2+**:
   - `{session-dir}/prompts/review-edge-cases.md`
   - `{session-dir}/prompts/review-correctness.md`
@@ -327,7 +327,7 @@ Write consolidated summary to `{session-dir}/review-reports/review-consolidated-
 # Consolidated Review Summary
 
 **Scope**: <list of all files reviewed>
-**Reviews completed**: Clarity, Edge Cases, Correctness, Excellence (round 1) or Correctness, Edge Cases (round 2+)
+**Reviews completed**: Clarity, Edge Cases, Correctness, Drift (round 1) or Correctness, Edge Cases (round 2+)
 **Reports verified**: <timestamp-marked report files>
 **Total raw findings**: <N across all reports>
 **Root causes identified**: <N after dedup>
@@ -340,7 +340,7 @@ Write consolidated summary to `{session-dir}/review-reports/review-consolidated-
 | Clarity | clarity-review-<timestamp>.md | ✓ Read | <N> findings |
 | Edge Cases | edge-cases-review-<timestamp>.md | ✓ Read | <N> findings |
 | Correctness | correctness-review-<timestamp>.md | ✓ Read | <N> findings |
-| Excellence | excellence-review-<timestamp>.md | ✓ Read | <N> findings |
+| Drift | drift-review-<timestamp>.md | ✓ Read | <N> findings |
 
 **Total findings from all reports**: <N>
 
@@ -363,7 +363,7 @@ Findings merged:
 <overall quality assessment>
 ```
 
-**Polling loop adaptation**: When composing the Big Head brief, include report path checks for the current round: round 1 includes all 4 reports (clarity, edge-cases, correctness, excellence); round 2+ includes only correctness and edge-cases reports.
+**Polling loop adaptation**: When composing the Big Head brief, include report path checks for the current round: round 1 includes all 4 reports (clarity, edge-cases, correctness, drift); round 2+ includes only correctness and edge-cases reports.
 
 ### Step 5: Write Combined Review Previews
 
@@ -396,7 +396,7 @@ Return to the Queen:
 | clarity     | {session-dir}/prompts/review-clarity.md | {session-dir}/previews/review-clarity-preview.md | {session-dir}/review-reports/clarity-review-{timestamp}.md | — |
 | edge-cases  | {session-dir}/prompts/review-edge-cases.md | {session-dir}/previews/review-edge-cases-preview.md | {session-dir}/review-reports/edge-cases-review-{timestamp}.md | — |
 | correctness | {session-dir}/prompts/review-correctness.md | {session-dir}/previews/review-correctness-preview.md | {session-dir}/review-reports/correctness-review-{timestamp}.md | — |
-| excellence  | {session-dir}/prompts/review-excellence.md | {session-dir}/previews/review-excellence-preview.md | {session-dir}/review-reports/excellence-review-{timestamp}.md | — |
+| drift       | {session-dir}/prompts/review-drift.md | {session-dir}/previews/review-drift-preview.md | {session-dir}/review-reports/drift-review-{timestamp}.md | — |
 | big-head    | {session-dir}/prompts/review-big-head-consolidation.md | {session-dir}/previews/review-big-head-preview.md | {session-dir}/review-reports/review-consolidated-{timestamp}.md | {session-dir}/prompts/review-big-head-consolidation.md |
 ```
 

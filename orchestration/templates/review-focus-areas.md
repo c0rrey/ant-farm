@@ -22,7 +22,7 @@ Focus areas:
 **Not your responsibility** — hand off to the relevant reviewer:
 - Edge Cases: missing input validation, error handling gaps, boundary conditions
 - Correctness: logic bugs, acceptance criteria, algorithm correctness
-- Excellence: performance, security vulnerabilities, architecture concerns
+- Drift: stale cross-file references, incomplete propagation of changes, broken assumptions
 <!-- /FOCUS: clarity -->
 
 <!-- FOCUS: edge-cases -->
@@ -44,7 +44,7 @@ Focus areas:
 **Not your responsibility** — hand off to the relevant reviewer:
 - Clarity: naming, comments, style, structural organization
 - Correctness: happy-path logic correctness, acceptance criteria (given valid inputs)
-- Excellence: performance of valid paths, security beyond input validation, architecture
+- Drift: stale cross-file references, incomplete propagation of changes, broken assumptions
 <!-- /FOCUS: edge-cases -->
 
 <!-- FOCUS: correctness -->
@@ -66,27 +66,27 @@ Focus areas:
 **Not your responsibility** — hand off to the relevant reviewer:
 - Clarity: naming, comments, style (even if logic is correct but hard to read)
 - Edge Cases: what happens with invalid inputs (your scope is valid-input behavior)
-- Excellence: performance, security hardening, architectural elegance
+- Drift: stale cross-file references, incomplete propagation of changes, broken assumptions
 <!-- /FOCUS: correctness -->
 
-<!-- FOCUS: excellence -->
-**Your focus**: Good engineering practice, security, performance, and future maintainability. You review for quality above the functional baseline.
+<!-- FOCUS: drift -->
+**Your focus**: The system agrees with itself after this change. You review for stale assumptions across file boundaries.
 
 Focus areas:
-1. **Best practices** — Does code follow language/framework conventions?
-2. **Performance** — Unnecessary loops-in-loops? Repeated expensive ops? N+1 patterns?
-3. **Security** — Path traversal? Injection risks? Insecure defaults? Credentials in code/logs?
-4. **Maintainability** — High cyclomatic complexity? Deep nesting? Technical debt without justification?
-5. **Architecture** — Does this fit project design principles? Does it add a third way to do something done two ways?
-6. **Scalability** — Will this perform at 10x scale?
+1. **Value propagation** — Did a changed value, name, count, or path get updated everywhere it appears?
+2. **Caller/consumer updates** — When a function signature or type shape changed, do all call sites match?
+3. **Config/constant drift** — Were renamed or removed config keys, env vars, or constants cleaned up everywhere?
+4. **Reference validity** — Do hardcoded line numbers, section names, URLs, or file paths still resolve?
+5. **Default value copies** — When a default changed at the source of truth, do hardcoded copies elsewhere still match?
+6. **Stale documentation** — Do comments, docstrings, and error messages still describe what the code actually does?
 
 **Severity calibration**:
-- P1: Security vulnerability with a realistic exploit path (user input reaching shell/SQL unsanitized)
-- P2: Performance issue noticeable at realistic scale, OR significant maintenance burden for next developer
-- P3: Best-practice miss that is real but low-stakes (loop→comprehension, missing test, splittable function) (default)
+- P1: Stale assumption causes runtime failure or silently wrong results in a common path
+- P2: Stale assumption creates inconsistency a developer will encounter but can work around
+- P3: Stale reference that is cosmetic or low-impact (default)
 
 **Not your responsibility** — hand off to the relevant reviewer:
-- Clarity: naming, comments, style (don't re-report style as "maintainability" unless architectural)
-- Edge Cases: input validation, error handling (don't re-report as security unless active exploit path)
-- Correctness: bugs, acceptance criteria (don't report correct-but-inefficient as "correctness")
-<!-- /FOCUS: excellence -->
+- Clarity: naming quality, comment style, readability (even within a single file)
+- Edge Cases: missing validation, error handling, boundary conditions
+- Correctness: whether logic is right given current inputs (bugs, not drift)
+<!-- /FOCUS: drift -->

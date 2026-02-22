@@ -32,7 +32,7 @@ TeamCreate(
     { "name": "clarity-reviewer",      "prompt": "<filled nitpicker template with REVIEW_TYPE=clarity>", "model": "sonnet" },
     { "name": "edge-cases-reviewer",   "prompt": "<filled nitpicker template with REVIEW_TYPE=edge-cases>", "model": "sonnet" },
     { "name": "correctness-reviewer",  "prompt": "<filled nitpicker template with REVIEW_TYPE=correctness>", "model": "sonnet" },
-    { "name": "excellence-reviewer",   "prompt": "<filled nitpicker template with REVIEW_TYPE=excellence>", "model": "sonnet" },
+    { "name": "drift-reviewer",        "prompt": "<filled nitpicker template with REVIEW_TYPE=drift>", "model": "sonnet" },
     { "name": "big-head",              "prompt": "<filled big-head template with all 4 expected report paths embedded>", "model": "{MODEL}" },
     { "name": "pest-control",          "prompt": "<pest-control prompt>", "model": "sonnet" }
   ]
@@ -68,7 +68,7 @@ Consolidate the Nitpicker reports into a unified summary.
 
 **Review round**: {REVIEW_ROUND}
 **Input guard**: If {REVIEW_ROUND} is blank or non-numeric, halt immediately and return: "BIG HEAD ABORTED: REVIEW_ROUND is invalid. Expected a positive integer; got: '{REVIEW_ROUND}'." Do NOT read any reports or proceed.
-- Round 1: expect 4 reports (clarity, edge-cases, correctness, excellence)
+- Round 1: expect 4 reports (clarity, edge-cases, correctness, drift)
 - Round 2+: expect 2 reports (correctness, edge-cases only)
 
 Step 0: Read your consolidation brief from {DATA_FILE_PATH}

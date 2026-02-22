@@ -181,7 +181,7 @@ The Queen creates an **agent team** (TeamCreate, not Task) with 4 parallel revie
 | **Clarity** | P3 | Readability, naming, documentation, consistency |
 | **Edge Cases** | P2 | Input validation, error handling, boundary conditions, concurrency |
 | **Correctness** | P1-P2 | Acceptance criteria verification, logic errors, regressions, cross-file consistency |
-| **Excellence** | P3 | Best practices, performance, security, maintainability, architecture |
+| **Drift** | P3 | Stale cross-file references, incomplete propagation, broken assumptions |
 
 Each reviewer reads all changed files, catalogs findings with file:line references and severity, groups them into preliminary root causes, and writes a structured report. Reviewers **do not file issues** — only Big Head does.
 
