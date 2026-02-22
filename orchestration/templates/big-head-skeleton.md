@@ -103,17 +103,70 @@ Your workflow:
 4. Deduplicate: merge findings about the same issue across reviewers
 5. Group by root cause: one group per underlying problem, not per occurrence
 6. For each merge, document WHY findings share a root cause
-7. Write consolidated summary to {CONSOLIDATED_OUTPUT_PATH}
-8. Send consolidated report path to Pest Control (SendMessage): "Consolidated report ready at {CONSOLIDATED_OUTPUT_PATH}. Please run DMVDC and CCB checkpoints and reply with verdict."
+7. **Cross-session dedup**: Before writing the summary or filing beads, check for existing open beads that already cover your root causes:
+   ```bash
+   bd list --status=open -n 0 --short
+   ```
+   For each root cause group, compare against existing bead titles:
+   - **Exact title match** (case-insensitive): Do NOT file. Log in the summary: "Dedup: RC-N matches existing bead ant-farm-XXXX — skipped."
+   - **Similar title** (same root cause, different wording): Run `bd search "<key phrases>" --status open` to confirm. If the existing bead covers the same root cause, do NOT file. Log the match.
+   - **No match found**: Mark for filing.
+   When uncertain whether a match is truly the same root cause, err on the side of filing (a human can merge later; a missed filing is harder to recover).
+8. Write consolidated summary to {CONSOLIDATED_OUTPUT_PATH}
+9. Send consolidated report path to Pest Control (SendMessage): "Consolidated report ready at {CONSOLIDATED_OUTPUT_PATH}. Please run DMVDC and CCB checkpoints and reply with verdict."
    - Do NOT file any beads before receiving Pest Control's reply
-9. Await Pest Control verdict — follow the timeout/retry protocol in reviews.md Step 4:
-   - Wait up to 60 seconds; retry once if no response; escalate to Queen after 120s total with no reply
-   - **PASS**: File ONE bead per root cause: `bd create --type=bug --priority=<P> --title="<title>"`
-   - **FAIL**: Escalate to Queen with specifics (which findings failed, why); file beads ONLY for validated findings
-   - **TIMEOUT/UNAVAILABLE**: Escalate to Queen with consolidated report path; do NOT file beads
-10. **Round 2+ only — P3 auto-filing**: After filing P1/P2 beads, auto-file P3 findings to "Future Work" epic:
+10. Await Pest Control verdict — follow the timeout/retry protocol in reviews.md Step 4:
+    - Wait up to 60 seconds; retry once if no response; escalate to Queen after 120s total with no reply
+    - **PASS**: File ONE bead per root cause (skip any marked as duplicates in step 7). For each bead, write a description to a temp file, then create:
+      ```bash
+      cat > /tmp/bead-desc.md << 'BEAD_DESC'
+      ## Root Cause
+      <What is specifically wrong — cite the code path, pattern, or design flaw.
+      Reference file:line locations where the issue originates. This must be
+      substantive analysis, NOT a restatement of the title.>
+
+      ## Affected Surfaces
+      - `file1.py:L42` — <specific instance> (from correctness review)
+      - `file2.sh:L15` — <specific instance> (from edge-cases review)
+
+      ## Fix
+      <Specific corrective action — what to change, where, and why.>
+
+      ## Changes Needed
+      - `path/to/file1.py`: <what to change>
+      - `path/to/file2.sh`: <what to change>
+
+      ## Acceptance Criteria
+      - [ ] <First independently testable criterion>
+      - [ ] <Second independently testable criterion>
+      - [ ] <Third independently testable criterion>
+      BEAD_DESC
+
+      bd create --type=bug --priority=<P> --title="<title>" --body-file /tmp/bead-desc.md
+      bd label add <new-bead-id> <primary-review-type>
+      rm -f /tmp/bead-desc.md
+      ```
+    - **FAIL**: Escalate to Queen with specifics (which findings failed, why); file beads ONLY for validated findings
+    - **TIMEOUT/UNAVAILABLE**: Escalate to Queen with consolidated report path; do NOT file beads
+11. **Round 2+ only — P3 auto-filing**: After filing P1/P2 beads, auto-file P3 findings to "Future Work" epic:
     - Find or create the epic: `bd list --status=open | grep -i "future work"` or `bd epic create --title="Future Work" --description="Low-priority polish and improvements from review sessions"`
-    - For each P3: `bd create --type=bug --priority=3 --title="<title>"` then `bd dep add <id> <epic-id> --type parent-child`
+    - For each P3 (skip any marked as duplicates in step 7):
+      ```bash
+      cat > /tmp/bead-desc.md << 'BEAD_DESC'
+      ## Root Cause
+      <What is wrong — file:line refs to the primary location.>
+
+      ## Affected Surfaces
+      - `file:line` — <instance> (from <reviewer>)
+
+      ## Acceptance Criteria
+      - [ ] <testable criterion>
+      BEAD_DESC
+
+      bd create --type=bug --priority=3 --title="<title>" --body-file /tmp/bead-desc.md
+      bd dep add <new-bead-id> <epic-id> --type parent-child
+      rm -f /tmp/bead-desc.md
+      ```
     - Mark P3s as "auto-filed, no action required" in the consolidated summary
     - Do NOT include P3 findings in the fix-or-defer prompt to the Queen
     - In round 1, skip this step — P3s are handled by the Queen's existing flow
@@ -121,5 +174,6 @@ Your workflow:
 Your output MUST include (see brief for full format):
 - Root cause groups with all affected surfaces and merge rationale
 - Deduplication log (which findings merged, why)
+- Cross-session dedup log: for each root cause, whether it was filed (new bead ID), skipped (matched existing bead ID), or merged with existing
 - Bead IDs filed, with priority breakdown
 - Overall verdict
