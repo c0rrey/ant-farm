@@ -257,12 +257,24 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             - Present full round history to user (round numbers, finding counts, bead IDs)
             - Ask user: "Review loop has not converged after 4 rounds. Continue or abort?"
             - Await user decision before taking any further action
-            **Only if current round < 4**: proceed with fix-now/defer decision:
+            **Only if current round < 4**: determine fix action:
+            **Auto-fix (round 1, ≤5 root causes)**: If round == 1 AND total P1+P2 root causes ≤ 5:
+            - Announce (do NOT wait for user input):
+              "**Auto-fix**: Round 1 review found X P1 and Y P2 issues (Z root causes, within 5-threshold). Spawning fix tasks automatically."
+            - Proceed directly to fix workflow (see reviews.md "Fix Workflow"):
+              - P1 root causes → TDD workflow (test spec + implementation)
+              - P2 root causes → fix-only workflow (direct implementation)
+            - After fixes complete + DMVDC passes, re-run Step 3b with round N+1
+            - Update session state: increment review round, record fix commit range
+            **Escalation (round 1, >5 root causes)**: If round == 1 AND total P1+P2 root causes > 5:
+            - Present findings to user: "Round 1 review found Z root causes (>5 threshold). This suggests a systemic issue. Fix now or defer?"
+            - Await user decision (same as round 2+ behavior below)
+            **User prompt (round 2+)**: If round >= 2:
             - Present findings to user: "Reviews found X P1 and Y P2 issues. Fix now or defer?"
-            - **If "fix now"**: Spawn fix tasks (see reviews.md), then re-run Step 3b with round N+1
+            - **If "fix now"**: Spawn fix tasks (see reviews.md "Fix Workflow"), then re-run Step 3b with round N+1
               - Update session state: increment review round, record fix commit range
             - **If "defer"**: P1/P2 beads stay open; document in CHANGELOG; proceed to Step 4
-            **Progress log (after triage decision):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_TRIAGED|round=<N>|p1=<count>|p2=<count>|decision=<fix_now|defer|terminated>" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after triage decision):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_TRIAGED|round=<N>|p1=<count>|p2=<count>|decision=<auto_fix|fix_now|defer|terminated>|root_causes=<count>" >> ${SESSION_DIR}/progress.log`
 
 **Step 4:** Documentation — update CHANGELOG, README, CLAUDE.md in single commit.
             Before committing: file issues for any remaining work; run quality gates (tests, linters,
