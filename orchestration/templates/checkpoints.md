@@ -14,7 +14,7 @@ For detailed extraction rules and examples, see `~/.claude/orchestration/referen
 
 All checkpoint verifications (SSV, CCO, WWD, DMVDC, CCB) are executed by **Pest Control**, a dedicated verification subagent that cross-checks orchestrator and agent work against ground truth.
 
-**Role distinction**: Pest Control is the orchestrator — the Queen spawns it to run a checkpoint. Pest Control then spawns a `code-reviewer` agent to execute the actual checks. The **Agent type (spawned by Pest Control)** fields in each section below specify the type of agent that Pest Control spawns, not Pest Control itself.
+**Role distinction**: The Queen spawns Pest Control to run a checkpoint. Pest Control executes all checkpoint logic directly — it does not spawn subagents. Pest Control has tools: Bash, Read, Write, Glob, Grep (no Task tool).
 
 **Pest Control responsibilities:**
 - Pre-implementation Scout strategy verification (SSV)
@@ -110,7 +110,6 @@ All checkpoints use the following verdict states:
 
 **When**: After orchestrator composes agent prompt(s), BEFORE spawning
 **Model**: `haiku` (mechanical checklist — cheap, fast)
-**Agent type (spawned by Pest Control)**: `code-reviewer`
 
 **Why**: The orchestrator has a self-policing checklist, but nobody audits the orchestrator. Catching prompt defects before spawn is 100x cheaper than catching them after.
 
@@ -188,7 +187,6 @@ Where:
 
 **When**: After composing all review prompts (round 1: 4 prompts; round 2+: 2 prompts), BEFORE creating the team
 **Model**: `haiku`
-**Agent type (spawned by Pest Control)**: `code-reviewer`
 
 ```markdown
 **Pest Control verification - CCO (Pre-Spawn Nitpickers Audit)**
@@ -263,7 +261,6 @@ Where:
 
 **When**: After agent commits, BEFORE spawning next agent in same wave (a "wave" is a group of agents spawned in parallel for the same execution round — e.g. all Nitpickers in round 1 constitute one wave)
 **Model**: `haiku` (mechanical file list comparison — cheap, fast)
-**Agent type (spawned by Pest Control)**: `code-reviewer`
 
 **Why**: Catches scope creep in real-time between agents, before DMVDC runs. Prevents cascading work attribution errors when multiple agents work on related files.
 
@@ -336,7 +333,6 @@ Note: FAIL blocks queue progression because scope creep may invalidate queued ta
 
 **When**: After each agent completes
 **Model**: `sonnet` (needs judgment to compare claims against actual code)
-**Agent type (spawned by Pest Control)**: `code-reviewer`
 
 **Why sonnet not haiku**: This checkpoint reads actual source code and compares it to report claims. "Is this finding description accurate for what's at build.py:L200?" requires understanding both the code and the claim. Haiku can check format; sonnet can check truth.
 
@@ -410,7 +406,6 @@ Where:
 
 **When**: After each Nitpicker completes its report
 **Model**: `sonnet`
-**Agent type (spawned by Pest Control)**: `code-reviewer`
 
 ```markdown
 **Pest Control verification - DMVDC (Nitpicker Substance Verification)**
@@ -501,7 +496,6 @@ Where:
 
 **When**: After Big Head consolidation (after all review reports merged and beads filed — 4 reports in round 1, 2 in round 2+)
 **Model**: `haiku` (mechanical counting + record-checking)
-**Agent type (spawned by Pest Control)**: `code-reviewer`
 
 **CCB must PASS before presenting results to the user.**
 
@@ -611,7 +605,6 @@ Where:
 
 **When**: After Scout returns `{SESSION_DIR}/briefing.md` and BEFORE spawning Pantry (Step 2 in RULES.md)
 **Model**: `haiku` (pure set comparisons — no judgment required)
-**Agent type (spawned by Pest Control)**: `code-reviewer`
 
 **Why**: The Scout's strategy (wave groupings, task-to-wave assignments, file conflict analysis) is currently validated only by human approval, which misses mechanical errors like file/task mismatches or intra-wave dependency violations. A lightweight automated check before Pantry is spawned catches strategy defects at the cheapest possible point — before any implementation prompts are composed.
 
