@@ -937,40 +937,80 @@ No user prompt needed — the loop simply ends.
 
 ### If P1 or P2 issues found:
 
-1. **Present findings to user** with consolidated summary showing:
-   - Total issues by priority (P1: X, P2: Y, P3: Z)
-   - Root causes identified
-   - Deduplication stats (N raw findings → M root causes)
+The Queen determines the fix action based on RULES.md Step 3c decision tree:
+- **Auto-fix** (round 1, ≤5 root causes): proceed directly to Fix Workflow below
+- **Escalation** (round 1, >5 root causes): present to user, await decision
+- **User prompt** (round 2+): present to user, "Fix now or defer?"
+- **Defer**: P1/P2 beads stay open; document in CHANGELOG; proceed to Step 4
 
-2. **Ask user**: "Reviews found X P1 and Y P2 issues. Should we fix them now, or push and address later?"
+### Fix Workflow
 
-3. **If user chooses "fix now"** — Queen spawns fix tasks:
+Triggered by auto-fix (round 1) or user choosing "fix now" (round 2+). The workflow splits by severity:
 
-   a. **Test-first workflow** (TDD approach):
-      - For each P1/P2 bead, Queen creates a test-writing task FIRST
-      - Group test tasks by file (use orchestration/reference/dependency-analysis.md for conflict analysis)
-      - Queen spawns Dirt Pushers (via Task tool, NOT agent teams) to write failing tests
-      - Test requirements: Must cover edge cases and failure scenarios, not just happy path
-      - Verify tests fail with expected error messages
-      - Run `bd close` on test-writing tasks after verification
+#### P1 Root Causes — TDD Workflow (test-first)
 
-   b. **Implementation workflow**:
-      - For each P1/P2 bead, Queen creates a fix implementation task
-      - Group fix tasks by file (use orchestration/reference/dependency-analysis.md for conflict analysis)
-      - Queen spawns Dirt Pushers to implement fixes (same 6-step process as original work)
-      - Agents must run tests and verify they now PASS
-      - Run DMVDC on each fix agent
-      - Run `bd close` on fix tasks after DMVDC passes
+For each P1 root cause bead:
 
-   c. **Re-run reviews** (MANDATORY) —
-      - After fix agents complete and pass DMVDC, re-run Step 3b with `Review round: <N+1>`
-      - Round 2+ uses only Correctness + Edge Cases reviewers, scoped to fix commits
-      - The loop continues until a round produces zero P1/P2 findings
+1. **Create test-writing task** — Queen creates a bead for the test-writing task
+2. **Compose test specification** — Queen extracts from the consolidated summary and includes in the task brief:
 
-4. **If user chooses "push and address later"**:
-   - P1/P2 beads already filed during consolidation — they stay open
-   - Document in CHANGELOG: "Known issues filed for future work: <list bead IDs>"
-   - Proceed to Step 4 (Handle P3 Issues and Documentation)
+   ~~~markdown
+   ## Test Specification (from review finding)
+
+   **Root cause**: <root cause description from consolidated summary>
+   **Affected surfaces**: <file:line references>
+
+   ### Required test cases:
+   1. **Failing case**: <specific scenario from review finding>
+      - Input: <concrete input that triggers the bug>
+      - Expected: <what should happen>
+      - Actual: <what currently happens>
+   2. **Boundary condition**: <derived from affected surfaces>
+      - Input: <edge case input>
+      - Expected: <correct behavior at boundary>
+   3. **Regression guard**: <happy path that must still pass>
+      - Input: <normal input>
+      - Expected: <existing correct behavior preserved>
+   ~~~
+
+3. **Spawn Dirt Pushers** (via Task tool, NOT agent teams) to write tests matching the spec
+4. **Verify tests fail** with expected error messages
+5. **Create fix implementation task** — Queen creates a bead for the fix task
+6. **Spawn Dirt Pushers** to implement fixes, run tests, verify they now PASS
+7. **DMVDC** on each fix agent
+8. **Close tasks** — `bd close` on both test and fix tasks after DMVDC passes
+
+Group test tasks by file (use orchestration/reference/dependency-analysis.md for conflict analysis).
+
+#### P2 Root Causes — Fix-Only Workflow (direct)
+
+For each P2 root cause bead:
+
+1. **Create fix implementation task** — Queen creates a bead (skip test phase)
+2. **Compose fix brief** — include root cause, affected surfaces, and suggested fix from consolidated summary
+3. **Spawn Dirt Pushers** to implement fixes
+4. **DMVDC** on each fix agent
+5. **Close tasks** — `bd close` on fix tasks after DMVDC passes
+
+Group fix tasks by file (use orchestration/reference/dependency-analysis.md for conflict analysis).
+
+#### Wave Composition
+
+P1 test tasks and P2 fix tasks target different root causes (different files), so they can be waved together:
+
+```
+Wave 1: [P1 test tasks] + [P2 fix tasks]    (concurrent)
+Wave 2: [P1 fix tasks]                       (after P1 tests verified failing)
+```
+
+Existing wave rules apply: max 7 Dirt Pushers per wave, no file overlap within a wave.
+
+#### Re-Run Reviews (MANDATORY)
+
+After all fix agents complete and pass DMVDC:
+- Re-run Step 3b with `Review round: <N+1>`
+- Round 2+ uses only Correctness + Edge Cases reviewers, scoped to fix commits
+- The loop continues until a round produces zero P1/P2 findings
 
 ### Handle P3 Issues (Queen's Step 4)
 
