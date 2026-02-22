@@ -56,7 +56,7 @@ The system has three layers: **the Queen** (the orchestrator that never touches 
 ├───────────┴─────────────┴───────────────────────────────┤
 │  Dirt Pushers (up to 7 concurrent)                      │
 ├─────────────────────────────────────────────────────────┤
-│  the Nitpickers (4 reviewers + Big Head)                │
+│  the Nitpickers (4 reviewers + Big Head + Pest Control) │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -198,36 +198,28 @@ An opus-model Big Head reads all 4 reports and:
 
 #### DMVDC + CCB (post-review verification)
 
-After the Nitpicker team completes, the Queen spawns **Pest Control** for DMVDC (substance verification on each reviewer's report) and **Colony Census Bureau (CCB)** (consolidation audit on Big Head's output).
+**Pest Control** is a member of the Nitpicker team. It runs DMVDC (substance verification on each reviewer's report) and **Colony Census Bureau (CCB)** (consolidation audit on Big Head's output) inside the team before the team returns to the Queen.
 
 ```
-Queen                       fill-review-slots.sh          Pest Control
-  │                              │                           │
-  ├──run script────────────────► │                           │
-  │  (replaces pantry-review)    ├─read reviews.md           │
-  │                              ├─write 4 review task briefs │
-  │                              ├─write combined previews   │
-  │                              ├─write Big Head consolidation brief  │
-  │  ◄──exit (files on disk)─────┤                           │
-  │                              │                           │
-  │                                                          │
-  ├──spawn─────────────────────────────────────────────────► │
-  │  "audit review prompts, CCO"                             │
-  │  ◄──return verdicts──────────────────────────────────────┤
-  │                                                          │
-  ├──create Nitpicker team (4 reviewers + Big Head)──►       │
-  │  ...reviewers write reports, Big Head consolidates...    │
-  │  ◄──team returns report paths                            │
-  │                                                          │
-  ├──spawn─────────────────────────────────────────────────► │
-  │  "read 4 reports + consolidated report,                  │
-  │   run DMVDC (Nitpickers) + CCB,                          │
-  │   write reports, return verdicts"                        │
-  │                                                          ├─read checkpoints.md
-  │                                                          ├─read 5 reports
-  │                                                          ├─audit each
-  │  ◄──return verdict table─────────────────────────────────┤
-  │  (~15 lines)                                             │
+Queen                       fill-review-slots.sh
+  │                              │
+  ├──run script────────────────► │
+  │  (replaces pantry-review)    ├─read reviews.md
+  │                              ├─write 4 review task briefs
+  │                              ├─write combined previews
+  │                              ├─write Big Head consolidation brief
+  │  ◄──exit (files on disk)─────┤
+  │
+  ├──spawn Pest Control (CCO, pre-team audit)──────────────► PC
+  │  ◄──return verdicts─────────────────────────────────────┤
+  │
+  ├──create Nitpicker team (4 reviewers + Big Head + PC)
+  │  ┌────────────────────────────────────────────────────┐
+  │  │  reviewers write reports                           │
+  │  │  Big Head consolidates                             │
+  │  │  Pest Control runs DMVDC + CCB (inside team)       │
+  │  └────────────────────────────────────────────────────┘
+  │  ◄──team returns report paths + verdict table
 ```
 
 Before presenting results to the user, CCB audits the consolidation:
