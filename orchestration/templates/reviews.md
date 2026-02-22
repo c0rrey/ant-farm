@@ -585,7 +585,7 @@ done
 
 if [ $REPORTS_FOUND -eq 0 ]; then
   echo "TIMEOUT: Not all expected reports arrived within ${POLL_TIMEOUT_SECS}s"
-  cat > "$CONSOLIDATED_OUTPUT_PATH" << 'EOF'
+  cat > "{CONSOLIDATED_OUTPUT_PATH}" << 'EOF'
 # Big Head Consolidation — BLOCKED: Missing Nitpicker Reports
 **Status**: FAILED — prerequisite gate timeout
 **Timestamp**: <current ISO 8601 timestamp>
@@ -774,7 +774,7 @@ SendMessage(
 - Wait an additional 60 seconds after the retry.
 - If still no response after the retry window, **escalate to the Queen immediately**:
   ```bash
-  cat > "$CONSOLIDATED_OUTPUT_PATH" << 'EOF'
+  cat > "{CONSOLIDATED_OUTPUT_PATH%.md}-pc-timeout.md" << 'EOF'
   # Big Head Consolidation — BLOCKED: Pest Control Timeout
   **Status**: FAILED — Pest Control checkpoint unavailable
   **Timestamp**: <current ISO 8601 timestamp>
@@ -787,6 +787,7 @@ SendMessage(
   Big Head checkpoint escalation to Queen:
   - Pest Control verdict: UNAVAILABLE (no response after 2 attempts, 120s total)
   - Consolidated report path: {CONSOLIDATED_OUTPUT_PATH}
+  - Timeout failure artifact: {CONSOLIDATED_OUTPUT_PATH%.md}-pc-timeout.md
   - Action required: PC checkpoint could not be completed. User must decide: re-spawn Pest Control
     manually, or accept consolidated findings without checkpoint validation.
   ```

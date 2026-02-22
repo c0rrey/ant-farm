@@ -90,7 +90,7 @@ Your workflow:
    - The brief is authoritative for this step: it specifies the polling timeout, error return format, and failure conditions
    - **On timeout (REPORTS_FOUND=0)**: Before returning the error to the Queen, write a failure artifact using this bash block:
      ```bash
-     cat > "$CONSOLIDATED_OUTPUT_PATH" << 'EOF'
+     cat > "{CONSOLIDATED_OUTPUT_PATH}" << 'EOF'
      # Big Head Consolidation — BLOCKED: Missing Nitpicker Reports
      **Status**: FAILED — prerequisite gate timeout
      **Timestamp**: <current ISO 8601 timestamp>
