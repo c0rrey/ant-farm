@@ -72,7 +72,7 @@ Generate a session ID, create the session directory and `task-metadata/` subdire
 
 ### Step 1: Recon
 
-The Queen spawns **the Scout** (`orchestration/templates/scout.md`), a sonnet subagent that performs all pre-flight reconnaissance:
+The Queen spawns **the Scout** (`orchestration/templates/scout.md`), an opus subagent that performs all pre-flight reconnaissance:
 
 1. Discovers tasks (from epic, explicit list, or natural-language filter)
 2. Runs `bd ready` and `bd blocked` to separate ready vs. blocked tasks
