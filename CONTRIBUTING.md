@@ -92,7 +92,7 @@ Templates live in `orchestration/templates/`. Each template has a specific reade
 | `pantry.md` | Pantry (self-read) | Prompt composition instructions |
 | `implementation.md` | Pantry | Agent prompt template with 6 mandatory steps |
 | `checkpoints.md` | Pest Control | All checkpoint definitions |
-| `reviews.md` | Pantry (review mode), `build-review-prompts.sh` | Review protocol, report format |
+| `reviews.md` | `build-review-prompts.sh` | Review protocol, report format |
 | `dirt-pusher-skeleton.md` | Queen | Minimal agent spawn template |
 | `nitpicker-skeleton.md` | Queen, `build-review-prompts.sh` | Review agent spawn template |
 | `big-head-skeleton.md` | Queen, `build-review-prompts.sh` | Consolidation agent spawn template |

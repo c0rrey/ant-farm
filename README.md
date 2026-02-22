@@ -49,7 +49,7 @@ The system has three layers: **the Queen** (the orchestrator that never touches 
 ├───────────┬─────────────┬───────────────────────────────┤
 │  Scout    │  Pantry     │  Pest Control                 │
 │  - Recon  │  - Composes │  - CCO (prompt audit)         │
-│  - Writes │   task briefs│  - WWD (scope)                │
+│  - Writes │  task briefs│  - WWD (scope)                │
 │   briefing│  - Writes   │  - DMVDC (substance)          │
 │  - Writes │    previews │  - CCB (consolidation         │
 │   metadata│             │    audit)                     │
@@ -103,7 +103,7 @@ Queen                          Pantry                    Pest Control
   │  "compose Wave N prompts"    │                           │
   │                              ├─read templates            │
   │                              ├─read task-metadata/       │
-  │                              ├─write task briefs to disk  │
+  │                              ├─write task briefs to disk │
   │                              ├─write combined previews   │
   │  ◄──return paths + done──────┤                           │
   │  (~10 lines)                 │(agent dies, context freed)│
@@ -249,7 +249,7 @@ Work is not complete until `git push` succeeds.
 
 A core design principle: the Queen **never reads source code, tests, configs, or implementation templates**. It reads only the Scout's briefing, agent notifications, commit messages, and verdict tables.
 
-Task metadata is read by the Scout, which writes per-task files and a briefing. `implementation.md` and `reviews.md` are read by the Pantry. `checkpoints.md` is read by Pest Control. The Pantry reads the Scout's pre-extracted metadata files and writes combined prompt previews to disk. Pest Control reads these previews and checkpoint criteria directly. All agents absorb the context cost so the Queen's window stays clean.
+Task metadata is read by the Scout, which writes per-task files and a briefing. `implementation.md` is read by the Pantry. `reviews.md` is read by `build-review-prompts.sh`. `checkpoints.md` is read by Pest Control. The Pantry reads the Scout's pre-extracted metadata files and writes combined prompt previews to disk. Pest Control reads these previews and checkpoint criteria directly. All agents absorb the context cost so the Queen's window stays clean.
 
 Target: finish a 40+ task session with >50% context window remaining, <10 file reads in the Queen, <20 commits.
 
@@ -257,6 +257,7 @@ Target: finish a 40+ task session with >50% context window remaining, <10 file r
 
 | Gate | What it blocks | Model |
 |------|---------------|-------|
+| **SSV** — strategy verification | Pantry spawn | haiku |
 | **CCO** — prompt audit | Agent spawn | haiku |
 | **WWD** — scope verification | Next agent in wave | haiku |
 | **DMVDC** — substance verification | Task closure | sonnet |
@@ -298,7 +299,7 @@ Custom Claude Code agent types live in `agents/` and are synced to `~/.claude/ag
 | `scout-organizer` | Bash, Read, Write, Glob, Grep | Pre-flight recon: task discovery, dependency analysis, execution strategy |
 | `pest-control` | Bash, Read, Write, Glob, Grep | Verification auditor: checkpoint audits (CCO, WWD, DMVDC, CCB) |
 | `pantry-impl` | Read, Write, Glob, Grep | Implementation prompt composer: builds task briefs and combined previews |
-| `pantry-review` | Read, Write, Glob, Grep | ~~Review prompt composer: builds review briefs and combined previews~~ **DEPRECATED** — replaced by `fill-review-slots.sh` bash script; see RULES.md Step 3b |
+| `pantry-review` | Read, Write, Glob, Grep | ~~Review prompt composer: builds review briefs and combined previews~~ **DEPRECATED** — replaced by `build-review-prompts.sh` bash script; see RULES.md Step 3b |
 | `nitpicker` | Read, Write, Edit, Bash, Glob, Grep | Code reviewer: finds issues with file:line specificity and calibrated severity |
 | `big-head` | Read, Write, Edit, Bash, Glob, Grep | Consolidation reviewer: merges and deduplicates findings across Nitpickers |
 
@@ -349,7 +350,7 @@ Informal shorthand (e.g., "templates/scout.md") is informal and always refers to
 | `orchestration/PLACEHOLDER_CONVENTIONS.md` | The Pantry, Pest Control | Placeholder syntax rules for templates and checkpoints |
 | `orchestration/templates/implementation.md` | The Pantry | Agent prompt template with 6 mandatory steps |
 | `orchestration/templates/checkpoints.md` | Pest Control | All checkpoint definitions (CCO, WWD, DMVDC, CCB) |
-| `orchestration/templates/reviews.md` | The Pantry (review mode) | Review protocol, 4 review types, report format, Big Head consolidation |
+| `orchestration/templates/reviews.md` | `build-review-prompts.sh` | Review protocol, 4 review types, report format, Big Head consolidation |
 | `orchestration/templates/pantry.md` | The Pantry (self-read at spawn) | The Pantry's own instructions |
 | `orchestration/templates/dirt-pusher-skeleton.md` | The Queen | Minimal agent spawn template |
 | `orchestration/templates/nitpicker-skeleton.md` | The Queen | Minimal review agent spawn template |

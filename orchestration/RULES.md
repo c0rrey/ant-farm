@@ -44,7 +44,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 - `orchestration/templates/pantry.md` — Pantry's instruction file
 - `orchestration/templates/implementation.md` — Implementation details (read by Pantry)
 - `orchestration/templates/checkpoints.md` — Checkpoint definitions (read by Pest Control)
-- `orchestration/templates/reviews.md` — Review protocol (read by Pantry in review mode)
+- `orchestration/templates/reviews.md` — Review protocol (read by build-review-prompts.sh)
 - `orchestration/reference/dependency-analysis.md` — Used by Scout for conflict analysis
 - `orchestration/reference/known-failures.md` — Reference material; for post-mortem only
 - `orchestration/_archive/*` — Deprecated documents; stale instructions that contradict current workflows. **No agent should read these.**
@@ -143,10 +143,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             - Commit range: round 1 = first session commit..HEAD; round 2+ = first fix commit..HEAD
             - File list: `git diff --name-only <commit-range>` (deduplicated)
             - Task IDs: round 1 = all task IDs; round 2+ = fix task IDs only
-            - Timestamp: The Queen generates ONE timestamp at the start of Step 3b using `date +%Y%m%d-%H%M%S` format (YYYYMMDD-HHmmss).
-              This shell variable corresponds to the canonical `{REVIEW_TIMESTAMP}` placeholder defined in
-              `orchestration/PLACEHOLDER_CONVENTIONS.md` (Tier 1 uppercase). Use `${TIMESTAMP}` in bash
-              code blocks; use `{REVIEW_TIMESTAMP}` when referencing the placeholder in prose or templates.
+            - Timestamp: The Queen generates ONE timestamp at the start of Step 3b using `date +%Y%m%d-%H%M%S` format (YYYYMMDD-HHmmss). Store as `{TIMESTAMP}` (shell: `${TIMESTAMP}`):
               ```bash
               TIMESTAMP=$(date +%Y%m%d-%H%M%S)
               ```
@@ -154,7 +151,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             **3b-i.5. Validate review inputs** before proceeding:
             ```bash
             # REVIEW_ROUND: must be a positive integer
-            if ! echo "${REVIEW_ROUND}" | grep -qE '^[1-9][0-9]*$'; then
+            if ! [[ "${REVIEW_ROUND}" =~ ^[1-9][0-9]*$ ]]; then
               echo "ERROR: REVIEW_ROUND is missing or non-numeric (got: '${REVIEW_ROUND}'). Expected: integer >= 1." >&2
               exit 1
             fi
@@ -169,7 +166,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             fi
 
             # TASK_IDS: must be non-empty (at least one task ID)
-            if [ -z "$(echo "${TASK_IDS}" | tr -s ' \n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')" ]; then
+            if [[ -z "${TASK_IDS//[[:space:]]/}" ]]; then
               echo "ERROR: TASK_IDS is empty. Round 1 requires all task IDs; round 2+ requires fix task IDs. Verify session state is populated." >&2
               exit 1
             fi
@@ -378,7 +375,7 @@ Every `Task` tool call the Queen makes MUST include the `model` parameter from t
 
 At session start (Step 0), generate a session ID and create the session artifact directory:
 
-    SESSION_ID=$(echo "$$-$(date +%s%N)-$RANDOM" | shasum | head -c 8)
+    SESSION_ID=$(echo "$$-$(date +%s)-$RANDOM" | shasum | head -c 8)
     SESSION_DIR=".beads/agent-summaries/_session-${SESSION_ID}"
     mkdir -p "${SESSION_DIR}"/{task-metadata,previews,prompts,pc,summaries}
 
@@ -437,7 +434,7 @@ This prevents collisions when multiple Queens run in the same repo.
 | Big Head skeleton for consolidation (Step 3b) | orchestration/templates/big-head-skeleton.md |
 | Implementation details (read by the Pantry) | orchestration/templates/implementation.md |
 | Checkpoint details (read by Pest Control) | orchestration/templates/checkpoints.md |
-| Review details (read by the Pantry) | orchestration/templates/reviews.md |
+| Review details (read by build-review-prompts.sh) | orchestration/templates/reviews.md |
 | Pre-flight recon (Step 1) | orchestration/templates/scout.md |
 | Conflict patterns (read by the Scout) | orchestration/reference/dependency-analysis.md |
 | Diagnosing a failure or post-mortem | orchestration/reference/known-failures.md |
