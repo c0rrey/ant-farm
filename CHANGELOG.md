@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-02-22 — Session db790c8d + e7ff7c0d (P1 Bug Fixes + Deferred Reviews)
+
+### Summary
+
+4 P1 bug fixes completed in session db790c8d, with reviews deferred and completed in continuation session e7ff7c0d. 1 P2 review finding fixed (WAVE_WWD_PASS missing from crash recovery). Reviews terminated at round 2 (0 P1, 1 dismissed P2 false positive). 6 P3 findings filed. 5 implementation commits.
+
+### Implementation (Session db790c8d — 2 waves, 4 tasks)
+
+- **x8iw**: fix: update Scout and Pantry model references from sonnet to opus (GLOSSARY.md, README.md, scout-organizer.md)
+- **h94m**: docs: correct checkpoints.md Pest Control architecture to direct execution
+- **wg2i**: fix: regenerate pre-push hook with non-fatal sync, fix CONTRIBUTING.md sync docs
+- **zuae**: fix: document WWD batch vs serial execution modes in RULES.md + checkpoints.md
+
+### Review Fix (Session e7ff7c0d)
+
+- **951b**: fix: add WAVE_WWD_PASS to parse-progress-log.sh STEP_KEYS (P2 — unmet crash recovery criterion)
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 6 files, 4 tasks | 0 | 1 | 6 | PASS WITH ISSUES |
+| 2 | 1 file, 1 fix task | 0 | 1 (dismissed) | 0 | Terminated |
+
+7 review beads filed in round 1 (1 P2 + 6 P3). Round 2 P2 dismissed as false positive (reviewer misread acceptance criteria). P3s remain open for future work.
+
 ## 2026-02-21 — Session 068ecc83 (Documentation Cleanup + Pantry-Review Deprecation)
 
 ### Summary
