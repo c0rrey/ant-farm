@@ -315,8 +315,9 @@ For each group of related findings across reports in the current round:
 - Beads filed during session review are standalone
 - Do NOT assign them to a specific epic via `bd dep add --type parent-child`
 - They represent session-wide findings, not epic-specific work
-- Command: `bd create --type=bug --priority=<combined-priority> --title="<root cause title>"`
-- Then update with full description including all affected surfaces
+- Command: use `bd create --body-file` pattern (see big-head-skeleton.md step 10 for canonical example)
+- Descriptions must include: root cause with file:line refs, affected surfaces, fix, changes needed, acceptance criteria
+- Before filing: run `bd list --status=open -n 0 --short` to check for existing duplicates
 - Add labels: `bd label add <id> <primary-review-type>`
 - For round 2+: P3 findings may be auto-filed if Pest Control confirms via checkpoint validation
 
