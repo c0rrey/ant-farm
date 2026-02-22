@@ -194,52 +194,39 @@ spawn(
 
 After all implementation agents complete:
 
-### Review Wave (Sequential)
+### Review Wave (Parallel TeamCreate)
 
-1. **Clarity Review**
-   - Agent: refactoring-specialist (sonnet)
-   - Files: All changed files
-   - Output: P3 clarity bugs
-   - Estimated: 15 min
+Reviews run as a single parallel Nitpicker team spawned via TeamCreate (per RULES.md Step 3b).
 
-2. **Edge Cases Review**
-   - Agent: code-reviewer (sonnet)
-   - Files: All changed files
-   - Output: P2 edge case bugs
-   - Estimated: 20 min
+**Round 1 team composition (6 members):**
+- 4 Nitpicker reviewers (Clarity, Edge Cases, Correctness, Drift) — run concurrently
+- 1 Big Head (deduplication, root-cause grouping, issue filing)
+- 1 Pest Control (CCB verification — added as team member so Big Head can SendMessage to it)
 
-3. **Correctness Review**
-   - Agent: code-reviewer (sonnet)
-   - Files: All changed files + acceptance criteria
-   - Output: P1-P2 correctness bugs
-   - Estimated: 25 min
+**Round 2+ team composition (4 members):**
+- 2 Nitpicker reviewers (Correctness + Edge Cases only)
+- 1 Big Head
+- 1 Pest Control
 
-4. **Drift Review**
-   - Agent: code-reviewer (sonnet)
-   - Files: All changed files
-   - Output: P3 stale cross-file references
-   - Estimated: 30 min
+**Pre-spawn gate:** CCO must PASS before the Nitpicker team is spawned.
 
-**Total review time:** ~90 minutes
-**Expected output:** 30-50 new beads filed
+**Output:** Big Head consolidated summary written to `${SESSION_DIR}/review-reports/review-consolidated-{timestamp}.md`
 
 ### Review Follow-Up Decision
 
-**If <5 P1/P2 issues found:**
-- Document in CHANGELOG
-- Proceed to push
-- Address in future session
+Per RULES.md Step 3c — triage is root-cause-based, not raw-issue-count-based:
 
-**If 5-15 P1/P2 issues found:**
-- Ask user: Fix now or later?
-- If now: Group by file and spawn fix agents
-- If later: Document and push
+**If zero P1 and zero P2 findings:** Proceed directly to Step 4 (documentation).
 
-**If >15 P1/P2 issues found:**
-- Quality gate failure
-- Must address before push
-- Group and spawn fix agents
-- May need to re-run reviews after fixes
+**Auto-fix (round 1, <=5 root causes):** Spawn fix tasks automatically without user prompt. After fixes, re-run reviews at round N+1.
+
+**Escalation (round 1, >5 root causes):** Present findings to user. Await "fix now" or "defer" decision.
+
+**Round 2+:** Present findings to user. Await "fix now" or "defer" decision.
+
+**Round cap:** If current round >= 4 and P1/P2 findings are still present, do NOT start another round — present full round history and await explicit user decision.
+
+See RULES.md Step 3c for the complete triage decision tree including session-state update requirements and progress log entries.
 
 ---
 
