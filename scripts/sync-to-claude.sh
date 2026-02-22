@@ -61,6 +61,11 @@ fi
 
 echo "[ant-farm] Sync complete."
 
+# Preflight: code-reviewer.md must be manually installed; warn if missing.
+if [ ! -f "${HOME}/.claude/agents/code-reviewer.md" ]; then
+    echo "[ant-farm] WARNING: ~/.claude/agents/code-reviewer.md is missing -- Nitpicker team members will fail to spawn. Copy it manually to ~/.claude/agents/code-reviewer.md before starting a review session." >&2
+fi
+
 if [ "$AGENTS_CHANGED" = true ]; then
     echo ""
     echo "[ant-farm] Agent files were updated. Reload Claude Code for changes to take effect."
