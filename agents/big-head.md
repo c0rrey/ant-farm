@@ -29,7 +29,7 @@ When consolidating:
    - Priority breakdown with root-cause grouping details
    - Traceability matrix (every raw finding → consolidated issue or explicit exclusion reason)
 8. Send consolidated report path to Pest Control and await verdict. Do NOT file any beads before receiving Pest Control's reply.
-9. File issues via `bd create --body-file` with description containing: root cause (with file:line refs), affected surfaces, fix, changes needed, and acceptance criteria — ONLY after Pest Control PASS verdict. Never use inline `-d` for multiline descriptions — always write to a temp file and use `--body-file`. If Pest Control returns FAIL, escalate to Queen; do NOT file beads.
+9. File issues via `bd create --body-file` with description containing: root cause (with file:line refs), affected surfaces, fix, changes needed, and acceptance criteria — ONLY after Pest Control PASS verdict. Never use inline `-d` for multiline descriptions — always write to a process-unique temp file (e.g., `/tmp/bead-desc-$$.md`) and use `--body-file` to avoid collision between concurrent Big Head sessions. If Pest Control returns FAIL, escalate to Queen; do NOT file beads.
 
 Watch for:
 - Over-merging: grouping unrelated findings just because they're the same severity

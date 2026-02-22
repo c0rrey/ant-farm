@@ -585,6 +585,13 @@ done
 
 if [ $REPORTS_FOUND -eq 0 ]; then
   echo "TIMEOUT: Not all expected reports arrived within ${POLL_TIMEOUT_SECS}s"
+  cat > "$CONSOLIDATED_OUTPUT_PATH" << 'EOF'
+# Big Head Consolidation — BLOCKED: Missing Nitpicker Reports
+**Status**: FAILED — prerequisite gate timeout
+**Timestamp**: <current ISO 8601 timestamp>
+**Reason**: Not all expected Nitpicker reports arrived within the polling timeout. Check the list of missing reports above.
+**Recovery**: Check reviewer logs. Once all expected reports are present, re-spawn Big Head consolidation.
+EOF
   exit 1
 fi
 ```
@@ -676,10 +683,13 @@ For each group of related findings across all reviews:
 Before writing the consolidated summary or filing any beads, check for open beads that already cover your root causes. This prevents duplicate tracking of issues found in previous sessions.
 
 ```bash
-bd list --status=open -n 0 --short
+if ! bd list --status=open -n 0 --short > /tmp/open-beads-$$.txt 2>&1; then
+  echo "ERROR: bd list failed (lock contention or bd error). Aborting bead filing to prevent duplicates."
+  exit 1
+fi
 ```
 
-For each root cause group, compare against existing bead titles:
+For each root cause group, compare against existing bead titles (from `/tmp/open-beads-$$.txt`):
 
 - **Exact title match** (case-insensitive): Do NOT file. Log in the summary: "Dedup: RC-N matches existing bead ant-farm-XXXX — skipped."
 - **Similar title** (same root cause, different wording): Run `bd search "<key phrases>" --status open` to confirm. If the existing bead covers the same root cause, do NOT file. Log the match and the existing bead ID.
@@ -763,6 +773,16 @@ SendMessage(
   ```
 - Wait an additional 60 seconds after the retry.
 - If still no response after the retry window, **escalate to the Queen immediately**:
+  ```bash
+  cat > "$CONSOLIDATED_OUTPUT_PATH" << 'EOF'
+  # Big Head Consolidation — BLOCKED: Pest Control Timeout
+  **Status**: FAILED — Pest Control checkpoint unavailable
+  **Timestamp**: <current ISO 8601 timestamp>
+  **Reason**: Pest Control did not respond after 2 attempts (120s total). Consolidated report was written but checkpoints could not be validated.
+  **Recovery**: Re-spawn Pest Control manually and provide the consolidated report path, or accept consolidated findings without checkpoint validation.
+  EOF
+  ```
+  Then send to Queen:
   ```
   Big Head checkpoint escalation to Queen:
   - Pest Control verdict: UNAVAILABLE (no response after 2 attempts, 120s total)
@@ -791,7 +811,7 @@ File ONE bead per root cause (not per finding, not per review).
 **Important**: Beads filed during session review are standalone. Do NOT assign them to a specific epic via `bd dep add --type parent-child`. They represent session-wide findings, not epic-specific work.
 
 ```bash
-cat > /tmp/bead-desc.md << 'BEAD_DESC'
+cat > /tmp/bead-desc-$$.md << 'BEAD_DESC'
 ## Root Cause
 <What is specifically wrong — cite the code path, pattern, or design flaw.
 Reference file:line locations where the issue originates. This must be
@@ -814,9 +834,9 @@ substantive analysis, NOT a restatement of the title.>
 - [ ] <Third independently testable criterion>
 BEAD_DESC
 
-bd create --type=bug --priority=<combined-priority> --title="<root cause title>" --body-file /tmp/bead-desc.md
+bd create --type=bug --priority=<combined-priority> --title="<root cause title>" --body-file /tmp/bead-desc-$$.md
 bd label add <new-bead-id> <primary-review-type>
-rm -f /tmp/bead-desc.md
+rm -f /tmp/bead-desc-$$.md
 ```
 
 ### P3 Auto-Filing (Round 2+ Only)
@@ -833,7 +853,7 @@ In round 2+, Big Head auto-files P3 findings to the "Future Work" epic without u
 
 2. For each P3 root cause:
    ```bash
-   cat > /tmp/bead-desc.md << 'BEAD_DESC'
+   cat > /tmp/bead-desc-$$.md << 'BEAD_DESC'
    ## Root Cause
    <What is wrong — file:line refs to the primary location.>
 
@@ -844,9 +864,9 @@ In round 2+, Big Head auto-files P3 findings to the "Future Work" epic without u
    - [ ] <testable criterion>
    BEAD_DESC
 
-   bd create --type=bug --priority=3 --title="<root cause title>" --body-file /tmp/bead-desc.md
+   bd create --type=bug --priority=3 --title="<root cause title>" --body-file /tmp/bead-desc-$$.md
    bd dep add <new-bead-id> <future-work-epic-id> --type parent-child
-   rm -f /tmp/bead-desc.md
+   rm -f /tmp/bead-desc-$$.md
    ```
 
 3. In the consolidated summary, list P3 beads in a separate section:

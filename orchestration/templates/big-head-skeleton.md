@@ -88,13 +88,15 @@ This ensures downstream consumers (Queen, Pest Control) have a written record of
 Your workflow:
 1. Verify all expected report files exist (4 for round 1; 2 for round 2+) — follow the missing-report handling protocol in your consolidation brief (Step 0a)
    - The brief is authoritative for this step: it specifies the polling timeout, error return format, and failure conditions
-   - **On timeout (REPORTS_FOUND=0)**: Before returning the error to the Queen, write a failure artifact to `{CONSOLIDATED_OUTPUT_PATH}`:
-     ```
+   - **On timeout (REPORTS_FOUND=0)**: Before returning the error to the Queen, write a failure artifact using this bash block:
+     ```bash
+     cat > "$CONSOLIDATED_OUTPUT_PATH" << 'EOF'
      # Big Head Consolidation — BLOCKED: Missing Nitpicker Reports
      **Status**: FAILED — prerequisite gate timeout
      **Timestamp**: <current ISO 8601 timestamp>
      **Reason**: Not all expected Nitpicker reports arrived within 30 seconds. <list missing reports>
      **Recovery**: Check reviewer logs. Once all expected reports are present, re-spawn Big Head consolidation.
+     EOF
      ```
    - After writing the failure artifact, return the error to the Queen as specified in the brief
    - Do NOT proceed to read reports or perform consolidation
@@ -105,9 +107,12 @@ Your workflow:
 6. For each merge, document WHY findings share a root cause
 7. **Cross-session dedup**: Before writing the summary or filing beads, check for existing open beads that already cover your root causes:
    ```bash
-   bd list --status=open -n 0 --short
+   if ! bd list --status=open -n 0 --short > /tmp/open-beads-$$.txt 2>&1; then
+     echo "ERROR: bd list failed (lock contention or bd error). Aborting bead filing to prevent duplicates."
+     exit 1
+   fi
    ```
-   For each root cause group, compare against existing bead titles:
+   For each root cause group, compare against existing bead titles (from `/tmp/open-beads-$$.txt`):
    - **Exact title match** (case-insensitive): Do NOT file. Log in the summary: "Dedup: RC-N matches existing bead ant-farm-XXXX — skipped."
    - **Similar title** (same root cause, different wording): Run `bd search "<key phrases>" --status open` to confirm. If the existing bead covers the same root cause, do NOT file. Log the match.
    - **No match found**: Mark for filing.
@@ -119,7 +124,7 @@ Your workflow:
     - Wait up to 60 seconds; retry once if no response; escalate to Queen after 120s total with no reply
     - **PASS**: File ONE bead per root cause (skip any marked as duplicates in step 7). For each bead, write a description to a temp file, then create:
       ```bash
-      cat > /tmp/bead-desc.md << 'BEAD_DESC'
+      cat > /tmp/bead-desc-$$.md << 'BEAD_DESC'
       ## Root Cause
       <What is specifically wrong — cite the code path, pattern, or design flaw.
       Reference file:line locations where the issue originates. This must be
@@ -142,9 +147,9 @@ Your workflow:
       - [ ] <Third independently testable criterion>
       BEAD_DESC
 
-      bd create --type=bug --priority=<P> --title="<title>" --body-file /tmp/bead-desc.md
+      bd create --type=bug --priority=<P> --title="<title>" --body-file /tmp/bead-desc-$$.md
       bd label add <new-bead-id> <primary-review-type>
-      rm -f /tmp/bead-desc.md
+      rm -f /tmp/bead-desc-$$.md
       ```
     - **FAIL**: Escalate to Queen with specifics (which findings failed, why); file beads ONLY for validated findings
     - **TIMEOUT/UNAVAILABLE**: Escalate to Queen with consolidated report path; do NOT file beads
@@ -152,7 +157,7 @@ Your workflow:
     - Find or create the epic: `bd list --status=open | grep -i "future work"` or `bd epic create --title="Future Work" --description="Low-priority polish and improvements from review sessions"`
     - For each P3 (skip any marked as duplicates in step 7):
       ```bash
-      cat > /tmp/bead-desc.md << 'BEAD_DESC'
+      cat > /tmp/bead-desc-$$.md << 'BEAD_DESC'
       ## Root Cause
       <What is wrong — file:line refs to the primary location.>
 
@@ -163,9 +168,9 @@ Your workflow:
       - [ ] <testable criterion>
       BEAD_DESC
 
-      bd create --type=bug --priority=3 --title="<title>" --body-file /tmp/bead-desc.md
+      bd create --type=bug --priority=3 --title="<title>" --body-file /tmp/bead-desc-$$.md
       bd dep add <new-bead-id> <epic-id> --type parent-child
-      rm -f /tmp/bead-desc.md
+      rm -f /tmp/bead-desc-$$.md
       ```
     - Mark P3s as "auto-filed, no action required" in the consolidated summary
     - Do NOT include P3 findings in the fix-or-defer prompt to the Queen
