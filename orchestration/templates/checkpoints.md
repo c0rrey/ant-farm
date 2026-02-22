@@ -24,13 +24,16 @@ All checkpoint verifications (SSV, CCO, WWD, DMVDC, CCB) are executed by **Pest 
 - Consolidation integrity audits (CCB)
 
 **Artifact naming conventions:**
-- **Task-specific checkpoints (CCO, WWD, DMVDC for Dirt Pushers):** `pc-{TASK_SUFFIX}-{checkpoint}-{timestamp}.md`
-  - Example: `pc-74g1-cco-20260215-001145.md`
+- **Task-specific checkpoints (WWD, DMVDC for Dirt Pushers):** `pc-{TASK_SUFFIX}-{checkpoint}-{timestamp}.md`
+  - Example: `pc-74g1-wwd-20260215-001045.md`
   - Example: `pc-74g1-dmvdc-20260215-003422.md`
-- **Session-wide checkpoints (SSV, CCO-review, CCB):** `pc-session-{checkpoint}-{timestamp}.md`
+- **Session-wide checkpoints (SSV, CCO for Dirt Pushers, CCO-review, CCB):** `pc-session-{checkpoint}-{timestamp}.md`
   - Example: `pc-session-ssv-20260215-001045.md`
+  - Example: `pc-session-cco-impl-20260215-001145.md` (Dirt Pusher CCO: Queen batches all wave prompts into one audit)
   - Example: `pc-session-cco-review-20260215-001145.md`
   - Example: `pc-session-ccb-20260215-010520.md`
+  - Note: Dirt Pusher CCO uses session-wide naming because the Queen audits all prompts for a wave in a single CCO run. Per-task CCO naming (`pc-{TASK_SUFFIX}-cco-{timestamp}.md`) applies only when auditing a single Dirt Pusher prompt in isolation (rare).
+- **Historical (pre-_session-068ecc83):** Earlier sessions used varied naming formats that do not match the conventions above. Common patterns included wave-based checkpoint letters (`pest-control-{session}-checkpoint-{A|B}-{timestamp}.md`), epic-scoped directories (`{epic}/verification/pc/` instead of `{SESSION_DIR}/pc/`), and non-standardized prefixes (`pc-review-cco-`, `pest-control-`). `_session-068ecc83` is the first session to use the current standard fully. Artifacts from earlier sessions are expected to diverge from the current convention; do not treat those divergences as errors.
 
 All checkpoints write to `{SESSION_DIR}/pc/`.
 
@@ -175,7 +178,14 @@ Do NOT execute the prompt — only verify its contents.
 > Recommendation: Rewrite prompt with actual file paths (e.g., `build.py:L200-215`) and explicit scope boundaries before re-running CCO.
 
 Write your verification report to:
-`{SESSION_DIR}/pc/pc-{TASK_SUFFIX}-cco-{timestamp}.md`
+
+**Batch mode (most common):** `{SESSION_DIR}/pc/pc-session-cco-impl-{timestamp}.md`
+- Use when the Queen runs CCO over all Dirt Pusher prompts for a wave in a single audit.
+- The suffix `impl` distinguishes this artifact from the Nitpicker CCO (`cco-review`) in the same session.
+
+**Per-task mode (single-prompt audit):** `{SESSION_DIR}/pc/pc-{TASK_SUFFIX}-cco-{timestamp}.md`
+- Use only when auditing a single Dirt Pusher prompt in isolation.
+- Example: `{SESSION_DIR}/pc/pc-74g1-cco-{timestamp}.md`
 
 Where:
 - `{TASK_SUFFIX}`: suffix portion of bead ID with no project prefix (e.g., `74g1` from `my-project-74g.1`)
@@ -469,10 +479,10 @@ Search the report for `bd create`, `bd update`, `bd close`, or bead ID patterns 
 - **FAIL: <list all failures with evidence>**
 
 Write your verification report to:
-`{SESSION_DIR}/pc/pc-{TASK_SUFFIX}-dmvdc-review-{timestamp}.md`
+`{SESSION_DIR}/pc/pc-{TASK_SUFFIX}-dmvdc-{timestamp}.md`
 
 Where:
-- `{TASK_SUFFIX}`: Nitpicker task suffix (e.g., `review-clarity`, `review-edge`)
+- `{TASK_SUFFIX}`: Nitpicker review type (e.g., `review-correctness`, `review-edge-cases`, `review-clarity`, `review-excellence`)
 - `{SESSION_DIR}`: session artifact directory (e.g., `.beads/agent-summaries/_session-abc123`)
 - timestamp: format defined in **Timestamp format** (Pest Control Overview)
 ```
