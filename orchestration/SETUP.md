@@ -22,10 +22,25 @@ For details on what gets synced, how to back up `~/.claude/`, and how to uninsta
 For complete details, see `docs/installation-guide.md`. Quick reference:
 
 ```bash
-./scripts/install-hooks.sh          # Install pre-push hook
+./scripts/install-hooks.sh          # Install both git hooks (see below)
 ./scripts/sync-to-claude.sh         # Sync to ~/.claude/
 # Then restart Claude Code
 ```
+
+`install-hooks.sh` installs two hooks:
+- **pre-push** — runs `sync-to-claude.sh` to sync agent files on every push
+- **pre-commit** — runs `scripts/scrub-pii.sh` to strip email addresses from `.beads/issues.jsonl` before each commit (PII scrubbing)
+
+Both hooks are required. Re-run `install-hooks.sh` after pulling upstream changes to get updated hook behavior.
+
+**Note on `code-reviewer` agent**: The `code-reviewer` agent type (used by Nitpicker reviewers in the
+review pipeline) is a custom Claude Code agent. It is NOT deployed by `sync-to-claude.sh` because it
+lives in the user's global `~/.claude/agents/` directory, not in this repo's `agents/` folder. If you
+are setting up this orchestration system on a new machine, you must copy or create
+`~/.claude/agents/code-reviewer.md` manually. You can find the source file in the original
+repository's `~/.claude/agents/code-reviewer.md` on the machine where the system was first configured.
+Without this file, the Nitpicker team members will fail to spawn (Claude Code will not recognize the
+`code-reviewer` agent type).
 
 **Step 2: Add orchestration reference to project CLAUDE.md**
 

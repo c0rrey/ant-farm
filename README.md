@@ -7,7 +7,7 @@ A multi-agent orchestration and quality review system for Claude Code. Coordinat
 1. **Clone and install hooks**
    ```bash
    git clone <repo-url> && cd ant-farm
-   ./scripts/install-hooks.sh
+   ./scripts/install-hooks.sh   # installs pre-push (sync) + pre-commit (PII scrub) hooks
    ./scripts/sync-to-claude.sh
    ```
 
