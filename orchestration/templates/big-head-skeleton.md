@@ -17,7 +17,7 @@ Do NOT use the Task tool for Big Head — it runs inside the same TeamCreate cal
 **Step 1 — Fill placeholders before building the TeamCreate call.**
 Replace `{PLACEHOLDER}` values (uppercase) in the agent-facing template below:
 - `{MODEL}`: Big Head model (specified in the Big Head Consolidation Protocol section of orchestration/templates/reviews.md; currently `opus`)
-- `{DATA_FILE_PATH}`: Big Head consolidation brief written by the Pantry (review mode)
+- `{DATA_FILE_PATH}`: Big Head consolidation brief written by build-review-prompts.sh
 - `{CONSOLIDATED_OUTPUT_PATH}`: `{SESSION_DIR}/review-reports/review-consolidated-{TIMESTAMP}.md`
 
 **Step 2 — Create the Nitpicker team.**
@@ -55,7 +55,7 @@ TeamCreate(
 
 **Step 3 — Embed report paths in Big Head's spawn prompt.**
 Rather than sending a follow-up SendMessage, include the expected report paths directly in Big Head's
-initial prompt (the agent-facing template below). The Pantry writes all report paths into
+initial prompt (the agent-facing template below). build-review-prompts.sh writes all report paths into
 `{DATA_FILE_PATH}`, so Big Head discovers them from the brief. No SendMessage step is required.
 
 The agent-facing text starts below the `---` separator. Do NOT include this instruction block in the TeamCreate prompt.

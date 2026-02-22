@@ -228,7 +228,15 @@ The Queen's window is restricted to prevent context bloat, but certain files are
               tmux new-window -t "${TMUX_SESSION}" -n "${DUMMY_WINDOW}"
               tmux send-keys -t "${TMUX_SESSION}:${DUMMY_WINDOW}" \
                 "cd $(pwd) && claude" Enter
-              sleep 5
+              # Wait for claude to be ready (up to 15s) before sending the prompt.
+              # A fixed sleep risks sending keys before the pane is responsive,
+              # silently losing the entire prompt.
+              for i in $(seq 1 15); do
+                if tmux capture-pane -t "${TMUX_SESSION}:${DUMMY_WINDOW}" -p 2>/dev/null | grep -q '>'; then
+                  break
+                fi
+                sleep 1
+              done
               tmux send-keys -t "${TMUX_SESSION}:${DUMMY_WINDOW}" \
                 "Perform a correctness review of the completed work. Step 0: Read your full review brief from ${SESSION_DIR}/prompts/review-dummy.md (Format: markdown. Sections: Scope, Files, Focus, Detailed Instructions.) Follow the instructions in the brief exactly, including the report format and output path. Write your report to ${SESSION_DIR}/review-reports/dummy-review-${TIMESTAMP}.md" Enter
             fi

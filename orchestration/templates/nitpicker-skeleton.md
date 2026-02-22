@@ -8,9 +8,9 @@ The agent-facing text starts below the `---` separator. Do NOT include this inst
 Placeholders:
 - {REVIEW_TYPE}: clarity / edge-cases / correctness / drift
   (These are the canonical short names. See "Review Type Canonical Names" in reviews.md for the full short-name → display-title mapping.)
-- {DATA_FILE_PATH}: from the Pantry (review mode) verdict table
-- {REPORT_OUTPUT_PATH}: from the Pantry verdict table (session-scoped)
-- {REVIEW_ROUND}: 1, 2, 3, ... (determines scope instructions; filled by Pantry)
+- {DATA_FILE_PATH}: from build-review-prompts.sh output table
+- {REPORT_OUTPUT_PATH}: from build-review-prompts.sh output table (session-scoped)
+- {REVIEW_ROUND}: 1, 2, 3, ... (determines scope instructions; filled by build-review-prompts.sh)
 
 ## Template (send everything below this line)
 
