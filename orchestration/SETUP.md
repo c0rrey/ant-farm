@@ -58,7 +58,7 @@ Follow orchestration docs for pre-flight planning.
 
 ```bash
 # Copy from reference project:
-cp orchestration/SESSION_PLAN_TEMPLATE.md .
+cp orchestration/templates/SESSION_PLAN_TEMPLATE.md .
 
 # Customize:
 # - Line 30-35: List your high-conflict files
@@ -118,7 +118,7 @@ For projects needing customization:
 Copy reference template and customize for your project:
 
 ```bash
-cp orchestration/SESSION_PLAN_TEMPLATE.md .
+cp orchestration/templates/SESSION_PLAN_TEMPLATE.md .
 ```
 
 Edit to match your project:
