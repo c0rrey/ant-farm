@@ -32,6 +32,15 @@ Your workflow:
 4. Write your report to {REPORT_OUTPUT_PATH}
 5. Message relevant Nitpickers if you find cross-domain issues
 
+**Cross-review messaging protocol**:
+When you find something that clearly belongs to another reviewer's domain, message them:
+- To Clarity: "Found misleading comment in file.py:L42 — may want to review."
+- To Edge Cases: "Found unvalidated external input at script.sh:L88 — could be boundary issue."
+- To Correctness: "Logic at rules.md:L120 may not satisfy acceptance criterion 3 — check bd show <task-id>."
+- To Excellence: "Function at pantry.md:L200 is 80 lines and deeply nested — worth an excellence look."
+Do NOT message for status updates. Do NOT report the finding yourself AND message — pick one owner.
+Log all sent/received messages in your report's Cross-Review Messages section.
+
 Your report MUST include these sections (see brief for full format):
 - **Findings Catalog**: each finding with file:line, severity, category, description, suggested fix
 - **Preliminary Groupings**: findings grouped by root cause

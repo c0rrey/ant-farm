@@ -7,13 +7,14 @@
 # (commit range, changed files, task IDs, timestamp).
 #
 # Usage:
-#   compose-review-skeletons.sh <SESSION_DIR> <REVIEWS_MD_PATH> <NITPICKER_SKELETON_PATH> <BIG_HEAD_SKELETON_PATH>
+#   compose-review-skeletons.sh <SESSION_DIR> <REVIEWS_MD_PATH> <NITPICKER_SKELETON_PATH> <BIG_HEAD_SKELETON_PATH> <FOCUS_AREAS_PATH>
 #
 # Arguments:
 #   SESSION_DIR              — session artifact directory (e.g. .beads/agent-summaries/_session-abc123)
 #   REVIEWS_MD_PATH          — path to orchestration/templates/reviews.md (runtime: ~/.claude/orchestration/templates/reviews.md)
 #   NITPICKER_SKELETON_PATH  — path to orchestration/templates/nitpicker-skeleton.md
 #   BIG_HEAD_SKELETON_PATH   — path to ~/.claude/orchestration/templates/big-head-skeleton.md
+#   FOCUS_AREAS_PATH         — path to orchestration/templates/review-focus-areas.md
 #
 # Outputs (written to {SESSION_DIR}/review-skeletons/):
 #   skeleton-clarity.md
@@ -32,9 +33,9 @@ set -euo pipefail
 # Argument validation
 # ---------------------------------------------------------------------------
 
-if [ $# -ne 4 ]; then
-    echo "ERROR: compose-review-skeletons.sh requires exactly 4 arguments." >&2
-    echo "Usage: $0 <SESSION_DIR> <REVIEWS_MD_PATH> <NITPICKER_SKELETON_PATH> <BIG_HEAD_SKELETON_PATH>" >&2
+if [ $# -ne 5 ]; then
+    echo "ERROR: compose-review-skeletons.sh requires exactly 5 arguments." >&2
+    echo "Usage: $0 <SESSION_DIR> <REVIEWS_MD_PATH> <NITPICKER_SKELETON_PATH> <BIG_HEAD_SKELETON_PATH> <FOCUS_AREAS_PATH>" >&2
     exit 1
 fi
 
@@ -42,8 +43,9 @@ SESSION_DIR="$1"
 REVIEWS_MD="$2"
 NITPICKER_SKELETON="$3"
 BIG_HEAD_SKELETON="$4"
+FOCUS_AREAS="$5"
 
-for f in "$REVIEWS_MD" "$NITPICKER_SKELETON" "$BIG_HEAD_SKELETON"; do
+for f in "$REVIEWS_MD" "$NITPICKER_SKELETON" "$BIG_HEAD_SKELETON" "$FOCUS_AREAS"; do
     if [ ! -f "$f" ]; then
         echo "ERROR: Source file not found: $f" >&2
         exit 1
@@ -74,6 +76,27 @@ mkdir -p "$SKELETON_DIR" || {
 extract_agent_section() {
     local file="$1"
     awk '/^---$/{count++; next} count>=1{print}' "$file"
+}
+
+# ---------------------------------------------------------------------------
+# Helper: extract a per-type focus block from review-focus-areas.md.
+# Prints all lines between <!-- FOCUS: {type} --> and <!-- /FOCUS: {type} -->
+# (delimiter lines excluded). Exits with error if the block is not found.
+# ---------------------------------------------------------------------------
+extract_focus_block() {
+    local focus_file="$1"
+    local review_type="$2"
+    local block
+    block="$(awk -v type="$review_type" '
+        $0 ~ "<!-- FOCUS: " type " -->" { found=1; next }
+        $0 ~ "<!-- /FOCUS: " type " -->" { found=0; next }
+        found { print }
+    ' "$focus_file")"
+    if [ -z "$block" ]; then
+        echo "ERROR: No focus block found for review type '${review_type}' in ${focus_file}" >&2
+        exit 1
+    fi
+    printf '%s' "$block"
 }
 
 # ---------------------------------------------------------------------------
@@ -110,6 +133,11 @@ write_nitpicker_skeleton() {
 
     # Then substitute the now-double-braced {{REVIEW_TYPE}} with the actual value.
     skeleton_body="$(printf '%s\n' "$skeleton_body" | sed "s/{{REVIEW_TYPE}}/${review_type}/g")"
+
+    # Extract the per-type focus block and prepend to skeleton body
+    local focus_block
+    focus_block="$(extract_focus_block "$FOCUS_AREAS" "$review_type")"
+    skeleton_body="$(printf '%s\n\n%s' "$focus_block" "$skeleton_body")"
 
     # Build the header comment so Pest Control (CCO) and future readers understand provenance
     {
