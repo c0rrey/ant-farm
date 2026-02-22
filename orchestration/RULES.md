@@ -184,6 +184,9 @@ The Queen's window is restricted to prevent context bloat, but certain files are
               "~/.claude/orchestration/templates/nitpicker-skeleton.md" \
               "~/.claude/orchestration/templates/big-head-skeleton.md"
             ```
+            Note: `<changed-files>` and `<task-IDs>` accept an `@filepath` prefix to read multiline
+            values from a file (e.g., `@/tmp/changed-files.txt`). Use this to avoid shell quoting
+            issues when the list contains many entries or paths with spaces.
             On exit 0: prompts/previews written to `${SESSION_DIR}/prompts/` and `${SESSION_DIR}/previews/`.
             On non-zero: surface stderr to user — do NOT proceed.
 
@@ -238,6 +241,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             - Replace `<N>` in `DUMMY_WINDOW` with the actual round number.
             - The dummy reviewer runs in its own tmux pane; the user observes context usage via the Claude Code UI.
             - The dummy reviewer's report path (`dummy-review-${TIMESTAMP}.md`) is intentionally excluded from the Big Head consolidation brief and from all CCB/DMVDC checks — it is measurement-only.
+            - The output report may not materialize. The dummy reviewer process runs in a tmux window with no supervision; if the session exits before the review completes or the agent does not write the file, the report simply does not appear. This is acceptable — the absence of the report file does not affect the review pipeline in any way.
             - Do NOT wait for the dummy reviewer to finish before proceeding with Step 3c. It runs concurrently.
             - Sunset clause: remove Step 3b-v after ~30 sessions of data collection or when a reliable file-budget threshold is established. Removal has no effect on the rest of the review workflow.
 
