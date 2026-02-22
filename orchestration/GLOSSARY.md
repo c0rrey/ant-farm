@@ -55,7 +55,7 @@ In tables, diagrams, and other non-prose contexts where the article is omitted, 
 | **summary doc** | A structured artifact written by each agent to `{session-dir}/summaries/<task-suffix>.md` at Step 6. Required sections: approaches considered, selected approach, implementation description, correctness review, build/test validation, and acceptance criteria checklist. |
 | **hard gate** | A checkpoint that must return PASS before the system proceeds to the next phase. All five checkpoints (SSV, CCO, WWD, DMVDC, CCB) are hard gates. |
 | **context window** | The token budget available to a model in a single session. The Queen's information diet keeps its context window clean by offloading reads to subagents. |
-| **pre-push hook** | A git hook that syncs `agents/*.md` to `~/.claude/agents/` and `orchestration/` files to `~/.claude/orchestration/` on every `git push`, keeping the runtime copies in sync with the repo. |
+| **pre-push hook** | A git hook that runs `scripts/sync-to-claude.sh` on every `git push` to keep runtime copies in sync with the repo. It copies `CLAUDE.md` to `~/.claude/CLAUDE.md`, syncs `agents/*.md` to `~/.claude/agents/`, and rsyncs `orchestration/` to `~/.claude/orchestration/` — excluding `_archive/` and without `--delete` so any custom files an adopter has placed in `~/.claude/orchestration/` are preserved. Of the scripts in `scripts/`, only `build-review-prompts.sh` is synced (to `~/.claude/orchestration/scripts/`); developer tools like `sync-to-claude.sh` itself are not copied. |
 
 ---
 
