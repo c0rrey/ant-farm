@@ -158,7 +158,7 @@ The orchestration framework runs from `~/.claude/`, not from the repo. Changes i
 
 `scripts/sync-to-claude.sh` copies:
 - `CLAUDE.md` to `~/.claude/CLAUDE.md` (backs up existing file first)
-- `orchestration/` to `~/.claude/orchestration/` (via rsync `--delete`, excluding `scripts/`)
+- `orchestration/` to `~/.claude/orchestration/` (via rsync without `--delete`, excluding `scripts/` and `_archive/` — existing files in the target that are not in the source are preserved, not deleted)
 - `scripts/compose-review-skeletons.sh` and `scripts/fill-review-slots.sh` to `~/.claude/orchestration/scripts/`
 - `agents/*.md` to `~/.claude/agents/`
 
@@ -176,6 +176,8 @@ The orchestration framework runs from `~/.claude/`, not from the repo. Changes i
 This installs two hooks:
 - **pre-push** -- runs `sync-to-claude.sh` on every push
 - **pre-commit** -- runs `scrub-pii.sh` to strip email addresses from `.beads/issues.jsonl` before commits
+
+**Re-run after pulling changes.** If `scripts/install-hooks.sh` is updated upstream (e.g. after a `git pull`), re-run it to get the new hook behavior. The installed hook in `.git/hooks/` is not updated automatically — it only changes when you run `install-hooks.sh` again.
 
 ### After syncing
 
