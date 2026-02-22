@@ -2,7 +2,7 @@
 
 Per-type focus blocks for nitpicker review prompts. Each block is delimited
 by `<!-- FOCUS: {type} -->` / `<!-- /FOCUS: {type} -->` for awk extraction
-in `compose-review-skeletons.sh`.
+in `build-review-prompts.sh`.
 
 <!-- FOCUS: clarity -->
 **Your focus**: Readable, consistent, well-documented code. You review for human comprehension.

@@ -1,0 +1,366 @@
+#!/usr/bin/env bash
+# build-review-prompts.sh — Build filled review prompts directly from master templates.
+#
+# Replaces the two-script pipeline (compose-review-skeletons.sh + fill-review-slots.sh)
+# by reading master templates, extracting agent-facing sections, and filling all slots
+# in a single pass. No intermediate skeleton files are created.
+#
+# Usage:
+#   build-review-prompts.sh <SESSION_DIR> <COMMIT_RANGE> <CHANGED_FILES_LIST> \
+#                           <TASK_IDS_LIST> <TIMESTAMP> <REVIEW_ROUND> \
+#                           <NITPICKER_SKELETON_PATH> <BIG_HEAD_SKELETON_PATH>
+#
+# Arguments:
+#   SESSION_DIR              — session artifact directory
+#   COMMIT_RANGE             — git commit range, e.g. "abc1234..HEAD"
+#   CHANGED_FILES_LIST       — newline-separated list of changed files (or @filepath)
+#   TASK_IDS_LIST            — space-separated list of task IDs (or @filepath)
+#   TIMESTAMP                — review timestamp in YYYYMMDD-HHmmss format
+#   REVIEW_ROUND             — positive integer (1, 2, 3, ...)
+#   NITPICKER_SKELETON_PATH  — path to nitpicker-skeleton.md
+#   BIG_HEAD_SKELETON_PATH   — path to big-head-skeleton.md
+#
+# Note on CHANGED_FILES_LIST and TASK_IDS_LIST:
+#   Pass them as file paths prefixed with "@" to avoid shell quoting issues with newlines:
+#     build-review-prompts.sh ... @/tmp/changed-files.txt @/tmp/task-ids.txt ...
+#   Or pass literal values (quoted) for simple cases.
+#
+# Outputs:
+#   {SESSION_DIR}/prompts/review-{type}.md           — filled review prompts
+#   {SESSION_DIR}/previews/review-{type}-preview.md  — combined previews
+#   {SESSION_DIR}/prompts/review-big-head-consolidation.md — Big Head brief
+#   {SESSION_DIR}/review-reports/                    — directory created for reports
+#
+# Exit codes:
+#   0 — all prompts and previews written successfully
+#   1 — missing argument, unreadable file, or write failure
+
+set -euo pipefail
+
+# ---------------------------------------------------------------------------
+# Argument validation
+# ---------------------------------------------------------------------------
+
+if [ $# -ne 8 ]; then
+    echo "ERROR: build-review-prompts.sh requires exactly 8 arguments." >&2
+    echo "Usage: $0 <SESSION_DIR> <COMMIT_RANGE> <CHANGED_FILES_LIST> <TASK_IDS_LIST> <TIMESTAMP> <REVIEW_ROUND> <NITPICKER_SKELETON_PATH> <BIG_HEAD_SKELETON_PATH>" >&2
+    exit 1
+fi
+
+SESSION_DIR="$1"
+COMMIT_RANGE="$2"
+CHANGED_FILES_RAW="$3"
+TASK_IDS_RAW="$4"
+TIMESTAMP="$5"
+REVIEW_ROUND="$6"
+NITPICKER_SKELETON="$7"
+BIG_HEAD_SKELETON="$8"
+
+for f in "$NITPICKER_SKELETON" "$BIG_HEAD_SKELETON"; do
+    if [ ! -f "$f" ]; then
+        echo "ERROR: Template file not found: $f" >&2
+        exit 1
+    fi
+    if [ ! -r "$f" ]; then
+        echo "ERROR: Template file not readable: $f" >&2
+        exit 1
+    fi
+done
+
+# ---------------------------------------------------------------------------
+# Resolve @file arguments for multiline values
+# ---------------------------------------------------------------------------
+
+resolve_arg() {
+    local val="$1"
+    if [[ "$val" == @* ]]; then
+        local fpath="${val:1}"
+        if [ ! -f "$fpath" ]; then
+            echo "ERROR: @file argument not found: $fpath" >&2
+            exit 1
+        fi
+        cat "$fpath"
+    else
+        printf '%s' "$val"
+    fi
+}
+
+CHANGED_FILES="$(resolve_arg "$CHANGED_FILES_RAW")"
+TASK_IDS="$(resolve_arg "$TASK_IDS_RAW")"
+
+# ---------------------------------------------------------------------------
+# Validate review round
+# ---------------------------------------------------------------------------
+
+if ! echo "$REVIEW_ROUND" | grep -qE '^[0-9]+$'; then
+    echo "ERROR: REVIEW_ROUND must be a positive integer, got: $REVIEW_ROUND" >&2
+    exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# Output directory setup
+# ---------------------------------------------------------------------------
+
+mkdir -p "${SESSION_DIR}/prompts" || {
+    echo "ERROR: Failed to create prompts directory: ${SESSION_DIR}/prompts" >&2
+    exit 1
+}
+mkdir -p "${SESSION_DIR}/previews" || {
+    echo "ERROR: Failed to create previews directory: ${SESSION_DIR}/previews" >&2
+    exit 1
+}
+mkdir -p "${SESSION_DIR}/review-reports" || {
+    echo "ERROR: Failed to create review-reports directory: ${SESSION_DIR}/review-reports" >&2
+    exit 1
+}
+
+# ---------------------------------------------------------------------------
+# Determine which review types to produce based on round
+# ---------------------------------------------------------------------------
+
+if [ "$REVIEW_ROUND" -eq 1 ]; then
+    ACTIVE_REVIEW_TYPES=(clarity edge-cases correctness excellence)
+else
+    # Round 2+: correctness and edge-cases only
+    ACTIVE_REVIEW_TYPES=(correctness edge-cases)
+fi
+
+# ---------------------------------------------------------------------------
+# Helper: extract agent-facing section from a skeleton template file
+# (everything after the line containing only "---")
+# ---------------------------------------------------------------------------
+extract_agent_section() {
+    local file="$1"
+    awk '/^---$/{found=1; next} found{print}' "$file"
+}
+
+# ---------------------------------------------------------------------------
+# Helper: safe substitution for multiline values.
+# Uses a temp file + awk to avoid issues with special characters.
+# ---------------------------------------------------------------------------
+fill_slot() {
+    local slot="$1"     # e.g. {{COMMIT_RANGE}}
+    local value="$2"    # the value to substitute
+    local file="$3"     # file to perform in-place substitution on
+
+    # Use a temp file for the replacement value to avoid sed special-char issues
+    local tmpval
+    tmpval="$(mktemp)"
+    printf '%s' "$value" > "$tmpval"
+
+    # Use awk for safe multiline substitution
+    # awk reads the replacement from the temp file, avoids regex escaping issues
+    awk -v slot="$slot" -v valfile="$tmpval" '
+    BEGIN {
+        # Read the full replacement value from file
+        val = ""
+        while ((getline line < valfile) > 0) {
+            if (val != "") val = val "\n"
+            val = val line
+        }
+        close(valfile)
+    }
+    {
+        # Replace all occurrences of slot in each line
+        # Use index() + substr() instead of sub() to avoid & and \ being
+        # treated as special characters in the replacement string
+        while ((pos = index($0, slot)) > 0) {
+            $0 = substr($0, 1, pos - 1) val substr($0, pos + length(slot))
+        }
+        print
+    }
+    ' "$file" > "${file}.tmp" && mv "${file}.tmp" "$file"
+
+    rm -f "$tmpval"
+}
+
+# ---------------------------------------------------------------------------
+# Helper: build a filled review prompt for one Nitpicker review type.
+#
+# Reads the master nitpicker-skeleton.md, extracts the agent-facing section,
+# converts placeholders, fills all values, and writes the final prompt.
+# ---------------------------------------------------------------------------
+build_nitpicker_prompt() {
+    local review_type="$1"
+    local out_prompt="${SESSION_DIR}/prompts/review-${review_type}.md"
+    local out_preview="${SESSION_DIR}/previews/review-${review_type}-preview.md"
+    local report_output_path="${SESSION_DIR}/review-reports/${review_type}-review-${TIMESTAMP}.md"
+    local data_file_path="${out_prompt}"
+
+    # 1. Extract agent-facing section from master template
+    local body
+    body="$(extract_agent_section "$NITPICKER_SKELETON")"
+
+    # 2. Convert {UPPERCASE} -> {{UPPERCASE}} (mark as slots for fill_slot)
+    body="$(printf '%s\n' "$body" | sed 's/{\([A-Z][A-Z_]*\)}/{{\1}}/g')"
+
+    # 3. Fill {{REVIEW_TYPE}} with actual type name
+    body="$(printf '%s\n' "$body" | sed "s/{{REVIEW_TYPE}}/${review_type}/g")"
+
+    # 4. Write header + body + Review Brief section with literal values
+    {
+        printf '<!-- Review prompt: %s | Built by build-review-prompts.sh -->\n' "$review_type"
+        echo ""
+        echo "$body"
+        echo ""
+        echo "---"
+        echo "## Review Brief"
+        echo ""
+        echo "**Commit range**: ${COMMIT_RANGE}"
+        echo ""
+        echo "**Review round**: ${REVIEW_ROUND}"
+        echo ""
+        echo "**Files to review**:"
+        echo "${CHANGED_FILES}"
+        echo ""
+        echo "**Task IDs** (for correctness review — run \`bd show <id>\` to retrieve acceptance criteria):"
+        echo "${TASK_IDS}"
+        echo ""
+        echo "**Report output path**: ${report_output_path}"
+        echo ""
+        echo "**Timestamp**: ${TIMESTAMP}"
+        echo ""
+        echo "Do NOT file beads — Big Head handles all bead filing."
+    } > "$out_prompt" || {
+        echo "ERROR: Failed to write prompt file: $out_prompt" >&2
+        exit 1
+    }
+
+    # 5. Fill any remaining {{SLOT}} markers in the template body
+    #    (DATA_FILE_PATH and REPORT_OUTPUT_PATH appear in the nitpicker template body)
+    fill_slot "{{DATA_FILE_PATH}}"      "$data_file_path"        "$out_prompt"
+    fill_slot "{{REPORT_OUTPUT_PATH}}"  "$report_output_path"    "$out_prompt"
+    fill_slot "{{REVIEW_ROUND}}"        "$REVIEW_ROUND"          "$out_prompt"
+    fill_slot "{{COMMIT_RANGE}}"        "$COMMIT_RANGE"          "$out_prompt"
+    fill_slot "{{CHANGED_FILES}}"       "$CHANGED_FILES"         "$out_prompt"
+    fill_slot "{{TASK_IDS}}"            "$TASK_IDS"              "$out_prompt"
+    fill_slot "{{TIMESTAMP}}"           "$TIMESTAMP"             "$out_prompt"
+
+    # 6. Copy to preview
+    cp "$out_prompt" "$out_preview" || {
+        echo "ERROR: Failed to write preview for ${review_type}: $out_preview" >&2
+        exit 1
+    }
+
+    echo "  Prompt:  $out_prompt"
+    echo "  Preview: $out_preview"
+    echo "  Report will be written to: $report_output_path"
+}
+
+# ---------------------------------------------------------------------------
+# Helper: build the filled Big Head consolidation brief.
+# ---------------------------------------------------------------------------
+build_big_head_prompt() {
+    local out_file="${SESSION_DIR}/prompts/review-big-head-consolidation.md"
+    local consolidated_output="${SESSION_DIR}/review-reports/review-consolidated-${TIMESTAMP}.md"
+
+    # Build the expected report paths list (round-appropriate)
+    local expected_paths=""
+    for rt in "${ACTIVE_REVIEW_TYPES[@]}"; do
+        expected_paths="${expected_paths}- ${SESSION_DIR}/review-reports/${rt}-review-${TIMESTAMP}.md\n"
+    done
+    # Remove trailing \n left by the loop
+    expected_paths="$(printf '%b' "$expected_paths" | sed '/^$/d')"
+
+    # 1. Extract agent-facing section from master template
+    local body
+    body="$(extract_agent_section "$BIG_HEAD_SKELETON")"
+
+    # 2. Convert {UPPERCASE} -> {{UPPERCASE}}
+    body="$(printf '%s\n' "$body" | sed 's/{\([A-Z][A-Z_]*\)}/{{\1}}/g')"
+
+    # 3. Write header + body + Consolidation Brief section with literal values
+    {
+        printf '<!-- Big Head prompt | Built by build-review-prompts.sh -->\n'
+        echo ""
+        echo "$body"
+        echo ""
+        echo "---"
+        echo "## Consolidation Brief"
+        echo ""
+        echo "**Review round**: ${REVIEW_ROUND}"
+        echo "**Data file**: ${out_file}"
+        echo "**Consolidated output**: ${consolidated_output}"
+        echo "**Timestamp**: ${TIMESTAMP}"
+        echo ""
+        echo "**Expected report paths** (all must exist before consolidation begins):"
+        echo "${expected_paths}"
+    } > "$out_file" || {
+        echo "ERROR: Failed to write Big Head brief: $out_file" >&2
+        exit 1
+    }
+
+    # 4. Fill any remaining {{SLOT}} markers in the template body
+    fill_slot "{{REVIEW_ROUND}}"              "$REVIEW_ROUND"          "$out_file"
+    fill_slot "{{TIMESTAMP}}"                 "$TIMESTAMP"             "$out_file"
+    fill_slot "{{DATA_FILE_PATH}}"            "$out_file"              "$out_file"
+    fill_slot "{{CONSOLIDATED_OUTPUT_PATH}}"  "$consolidated_output"   "$out_file"
+    fill_slot "{{EXPECTED_REPORT_PATHS}}"     "$expected_paths"        "$out_file"
+
+    echo "  Big Head brief: $out_file"
+    echo "  Consolidated output will be: $consolidated_output"
+}
+
+# ---------------------------------------------------------------------------
+# Main execution
+# ---------------------------------------------------------------------------
+
+echo "build-review-prompts.sh: building review prompts (round ${REVIEW_ROUND})"
+echo "  Session dir:    ${SESSION_DIR}"
+echo "  Commit range:   ${COMMIT_RANGE}"
+echo "  Timestamp:      ${TIMESTAMP}"
+echo "  Active reviews: ${ACTIVE_REVIEW_TYPES[*]}"
+echo ""
+
+for review_type in "${ACTIVE_REVIEW_TYPES[@]}"; do
+    echo "Processing: ${review_type}"
+    build_nitpicker_prompt "$review_type"
+    echo ""
+done
+
+echo "Processing: big-head"
+build_big_head_prompt
+echo ""
+
+# ---------------------------------------------------------------------------
+# Verify all output files were written and are non-empty
+# ---------------------------------------------------------------------------
+
+echo "build-review-prompts.sh: verifying output files..."
+
+ALL_OK=true
+for review_type in "${ACTIVE_REVIEW_TYPES[@]}"; do
+    for f in \
+        "${SESSION_DIR}/prompts/review-${review_type}.md" \
+        "${SESSION_DIR}/previews/review-${review_type}-preview.md"
+    do
+        if [ ! -f "$f" ]; then
+            echo "ERROR: Expected output file missing: $f" >&2
+            ALL_OK=false
+        elif [ ! -s "$f" ]; then
+            echo "ERROR: Output file is empty: $f" >&2
+            ALL_OK=false
+        fi
+    done
+done
+
+if [ ! -f "${SESSION_DIR}/prompts/review-big-head-consolidation.md" ]; then
+    echo "ERROR: Big Head consolidation brief not found: ${SESSION_DIR}/prompts/review-big-head-consolidation.md" >&2
+    ALL_OK=false
+fi
+
+if [ "$ALL_OK" = false ]; then
+    exit 1
+fi
+
+echo "build-review-prompts.sh: all review prompt files written successfully."
+echo ""
+echo "Return table:"
+echo "| Review Type | Prompt | Preview | Report Output Path |"
+echo "|-------------|--------|---------|-------------------|"
+for review_type in "${ACTIVE_REVIEW_TYPES[@]}"; do
+    echo "| ${review_type} | ${SESSION_DIR}/prompts/review-${review_type}.md | ${SESSION_DIR}/previews/review-${review_type}-preview.md | ${SESSION_DIR}/review-reports/${review_type}-review-${TIMESTAMP}.md |"
+done
+echo ""
+echo "Big Head consolidation data: ${SESSION_DIR}/prompts/review-big-head-consolidation.md"
+echo "Big Head consolidated output: ${SESSION_DIR}/review-reports/review-consolidated-${TIMESTAMP}.md"

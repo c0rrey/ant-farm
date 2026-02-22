@@ -176,11 +176,13 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             ```
             On any validation failure: surface the error to the user and do NOT proceed to 3b-ii.
 
-            **3b-ii. Fill review slots** (NO Pantry spawn — skeletons were assembled in Step 2):
+            **3b-ii. Build review prompts** (single script — reads templates and fills all values):
             ```bash
-            bash ~/.claude/orchestration/scripts/fill-review-slots.sh \
+            bash ~/.claude/orchestration/scripts/build-review-prompts.sh \
               "${SESSION_DIR}" "<commit-range>" "<changed-files>" \
-              "<task-IDs>" "<timestamp>" "<round>"
+              "<task-IDs>" "<timestamp>" "<round>" \
+              "~/.claude/orchestration/templates/nitpicker-skeleton.md" \
+              "~/.claude/orchestration/templates/big-head-skeleton.md"
             ```
             On exit 0: prompts/previews written to `${SESSION_DIR}/prompts/` and `${SESSION_DIR}/previews/`.
             On non-zero: surface stderr to user — do NOT proceed.
@@ -292,7 +294,7 @@ For the complete detailed list and rationale, see "Queen Read Permissions" above
 | Agent | subagent_type | Rationale |
 |-------|---------------|-----------|
 | Scout | `scout-organizer` | Custom agent: agent-organizer + Bash for bd CLI |
-| Pantry (impl) | `pantry-impl` | Custom agent: CCO-aligned implementation prompt composer (also assembles review skeletons via compose-review-skeletons.sh) |
+| Pantry (impl) | `pantry-impl` | Custom agent: CCO-aligned implementation prompt composer |
 | Pest Control | `pest-control` | Custom agent: verification auditor, catches fabrication + scope creep |
 | Dirt Pushers | from Pantry verdict table | Specialist per task — Scout recommends via dynamic agent discovery, Pantry passes through |
 | Nitpickers | `nitpicker` | Custom agent: file:line specificity, calibrated severity, complete coverage |
