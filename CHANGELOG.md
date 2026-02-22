@@ -1,5 +1,34 @@
 # Changelog
 
+## 2026-02-22 — Session 5da05acb (Documentation Bug Fixes + Review Fix Cycle)
+
+### Summary
+
+6 P2 documentation bugs fixed across orchestration docs, README, CONTRIBUTING, GLOSSARY, sync script, and SESSION_PLAN_TEMPLATE. Review round 1 found 0 P1, 2 P2, 8 P3 (13 root causes, 3 deduplicated against existing beads). 5 root causes fixed in-session (RC-3, RC-4, RC-5, RC-6, RC-11). 5 P3s dropped by user decision. 6 implementation commits + 3 fix commits.
+
+### Implementation (Wave 1: 4 agents, 6 tasks)
+
+- **ant-farm-2yww + ant-farm-80l0**: fix: update reader attributions from Pantry (review mode) to build-review-prompts.sh across RULES.md, README.md, GLOSSARY.md, CONTRIBUTING.md; add missing SSV row to README Hard Gates table
+- **ant-farm-q84z + ant-farm-zg7t**: fix: unify TIMESTAMP naming (remove dual REVIEW_TIMESTAMP), replace macOS-incompatible shell commands with bash-native equivalents in RULES.md
+- **ant-farm-tour**: fix: update SESSION_PLAN_TEMPLATE review sections to match parallel TeamCreate workflow and root-cause-based triage
+- **ant-farm-sje5**: fix: add preflight check for missing code-reviewer.md agent in sync-to-claude.sh
+
+### Review Fixes (Round 1 auto-fix, 5 root causes)
+
+- **RC-3**: fix: update skeleton template attributions from Pantry to build-review-prompts.sh (nitpicker-skeleton.md, big-head-skeleton.md)
+- **RC-4**: fix: add warning when agents/ directory exists but contains no .md files (sync-to-claude.sh)
+- **RC-5**: fix: replace fixed sleep 5 with 15s readiness poll in dummy reviewer tmux launch (RULES.md)
+- **RC-6**: fix: replace single-item for-loop with direct cp (sync-to-claude.sh)
+- **RC-11**: fix: add explicit error guard on backup cp (sync-to-claude.sh)
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 6 files, 6 tasks | 0 | 2 | 8 | PASS WITH ISSUES |
+
+13 root causes consolidated. 3 skipped (existing beads: ant-farm-2yww, ant-farm-q84z, ant-farm-4lcv). 5 fixed in-session. 5 P3s dropped per user decision.
+
 ## 2026-02-22 — Session db790c8d + e7ff7c0d (P1 Bug Fixes + Deferred Reviews)
 
 ### Summary
