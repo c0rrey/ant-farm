@@ -671,6 +671,24 @@ For each group of related findings across all reviews:
 - **Acceptance criteria**: <how to verify across all surfaces>
 ```
 
+### Step 2.5: Deduplicate Against Existing Beads
+
+Before writing the consolidated summary or filing any beads, check for open beads that already cover your root causes. This prevents duplicate tracking of issues found in previous sessions.
+
+```bash
+bd list --status=open -n 0 --short
+```
+
+For each root cause group, compare against existing bead titles:
+
+- **Exact title match** (case-insensitive): Do NOT file. Log in the summary: "Dedup: RC-N matches existing bead ant-farm-XXXX — skipped."
+- **Similar title** (same root cause, different wording): Run `bd search "<key phrases>" --status open` to confirm. If the existing bead covers the same root cause, do NOT file. Log the match and the existing bead ID.
+- **No match found**: Mark the root cause for filing.
+
+When uncertain whether a match is truly the same root cause, err on the side of filing — a human can merge later; a missed filing is harder to recover.
+
+Include a **Cross-Session Dedup** section in the consolidated summary listing, for each root cause, whether it was filed (new bead ID), skipped (matched existing bead ID and why), or merged with an existing bead.
+
 ### Step 3: Write Consolidated Summary
 
 Write the consolidated summary to `<session-dir>/review-reports/review-consolidated-<timestamp>.md`:
@@ -773,9 +791,32 @@ File ONE bead per root cause (not per finding, not per review).
 **Important**: Beads filed during session review are standalone. Do NOT assign them to a specific epic via `bd dep add --type parent-child`. They represent session-wide findings, not epic-specific work.
 
 ```bash
-bd create --type=bug --priority=<combined-priority> --title="<root cause title>"
-# Then update with full description including all affected surfaces
-bd label add <id> <primary-review-type>
+cat > /tmp/bead-desc.md << 'BEAD_DESC'
+## Root Cause
+<What is specifically wrong — cite the code path, pattern, or design flaw.
+Reference file:line locations where the issue originates. This must be
+substantive analysis, NOT a restatement of the title.>
+
+## Affected Surfaces
+- `file1.py:L42` — <specific instance> (from clarity review)
+- `file2.sh:L15` — <specific instance> (from edge-cases review)
+
+## Fix
+<Specific corrective action — what to change, where, and why.>
+
+## Changes Needed
+- `path/to/file1.py`: <what to change>
+- `path/to/file2.sh`: <what to change>
+
+## Acceptance Criteria
+- [ ] <First independently testable criterion>
+- [ ] <Second independently testable criterion>
+- [ ] <Third independently testable criterion>
+BEAD_DESC
+
+bd create --type=bug --priority=<combined-priority> --title="<root cause title>" --body-file /tmp/bead-desc.md
+bd label add <new-bead-id> <primary-review-type>
+rm -f /tmp/bead-desc.md
 ```
 
 ### P3 Auto-Filing (Round 2+ Only)
@@ -792,8 +833,20 @@ In round 2+, Big Head auto-files P3 findings to the "Future Work" epic without u
 
 2. For each P3 root cause:
    ```bash
-   bd create --type=bug --priority=3 --title="<root cause title>"
-   bd dep add <bead-id> <future-work-epic-id> --type parent-child
+   cat > /tmp/bead-desc.md << 'BEAD_DESC'
+   ## Root Cause
+   <What is wrong — file:line refs to the primary location.>
+
+   ## Affected Surfaces
+   - `file:line` — <instance> (from <reviewer>)
+
+   ## Acceptance Criteria
+   - [ ] <testable criterion>
+   BEAD_DESC
+
+   bd create --type=bug --priority=3 --title="<root cause title>" --body-file /tmp/bead-desc.md
+   bd dep add <new-bead-id> <future-work-epic-id> --type parent-child
+   rm -f /tmp/bead-desc.md
    ```
 
 3. In the consolidated summary, list P3 beads in a separate section:
