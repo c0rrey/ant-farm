@@ -1,0 +1,162 @@
+[
+  {
+    "bead_id": "ant-farm-1yl",
+    "title": "PLACEHOLDER_CONVENTIONS.md shell example uses unquoted SESSION_DIR variable",
+    "verdict": "ALREADY_FIXED",
+    "confidence": "HIGH",
+    "evidence": "PLACEHOLDER_CONVENTIONS.md lines 91-95 contain the shell usage example block. Line 93 is `SESSION_DIR=\".beads/agent-summaries/_session-${SESSION_ID}\"` — SESSION_DIR is quoted. Line 94 is `mkdir -p \"${SESSION_DIR}\"/{task-metadata,previews,prompts}` — ${SESSION_DIR} is double-quoted on both sides of the brace expansion. Both usages are correctly quoted and safe for paths containing spaces. No unquoted SESSION_DIR variable exists in the bash code block.",
+    "priority_check": "N/A — issue no longer exists; bead can be closed.",
+    "duplicate_of": null,
+    "notes": "The bead was created 2026-02-18. The file at that time may have had unquoted usage; current state is correct."
+  },
+  {
+    "bead_id": "ant-farm-28fl",
+    "title": "PLACEHOLDER_CONVENTIONS enforcement incomplete and angle-bracket syntax undocumented",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "Two sub-issues remain open. (1) Angle-bracket syntax undocumented: The Overview table (lines 9-13) defines only three tiers: {UPPERCASE}, {lowercase-kebab}, and ${SHELL_VAR}. The angle-bracket `<placeholder>` syntax used in reviews.md, implementation.md, and queen-state.md is not listed as a formal tier. The audit table row for queen-state.md (line 114) mentions it parenthetically as 'Tier 1 variant for human editing' but no section defines it, explains when to use it, or provides a validation pattern for it. (2) Enforcement incomplete: The Enforcement Strategy (lines 204-211) item 3 says 'Run grep patterns as part of pre-push validation (optional, via git hook or CI)' — no such hook or CI rule exists in the repo. Item 4 says 'Document pattern in RULES.md' — RULES.md does not have an Information Diet section referencing PLACEHOLDER_CONVENTIONS.md.",
+    "priority_check": "P3 confirmed — documentation gap; no runtime impact but conventions document is self-contradictory about completeness.",
+    "duplicate_of": null,
+    "notes": "Near-duplicate cluster: ant-farm-28fl, ant-farm-a4s, and ant-farm-w6m all concern angle-bracket documentation. ant-farm-28fl is the broadest (also covers enforcement gaps). ant-farm-a4s and ant-farm-w6m are narrower sub-issues of this bead. Also related to ant-farm-nx31 and ant-farm-t0n (enforcement gaps). Cross-batch near-duplicate: ant-farm-t6f ('not cross-referenced from RULES.md') and ant-farm-164n ('Dual placeholder conventions') overlap with sub-issue (1) here."
+  },
+  {
+    "bead_id": "ant-farm-3a0",
+    "title": "PLACEHOLDER_CONVENTIONS.md Tier 2 {session-dir} vs Tier 1 {SESSION_DIR} naming ambiguity",
+    "verdict": "ALREADY_FIXED",
+    "confidence": "HIGH",
+    "evidence": "PLACEHOLDER_CONVENTIONS.md explicitly defines and distinguishes both forms. Tier 1 definition (lines 31-32): '{SESSION_DIR} — session artifact directory path (e.g., .beads/agent-summaries/_session-abc123)'. Tier 2 definition (lines 63-64): '{session-dir} — Derived from {SESSION_DIR} at runtime; used in agent-facing instructions to show \"the session dir you were given\" in relative terms.' The relationship between the two is spelled out in a single definition: Tier 1 is Queen-substituted before spawn, Tier 2 is the agent-facing representation. The ambiguity the bead describes has been resolved by the explicit relationship statement in the Tier 2 section.",
+    "priority_check": "N/A — issue no longer exists; bead can be closed.",
+    "duplicate_of": null,
+    "notes": "The bead was created 2026-02-18. The distinction is now clearly documented in the Tier 2 definitions section."
+  },
+  {
+    "bead_id": "ant-farm-3yw",
+    "title": "PLACEHOLDER_CONVENTIONS.md Compliance Status section is verbose and redundant with audit table",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "The 'Compliance Status: All Files Pass' section (lines 156-200) is 45 lines long and repeats information already in the 16-line audit table (lines 103-118). The section has six numbered 'Key Findings' subsections (one per file group), each saying 'COMPLIANT' and 'No changes needed' — information already captured by the 'PASS' column in the audit table. The section adds a 'Why No Changes Needed' subsection (lines 193-200) that restates the tier convention, which is already defined in the Tier 1/2/3 sections. The redundancy is present and the section remains verbose.",
+    "priority_check": "P3 confirmed — low priority readability/maintenance issue; no correctness impact.",
+    "duplicate_of": null,
+    "notes": "No near-duplicates in this batch. This is a standalone structural issue about document organization."
+  },
+  {
+    "bead_id": "ant-farm-a4s",
+    "title": "Angle-bracket placeholder convention not documented in PLACEHOLDER_CONVENTIONS.md",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "The Overview table (lines 9-13) lists three syntaxes: {UPPERCASE}, {lowercase-kebab}, and ${SHELL_VAR}. No angle-bracket syntax is in this table. The 'Detailed Definitions' section covers Tier 1, Tier 2, and Tier 3 only. Angle-bracket usage is acknowledged only in one audit table cell (line 114): queen-state.md uses '<placeholder> syntax (Tier 1 variant for human editing)' — but this is a parenthetical remark in a data cell, not a defined convention. No section explains when to use angle-brackets vs curly-braces, what agent should fill in angle-bracket values, or how to validate angle-bracket usage with grep.",
+    "priority_check": "P3 confirmed — documentation gap; angle-bracket convention is in use but undefined.",
+    "duplicate_of": "ant-farm-28fl",
+    "notes": "Near-duplicate cluster: ant-farm-a4s is a narrower sub-issue of ant-farm-28fl (angle-bracket portion only). ant-farm-w6m covers the same gap. Recommend closing ant-farm-a4s and ant-farm-w6m in favor of ant-farm-28fl which covers both angle-bracket docs and enforcement gaps. Cross-batch near-duplicate: ant-farm-glzg in this batch covers the specific manifestation in queen-state.md."
+  },
+  {
+    "bead_id": "ant-farm-d1u",
+    "title": "PLACEHOLDER_CONVENTIONS.md audit table line numbers will become stale without commit reference",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "The 'File-by-File Audit (Completed)' table (lines 103-118) contains line number references in multiple cells, e.g., scout.md row: '{SESSION_DIR} (L10,62,66,129,175,178), {MODE} (L11)' and '{session-dir} (L166-167), {task-id} (L81,254), {task-suffix} (L78)'. The table heading says '(Completed)' with no date, version hash, or note about when these line numbers were recorded. As template files are edited, these line numbers will drift without any mechanism to detect or flag staleness. No commit hash, no 'as of' date, and no update instructions appear in the table or its surrounding text.",
+    "priority_check": "P3 confirmed — maintenance issue; the line numbers are already potentially stale given ongoing edits to scout.md and other templates.",
+    "duplicate_of": null,
+    "notes": "Near-duplicate concern: ant-farm-lc3a (also in this batch) covers the same audit table but focuses specifically on missing update guidance/instructions. ant-farm-d1u focuses on the line number staleness mechanism. The two are complementary rather than exact duplicates — both should be fixed together. Cross-batch near-duplicate: ant-farm-6i1 ('audit claims All Files Pass despite partial nitpicker-skeleton.md') also identifies audit table accuracy issues."
+  },
+  {
+    "bead_id": "ant-farm-glzg",
+    "title": "Placeholder syntax inconsistency: queen-state.md uses angle-brackets while other templates use curly-braces",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "queen-state.md uses angle-bracket syntax throughout: lines 6-10 use <YYYY-MM-DDTHH:MM:SSZ>, <session-id>, <chosen execution strategy>; lines 20-21, 25, 32-38 use <name>, <ids>, <files>, <hash>, <task-ids>, <details>, etc. By contrast, dirt-pusher-skeleton.md uses {UPPERCASE} curly-brace syntax for its fill-in fields. PLACEHOLDER_CONVENTIONS.md acknowledges this in the audit table (line 114) as '<placeholder> syntax (Tier 1 variant for human editing)' but provides no formal endorsement, definition, or criteria for when angle-bracket syntax is appropriate vs. curly-brace. A template author has no guidance for which syntax to choose for new templates.",
+    "priority_check": "P3 confirmed — inconsistency is acknowledged but unresolved in the conventions document.",
+    "duplicate_of": null,
+    "notes": "This bead is the specific manifestation of what ant-farm-a4s and ant-farm-28fl describe at the document level. ant-farm-glzg focuses on queen-state.md specifically and the inconsistency relative to other templates. All three should be addressed together. Note that queen-state.md also uses Tier 2 curly-brace placeholders ({path}, {N}, {M}, {name}) in the Scout table row (line 15), meaning it mixes both syntaxes — the angle-brackets for the Queen's own fill-in fields and curly-braces for sub-table output examples."
+  },
+  {
+    "bead_id": "ant-farm-hpi",
+    "title": "Scout {MODE} placeholder parsing convention undocumented for compound modes",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "PLACEHOLDER_CONVENTIONS.md's Tier 1 section defines {UPPERCASE} placeholders and lists {MODE} in the audit table (line 105) as a Tier 1 placeholder used in scout.md at L11. The Tier 1 section gives no parsing specification for {MODE} values. The document defines that {UPPERCASE} placeholders are 'filled in by the Queen before spawning a subagent' but gives no guidance on valid values, compound mode syntax (e.g., 'READY+REVIEW'), or how the Queen should format or the Scout should parse compound modes. This convention gap is not addressed anywhere in the document.",
+    "priority_check": "P3 confirmed — documentation gap; compound mode handling is undocumented in the conventions file.",
+    "duplicate_of": null,
+    "notes": "This bead is specifically about the {MODE} placeholder semantics, not just its casing compliance. PLACEHOLDER_CONVENTIONS.md correctly classifies {MODE} as Tier 1 but does not define its valid value space or compound-value parsing rules. The bead title says 'undocumented for compound modes' which remains accurate."
+  },
+  {
+    "bead_id": "ant-farm-lc3a",
+    "title": "PLACEHOLDER_CONVENTIONS.md audit table lacks update guidance",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "The 'File-by-File Audit (Completed)' table (lines 99-118) has no timestamp, version reference, or update instructions. The heading 'File-by-File Audit (Completed)' implies a one-time activity with no maintenance path. No text near the table explains: when to add rows (when new templates are created), how to update line number references (after template edits), or who is responsible for keeping the table current. The bead description confirms this: 'marked Completed with no date, version, or instructions for updating when new templates are added.' All three missing elements (date, version, update instructions) remain absent from the current file.",
+    "priority_check": "P3 confirmed — maintenance gap in documentation.",
+    "duplicate_of": null,
+    "notes": "Near-duplicate concern: ant-farm-d1u (also in this batch) covers the related issue of line number staleness. ant-farm-lc3a covers the missing update process/guidance. These are complementary and should be fixed together. Cross-batch near-duplicate: ant-farm-6i1 addresses correctness of the table's 'All Files Pass' claim."
+  },
+  {
+    "bead_id": "ant-farm-nx31",
+    "title": "PLACEHOLDER_CONVENTIONS.md enforcement strategy references unimplemented automation",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "Enforcement Strategy item 3 (line 208): 'Run grep patterns as part of pre-push validation (optional, via git hook or CI)'. No pre-push hook for placeholder validation exists in the repo (the pre-push hook handles bd sync and PII scrubbing, not placeholder validation). No CI configuration for placeholder checks exists. Item 4 (line 209): 'Document pattern in RULES.md Information Diet section referencing this document.' RULES.md has no 'Information Diet' section and no cross-reference to PLACEHOLDER_CONVENTIONS.md. The bead description confirms: 'Creates false impression of automated enforcement.' Both specific sub-issues (hook and RULES.md cross-reference) are unimplemented.",
+    "priority_check": "P3 confirmed — the document overstates the enforcement mechanisms in place.",
+    "duplicate_of": null,
+    "notes": "Near-duplicate cluster: ant-farm-nx31 and ant-farm-t0n are near-duplicates. ant-farm-nx31 focuses specifically on the unimplemented automation (items 3 and 4 of the strategy). ant-farm-t0n focuses on the broader issue of completed vs. aspirational items not being distinguished. Recommend flagging these for consolidation — both can be addressed in one edit. Cross-batch overlap: ant-farm-28fl (in this batch) also covers enforcement incompleteness as one of its two sub-issues."
+  },
+  {
+    "bead_id": "ant-farm-omwi",
+    "title": "dirt-pusher-skeleton.md has policy text embedded in placeholder list",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "dirt-pusher-skeleton.md lines 19-22: The {AGENT_TYPE} placeholder entry in the 'Placeholders:' bullet list contains two sub-bullets of policy prose: '**Authority chain**: Scout recommends → Pantry passes through unchanged → Queen may override.' and '**Queen override**: Allowed only when Scout metadata is demonstrably wrong (e.g., wrong domain, agent type unavailable). Document the override reason in the Queen's state file before spawning. Do NOT override based on preference or guesswork.' This multi-line policy block interrupts the compact placeholder list format used by all other entries ({TASK_TYPE}: one line, {TASK_ID}: one line, {TASK_SUFFIX}: one line). The policy text is substantively useful but misplaced in the list.",
+    "priority_check": "P3 confirmed — readability/structure issue; policy content is correct but poorly formatted in context.",
+    "duplicate_of": null,
+    "notes": "This bead is under epic ant-farm-qp1j (Review Pipeline Polish), not the PLACEHOLDER_CONVENTIONS epic. Cross-batch near-duplicate: ant-farm-hm05 ('Placeholder/term definition block maintenance gaps in templates') also addresses template placeholder section quality, though from a different angle (missing term blocks vs. embedded policy text)."
+  },
+  {
+    "bead_id": "ant-farm-t0n",
+    "title": "PLACEHOLDER_CONVENTIONS.md Enforcement Strategy mixes completed and aspirational items",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "The Enforcement Strategy section (lines 204-211) lists 5 items without distinguishing completed from aspirational: Item 1 ('Add this document to repo') — completed (file exists). Item 2 ('Update all templates to include/fix term definition blocks') — completed per audit table. Item 3 ('Run grep patterns as part of pre-push validation') — not implemented. Item 4 ('Document pattern in RULES.md') — not implemented (no cross-reference exists in RULES.md). Item 5 ('Code review checklist') — informal/aspirational. The section presents all 5 as a flat numbered list with no status indicators, making it impossible to tell what has been done vs. what remains to do.",
+    "priority_check": "P3 confirmed — maintenance gap; the section is misleading about current state.",
+    "duplicate_of": "ant-farm-nx31",
+    "notes": "Near-duplicate cluster: ant-farm-t0n and ant-farm-nx31 are near-duplicates describing overlapping aspects of the same enforcement section problem. ant-farm-t0n is the broader framing (completed vs. aspirational mixing); ant-farm-nx31 is narrower (unimplemented automation specifically). Recommend consolidating into ant-farm-t0n as the umbrella with ant-farm-nx31 merged into it, or vice versa."
+  },
+  {
+    "bead_id": "ant-farm-w6m",
+    "title": "PLACEHOLDER_CONVENTIONS.md does not document or validate angle-bracket placeholder syntax",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "The 'Validation Rules' section (lines 122-153) provides four grep patterns for Tier 1 (Pattern 1), Tier 2 (Pattern 2), Tier 3 (Pattern 3), and mixed casing (Pattern 4). No Pattern 5 exists for angle-bracket syntax. The 'Overview' table (lines 9-13) lists three tiers with no angle-bracket row. The 'Exceptions and Special Cases' section (lines 225-234) does not mention angle-bracket syntax. No section defines when angle-brackets are acceptable, what values they can contain, or how to grep for them. The file uses the phrase 'angle-bracket syntax' once (line 112) in the audit table as a descriptor but never defines it as a convention.",
+    "priority_check": "P3 confirmed — documentation and validation gap for an in-use syntax.",
+    "duplicate_of": "ant-farm-28fl",
+    "notes": "Near-duplicate cluster: ant-farm-w6m, ant-farm-a4s, and ant-farm-28fl all describe the missing angle-bracket documentation. ant-farm-w6m emphasizes both the documentation gap AND the validation gap (no grep pattern); ant-farm-a4s focuses on documentation only; ant-farm-28fl is the broadest (covers both enforcement and angle-bracket docs). Recommend consolidating ant-farm-w6m and ant-farm-a4s into ant-farm-28fl."
+  },
+  {
+    "bead_id": "ant-farm-xyly",
+    "title": "Template-to-agent communication gaps: unactionable escalation path and unfilled placeholder",
+    "verdict": "STILL_VALID",
+    "confidence": "MEDIUM",
+    "evidence": "This bead is under epic ant-farm-5eul (Orchestration Workflow Polish), not the PLACEHOLDER_CONVENTIONS epic. The title references 'unfilled placeholder' which has a PLACEHOLDER_CONVENTIONS dimension, but the bead's primary scope is template-to-agent communication quality. dirt-pusher-skeleton.md (the main template in scope) does not show an obvious unfilled placeholder in the current file state. However, without a description (title-only bead), the specific 'unactionable escalation path' and 'unfilled placeholder' cannot be confirmed as resolved — the bead may refer to a different template (e.g., nitpicker-skeleton.md or big-head-skeleton.md) not in this batch's read scope. Confidence reduced due to absence of description and uncertainty about which template the 'unfilled placeholder' refers to.",
+    "priority_check": "P3 confirmed — edge-case label aligns with low-frequency but real template communication gap.",
+    "duplicate_of": null,
+    "notes": "Title-only bead without description. The 'unfilled placeholder' aspect may overlap with ant-farm-omwi (embedded policy text near {AGENT_TYPE}) or may refer to a different file entirely. Cannot assess ALREADY_FIXED without knowing which specific placeholder and which specific template. Recommend keeping open pending description addition."
+  },
+  {
+    "bead_id": "ant-farm-yh4",
+    "title": "PLACEHOLDER_CONVENTIONS.md validation regex Pattern 4 has false negatives for mixed casing",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "Pattern 4 (lines 148-149): `grep -rE '\\{[A-Z]+[a-z_\\-]+\\}|\\{[a-z\\-]*[A-Z]+\\}' orchestration/ --exclude-dir=_archive`. Analysis of false negative cases: (1) `{My_var}` — starts with uppercase, has underscore before lowercase; the first alternation `\\{[A-Z]+[a-z_\\-]+\\}` matches `[A-Z]+` then `[a-z_\\-]+`, so it WOULD catch `{My_var}`. (2) `{myVar}` — starts lowercase, has embedded uppercase; the second alternation `\\{[a-z\\-]*[A-Z]+\\}` requires the string to END after the uppercase. `{myVar}` ends with 'r' (lowercase) after 'V' (uppercase), so `[A-Z]+\\}` would NOT match — this is a confirmed false negative. (3) `{MY_var_ID}` — mixed with legitimate underscore patterns; neither alternation would catch this specific pattern. (4) `{mixedCase}` — starts lower, ends lower after uppercase in middle; second alternation fails because it requires uppercase to terminate the match.",
+    "priority_check": "P3 confirmed — the regex has confirmed false negatives for patterns like {myVar} and {mixedCase} where uppercase appears mid-string followed by lowercase.",
+    "duplicate_of": null,
+    "notes": "Technical analysis confirms the regex gap. A corrected pattern would need to detect ANY mixed-case occurrence within braces, such as: `\\{[^}]*[A-Z][^}]*[a-z][^}]*\\}|\\{[^}]*[a-z][^}]*[A-Z][^}]*\\}` or equivalently using lookahead. The current pattern only catches cases where all uppercase comes before all lowercase (or vice versa at the word boundaries)."
+  },
+  {
+    "bead_id": "ant-farm-zyxs",
+    "title": "New documents (GLOSSARY, PLACEHOLDER_CONVENTIONS, SESSION_PLAN) missing from README File Reference",
+    "verdict": "ALREADY_FIXED",
+    "confidence": "HIGH",
+    "evidence": "README.md currently contains all three documents in its File Reference section: line 356 lists 'orchestration/GLOSSARY.md' with description 'Term definitions used across orchestration docs'; line 357 lists 'orchestration/PLACEHOLDER_CONVENTIONS.md' with description 'Placeholder syntax rules for templates and checkpoints'; line 367 lists 'orchestration/templates/SESSION_PLAN_TEMPLATE.md' with description 'Session planning template for project customization'. All three were added in commit 07ec281b ('docs: close Handoff Safety, Setup & Forkability, and Documentation Gaps epics (10 tasks)') which also modified README.md.",
+    "priority_check": "N/A — issue no longer exists; bead can be closed.",
+    "duplicate_of": null,
+    "notes": "The bead was created 2026-02-20. The fix was applied in commit 07ec281b (date not checked but post-creation). Bead is under epic ant-farm-2em7 (Documentation & Setup)."
+  }
+]
