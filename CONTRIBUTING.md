@@ -91,16 +91,16 @@ Templates live in `orchestration/templates/`. Each template has a specific reade
 | `pantry.md` | Pantry (self-read) | Prompt composition instructions |
 | `implementation.md` | Pantry | Agent prompt template with 6 mandatory steps |
 | `checkpoints.md` | Pest Control | All checkpoint definitions |
-| `reviews.md` | Pantry (review mode), `compose-review-skeletons.sh` | Review protocol, report format |
+| `reviews.md` | Pantry (review mode), `build-review-prompts.sh` | Review protocol, report format |
 | `dirt-pusher-skeleton.md` | Queen | Minimal agent spawn template |
-| `nitpicker-skeleton.md` | Queen, `compose-review-skeletons.sh` | Review agent spawn template |
-| `big-head-skeleton.md` | Queen, `compose-review-skeletons.sh` | Consolidation agent spawn template |
+| `nitpicker-skeleton.md` | Queen, `build-review-prompts.sh` | Review agent spawn template |
+| `big-head-skeleton.md` | Queen, `build-review-prompts.sh` | Consolidation agent spawn template |
 | `queen-state.md` | Queen | Session state file schema |
 | `SESSION_PLAN_TEMPLATE.md` | User (optional) | Session planning template for new projects |
 
 ### Placeholder conventions
 
-Templates use `{PLACEHOLDER}` (single braces) for values filled by the Queen or Pantry at spawn time. Review skeletons use `{{SLOT_NAME}}` (double braces) for values filled by `fill-review-slots.sh`.
+Templates use `{PLACEHOLDER}` (single braces) for values filled by the Queen or Pantry at spawn time. Review skeletons use `{{SLOT_NAME}}` (double braces) for values filled by `build-review-prompts.sh`.
 
 Common placeholders:
 - `{TASK_ID}`, `{TASK_SUFFIX}` -- bead identifiers
@@ -111,8 +111,8 @@ Common placeholders:
 ### What to watch when editing templates
 
 - **`implementation.md`** defines the 6 mandatory steps that every Dirt Pusher must follow. If you change a step, update the corresponding CCO check in `checkpoints.md` (Check 4 verifies all 6 steps are present).
-- **`reviews.md`** defines review types and report format. Changes here must stay in sync with `compose-review-skeletons.sh` (which reads `reviews.md` to build skeletons) and the CCB checks in `checkpoints.md` (which verify report structure).
-- **`nitpicker-skeleton.md`** and **`big-head-skeleton.md`** are read by `compose-review-skeletons.sh` to produce skeleton files. If you change their structure, verify the script still parses them correctly.
+- **`reviews.md`** defines review types and report format. Changes here must stay in sync with `build-review-prompts.sh` (which reads `reviews.md` to build review prompts) and the CCB checks in `checkpoints.md` (which verify report structure).
+- **`nitpicker-skeleton.md`** and **`big-head-skeleton.md`** are read by `build-review-prompts.sh` to produce filled prompt files. If you change their structure, verify the script still parses them correctly.
 - **`dirt-pusher-skeleton.md`** is what the Queen uses to spawn agents. If you add fields, the Pantry's task briefs must include the corresponding data.
 
 ## Testing Changes
@@ -139,24 +139,19 @@ Common placeholders:
 
 ### Script validation
 
-For changes to the review pipeline scripts:
+For changes to the review pipeline script:
 
 ```bash
-# Test compose-review-skeletons.sh (Script 1):
-# Requires a session dir with task-metadata/ populated by the Scout
-./scripts/compose-review-skeletons.sh <SESSION_DIR> \
-  ~/.claude/orchestration/templates/reviews.md \
+# Test build-review-prompts.sh:
+# Requires a session dir to write output into
+./scripts/build-review-prompts.sh <SESSION_DIR> \
+  "abc1234..HEAD" "file1.py\nfile2.py" "task-1 task-2" \
+  "$(date +%Y%m%d-%H%M%S)" 1 \
   ~/.claude/orchestration/templates/nitpicker-skeleton.md \
   ~/.claude/orchestration/templates/big-head-skeleton.md
-
-# Test fill-review-slots.sh (Script 2):
-# Requires skeletons from Script 1 in <SESSION_DIR>/review-skeletons/
-./scripts/fill-review-slots.sh <SESSION_DIR> \
-  "abc1234..HEAD" "file1.py\nfile2.py" "task-1 task-2" \
-  "$(date +%Y%m%d-%H%M%S)" 1
 ```
 
-Both scripts exit 0 on success and print error messages to stderr on failure.
+The script exits 0 on success and prints error messages to stderr on failure.
 
 ## Syncing to ~/.claude/
 
@@ -167,7 +162,7 @@ The orchestration framework runs from `~/.claude/`, not from the repo. Changes i
 `scripts/sync-to-claude.sh` copies:
 - `CLAUDE.md` to `~/.claude/CLAUDE.md` (backs up existing file first)
 - `orchestration/` to `~/.claude/orchestration/` (via rsync without `--delete`, excluding `scripts/` and `_archive/` — existing files in the target that are not in the source are preserved, not deleted)
-- `scripts/compose-review-skeletons.sh` and `scripts/fill-review-slots.sh` to `~/.claude/orchestration/scripts/`
+- `scripts/build-review-prompts.sh` to `~/.claude/orchestration/scripts/`
 - `agents/*.md` to `~/.claude/agents/`
 
 ### When syncing happens
@@ -216,8 +211,8 @@ Changes to one file often require updates to others. This table lists the critic
 
 | If you change... | Also update... |
 |------------------|----------------|
-| Review types or report format | `compose-review-skeletons.sh` (reads reviews.md to build skeletons) |
-| Report output paths | `fill-review-slots.sh` `{{REPORT_OUTPUT_PATH}}` slot logic |
+| Review types or report format | `build-review-prompts.sh` (reads reviews.md to build review prompts) |
+| Report output paths | `build-review-prompts.sh` `{{REPORT_OUTPUT_PATH}}` slot logic |
 | Number of review types per round | `checkpoints.md` CCB Check 0 (verifies expected report count) |
 | Review types per round | `RULES.md` Step 3b (specifies round 1: 4 types, round 2+: 2 types) |
 
@@ -225,10 +220,10 @@ Changes to one file often require updates to others. This table lists the critic
 
 | If you change... | Also update... |
 |------------------|----------------|
-| `nitpicker-skeleton.md` structure | `compose-review-skeletons.sh` (parses this file) |
-| `big-head-skeleton.md` structure | `compose-review-skeletons.sh` (parses this file) |
+| `nitpicker-skeleton.md` structure | `build-review-prompts.sh` (parses this file) |
+| `big-head-skeleton.md` structure | `build-review-prompts.sh` (parses this file) |
 | `dirt-pusher-skeleton.md` fields | `pantry.md` (Pantry must produce matching task brief data) |
-| Slot marker names (`{{...}}`) | `fill-review-slots.sh` (fills the markers) |
+| Slot marker names (`{{...}}`) | `build-review-prompts.sh` (fills the markers) |
 
 ### Agent file dependencies
 

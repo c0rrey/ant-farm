@@ -11,7 +11,7 @@ The orchestration system uses four distinct placeholder syntaxes, each with a sp
 | `{UPPERCASE}` | Queen-provided context | Queen agent | Before agent spawn | `{TASK_ID}`, `{SESSION_DIR}`, `{TASK_SUFFIX}` |
 | `{lowercase-kebab}` | Runtime-derived or output format | Agent or system | At runtime by agent | `{session-dir}` (computed from SESSION_DIR), `{timestamp}` (from system clock) |
 | `${SHELL_VAR}` | Bash/shell variables | Shell interpreter | When bash script executes | `${SESSION_ID}`, `${SESSION_DIR}` in code blocks only |
-| `{{UPPERCASE}}` | Review slot markers | `fill-review-slots.sh` | When shell script composes review prompts | `{{REVIEW_ROUND}}`, `{{COMMIT_RANGE}}`, `{{CHANGED_FILES}}` |
+| `{{UPPERCASE}}` | Review slot markers | `build-review-prompts.sh` | When shell script composes review prompts | `{{REVIEW_ROUND}}`, `{{COMMIT_RANGE}}`, `{{CHANGED_FILES}}` |
 
 ## Detailed Definitions
 
@@ -99,19 +99,19 @@ mkdir -p "${SESSION_DIR}"/{task-metadata,previews,prompts}
 
 ### Tier 4: Script-Substituted (`{{DOUBLE_BRACE}}`)
 
-These placeholders are filled in by **`fill-review-slots.sh`** when it composes the final review prompts from skeleton templates. They use double curly braces to visually distinguish them from Queen-substituted Tier 1 placeholders and to prevent accidental substitution during earlier pipeline stages.
+These placeholders are filled in by **`build-review-prompts.sh`** when it composes the final review prompts from skeleton templates. They use double curly braces to visually distinguish them from Queen-substituted Tier 1 placeholders and to prevent accidental substitution during earlier pipeline stages.
 
 **When to use**: Values that are only known at review-slot-filling time — after Dirt Pushers have committed and the Queen has generated the review cycle metadata — but that must not be filled in by the Queen during initial agent spawn.
 
 **Characteristics**:
 - ALL CAPS with underscores, wrapped in double curly braces: `{{VAR}}`
-- Filled in exclusively by `fill-review-slots.sh` (the shell script that composes review prompts)
+- Filled in exclusively by `build-review-prompts.sh` (the shell script that composes review prompts)
 - Appear in review skeleton templates (`reviews.md`, `big-head-skeleton.md`, `nitpicker-skeleton.md`)
 - Never appear in final delivered prompts — all instances replaced before delivery to agents
 - Guards in the templates detect unsubstituted double-brace markers and return an error rather than proceeding with incomplete data
 
 **Examples**:
-- `{{REVIEW_ROUND}}` — the integer review round number (1, 2, 3, ...) injected by `fill-review-slots.sh` into Big Head's brief so that shell conditionals (`if [ "$REVIEW_ROUND" -eq 1 ]`) execute correctly
+- `{{REVIEW_ROUND}}` — the integer review round number (1, 2, 3, ...) injected by `build-review-prompts.sh` into Big Head's brief so that shell conditionals (`if [ "$REVIEW_ROUND" -eq 1 ]`) execute correctly
 - `{{COMMIT_RANGE}}` — the git commit range for the review scope (e.g., `abc123..HEAD`)
 - `{{CHANGED_FILES}}` — deduplicated list of files changed across all session epics
 - `{{TASK_IDS}}` — list of all bead IDs worked in the session, used in acceptance-criteria verification
@@ -120,13 +120,13 @@ These placeholders are filled in by **`fill-review-slots.sh`** when it composes 
 
 Single-brace `{UPPERCASE}` is already claimed by Tier 1 (Queen-substituted). Using `{{UPPERCASE}}` for script-substituted slots makes the two tiers visually and programmatically distinct:
 - The Queen's substitution logic replaces `{VAR}` patterns — it will not accidentally replace `{{VAR}}`
-- `fill-review-slots.sh` explicitly targets `{{VAR}}` patterns — it will not accidentally replace `{VAR}`
+- `build-review-prompts.sh` explicitly targets `{{VAR}}` patterns — it will not accidentally replace `{VAR}`
 - The self-check guard in templates (`case "$REVIEW_ROUND" in *'{'*|*'}'* )`) catches any unsubstituted `{{VAR}}` that slipped through
 
 **Substitution mechanism**:
 
 ```bash
-# fill-review-slots.sh fills double-brace slots before delivering the brief:
+# build-review-prompts.sh fills double-brace slots before delivering the brief:
 sed -i "s/{{REVIEW_ROUND}}/$REVIEW_ROUND/g" "$BRIEF_PATH"
 sed -i "s/{{COMMIT_RANGE}}/$COMMIT_RANGE/g" "$BRIEF_PATH"
 sed -i "s/{{CHANGED_FILES}}/$CHANGED_FILES/g" "$BRIEF_PATH"
@@ -147,7 +147,7 @@ All files audited. No violations found. All files use the Tiered convention corr
 | `dirt-pusher-skeleton.md` | `{TASK_TYPE}`, `{TASK_ID}`, `{TASK_SUFFIX}`, `{AGENT_TYPE}`, `{DATA_FILE_PATH}`, `{SUMMARY_OUTPUT_PATH}`, `{SESSION_DIR}` | None | None | None | Yes (L8-11) | PASS |
 | `nitpicker-skeleton.md` | `{REVIEW_TYPE}`, `{DATA_FILE_PATH}`, `{REPORT_OUTPUT_PATH}` | None | None | None | Partial (L8-11, missing EPOCH/timestamp defs) | PASS |
 | `big-head-skeleton.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{TIMESTAMP}`, `{DATA_FILE_PATH}`, `{CONSOLIDATED_OUTPUT_PATH}`, `{SESSION_DIR}` | None | None | None | Yes (L8-12) | PASS |
-| `reviews.md` | None (uses angle-bracket syntax `<session-dir>`, `<timestamp>` in text; `<epic>` only in impl DMVDC paths) | None | None | `{{REVIEW_ROUND}}` (L502, L506, L592) — substituted by `fill-review-slots.sh` before Big Head brief delivery | No | PASS |
+| `reviews.md` | None (uses angle-bracket syntax `<session-dir>`, `<timestamp>` in text; `<epic>` only in impl DMVDC paths) | None | None | `{{REVIEW_ROUND}}` (L502, L506, L592) — substituted by `build-review-prompts.sh` before Big Head brief delivery | No | PASS |
 | `implementation.md` | None (uses angle-bracket syntax `<task-type>`, `<task-id>`, etc.) | None | None | None | No | PASS |
 | `queen-state.md` | `<placeholder>` syntax (Tier 1 variant for human editing) on L2-6,16,21,34-40; `{path}`, `{N}`, `{M}`, `{name}` (Tier 2 in table) on L11 | Tier 2 examples in table (L11) | None | None | No | PASS |
 | `SESSION_PLAN_TEMPLATE.md` | None (no placeholders found) | None | None | None | No | PASS |
@@ -194,7 +194,7 @@ This pattern finds mixed-case placeholders like `{MyVar}` or `{my_VAR}`, which s
 grep -rE '\{\{[A-Z][A-Z_]*\}\}' orchestration/ --exclude-dir=_archive
 ```
 
-Expected matches: `{{REVIEW_ROUND}}`, `{{COMMIT_RANGE}}`, `{{CHANGED_FILES}}`, `{{TASK_IDS}}`. These should only appear in review skeleton templates (`reviews.md`, `big-head-skeleton.md`, `nitpicker-skeleton.md`) and are substituted exclusively by `fill-review-slots.sh` before prompt delivery. Any double-brace placeholder that survives to a delivered agent prompt indicates a substitution failure.
+Expected matches: `{{REVIEW_ROUND}}`, `{{COMMIT_RANGE}}`, `{{CHANGED_FILES}}`, `{{TASK_IDS}}`. These should only appear in review skeleton templates (`reviews.md`, `big-head-skeleton.md`, `nitpicker-skeleton.md`) and are substituted exclusively by `build-review-prompts.sh` before prompt delivery. Any double-brace placeholder that survives to a delivered agent prompt indicates a substitution failure.
 
 ---
 
@@ -231,7 +231,7 @@ The orchestration system **already complies** with the Tiered Placeholder Conven
    - No changes needed
 
 6. **Other Templates (reviews.md, implementation.md, queen-state.md, SESSION_PLAN_TEMPLATE.md, SETUP.md, reference/)** — COMPLIANT
-   - `reviews.md` uses Tier 4 `{{REVIEW_ROUND}}` double-brace placeholders (substituted by `fill-review-slots.sh`); all other files in this group use angle-bracket `<>` syntax or no placeholders
+   - `reviews.md` uses Tier 4 `{{REVIEW_ROUND}}` double-brace placeholders (substituted by `build-review-prompts.sh`); all other files in this group use angle-bracket `<>` syntax or no placeholders
    - All systems are coherent and follow the tiered convention
    - No changes needed
 
@@ -241,7 +241,7 @@ The development team unconsciously implemented the Tiered Placeholder Convention
 - Queen-provided context uses uppercase (`{SESSION_DIR}`, `{TASK_ID}`, `{TASK_SUFFIX}`)
 - Agent-derived or output examples use lowercase (`{session-dir}`, `{timestamp}`)
 - Shell variables use `${}` syntax (`${SESSION_ID}`)
-- Script-substituted review slots use double-brace uppercase (`{{REVIEW_ROUND}}`) — filled by `fill-review-slots.sh`
+- Script-substituted review slots use double-brace uppercase (`{{REVIEW_ROUND}}`) — filled by `build-review-prompts.sh`
 
 The convention simply **documents** this existing best practice rather than imposing new restrictions.
 

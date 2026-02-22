@@ -26,14 +26,14 @@ cp "$REPO_ROOT/CLAUDE.md" ~/.claude/CLAUDE.md
 # Exclude scripts/ — these live under $REPO_ROOT/scripts/ and are synced separately below.
 rsync -av --exclude='scripts/' --exclude='_archive/' "$REPO_ROOT/orchestration/" ~/.claude/orchestration/
 
-# Sync orchestration scripts (review slot-filling pipeline).
-# Only compose-review-skeletons.sh and fill-review-slots.sh are synced here because they are
-# the two user-facing pipeline tools that Claude Code subagents invoke at runtime from
-# ~/.claude/orchestration/scripts/. Other scripts in scripts/ (e.g. sync-to-claude.sh itself,
-# install-hooks.sh, scrub-pii.sh) are developer/maintainer tools that run from the repo
-# checkout and are not needed inside the ~/.claude/ tree.
+# Sync orchestration scripts (review prompt pipeline).
+# Only build-review-prompts.sh is synced here because it is the user-facing pipeline tool
+# that Claude Code subagents invoke at runtime from ~/.claude/orchestration/scripts/.
+# Other scripts in scripts/ (e.g. sync-to-claude.sh itself, install-hooks.sh, scrub-pii.sh)
+# are developer/maintainer tools that run from the repo checkout and are not needed inside
+# the ~/.claude/ tree.
 mkdir -p ~/.claude/orchestration/scripts/
-for script in "$REPO_ROOT/scripts/compose-review-skeletons.sh" "$REPO_ROOT/scripts/fill-review-slots.sh"; do
+for script in "$REPO_ROOT/scripts/build-review-prompts.sh"; do
     if [ ! -f "$script" ]; then
         echo "[ant-farm] WARNING: expected script not found, skipping: $script" >&2
         continue
