@@ -51,7 +51,7 @@ Present these as multiple-choice questions using the platform's question tool (4
 
 ## Landing the Plane (Session Completion)
 
-(Corresponds to RULES.md Step 6.)
+(Corresponds to RULES.md Steps 4-6.)
 
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
 
@@ -60,18 +60,20 @@ Present these as multiple-choice questions using the platform's question tool (4
 1. **File issues for remaining work** - Create issues for anything that needs follow-up
 2. **Run quality gates** (if code changed) - Tests, linters, builds
 3. **Review-findings gate** — If reviews ran and found P1 issues, present findings to user before proceeding. User decides: fix now, or document deferred P1s in CHANGELOG and push. Do NOT push with undisclosed P1 blockers. If no reviews ran or no P1s exist, proceed.
-4. **Update issue status** - Close finished work, update in-progress items
-5. **PUSH TO REMOTE** - This is MANDATORY:
+4. **Update documentation** - Update CHANGELOG, README, CLAUDE.md in a single commit (RULES.md Step 4)
+5. **Verify cross-references** - Confirm all cross-references are valid and all tasks have CHANGELOG entries (RULES.md Step 5)
+6. **Update issue status** - Close finished work, update in-progress items
+7. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
    git pull --rebase
    bd sync
    git push
    git status  # MUST show "up to date with origin"
    ```
-6. **Clean up** - Clear stashes, prune remote branches
+8. **Clean up** - Clear stashes, prune remote branches
    (Session artifacts in .beads/agent-summaries/_session-*/ are retained for posterity. Prune old sessions manually when needed.)
-7. **Verify** - All changes committed AND pushed
-8. **Hand off** - Provide context for next session
+9. **Verify** - All changes committed AND pushed
+10. **Hand off** - Provide context for next session
 
 **CRITICAL RULES:**
 - Work is NOT complete until `git push` succeeds

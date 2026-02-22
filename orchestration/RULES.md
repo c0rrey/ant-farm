@@ -198,6 +198,14 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             - Templates: `nitpicker-skeleton.md`, `big-head-skeleton.md`
             - After team completes, DMVDC and CCB have already run inside the team
 
+            **Constraint: one TeamCreate per session.** Claude Code supports only one `TeamCreate` call
+            per session. The Nitpicker team uses this slot. Any agent that needs to communicate with
+            another agent (e.g., Pest Control receiving a message from Big Head) MUST be added as a
+            team member — it cannot be spawned separately as a Task agent and then contacted via
+            SendMessage from inside the team. If you are adding a new agent that requires intra-team
+            messaging, include it as a team member in the Nitpicker team rather than as a standalone
+            Task spawn. Do NOT add a second TeamCreate call anywhere in the workflow.
+
             **3b-v. Spawn dummy reviewer** (context usage instrumentation — sunset after ~30 sessions):
             The dummy reviewer mirrors the correctness reviewer to produce empirical context-usage data.
             Its report is discarded — Big Head does NOT read or consolidate it.
@@ -256,13 +264,20 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             - **If "defer"**: P1/P2 beads stay open; document in CHANGELOG; proceed to Step 4
             **Progress log (after triage decision):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_TRIAGED|round=<N>|p1=<count>|p2=<count>|decision=<fix_now|defer|terminated>" >> ${SESSION_DIR}/progress.log`
 
-**Step 4:** Documentation — update CHANGELOG, README, CLAUDE.md in single commit
+**Step 4:** Documentation — update CHANGELOG, README, CLAUDE.md in single commit.
+            Before committing: file issues for any remaining work; run quality gates (tests, linters,
+            builds) if code changed; apply review-findings gate (if reviews found P1 issues, present
+            to user before proceeding — user decides fix now or defer; do NOT push with undisclosed
+            P1 blockers).
             **Progress log (after doc commit):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|DOCS_COMMITTED|complete|commit=<hash>" >> ${SESSION_DIR}/progress.log`
 
-**Step 5:** Verify — cross-references valid, all tasks have CHANGELOG entries
+**Step 5:** Verify — cross-references valid, all tasks have CHANGELOG entries.
+            Update issue status: close finished tasks, update in-progress items.
             **Progress log (after cross-reference check):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|XREF_VERIFIED|complete|tasks_with_changelog=<ids>" >> ${SESSION_DIR}/progress.log`
 
-**Step 6:** Land the plane — git pull --rebase, bd sync, git push, clean up stashes and remote branches
+**Step 6:** Land the plane — git pull --rebase, bd sync, git push, clean up stashes and remote branches.
+            Run `git status` after push — output MUST show "up to date with origin".
+            Provide hand-off context for the next session.
             **Progress log (after git push succeeds):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SESSION_COMPLETE|pushed=true" >> ${SESSION_DIR}/progress.log`
 
 ## Hard Gates
@@ -309,6 +324,7 @@ Every `Task` tool call the Queen makes MUST include the `model` parameter from t
 | Scout | Task (`scout-organizer`) | opus | Orchestration role |
 | Pantry (impl) | Task (`pantry-impl`) | opus | Prompt composition + review skeleton assembly (Script 1) |
 | Dirt Pushers | Task (dynamic type) | sonnet | All dirt pushers regardless of subagent_type |
+| PC — SSV | Task (`pest-control`) | haiku | Set comparisons only — no judgment required |
 | PC — CCO | Task (`pest-control`) | haiku | Mechanical checklist |
 | PC — WWD | Task (`pest-control`) | haiku | Mechanical file comparison |
 | PC — DMVDC | Task (`pest-control`) | sonnet | Judgment: claims vs actual code |
@@ -350,16 +366,26 @@ At session start (Step 0), generate a session ID and create the session artifact
     SESSION_DIR=".beads/agent-summaries/_session-${SESSION_ID}"
     mkdir -p "${SESSION_DIR}"/{task-metadata,previews,prompts,pc,summaries}
 
+Note: `review-skeletons/` and `review-reports/` are created lazily during Step 3b (see 3b-iii and 3b-ii respectively) — they do not exist until reviews run.
+
 Store SESSION_DIR in your context. Pass it explicitly to every agent that needs to write artifacts:
 Scout receives it as "Session directory: <SESSION_DIR>".
 Pantry receives it as "Session directory: <SESSION_DIR>".
 Pest Control receives it as "Session directory: <SESSION_DIR>" (when writing checkpoint artifacts).
 
-All session-scoped artifacts go here:
+All session-scoped artifacts go here (7 subdirectories total; `review-skeletons/` and `review-reports/` are lazy-created):
+- `task-metadata/` — per-task scope files written by Scout
+- `previews/` — combined prompt previews written by Pantry
+- `prompts/` — full task and review prompt files written by Pantry
+- `pc/` — Pest Control checkpoint artifact files
+- `summaries/` — Dirt Pusher summary docs
+- `review-skeletons/` — review skeleton files written by `compose-review-skeletons.sh` (created at Step 3b-ii, not at Step 0)
+- `review-reports/` — Nitpicker and Big Head reports (created at Step 3b-iii via `mkdir -p`, not at Step 0)
+
+Root-level artifacts in `${SESSION_DIR}`:
 - `queen-state.md` — session state for context recovery
-- `orchestrator-state*.md` — orchestrator snapshots
-- `step3b-transition-gate.md` — review transition gate
-- `HANDOFF-*.md` — handoff documents
+- `briefing.md` — written by Scout (Step 1a); strategy summary read by Queen before user approval
+- `session-summary.md` — written by Pantry (optional); end-of-session narrative summary
 - `progress.log` — append-only milestone log; one pipe-delimited line per completed step; written by the Queen at each workflow milestone; never read or overwritten during normal operation; recovery sessions read this once to determine the resume point
 - `resume-plan.md` — written by `scripts/parse-progress-log.sh` on crash recovery; structured markdown resume plan presented to the user for approval before any action is taken
 

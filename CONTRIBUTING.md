@@ -40,6 +40,14 @@ Claude Code loads agent files once at startup. Adding or editing an agent file r
 2. **`orchestration/RULES.md`** -- add the agent to the "Agent Types" table and "Model Assignments" table
 3. **`orchestration/templates/scout.md`** -- the Scout discovers agents dynamically by scanning `~/.claude/agents/`, so no template change is needed unless you want to add heuristic rules for when to recommend the new agent
 
+### One-TeamCreate-per-session constraint
+
+Claude Code supports only one `TeamCreate` call per session. The Nitpicker review team (Step 3b-iv) uses this slot for the entire session.
+
+**Implication for new agents**: If your new agent needs to receive messages from another agent via `SendMessage` (as Pest Control does from Big Head), it MUST be added as a member of the Nitpicker team — it cannot be spawned as a separate Task agent and reached via `SendMessage` from inside the team. Adding a second `TeamCreate` call will fail at runtime.
+
+If the agent does not require intra-team messaging, it can be spawned as a regular Task agent and is not subject to this constraint.
+
 ## Adding a New Checkpoint
 
 Checkpoints are verification gates run by Pest Control. All checkpoint definitions live in a single file: `orchestration/templates/checkpoints.md`.
