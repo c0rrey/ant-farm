@@ -143,7 +143,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             - Commit range: round 1 = first session commit..HEAD; round 2+ = first fix commit..HEAD
             - File list: `git diff --name-only <commit-range>` (deduplicated)
             - Task IDs: round 1 = all task IDs; round 2+ = fix task IDs only
-            - Timestamp: The Queen generates ONE timestamp at the start of Step 3b using `date +%Y%m%d-%H%M%S` format (YYYYMMDD-HHMMSS).
+            - Timestamp: The Queen generates ONE timestamp at the start of Step 3b using `date +%Y%m%d-%H%M%S` format (YYYYMMDD-HHmmss).
               This shell variable corresponds to the canonical `{REVIEW_TIMESTAMP}` placeholder defined in
               `orchestration/PLACEHOLDER_CONVENTIONS.md` (Tier 1 uppercase). Use `${TIMESTAMP}` in bash
               code blocks; use `{REVIEW_TIMESTAMP}` when referencing the placeholder in prose or templates.
@@ -290,7 +290,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 | WWD PASS | Serial mode: next agent spawn; Batch mode: DMVDC spawn (all wave agents checked before DMVDC) | ${SESSION_DIR}/pc/*-wwd-*.md |
 | DMVDC PASS | Task closure (bd close) | ${SESSION_DIR}/pc/*-dmvdc-*.md |
 | CCB PASS | Presenting results | ${SESSION_DIR}/pc/pc-session-ccb-{timestamp}.md |
-| Reviews | Mandatory after ALL implementation completes; re-runs after fix cycles with reduced scope (round 2+) |
+| Reviews | Mandatory after ALL implementation completes; re-runs after fix cycles with reduced scope (round 2+) | ${SESSION_DIR}/review-reports/review-consolidated-{timestamp}.md |
 
 ## Information Diet (The Queen's Window)
 

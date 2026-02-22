@@ -4,7 +4,7 @@
 
 The orchestration system uses custom Claude Code agent types defined in `agents/`. These are synced to `~/.claude/agents/` automatically on `git push` via the pre-push hook.
 
-**First-time setup:** See `docs/installation-guide.md` for complete installation, sync behavior, backup, and uninstall documentation.
+**First-time setup:** See the Quick Setup and Full Setup sections below for installation, sync behavior, backup, and uninstall documentation.
 
 Quick reference:
 ```bash
@@ -13,7 +13,7 @@ Quick reference:
 # Then restart Claude Code
 ```
 
-For details on what gets synced, how to back up `~/.claude/`, and how to uninstall, refer to the full installation guide.
+For details on what gets synced, how to back up `~/.claude/`, and how to uninstall, see the Full Setup section below.
 
 ## Quick Setup (5 minutes)
 
