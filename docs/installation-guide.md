@@ -136,10 +136,10 @@ If you edit `~/.claude/CLAUDE.md` directly, those changes will be overwritten on
 
 - **Source**: `{repo-root}/orchestration/`
 - **Target**: `~/.claude/orchestration/`
-- **Behavior**: One-way sync with `--delete` flag (removes files from target that no longer exist in source)
+- **Behavior**: One-way sync without `--delete` (adds/updates files from source, preserves user-created files in target)
 - **Contents**: RULES.md, templates/, reference/, SETUP.md, etc.
 
-Files deleted from the repo's `orchestration/` directory will be deleted from `~/.claude/orchestration/` on the next sync. This ensures stale templates and outdated rules don't interfere with active sessions.
+Files deleted from the repo's `orchestration/` directory will **not** be automatically removed from `~/.claude/orchestration/`. This preserves any custom files adopters have placed in the target. If you need to remove a stale source file from the target, delete it manually from `~/.claude/orchestration/`.
 
 ### Agent Definitions Synchronization
 
