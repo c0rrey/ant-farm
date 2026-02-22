@@ -60,7 +60,7 @@ valid frontmatter. **Also track the file path for each agent** — you will use 
 All agents appear in your internal catalog for reference, but implementation candidates are separate from orchestration agents. Orchestration agents (scout, pantry, pest-control, etc.) coordinate the work; they do not implement tasks. Therefore, they are excluded from Dirt Pusher recommendations. Implementation candidates are agents who will execute tasks (python-pro, debugger, etc.).
 
 **Exclusions from Dirt Pusher recommendations** (orchestration agents):
-scout-organizer, pantry-impl, pantry-review, pest-control, nitpicker, big-head
+scout-organizer, pantry-impl, pest-control, nitpicker, big-head
 
 Build an internal two-tier catalog (keep in context, do NOT write to disk):
 

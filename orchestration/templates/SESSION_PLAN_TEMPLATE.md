@@ -5,7 +5,7 @@ Use this template for planning multi-agent orchestration sessions.
 ## Session Overview
 
 **Date:** YYYY-MM-DD
-**Boss-Bot:** Claude Sonnet 4.5
+**Queen:** Claude Opus
 **User Request:** [Paste original request here]
 **Task IDs:** [List all task IDs]
 **Epic:** [If applicable]
@@ -337,9 +337,9 @@ Before declaring session complete:
 - Strategy changes mid-session: ___
 
 **Context Preservation:**
-- Implementation files read in boss-bot window: ___ (target: <10)
+- Implementation files read in Queen window: ___ (target: <10)
 - Token budget remaining: ___K (target: >100K)
-- Boss-bot stayed focused: ✅ / ❌
+- Queen stayed focused: ✅ / ❌
 
 ---
 
