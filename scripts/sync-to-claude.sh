@@ -12,7 +12,7 @@ mkdir -p ~/.claude/agents/
 # Back up existing CLAUDE.md before overwrite
 if [ -f ~/.claude/CLAUDE.md ]; then
     BACKUP_PATH="${HOME}/.claude/CLAUDE.md.bak.$(date +%Y%m%dT%H%M%S).$$"
-    cp ~/.claude/CLAUDE.md "$BACKUP_PATH"
+    cp ~/.claude/CLAUDE.md "$BACKUP_PATH" || { echo "[ant-farm] ERROR: backup failed" >&2; exit 1; }
     echo "[ant-farm] Backed up ~/.claude/CLAUDE.md -> $BACKUP_PATH"
 fi
 
@@ -33,22 +33,20 @@ rsync -av --exclude='scripts/' --exclude='_archive/' "$REPO_ROOT/orchestration/"
 # are developer/maintainer tools that run from the repo checkout and are not needed inside
 # the ~/.claude/ tree.
 mkdir -p ~/.claude/orchestration/scripts/
-for script in "$REPO_ROOT/scripts/build-review-prompts.sh"; do
-    if [ ! -f "$script" ]; then
-        echo "[ant-farm] WARNING: expected script not found, skipping: $script" >&2
-        continue
-    fi
-    dest=~/.claude/orchestration/scripts/"$(basename "$script")"
-    cp "$script" "$dest"
-    chmod +x "$dest"
-    echo "[ant-farm] Synced script: $dest"
-done
+if [ ! -f "$REPO_ROOT/scripts/build-review-prompts.sh" ]; then
+    echo "[ant-farm] WARNING: expected script not found, skipping: $REPO_ROOT/scripts/build-review-prompts.sh" >&2
+else
+    cp "$REPO_ROOT/scripts/build-review-prompts.sh" ~/.claude/orchestration/scripts/build-review-prompts.sh
+    chmod +x ~/.claude/orchestration/scripts/build-review-prompts.sh
+    echo "[ant-farm] Synced script: ~/.claude/orchestration/scripts/build-review-prompts.sh"
+fi
 
 # Sync custom agents to ~/.claude/agents/
 AGENTS_CHANGED=false
 if [ ! -d "$REPO_ROOT/agents" ]; then
     echo "[ant-farm] WARNING: agents/ directory not found, skipping agent sync: $REPO_ROOT/agents" >&2
 else
+    agents_synced=0
     for agent in "$REPO_ROOT/agents/"*.md; do
         [ -f "$agent" ] || continue
         name="$(basename "$agent")"
@@ -56,7 +54,11 @@ else
             AGENTS_CHANGED=true
         fi
         cp "$agent" ~/.claude/agents/"$name"
+        agents_synced=$((agents_synced + 1))
     done
+    if [ "$agents_synced" -eq 0 ]; then
+        echo "[ant-farm] WARNING: agents/ directory exists but contains no .md files — no agents synced." >&2
+    fi
 fi
 
 echo "[ant-farm] Sync complete."
