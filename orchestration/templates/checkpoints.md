@@ -12,7 +12,7 @@ For detailed extraction rules and examples, see `~/.claude/orchestration/referen
 
 ## Pest Control Overview
 
-All checkpoint verifications (SSV, CCO, WWD, DMVDC, CCB) are executed by **Pest Control**, a dedicated verification subagent that cross-checks orchestrator and agent work against ground truth.
+All checkpoint verifications (SSV, CCO, WWD, DMVDC, CCB, ESV) are executed by **Pest Control**, a dedicated verification subagent that cross-checks orchestrator and agent work against ground truth.
 
 **Role distinction**: The Queen spawns Pest Control to run a checkpoint. Pest Control executes all checkpoint logic directly — it does not spawn subagents. Pest Control has tools: Bash, Read, Write, Glob, Grep (no Task tool).
 
@@ -22,16 +22,18 @@ All checkpoint verifications (SSV, CCO, WWD, DMVDC, CCB) are executed by **Pest 
 - Post-commit scope verification (WWD)
 - Post-completion substance verification (DMVDC)
 - Consolidation integrity audits (CCB)
+- Exec summary and CHANGELOG verification before push (ESV)
 
 **Artifact naming conventions:**
 - **Task-specific checkpoints (WWD, DMVDC for Dirt Pushers):** `pc-{TASK_SUFFIX}-{checkpoint}-{timestamp}.md`
   - Example: `pc-74g1-wwd-20260215-001045.md`
   - Example: `pc-74g1-dmvdc-20260215-003422.md`
-- **Session-wide checkpoints (SSV, CCO for Dirt Pushers, CCO-review, CCB):** `pc-session-{checkpoint}-{timestamp}.md`
+- **Session-wide checkpoints (SSV, CCO for Dirt Pushers, CCO-review, CCB, ESV):** `pc-session-{checkpoint}-{timestamp}.md`
   - Example: `pc-session-ssv-20260215-001045.md`
   - Example: `pc-session-cco-impl-20260215-001145.md` (Dirt Pusher CCO: Queen batches all wave prompts into one audit)
   - Example: `pc-session-cco-review-20260215-001145.md`
   - Example: `pc-session-ccb-20260215-010520.md`
+  - Example: `pc-session-esv-20260215-012345.md`
   - Note: Dirt Pusher CCO uses session-wide naming because the Queen audits all prompts for a wave in a single CCO run. Per-task CCO naming (`pc-{TASK_SUFFIX}-cco-{timestamp}.md`) applies only when auditing a single Dirt Pusher prompt in isolation (rare).
 - **Historical (pre-_session-068ecc83):** Earlier sessions used varied naming formats that do not match the conventions above. Common patterns included wave-based checkpoint letters (`pest-control-{session}-checkpoint-{A|B}-{timestamp}.md`), epic-scoped directories (`{epic}/verification/pc/` instead of `{SESSION_DIR}/pc/`), and non-standardized prefixes (`pc-review-cco-`, `pest-control-`). `_session-068ecc83` is the first session to use the current standard fully. Artifacts from earlier sessions are expected to diverge from the current convention; do not treat those divergences as errors.
 
@@ -78,6 +80,7 @@ All checkpoints use the following verdict states:
 | **DMVDC (Dirt Pushers)** | Pick 2 criteria: first-listed OR identified-as-critical OR all if <2 | First-listed acceptance criterion | PARTIAL allows resubmission; FAIL escalates |
 | **DMVDC (Nitpickers)** | Sample size = min(N, max(3, min(5, ceil(N/3)))) — see Check 1 for worked examples | Include highest-severity + all tiers | PARTIAL allows resubmission; FAIL escalates |
 | **CCB** | Finding count must reconcile to 100% | Earliest-filed bead per root cause | PARTIAL: fix and re-run; FAIL blocks user presentation |
+| **ESV** | All 6 checks must pass | First-listed violation per check | FAIL blocks git push; one Scribe retry allowed before escalation |
 
 ### Details by Checkpoint
 
@@ -104,6 +107,10 @@ All checkpoints use the following verdict states:
 - PASS: All 8 checks confirm (finding reconciliation, bead quality, priority calibration, traceability, dedup correctness, provenance)
 - PARTIAL: Some checks fail (fix and re-run)
 - FAIL: Critical failures (e.g., missing reports, orphaned findings). Must resolve before presenting to user.
+
+**ESV Verdict Specifics:**
+- PASS: All 6 checks pass (task coverage, commit coverage, open bead accuracy, CHANGELOG fidelity, section completeness, metric consistency)
+- FAIL: Any check fails. Blocks git push. Re-spawn Scribe with specific violations (max 1 retry). Second failure escalates to user.
 
 ---
 
@@ -720,3 +727,166 @@ Where:
    ```
 4. After Scout revises `{SESSION_DIR}/briefing.md`, re-run SSV.
 5. If SSV fails a second time, escalate to user with the full violation report.
+
+---
+
+## Exec Summary Verification (ESV): Pre-Push Session Output Audit
+
+**When**: After Scribe writes `{SESSION_DIR}/exec-summary.md` and CHANGELOG.md, BEFORE `git push` (Step 5c in RULES.md)
+**Model**: `haiku` (mechanical counting and set comparisons — no judgment required)
+
+**Why**: The Scribe produces an exec summary and CHANGELOG entry that are the permanent record of the session. Errors here (missed tasks, phantom commits, stale bead statuses) mislead future sessions and create audit gaps. A lightweight automated check before push catches output defects at zero implementation cost — the session is already complete, so no rework cascades.
+
+**Why haiku**: All six checks are set comparisons, count reconciliations, and status lookups with no ambiguity. No judgment or code comprehension is required. Haiku handles this class of verification faster and cheaper than sonnet.
+
+```markdown
+**Pest Control verification - ESV (Exec Summary Verification)**
+
+You are **Pest Control**, the verification subagent. Your role is to verify the Scribe's session output for correctness before the session is pushed to remote. See "Pest Control Overview" section above for full conventions.
+
+**Exec summary**: `{SESSION_DIR}/exec-summary.md`
+**Session directory**: `{SESSION_DIR}`
+**Session start commit**: `{SESSION_START_COMMIT}` (Queen-supplied; first commit of this session, used to scope git log)
+**Session end commit**: `{SESSION_END_COMMIT}` (Queen-supplied; final commit before push)
+**Session start date**: `{SESSION_START_DATE}` (ISO 8601, e.g., `2026-02-22` — Queen-supplied; used to scope bd list)
+
+Read the exec summary first. Then run all six checks below.
+
+## Check 1: Task Coverage
+
+1. Read `{SESSION_DIR}/briefing.md` (or `{SESSION_DIR}/progress.log` if briefing is unavailable) to extract all task IDs planned for this session.
+2. Read the exec summary's "Work Completed" section and extract every task ID mentioned.
+3. Every task ID from the briefing/progress log must appear in the exec summary.
+4. Report each missing task as: "Task `{TASK_ID}` — in briefing/progress log but not in exec summary."
+
+**PASS condition**: Every planned task ID appears in the exec summary's Work Completed section.
+**FAIL condition**: One or more task IDs are absent. List every missing task ID.
+
+## Check 2: Commit Coverage
+
+1. Run `git log --oneline {SESSION_START_COMMIT}..{SESSION_END_COMMIT}` to list all commits in this session's range.
+2. Extract all commit hashes mentioned in the exec summary.
+3. Every commit hash from the git log must be accounted for in the exec summary (either listed explicitly or covered by a task entry that references it).
+4. Report each unaccounted commit as: "Commit `{HASH}` (`{message}`) — in git log but not referenced in exec summary."
+
+**PASS condition**: Every commit in the session range is accounted for in the exec summary.
+**FAIL condition**: One or more commits are unaccounted for. List every missing commit hash and its message.
+
+## Check 3: Open Bead Accuracy
+
+1. Read the exec summary's "Open Issues" section and extract every bead ID listed as open.
+2. Run `bd show <id>` for each listed bead to verify it is actually open.
+
+**GUARD: bd show Failure Handling (INFRASTRUCTURE FAILURE)**
+If `bd show <id>` fails (task not found, unreadable, or bd command error):
+- Record the infrastructure failure: "`<id>` — bd show failed: {error details}"
+- Write a note in your verification report: "Could not verify status of `<id>` via `bd show`: {error}. Skipping this bead's status check."
+- Do NOT abort the review; continue with remaining beads.
+- Clearly mark skipped beads in your findings: "[SKIPPED: bd show failed]"
+- If more than half the listed beads fail `bd show`, FAIL the check with: "Infrastructure failure: could not verify status for majority of listed beads."
+
+3. Run `bd list --status=open --after={SESSION_START_DATE}` to detect any open beads from this session that are NOT listed in the exec summary.
+4. Report each discrepancy as one of:
+   - "Bead `<id>` listed as open in exec summary but `bd show` reports status={status}."
+   - "Bead `<id>` is open and filed during this session but not listed in exec summary's Open Issues."
+
+**PASS condition**: Every bead listed as open in exec summary is actually open (per `bd show`), and no unlisted open beads from this session exist.
+**FAIL condition**: Any status mismatch, or unlisted open beads exist. List every discrepancy.
+
+## Check 4: CHANGELOG Derivation Fidelity
+
+1. Identify the new CHANGELOG.md entry written by the Scribe for this session (it will be the most recently added entry).
+2. Read the exec summary's task IDs and commit hashes.
+3. Verify that every task ID and commit hash present in the exec summary also appears in the CHANGELOG entry.
+4. Report each missing item as: "Task ID `{TASK_ID}` in exec summary but absent from CHANGELOG entry." or "Commit `{HASH}` in exec summary but absent from CHANGELOG entry."
+
+**PASS condition**: Every task ID and commit hash from the exec summary is present in the CHANGELOG entry.
+**FAIL condition**: One or more items are missing from the CHANGELOG. List every missing item.
+
+## Check 5: Section Completeness
+
+1. Read the exec summary and verify that all 5 required sections are present:
+   - **At a Glance** — summary table with key metrics
+   - **Work Completed** — per-task outcome list
+   - **Review Findings** — Nitpicker findings summary (may be "None" if no review ran)
+   - **Open Issues** — list of open beads from this session (may be "None")
+   - **Observations** — process notes, patterns, or handoff context
+
+2. Report each missing section as: "Section '{section name}' is absent from exec summary."
+
+**PASS condition**: All 5 required sections are present.
+**FAIL condition**: One or more sections are missing. List every absent section.
+
+## Check 6: Metric Consistency
+
+1. Read the "At a Glance" table in the exec summary and extract all numeric counts (e.g., "Tasks completed: N", "Commits: N", "Beads filed: N").
+2. For each count, verify it against the actual item count in the corresponding body section:
+   - "Tasks completed" count must match the number of task entries in "Work Completed"
+   - "Commits" count must match the number of commits in the session range (`git log --oneline` output)
+   - "Beads filed" count must match the number of bead IDs listed in "Open Issues" (or the review findings section if beads were filed there)
+3. Report each mismatch as: "At a Glance says '{label}: {claimed}' but actual count in body is {actual}."
+
+**PASS condition**: All numeric counts in "At a Glance" match the actual item counts in the body sections.
+**FAIL condition**: One or more counts are inconsistent. List every mismatch with claimed and actual values.
+
+## Verdict
+
+Per-check status — report each check individually:
+
+```
+Check 1 (Task Coverage): PASS / FAIL — {evidence or "All task IDs present"}
+Check 2 (Commit Coverage): PASS / FAIL — {evidence or "All commits accounted for"}
+Check 3 (Open Bead Accuracy): PASS / FAIL — {evidence or "All bead statuses confirmed"}
+Check 4 (CHANGELOG Fidelity): PASS / FAIL — {evidence or "All items present in CHANGELOG"}
+Check 5 (Section Completeness): PASS / FAIL — {evidence or "All 5 sections present"}
+Check 6 (Metric Consistency): PASS / FAIL — {evidence or "All counts consistent"}
+```
+
+**PASS** — All 6 checks pass. Report PASS to the Queen. The Queen may proceed with `git push`.
+
+**FAIL: <list each failing check with evidence>** — One or more checks failed. Do NOT push. Re-spawn Scribe with specific violations.
+
+**Example FAIL verdict:**
+
+> **Verdict: FAIL**
+>
+> Check 1 (Task Coverage): PASS
+>
+> Check 2 (Commit Coverage): FAIL
+> - Commit `a3f9c12` ("chore: sync beads JSONL") — in git log but not referenced in exec summary.
+>
+> Check 3 (Open Bead Accuracy): FAIL
+> - Bead `ant-farm-99z` listed as open in exec summary but `bd show` reports status=closed.
+>
+> Check 4 (CHANGELOG Fidelity): PASS
+>
+> Check 5 (Section Completeness): PASS
+>
+> Check 6 (Metric Consistency): FAIL
+> - At a Glance says "Tasks completed: 4" but Work Completed section lists 3 tasks.
+>
+> Recommendation: Re-spawn Scribe with these violations. Scribe must update exec-summary.md and CHANGELOG to resolve Check 2, Check 3, and Check 6 before re-running ESV.
+
+Write your verification report to:
+`{SESSION_DIR}/pc/pc-session-esv-{timestamp}.md`
+
+Where:
+- `{SESSION_DIR}`: session artifact directory (e.g., `.beads/agent-summaries/_session-abc123`)
+- timestamp: format defined in **Timestamp format** (Pest Control Overview)
+```
+
+### The Queen's Response
+
+**On PASS**: Proceed with `git push` (Step 6 in RULES.md).
+
+**On FAIL**:
+1. Log the failing check details from the ESV report.
+2. Do NOT push to remote.
+3. Re-spawn Scribe with a prompt that includes the specific violations:
+   ```
+   ESV found errors in the exec summary or CHANGELOG that must be corrected before push:
+   <paste specific failures from ESV report>
+   Please update {SESSION_DIR}/exec-summary.md and CHANGELOG.md to resolve these issues.
+   ```
+4. After Scribe updates the outputs, re-run ESV.
+5. If ESV fails a second time, escalate to user — present the failed ESV report and ask whether to fix manually or push as-is. Do NOT push with undisclosed failures.
