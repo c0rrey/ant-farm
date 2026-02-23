@@ -39,9 +39,9 @@ CHANGELOG authoring moves from the Queen (Step 4) to the Scribe (Step 5b). The Q
 ## Scribe Agent Specification
 
 ### Agent Configuration
-- **subagent_type**: `general-purpose`
+- **subagent_type**: `technical-writer`
 - **model**: `sonnet`
-- **No custom agent file needed** — general-purpose has Bash, Read, Glob, Grep, Write, Edit
+- **No custom agent file needed** — technical-writer has Bash, Read, Glob, Grep, Write, Edit
 
 ### Inputs (passed by Queen)
 
@@ -169,7 +169,7 @@ Add to RULES.md Retry Limits table:
 Queen spawns:
 ```
 Task(
-  subagent_type="general-purpose",
+  subagent_type="technical-writer",
   model="sonnet",
   prompt="Write session exec summary. Session dir: {SESSION_DIR}. Commit range: {RANGE}. Open beads: {IDS}. [+ template instructions]"
 )

@@ -5,7 +5,7 @@
 Fill in all `{PLACEHOLDER}` values (uppercase) and use the result as the Task tool `prompt` parameter.
 The agent-facing text starts below the `---` separator. Do NOT include this instruction block.
 
-**Model**: The Task tool call MUST include `model: "sonnet"`. subagent_type: `general-purpose`.
+**Model**: The Task tool call MUST include `model: "sonnet"`. subagent_type: `technical-writer`.
 
 **Term definitions (canonical across all orchestration templates):**
 - `{SESSION_DIR}` — session artifact directory path (e.g., `.beads/agent-summaries/_session-abc123`)

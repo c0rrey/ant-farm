@@ -302,7 +302,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 **Step 5b:** Scribe — spawn the Scribe agent to write the session exec summary and CHANGELOG entry.
             ```
             Task(
-              subagent_type="general-purpose",
+              subagent_type="technical-writer",
               model="sonnet",
               prompt="Write session exec summary. Session dir: {SESSION_DIR}. Commit range: {RANGE}.
                       Open beads: {IDS}. CHANGELOG path: CHANGELOG.md.
@@ -383,7 +383,7 @@ For the complete detailed list and rationale, see "Queen Read Permissions" above
 | Dirt Pushers | from Pantry verdict table | Specialist per task — Scout recommends via dynamic agent discovery, Pantry passes through |
 | Nitpickers | `nitpicker` | Custom agent: file:line specificity, calibrated severity, complete coverage |
 | Big Head | `big-head` | Custom agent: deduplication, root-cause grouping, issue filing |
-| Scribe | `general-purpose` | No custom agent needed — reads session artifacts, writes exec summary + CHANGELOG |
+| Scribe | `technical-writer` | Reads session artifacts, writes exec summary + CHANGELOG |
 | PC — ESV | `pest-control` | Custom agent: mechanical exec-summary verification against session artifacts |
 
 ## Model Assignments
@@ -404,7 +404,7 @@ Every `Task` tool call the Queen makes MUST include the `model` parameter from t
 | Big Head | TeamCreate member | opus | Set in big-head-skeleton.md (`{MODEL}`) |
 | PC (team member) | TeamCreate member | sonnet | Runs DMVDC inside team; needs sonnet |
 | Fix Dirt Pushers | Task (dynamic type) | sonnet | Same rule as regular Dirt Pushers |
-| Scribe | Task (`general-purpose`) | sonnet | Reads session artifacts; writes exec-summary.md + CHANGELOG entry |
+| Scribe | Task (`technical-writer`) | sonnet | Reads session artifacts; writes exec-summary.md + CHANGELOG entry |
 | PC — ESV | Task (`pest-control`) | haiku | Mechanical verification — 6 checks, no judgment required |
 
 ## Concurrency Rules
