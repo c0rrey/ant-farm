@@ -53,10 +53,10 @@ TeamCreate(
 )
 ```
 
-**Step 3 — Embed report paths in Big Head's spawn prompt.**
-Rather than sending a follow-up SendMessage, include the expected report paths directly in Big Head's
-initial prompt (the agent-facing template below). build-review-prompts.sh writes all report paths into
-`{DATA_FILE_PATH}`, so Big Head discovers them from the brief. No SendMessage step is required.
+**Step 3 — Report paths are included automatically.**
+build-review-prompts.sh writes all expected report paths into `{DATA_FILE_PATH}` (the consolidation brief)
+automatically via `fill_slot`. Big Head's spawn prompt already includes `{DATA_FILE_PATH}`, so Big Head
+discovers all report paths from the brief without any manual embedding or follow-up SendMessage.
 
 The agent-facing text starts below the `---` separator. Do NOT include this instruction block in the TeamCreate prompt.
 
@@ -120,7 +120,7 @@ Your workflow:
 8. Write consolidated summary to {CONSOLIDATED_OUTPUT_PATH}
 9. Send consolidated report path to Pest Control (SendMessage): "Consolidated report ready at {CONSOLIDATED_OUTPUT_PATH}. Please run DMVDC and CCB checkpoints and reply with verdict."
    - Do NOT file any beads before receiving Pest Control's reply
-10. **End your turn** after sending to Pest Control. Do NOT sleep or poll — doing so blocks incoming messages. Pest Control's reply arrives as a new conversation turn. When it arrives, act on the verdict — follow the turn-based retry protocol in reviews.md Step 4:
+10. **End your turn** after sending to Pest Control. Do NOT sleep or poll — doing so blocks incoming messages. Pest Control's reply arrives as a new conversation turn. When it arrives, act on the verdict — follow the turn-based retry protocol in reviews.md (Big Head Consolidation Protocol > Step 4: Checkpoint Gate):
     - If no reply after 2 subsequent turns, retry once; if still no reply after 2 more turns, escalate to Queen
     - **PASS**: File ONE bead per root cause (skip any marked as duplicates in step 7). For each bead, write a description to a temp file, then create:
       ```bash

@@ -126,10 +126,10 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             (`pantry-impl`, `model: "opus"`) in the SAME message so they launch concurrently.
             The Pantry reads from task-metadata (written by Scout) and has no dependency on wave N's output.
             This eliminates the idle gap between waves. The flow per wave boundary:
-            1. Wave N CCO PASS → spawn wave N Dirt Pushers + wave N+1 Pantry (single message)
+            1. Wave N CCO PASS → spawn wave N Dirt Pushers + wave N+1 Pantry (in a single Task call to achieve concurrency)
             2. Wave N+1 Pantry returns → spawn wave N+1 CCO
             3. Wave N Dirt Pushers finish → run WWD/DMVDC (Step 3)
-            4. Wave N+1 CCO PASS + wave N verification done → spawn wave N+1 Dirt Pushers + wave N+2 Pantry
+            4. Wave N+1 CCO PASS + wave N WWD + DMVDC both PASS → spawn wave N+1 Dirt Pushers + wave N+2 Pantry
             For the final wave (no wave N+1), skip the Pantry — just spawn Dirt Pushers alone.
             **Progress log (after each wave's Dirt Pushers are spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_SPAWNED|wave=<N>|spawned=<agent-ids>|previews_dir=${SESSION_DIR}/previews" >> ${SESSION_DIR}/progress.log`
 
@@ -383,8 +383,10 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 | WWD PASS | Serial mode: next agent spawn; Batch mode: DMVDC spawn (all wave agents checked before DMVDC) | ${SESSION_DIR}/pc/*-wwd-*.md |
 | DMVDC PASS | Task closure (bd close) | ${SESSION_DIR}/pc/*-dmvdc-*.md |
 | CCB PASS | Presenting results | ${SESSION_DIR}/pc/pc-session-ccb-{timestamp}.md |
-| Reviews | Mandatory after ALL implementation completes; re-runs after fix cycles with reduced scope (round 2+) | ${SESSION_DIR}/review-reports/review-consolidated-{timestamp}.md |
+| Reviews | Presenting findings to user (Step 3c) | ${SESSION_DIR}/review-reports/review-consolidated-{timestamp}.md |
 | ESV PASS | Git push (Step 6) | ${SESSION_DIR}/pc/pc-session-esv-{timestamp}.md |
+
+> **Note (Reviews gate):** Reviews are mandatory after ALL implementation completes (round 1). If findings require a fix cycle, reviews re-run with reduced scope — correctness and edge-cases only (round 2+).
 
 ## Information Diet (The Queen's Window)
 
