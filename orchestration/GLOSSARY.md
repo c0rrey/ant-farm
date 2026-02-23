@@ -43,7 +43,7 @@ In tables, diagrams, and other non-prose contexts where the article is omitted, 
 |------|------------|
 | **session** | A single invocation of the orchestration system, from "let's get to work" through `git push`. Identified by a unique session ID and backed by a session directory (`.beads/agent-summaries/_session-<id>/`). |
 | **wave** | A batch of implementation agents that run concurrently within a session. Wave boundaries are chosen to avoid file conflicts: tasks that touch the same file are placed in different waves. Wave N+1 does not start until all agents in wave N have committed and passed WWD. |
-| **checkpoint** | A mandatory verification gate that blocks the next phase of work until it returns PASS (or an approved WARN). There are five checkpoints: SSV, CCO, WWD, DMVDC, and CCB. |
+| **checkpoint** | A mandatory verification gate that blocks the next phase of work until it returns PASS (or an approved WARN). There are six checkpoints: SSV, CCO, WWD, DMVDC, CCB, and ESV. |
 | **scope boundary** | The explicit list of files and line ranges an agent is permitted to edit. Defined in the agent's data file. Changes outside the scope boundary are a WWD violation. |
 | **data file** | A per-task artifact written by the Pantry that contains the task's scope boundaries, affected files, root cause, acceptance criteria, agent type, and off-limits areas. The agent reads this file at Step 0. |
 | **briefing** | A ~40-line summary written by the Scout to `{session-dir}/briefing.md`. Contains ready/blocked task counts, proposed execution strategies with wave groupings, risk assessments, and agent type recommendations. The Queen reads only this — not raw task data. |
@@ -53,7 +53,7 @@ In tables, diagrams, and other non-prose contexts where the article is omitted, 
 | **escalation** | When a failing agent or stuck checkpoint exceeds its retry limit and the Queen surfaces the problem to the user with full context rather than retrying again. |
 | **adjacent issue** | A defect or improvement opportunity noticed by an agent that falls outside its scope boundary. Agents document these in their summary docs but do not fix them. |
 | **summary doc** | A structured artifact written by each agent to `{session-dir}/summaries/<task-suffix>.md` at Step 6. Required sections: approaches considered, selected approach, implementation description, correctness review, build/test validation, and acceptance criteria checklist. |
-| **hard gate** | A checkpoint that must return PASS before the system proceeds to the next phase. All five checkpoints (SSV, CCO, WWD, DMVDC, CCB) are hard gates. |
+| **hard gate** | A checkpoint that must return PASS before the system proceeds to the next phase. All six checkpoints (SSV, CCO, WWD, DMVDC, CCB, ESV) are hard gates. |
 | **context window** | The token budget available to a model in a single session. The Queen's information diet keeps its context window clean by offloading reads to subagents. |
 | **pre-push hook** | A git hook that runs `scripts/sync-to-claude.sh` on every `git push` to keep runtime copies in sync with the repo. It copies `CLAUDE.md` to `~/.claude/CLAUDE.md`, syncs `agents/*.md` to `~/.claude/agents/`, and rsyncs `orchestration/` to `~/.claude/orchestration/` — excluding `_archive/` and without `--delete` so any custom files an adopter has placed in `~/.claude/orchestration/` are preserved. Of the scripts in `scripts/`, only `build-review-prompts.sh` is synced (to `~/.claude/orchestration/scripts/`); developer tools like `sync-to-claude.sh` itself are not copied. |
 | **Scribe** | A `general-purpose` agent (model: sonnet) spawned by the Queen at Step 5b. The Scribe reads all session artifacts — briefing.md, summaries/*.md, review-consolidated-*.md, and progress.log — then runs git diff/log over the session's commit range. It produces two outputs: (1) `{SESSION_DIR}/exec-summary.md`, the canonical session record, and (2) a prepended CHANGELOG entry in `CHANGELOG.md`. The Scribe is the only agent that writes CHANGELOG.md; the Queen commits that file at Step 6. |
@@ -64,7 +64,7 @@ In tables, diagrams, and other non-prose contexts where the article is omitted, 
 
 ## Checkpoint Acronyms
 
-All five checkpoints are executed by Pest Control. Full definitions live in `orchestration/templates/checkpoints.md`.
+All six checkpoints are executed by Pest Control. Full definitions live in `orchestration/templates/checkpoints.md`.
 
 | Acronym | Expansion | When it runs | What it verifies | Blocks |
 |---------|-----------|--------------|------------------|--------|
@@ -73,6 +73,7 @@ All five checkpoints are executed by Pest Control. Full definitions live in `orc
 | **WWD** | Wandering Worker Detection | After agent commits, before next agent in same wave spawns | Post-commit scope verification: files changed in the commit match the task's expected scope — no scope creep | Next agent in wave |
 | **DMVDC** | Dirt Moved vs Dirt Claimed | After agent completes its summary doc | Substance verification: git diff matches summary claims, acceptance criteria are genuinely met, 4 design approaches are substantively distinct, correctness review is specific rather than boilerplate | Task closure |
 | **CCB** | Colony Census Bureau | After the Nitpicker team and Big Head complete, before results are presented to the user | Consolidation integrity: finding counts reconcile, every filed issue has required fields, priority calibration is correct, traceability matrix is complete, deduplication is accurate, no unauthorized issues were filed | Presenting results to user |
+| **ESV** | Exec Summary Verification | After Scribe writes exec-summary.md and CHANGELOG entry, before Step 6 (push) | Exec summary integrity: task coverage, commit coverage, open bead accuracy, CHANGELOG derivation fidelity, section completeness, and metric consistency | Step 6 (push) |
 
 ---
 
@@ -83,7 +84,7 @@ All five checkpoints are executed by Pest Control. Full definitions live in `orc
 | **Queen** | _(orchestrator — no agent file; runs as the top-level Claude Code session)_ | opus | The orchestrator. Reads only briefings, verdict tables, commit messages, and agent notifications. Never reads source code or implementation templates. The only agent that pushes to remote. Spawns all subagents and makes all go/no-go decisions. |
 | **Scout** | `agents/scout-organizer.md` | opus | Pre-flight reconnaissance agent. Discovers ready and blocked tasks, builds a file modification matrix, assesses conflict risk, recommends specialist agent types, proposes 2–3 execution strategies with wave groupings, and writes the session briefing. |
 | **Pantry** | `agents/pantry-impl.md` (implementation), ~~`agents/pantry-review.md`~~ (deprecated; see RULES.md Step 3b) | opus | Prompt composition agent. Reads implementation templates, extracts per-task context from Scout metadata, writes data files and combined prompt previews, and returns a file-path table to the Queen. Keeps template content out of the Queen's context. |
-| **Pest Control** | `agents/pest-control.md` | haiku (CCO, WWD, CCB), sonnet (DMVDC) | Verification auditor. Runs all five checkpoints (SSV, CCO, WWD, DMVDC, CCB) and writes timestamped audit reports to `{session-dir}/pc/`. Cross-checks orchestrator and agent work against ground truth. |
+| **Pest Control** | `agents/pest-control.md` | haiku (CCO, WWD, CCB, ESV), sonnet (DMVDC) | Verification auditor. Runs all six checkpoints (SSV, CCO, WWD, DMVDC, CCB, ESV) and writes timestamped audit reports to `{session-dir}/pc/`. Cross-checks orchestrator and agent work against ground truth. |
 | **Dirt Pusher** | _(spawned via `orchestration/templates/dirt-pusher-skeleton.md` with a specialist `subagent_type`)_ | varies by task | Implementation agent. Executes exactly 6 mandatory steps: claim, design, implement, review, commit, summary doc. Constrained to its scope boundary. Documents adjacent issues without fixing them. |
 | **Nitpicker** | `agents/nitpicker.md` | sonnet | Code review agent. Reads all changed files, catalogs findings with file:line references and severity, groups findings into preliminary root causes, and writes a structured review report. There are four Nitpicker specializations: Clarity (P3), Edge Cases (P2), Correctness (P1–P2), and Drift (P3). Does not file issues — only Big Head does. |
 | **Big Head** | `agents/big-head.md` | opus | Consolidation reviewer. Reads all four Nitpicker reports, merges duplicate findings, groups by root cause, documents merge rationale, files one issue per root cause with all affected surfaces, and writes a consolidated summary with deduplication log and priority breakdown. |
