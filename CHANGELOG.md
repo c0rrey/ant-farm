@@ -1,5 +1,44 @@
 # Changelog
 
+## 2026-02-23 — Session 20260222-225628 (Persistent-Team Fix Loop + CCB Spot-Check)
+
+### Summary
+
+4 original tasks (ant-farm-ygmj.1–.4) upgraded the review-fix loop infrastructure: CCB model from haiku to sonnet with a new root cause spot-check, Big Head bead-list handoff step, full rewrite of the reviews.md fix workflow for the in-team persistent model, and RULES.md documentation of team persistence, fix inner loop, and 4 new progress log milestones. Review round 1 found 2 P1 and 6 P2 root causes across 23 raw findings (17 consolidated); all fixed in a batched fix cycle across 3 delivery agents. Round 2 found 2 P2 defects in the fix itself (pseudocode in shell, criteria drift); both fixed in 1 commit. Round 3 confirmed all fixes and found 1 P3, terminating the loop. 10 commits total.
+
+### Implementation (Waves 1–3: 4 tasks)
+
+- **ant-farm-ygmj.1** (`05ebb82`): feat: upgrade CCB to sonnet and add root cause spot-check — new Check 3b section in checkpoints.md with minor/material severity distinction, 6-step escalation path; CCB row updated in RULES.md Model Assignments table
+- **ant-farm-ygmj.2** (`9f4c6da`): feat: add bead-list handoff step to Big Head skeleton — new Step 12 in big-head-skeleton.md with SendMessage format, round-conditional trigger, P1/P2/P3 separation
+- **ant-farm-ygmj.3** (`f686f88`): refactor: rewrite fix workflow for in-team agents — replaced outdated standalone-agent Fix Workflow in reviews.md with 8 subsections covering Scout auto-approval, Pantry/CCO skip, naming, prompt structure, inner loop, wave composition, round transition, re-run reviews
+- **ant-farm-ygmj.4** (`9fcfc87`): refactor: update RULES.md for persistent team and fix inner loop — Steps 3b/3c rewritten for persistent team; Model Assignments and Retry Limits tables expanded; 4 new progress log milestones added
+
+### Review Fixes (Round 1, 8 P1/P2 root causes)
+
+- **ant-farm-ql6s** (`06cf404`): fix: wrong team name "nitpickers" → "nitpicker-team" in reviews.md Fix Workflow (reviews.md)
+- **ant-farm-1pa0** (`06cf404`): fix: add single-invocation constraint comment and increase POLL_TIMEOUT_SECS from 30 to 60 (reviews.md, big-head-skeleton.md)
+- **ant-farm-f7lg** (`06cf404`, `0463fa5`): fix: remove phantom briefs/ path; add explicit edge-cases output path to round-transition spec (reviews.md, RULES.md)
+- **ant-farm-5zs0** (`06cf404`): fix: rewrite Round 2+ spawn instructions to use SendMessage re-tasking, not TeamCreate (reviews.md)
+- **ant-farm-fp74** (`06cf404`): fix: add failure artifact write and Queen notification before exit 1 on bd list failure (reviews.md, big-head-skeleton.md)
+- **ant-farm-01a8** (`365a0d9`): fix: restore conditional clarity/drift path check with REVIEW_ROUND pre-validation invariant comment (reviews.md)
+- **ant-farm-1rof** + **ant-farm-evk2** (`a58c56f`, `0463fa5`): fix: add session dir existence check to crash recovery; add shutdown prohibition to Queen Prohibitions and Step 3c (RULES.md)
+- **ant-farm-ccg8** (`4021909`): fix: add repo root commit guard to ESV Check 2 git log range (checkpoints.md)
+
+### Review Fixes (Round 2, 2 P2 root causes)
+
+- **ant-farm-fz32** (`50844a7`): fix: remove SendMessage pseudocode from shell error handler; add prose halt-and-notify instruction outside bash block (reviews.md, big-head-skeleton.md)
+- **ant-farm-pj9t** (`50844a7`): fix: update ant-farm-01a8 acceptance criteria to document conditional-check approach and REVIEW_ROUND pre-validation invariant (bead metadata only)
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 4 files, 4 tasks | 2 | 6 | 9 | PASS WITH ISSUES |
+| 2 | 4 files, 9 fix tasks | 0 | 2 | 3 | PASS WITH ISSUES |
+| 3 | 2 files, 2 fix tasks | 0 | 0 | 1 | PASS |
+
+23 raw findings (round 1) → 17 root causes consolidated; 6 raw findings (round 2) → 5 root causes; 3 raw findings (round 3) → 1 root cause. 10 P1/P2 root causes fixed across rounds 1 and 2. 13 P3 beads filed (10 round 1 + 3 round 2+ auto-filed to Future Work epic ant-farm-66gl).
+
 ## 2026-02-22 — Session 86c76859 (CCB Timeout + Pantry Preview + Review Focus Areas)
 
 ### Summary
