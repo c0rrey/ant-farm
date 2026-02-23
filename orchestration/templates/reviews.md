@@ -555,12 +555,34 @@ ELAPSED=0
 # braces) in file paths cause every [ -f ] test to fail silently, producing a misleading
 # timeout error instead of a clear diagnosis.
 PLACEHOLDER_ERROR=0
-# Validate ALL four report paths unconditionally — even round-2+ briefs omit the
-# clarity/drift paths, so they'll still be checked here. A corrupt REVIEW_ROUND
-# must not prevent validation of the other paths.
+# Validate paths for reports expected in ALL rounds (correctness + edge-cases).
+# Note: REVIEW_ROUND corruption is caught above in the case statement before we
+# reach this block, so REVIEW_ROUND is guaranteed to be a valid integer here.
 for _path in \
   "<session-dir>/review-reports/correctness-review-<timestamp>.md" \
-  "<session-dir>/review-reports/edge-cases-review-<timestamp>.md" \
+  "<session-dir>/review-reports/edge-cases-review-<timestamp>.md"; do
+  if [ -z "$_path" ]; then
+    echo "PLACEHOLDER ERROR: path resolved to empty string (SESSION_DIR or timestamp unset)"
+    echo "Root cause: unset or empty shell variable in Pantry prompt composition."
+    echo "Do NOT proceed. Return this error to the Queen immediately."
+    PLACEHOLDER_ERROR=1
+  fi
+  case "$_path" in
+    *'<'*|*'>'*|*'{'*|*'}'*)
+      echo "PLACEHOLDER ERROR: path was not substituted by Pantry: $_path"
+      echo "This brief was delivered with unresolved template placeholders."
+      echo "Root cause: upstream substitution failure in Pantry prompt composition."
+      echo "Do NOT proceed. Return this error to the Queen immediately."
+      PLACEHOLDER_ERROR=1
+      ;;
+  esac
+done
+# Validate round-1-only paths (clarity + drift). Pantry only substitutes these
+# paths in round-1 briefs; round-2+ briefs leave these as literal angle-bracket
+# placeholders (they are not in ACTIVE_REVIEW_TYPES for round 2+). Checking them
+# unconditionally in round 2+ would always trigger a false PLACEHOLDER_ERROR.
+if [ "$REVIEW_ROUND" -eq 1 ]; then
+for _path in \
   "<session-dir>/review-reports/clarity-review-<timestamp>.md" \
   "<session-dir>/review-reports/drift-review-<timestamp>.md"; do
   if [ -z "$_path" ]; then
@@ -579,6 +601,7 @@ for _path in \
       ;;
   esac
 done
+fi
 if [ $PLACEHOLDER_ERROR -eq 1 ]; then
   exit 1
 fi
