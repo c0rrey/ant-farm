@@ -113,7 +113,8 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             a 15-task session that passes SSV is structurally sound. Additional safety nets remain in
             effect: Dirt Pusher summaries (Step 3), DMVDC (Step 3), and WWD verification (Step 3).
 
-            **Progress log (after SSV PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SCOUT_COMPLETE|briefing=${SESSION_DIR}/briefing.md|ssv=pass|tasks_approved=<N>" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after SSV PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SCOUT_COMPLETE|briefing=${SESSION_DIR}/briefing.md|ssv=pass|tasks_accepted=<N>" >> ${SESSION_DIR}/progress.log`
+            where `<N>` is the count of tasks in the briefing task list after SSV PASS (N=0 is not logged — it is caught by the zero-task guard earlier in Step 1b).
 
 **Step 2:** Spawn — Spawn the Pantry (`pantry-impl`, `model: "opus"`) for task briefs + combined previews
             (→ orchestration/templates/pantry.md, Section 1). Include `Session directory: <value of SESSION_DIR>`
