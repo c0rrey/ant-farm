@@ -216,7 +216,8 @@ Reviews run as a single parallel Nitpicker team spawned via TeamCreate (per RULE
 
 Per RULES.md Step 3c — triage is root-cause-based, not raw-issue-count-based:
 
-**If zero P1 and zero P2 findings:** Proceed directly to Step 4 (documentation).
+**If zero P1 and zero P2 findings:** Proceed directly to Step 4 (documentation — README and CLAUDE.md only).
+The Scribe authors the session CHANGELOG at Step 5b.
 
 **Auto-fix (round 1, <=5 root causes):** Spawn fix tasks automatically without user prompt. After fixes, re-run reviews at round N+1.
 
@@ -234,12 +235,9 @@ See RULES.md Step 3c for the complete triage decision tree including session-sta
 
 Files to update after all work completes:
 
-- [ ] **CHANGELOG.md** - Add entries under [Unreleased]
-  - Original task descriptions
-  - P2 bug fix summaries
-  - P3 improvement summaries
-  - New features added
-  - Breaking changes (if any)
+- [ ] **CHANGELOG.md** - Authored by the Scribe at Step 5b (not the Queen at Step 4)
+  - Scribe derives entries from exec-summary.md: task descriptions, bug fix summaries, new features, breaking changes
+  - Queen commits the Scribe's CHANGELOG.md output at Step 6 before pushing
 
 - [ ] **README.md** - Update if needed
   - New scripts or tools
@@ -279,7 +277,7 @@ Before declaring session complete:
 
 ### Documentation Complete
 
-- [ ] CHANGELOG.md updated
+- [ ] CHANGELOG.md authored by Scribe (Step 5b) and committed by Queen (Step 6)
 - [ ] README.md updated (if needed)
 - [ ] CLAUDE.md updated (if needed)
 - [ ] All cross-references verified (no broken links)

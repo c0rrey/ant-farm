@@ -35,6 +35,7 @@
 | Step 3 | Wave N post | DMVDC | pending/completed/failed | All PASS / <details> |
 | Step 3b | Round R review prompts | CCO | pending/completed/failed | All PASS / <details> |
 | Step 3b | Round R review post | DMVDC + CCB | pending/completed/failed | All PASS / <details> |
+| Step 5c | Exec summary | ESV | pending/completed/failed | PASS / FAIL / <details> |
 
 ## Review Rounds
 - **Current round**: <1 | 2 | 3 | ...>
@@ -43,6 +44,14 @@
 - **Round 1 commit range**: <first-session-commit>..<last-impl-commit>
 - **Fix commit range**: <first-fix-commit>..<HEAD> (set after fix cycle)
 - **Termination**: <pending | terminated (round N: 0 P1/P2)>
+
+## Scribe and ESV (Step 5b / 5c)
+- **Scribe status**: <pending | spawned | completed | failed>
+- **Scribe retry**: <0 | 1> (max 1 retry before escalation)
+- **Exec summary path**: <{SESSION_DIR}/exec-summary.md | N/A>
+- **ESV status**: <pending | spawned | PASS | FAIL>
+- **ESV artifact**: <{SESSION_DIR}/pc/pc-session-esv-{timestamp}.md | N/A>
+- **ESV escalated**: <no | yes — awaiting user decision>
 
 ## Queue Position
 - **Completed**: <N> of <total> tasks

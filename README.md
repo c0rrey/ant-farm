@@ -230,9 +230,17 @@ Before presenting results to the user, CCB audits the consolidation:
 - Deduplication correctness (merged findings actually share a code path, not just vague similarity)
 - Provenance audit (no unauthorized issues filed during review phase)
 
-### Step 4-5: Document and verify
+### Step 4: Document
 
-Update CHANGELOG, README, and project CLAUDE.md in a single commit. Cross-reference all entries.
+Update README and CLAUDE.md in a single commit if needed. CHANGELOG is not updated here.
+
+### Step 5b: Scribe
+
+Spawn the Scribe agent to write the session exec summary (`{SESSION_DIR}/exec-summary.md`) and prepend a CHANGELOG entry to `CHANGELOG.md`. The Scribe reads all session artifacts and the commit range to produce both outputs.
+
+### Step 5c: ESV (Exec Summary Verification)
+
+Pest Control runs the ESV checkpoint — a hard gate that must PASS before Step 6. It verifies task coverage, commit coverage, open bead accuracy, CHANGELOG derivation fidelity, section completeness, and metric consistency.
 
 ### Step 6: Land
 
