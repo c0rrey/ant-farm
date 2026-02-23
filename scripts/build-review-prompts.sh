@@ -89,11 +89,19 @@ CHANGED_FILES="$(resolve_arg "$CHANGED_FILES_RAW")"
 TASK_IDS="$(resolve_arg "$TASK_IDS_RAW")"
 
 # ---------------------------------------------------------------------------
-# Validate review round
+# Input validation (after @file resolution)
 # ---------------------------------------------------------------------------
 
-if ! echo "$REVIEW_ROUND" | grep -qE '^[0-9]+$'; then
-    echo "ERROR: REVIEW_ROUND must be a positive integer, got: $REVIEW_ROUND" >&2
+# CHANGED_FILES: must be non-empty (at least one changed file)
+# Strip all whitespace via parameter expansion — no subprocesses required.
+if [[ -z "${CHANGED_FILES//[[:space:]]/}" ]]; then
+    echo "ERROR: CHANGED_FILES is empty (got: '${CHANGED_FILES_RAW}'). Expected: at least one file path (or a non-empty @file)." >&2
+    exit 1
+fi
+
+# REVIEW_ROUND: must be a positive integer >= 1
+if ! [[ "${REVIEW_ROUND}" =~ ^[1-9][0-9]*$ ]]; then
+    echo "ERROR: REVIEW_ROUND must be a positive integer >= 1, got: '${REVIEW_ROUND}'. Expected format: ^[1-9][0-9]*\$ (e.g. 1, 2, 10)." >&2
     exit 1
 fi
 
@@ -132,6 +140,25 @@ fi
 extract_agent_section() {
     local file="$1"
     awk '/^---$/{found=1; next} found{print}' "$file"
+}
+
+# ---------------------------------------------------------------------------
+# Helper: extract focus block for a given review type from review-focus-areas.md.
+# Extracts content between <!-- FOCUS: {type} --> and <!-- /FOCUS: {type} --> markers.
+# ---------------------------------------------------------------------------
+FOCUS_AREAS_FILE="$(dirname "$NITPICKER_SKELETON")/review-focus-areas.md"
+if [ ! -f "$FOCUS_AREAS_FILE" ]; then
+    echo "ERROR: Focus areas file not found: $FOCUS_AREAS_FILE" >&2
+    exit 1
+fi
+
+extract_focus_block() {
+    local review_type="$1"
+    awk -v type="$review_type" '
+        $0 ~ "<!-- FOCUS: " type " -->" { found=1; next }
+        $0 ~ "<!-- /FOCUS: " type " -->" { found=0; next }
+        found { print }
+    ' "$FOCUS_AREAS_FILE"
 }
 
 # ---------------------------------------------------------------------------
@@ -212,6 +239,10 @@ build_nitpicker_prompt() {
         echo ""
         echo "**Files to review**:"
         echo "${CHANGED_FILES}"
+        echo ""
+        echo "## Focus"
+        echo ""
+        extract_focus_block "$review_type"
         echo ""
         echo "**Task IDs** (for correctness review — run \`bd show <id>\` to retrieve acceptance criteria):"
         echo "${TASK_IDS}"
