@@ -48,6 +48,8 @@ Read the following sources. Take notes as you go — you will synthesize them in
 
 **Duration calculation**: Read the first line and last line of `{SESSION_DIR}/progress.log`. Each line has the format `YYYY-MM-DDTHH:MM:SS|STEP_KEY|...`. Subtract first timestamp from last timestamp to get elapsed time. Express as `~Xh Ym` (round to nearest 5 minutes).
 
+**Fallback — zero agent summaries**: If the `{SESSION_DIR}/summaries/*.md` glob returns no files, note "No agent summaries available." in your working notes and derive Work Completed entirely from `git log --oneline {COMMIT_RANGE}` and the briefing.md task list. Do not leave the Work Completed section blank; reconstruct what you can from commits and briefing context.
+
 If `{OPEN_BEAD_IDS}` is empty, skip the `bd show` calls and write "None" in the Open Issues section.
 
 ### Step 2 — Write exec summary
@@ -145,7 +147,15 @@ Prepend a new entry to `{CHANGELOG_PATH}`. The entry is derived from the exec su
 {N} root causes consolidated. {Disposition sentence.}
 ```
 
-To prepend: read the current contents of `{CHANGELOG_PATH}`, then write a new file with your new entry at the top followed by the existing contents. Preserve the `# Changelog` heading at the top of the file if it exists — your new entry goes after the heading, not before it.
+**Fallback — CHANGELOG.md does not exist**: If `{CHANGELOG_PATH}` does not exist, create it. Write the file with the following header on the first line, then your new entry immediately below:
+
+```
+# Changelog
+```
+
+Then continue with your formatted entry. Do not prepend to a nonexistent file; create-then-write.
+
+To prepend to an existing file: read the current contents of `{CHANGELOG_PATH}`, then write a new file with your new entry at the top followed by the existing contents. Preserve the `# Changelog` heading at the top of the file if it exists — your new entry goes after the heading, not before it.
 
 If there were no review rounds this session, omit the Review Fixes and Review Statistics sections.
 
