@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-02-22 — Session 2bb21f22 (Auto-Approve Scout Strategy)
+
+### Summary
+
+1 feature task (ant-farm-fomy) to auto-approve Scout strategy after SSV PASS, removing the user approval gate from Step 1b. Review round 1 found 1 P1 + 2 P2 + 1 P3 (4 root causes). P1 and P2 fixes applied in-session. Review round 2 found 0 P1/P2 (3 P3s auto-filed to Future Work). 3 implementation commits + 2 fix commits.
+
+### Implementation (Wave 1: 1 task)
+
+- **ant-farm-fomy**: docs: auto-approve Scout strategy after SSV PASS in Step 1b — removed user approval gate, added risk analysis block documenting safety nets, rejected complexity threshold
+
+### Review Fixes (Round 1, 3 root causes)
+
+- **RC-2** (ant-farm-i7wl): fix: add zero-task guard and SSV FAIL retry cap to RULES.md Step 1b
+- **RC-3** (ant-farm-sfe0): fix: update stale briefing.md descriptions in RULES.md (lines 28, 474)
+- **RC-4** (ant-farm-or8q, partial): fix: remove user-approval references from checkpoints.md and dependency-analysis.md; CLAUDE.md and README.md updated by Queen in Step 4
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 1 file, 1 task | 1 | 2 | 1 | PASS WITH ISSUES |
+| 2 | 3 files, 3 fix tasks | 0 | 0 | 3 | PASS |
+
+4 root causes consolidated from 11 raw findings (round 1). 3 P1/P2 root causes fixed in-session. 1 P3 (RC-1, ant-farm-m4si) filed. Round 2: 3 P3s auto-filed to Future Work epic.
+
+### Open beads filed this session
+
+- ant-farm-m4si (P3): Progress log key tasks_approved misleading after auto-approve change
+- ant-farm-vxcn (P2): Pantry skips writing preview file to previews/ directory
+- ant-farm-q59z (P2): Big Head cannot receive Pest Control messages — timeout on every CCB exchange
+- Plus 3 P3s auto-filed by Big Head to Future Work epic (round 2)
+
 ## 2026-02-22 — Session d81536bb (Exec Summary Scribe Infrastructure)
 
 ### Summary

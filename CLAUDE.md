@@ -47,7 +47,7 @@ Present these as multiple-choice questions using the platform's question tool (4
 - `templates/` — Agent prompts, checkpoints, reviews (read on demand)
 - `reference/` — Dependency analysis, known failures (read when needed)
 
-**Key rule**: WAIT for user approval of execution strategy before spawning any agents.
+**Key rule**: After SSV PASS, the Queen auto-proceeds to Step 2. No user approval required for execution strategy.
 
 ## Landing the Plane (Session Completion)
 

@@ -32,9 +32,9 @@ A multi-agent orchestration and quality review system for Claude Code. Coordinat
    ```
    Let's get to work on: ant-farm-XXXX
    ```
-   Claude will spawn the Scout for recon, present 2-3 execution strategies, and wait for your approval before spawning any implementation agents.
+   Claude will spawn the Scout for recon, verify the execution strategy via SSV, and auto-proceed to spawn implementation agents.
 
-5. **Approve and watch** -- pick a strategy, and the Queen orchestrates the full workflow: prompt composition, checkpoint audits, implementation, and quality review.
+5. **Watch** -- the Queen orchestrates the full workflow: prompt composition, checkpoint audits, implementation, and quality review.
 
 ## Architecture
 
@@ -82,7 +82,7 @@ The Queen spawns **the Scout** (`orchestration/templates/scout.md`), an opus sub
 6. Proposes 2-3 execution strategies with wave groupings, agent counts, and risk assessments
 7. Writes `{session-dir}/briefing.md` — a ~40-line summary the Queen presents to the user
 
-The Queen reads the briefing, presents the strategy options, and **waits for user approval** before proceeding.
+The Queen reads the briefing, and after SSV PASS, auto-proceeds to Step 2 without user approval.
 
 ### Step 2: Spawn implementation agents
 
