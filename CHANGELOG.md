@@ -1,5 +1,47 @@
 # Changelog
 
+## 2026-02-22 — Session 86c76859 (CCB Timeout + Pantry Preview + Review Focus Areas)
+
+### Summary
+
+3 original tasks (ant-farm-q59z, ant-farm-vxcn, ant-farm-m4si) fixing CCB timeout, Pantry preview enforcement, and progress log key naming. Review round 1 found 0 P1, 4 P2, 9 P3 (13 root causes). 4 P2 fixes applied in-session across 3 waves. 12 review beads filed by Big Head. Mid-session fix: `build-review-prompts.sh` patched to inject per-type focus areas from `review-focus-areas.md` (CCO caught missing focus blocks).
+
+### Implementation (Wave 1: 3 tasks, parallel)
+
+- **ant-farm-q59z** (`a59d61e`): fix: replace sleep-based CCB wait with turn-based end-turn protocol in reviews.md and big-head-skeleton.md
+- **ant-farm-vxcn** (`1b8f898`): fix: enforce preview file as mandatory output in Pantry Step 3 with read-back verification
+- **ant-farm-m4si** (`55514c1`): fix: rename tasks_approved to tasks_accepted, document N derivation in RULES.md
+
+### Review Fixes (Round 1, 4 P2 root causes)
+
+- **RC-5** (ant-farm-m2cb, `ba0d70d`): fix: rename Priority Calibration to Bead Priority Calibration, consolidate Information Diet, move Review Quality Metrics
+- **RC-10** (ant-farm-bzl6, `ed0a651`): fix: enforce REVIEW_ROUND >= 1 and non-empty CHANGED_FILES in build-review-prompts.sh
+- **RC-6** (ant-farm-60em, `214ad51`): docs: expand incomplete mechanism descriptions in RULES.md and big-head-skeleton.md
+- **RC-2** (ant-farm-zzdk, `f81bd86`): fix: resolve template-vs-runtime placeholder confusion, add post-write placeholder scan
+
+### Infrastructure Fix (Mid-Session)
+
+- `build-review-prompts.sh`: Added `extract_focus_block()` helper and `## Focus` section injection per review type, sourced from `review-focus-areas.md`. CCO caught identical generic prompts across all 4 review types.
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 4 files, 3 tasks | 0 | 4 | 9 | PASS WITH ISSUES |
+
+13 root causes consolidated from 35 raw findings. 4 P2 root causes fixed in-session. 8 P3 beads filed. 1 P3 skipped (matched existing ant-farm-2sjc).
+
+### Open beads filed this session
+
+- ant-farm-sf3v (P3): Stale "user approval" label in parse-progress-log.sh
+- ant-farm-yufy (P3): Deprecated pantry.md Section 2 stale and misleading
+- ant-farm-8evt (P3): Lifecycle metadata mixed into operational steps
+- ant-farm-az7u (P3): Pantry step numbering namespace collision
+- ant-farm-e26s (P3): Post-push sync check documentation gaps
+- ant-farm-8kds (P3): fill_slot temp file leak on awk failure
+- ant-farm-d1rx (P3): Polling loop off-by-one (28s vs 30s)
+- ant-farm-kf0y (P3): RULES.md bash blocks missing edge-case handling
+
 ## 2026-02-22 — Session 2bb21f22 (Auto-Approve Scout Strategy)
 
 ### Summary
