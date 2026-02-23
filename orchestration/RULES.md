@@ -88,17 +88,27 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             WAIT for the Scout to return its briefing verdict (written to `{SESSION_DIR}/briefing.md`).
 
 **Step 1b:** SSV gate — After Scout writes `{SESSION_DIR}/briefing.md`, spawn Pest Control
-            (`pest-control`, `model: "haiku"`) for Scout Strategy Verification (SSV) before presenting to user.
+            (`pest-control`, `model: "haiku"`) for Scout Strategy Verification (SSV).
             Pass `Session directory: <value of SESSION_DIR>` and the path `orchestration/templates/checkpoints.md`
             as its instruction file. Pest Control reads `{SESSION_DIR}/briefing.md` itself and runs all three
             mechanical checks (file overlap within waves, file list match against beads, intra-wave dependency
             ordering). **SSV must PASS before proceeding.**
 
-            **On SSV PASS**: Present the recommended strategy to the user for approval.
+            **On SSV PASS**: Proceed directly to Step 2. Do NOT wait for user approval. SSV is the
+            mechanical safety gate — a passing strategy is structurally sound and ready to execute.
+            No complexity threshold applies; auto-approve regardless of task count.
             **On SSV FAIL**: Re-run Scout with the specific violations from the SSV report (do NOT present
             a failed strategy to the user). After Scout revises briefing.md, re-run SSV.
 
-            **Progress log (after SSV PASS and user approves strategy):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SCOUT_COMPLETE|briefing=${SESSION_DIR}/briefing.md|ssv=pass|tasks_approved=<N>" >> ${SESSION_DIR}/progress.log`
+            **Risk analysis (documented per ant-farm-fomy):** Auto-approving after SSV PASS is safe
+            because SSV verifies file overlap, file list integrity, and dependency ordering — the three
+            failure modes that cause agent conflicts. The remaining risk is strategic scope error (wrong
+            tasks selected), which the Scout mitigates by deriving scope directly from the user's message.
+            A complexity threshold was evaluated and rejected: task count alone is not a useful risk signal;
+            a 15-task session that passes SSV is structurally sound. Additional safety nets remain in
+            effect: Dirt Pusher summaries (Step 3), DMVDC (Step 3), and WWD verification (Step 3).
+
+            **Progress log (after SSV PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SCOUT_COMPLETE|briefing=${SESSION_DIR}/briefing.md|ssv=pass|tasks_approved=<N>" >> ${SESSION_DIR}/progress.log`
 
 **Step 2:** Spawn — Spawn the Pantry (`pantry-impl`, `model: "opus"`) for task briefs + combined previews
             (→ orchestration/templates/pantry.md, Section 1). Include `Session directory: <value of SESSION_DIR>`
