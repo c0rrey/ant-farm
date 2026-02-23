@@ -37,6 +37,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 - `orchestration/templates/dirt-pusher-skeleton.md` — Once per implementation wave (skeleton structure; see [Glossary: wave](GLOSSARY.md#workflow-concepts))
 - `orchestration/templates/nitpicker-skeleton.md` — Once per review cycle (skeleton structure)
 - `orchestration/templates/big-head-skeleton.md` — Once per review cycle (skeleton structure)
+- `orchestration/templates/scribe-skeleton.md` — Once per session (read to fill placeholders before spawning the Scribe at Step 5b)
 - Project's `CLAUDE.md` — Global project rules
 - `{SESSION_DIR}/exec-summary.md` — Scribe output; read only when ESV escalates to user with a failed exec summary
 
@@ -46,7 +47,6 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 - `orchestration/templates/implementation.md` — Implementation details (read by Pantry)
 - `orchestration/templates/checkpoints.md` — Checkpoint definitions (read by Pest Control)
 - `orchestration/templates/reviews.md` — Review protocol (read by build-review-prompts.sh)
-- `orchestration/templates/scribe-skeleton.md` — Scribe's instruction template (read by Scribe only)
 - `orchestration/reference/dependency-analysis.md` — Used by Scout for conflict analysis
 - `orchestration/reference/known-failures.md` — Reference material; for post-mortem only
 - `orchestration/_archive/*` — Deprecated documents; stale instructions that contradict current workflows. **No agent should read these.**
@@ -284,7 +284,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             - Present findings to user: "Reviews found X P1 and Y P2 issues. Fix now or defer?"
             - **If "fix now"**: Spawn fix tasks (see reviews.md "Fix Workflow"), then re-run Step 3b with round N+1
               - Update session state: increment review round, record fix commit range
-            - **If "defer"**: P1/P2 beads stay open; document in CHANGELOG; proceed to Step 4
+            - **If "defer"**: P1/P2 beads stay open; note deferred items for the Scribe to document at Step 5b; proceed to Step 4
             **Progress log (after triage decision):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_TRIAGED|round=<N>|p1=<count>|p2=<count>|decision=<auto_fix|fix_now|defer|terminated>|root_causes=<count>" >> ${SESSION_DIR}/progress.log`
 
 **Step 4:** Documentation — update README and CLAUDE.md in single commit.
