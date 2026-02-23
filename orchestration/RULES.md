@@ -38,6 +38,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 - `orchestration/templates/nitpicker-skeleton.md` — Once per review cycle (skeleton structure)
 - `orchestration/templates/big-head-skeleton.md` — Once per review cycle (skeleton structure)
 - Project's `CLAUDE.md` — Global project rules
+- `{SESSION_DIR}/exec-summary.md` — Scribe output; read only when ESV escalates to user with a failed exec summary
 
 **FORBIDDEN (agents read; Queen never reads):**
 - `orchestration/templates/scout.md` — Scout's instruction file
@@ -45,6 +46,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 - `orchestration/templates/implementation.md` — Implementation details (read by Pantry)
 - `orchestration/templates/checkpoints.md` — Checkpoint definitions (read by Pest Control)
 - `orchestration/templates/reviews.md` — Review protocol (read by build-review-prompts.sh)
+- `orchestration/templates/scribe-skeleton.md` — Scribe's instruction template (read by Scribe only)
 - `orchestration/reference/dependency-analysis.md` — Used by Scout for conflict analysis
 - `orchestration/reference/known-failures.md` — Reference material; for post-mortem only
 - `orchestration/_archive/*` — Deprecated documents; stale instructions that contradict current workflows. **No agent should read these.**
@@ -285,20 +287,61 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             - **If "defer"**: P1/P2 beads stay open; document in CHANGELOG; proceed to Step 4
             **Progress log (after triage decision):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_TRIAGED|round=<N>|p1=<count>|p2=<count>|decision=<auto_fix|fix_now|defer|terminated>|root_causes=<count>" >> ${SESSION_DIR}/progress.log`
 
-**Step 4:** Documentation — update CHANGELOG, README, CLAUDE.md in single commit.
+**Step 4:** Documentation — update README and CLAUDE.md in single commit.
+            Note: session narrative and changelog entry are handled by the Scribe at Step 5b.
             Before committing: file issues for any remaining work; run quality gates (tests, linters,
             builds) if code changed; apply review-findings gate (if reviews found P1 issues, present
             to user before proceeding — user decides fix now or defer; do NOT push with undisclosed
             P1 blockers).
             **Progress log (after doc commit):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|DOCS_COMMITTED|complete|commit=<hash>" >> ${SESSION_DIR}/progress.log`
 
-**Step 5:** Verify — cross-references valid, all tasks have CHANGELOG entries.
-            Update issue status: close finished tasks, update in-progress items.
-            **Progress log (after cross-reference check):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|XREF_VERIFIED|complete|tasks_with_changelog=<ids>" >> ${SESSION_DIR}/progress.log`
+**Step 5:** Verify — cross-references valid, all tasks accounted for. Update issue status: close
+            finished tasks, update in-progress items.
+            **Progress log (after cross-reference check):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|XREF_VERIFIED|complete|tasks_closed=<ids>" >> ${SESSION_DIR}/progress.log`
 
-**Step 6:** Land the plane — git pull --rebase, bd sync, git push, clean up stashes and remote branches.
+**Step 5b:** Scribe — spawn the Scribe agent to write the session exec summary and CHANGELOG entry.
+            ```
+            Task(
+              subagent_type="general-purpose",
+              model="sonnet",
+              prompt="Write session exec summary. Session dir: {SESSION_DIR}. Commit range: {RANGE}.
+                      Open beads: {IDS}. CHANGELOG path: CHANGELOG.md.
+                      Read orchestration/templates/scribe-skeleton.md for full instructions."
+            )
+            ```
+            The Scribe reads all session artifacts ({SESSION_DIR}/briefing.md, summaries/*.md,
+            review-reports/review-consolidated-*.md, progress.log), runs git diff/log for the commit
+            range, and produces two outputs:
+            1. `{SESSION_DIR}/exec-summary.md` — canonical session record
+            2. Prepends a CHANGELOG entry to `CHANGELOG.md`
+            **Progress log (after Scribe completes):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SCRIBE_COMPLETE|exec_summary=${SESSION_DIR}/exec-summary.md" >> ${SESSION_DIR}/progress.log`
+
+**Step 5c:** ESV — spawn Pest Control for Exec Summary Verification. **Hard gate: must PASS before Step 6.**
+            ```
+            Task(
+              subagent_type="pest-control",
+              model="haiku",
+              prompt="ESV checkpoint. Session dir: {SESSION_DIR}. Commit range: {RANGE}.
+                      Verify exec-summary.md and CHANGELOG.md.
+                      Read orchestration/templates/checkpoints.md for full instructions."
+            )
+            ```
+            ESV checks: task coverage, commit coverage, open bead accuracy, CHANGELOG derivation
+            fidelity, section completeness, metric consistency.
+            Artifact written to `{SESSION_DIR}/pc/pc-session-esv-{timestamp}.md`.
+            **On ESV FAIL**: Re-spawn Scribe with specific violations from ESV report (max 1 retry).
+            **On second ESV FAIL**: Escalate to user — present failed checks, await decision.
+            **Progress log (after ESV PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|ESV_PASS|artifact=${SESSION_DIR}/pc/pc-session-esv-$(date +%Y%m%d-%H%M%S).md" >> ${SESSION_DIR}/progress.log`
+
+**Step 6:** Land the plane — Queen commits the Scribe's CHANGELOG.md, then pulls, syncs, and pushes.
+            ```bash
+            git add CHANGELOG.md && git commit -m "docs: add session {SESSION_ID} changelog entry"
+            git pull --rebase
+            bd sync
+            git push
+            ```
             Run `git status` after push — output MUST show "up to date with origin".
-            Provide hand-off context for the next session.
+            Clean up stashes and remote branches. Provide hand-off context for the next session.
             **Progress log (after git push succeeds):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SESSION_COMPLETE|pushed=true" >> ${SESSION_DIR}/progress.log`
 
 ## Hard Gates
@@ -312,6 +355,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 | DMVDC PASS | Task closure (bd close) | ${SESSION_DIR}/pc/*-dmvdc-*.md |
 | CCB PASS | Presenting results | ${SESSION_DIR}/pc/pc-session-ccb-{timestamp}.md |
 | Reviews | Mandatory after ALL implementation completes; re-runs after fix cycles with reduced scope (round 2+) | ${SESSION_DIR}/review-reports/review-consolidated-{timestamp}.md |
+| ESV PASS | Git push (Step 6) | ${SESSION_DIR}/pc/pc-session-esv-{timestamp}.md |
 
 ## Information Diet (The Queen's Window)
 
@@ -335,6 +379,8 @@ For the complete detailed list and rationale, see "Queen Read Permissions" above
 | Dirt Pushers | from Pantry verdict table | Specialist per task — Scout recommends via dynamic agent discovery, Pantry passes through |
 | Nitpickers | `nitpicker` | Custom agent: file:line specificity, calibrated severity, complete coverage |
 | Big Head | `big-head` | Custom agent: deduplication, root-cause grouping, issue filing |
+| Scribe | `general-purpose` | No custom agent needed — reads session artifacts, writes exec summary + CHANGELOG |
+| PC — ESV | `pest-control` | Custom agent: mechanical exec-summary verification against session artifacts |
 
 ## Model Assignments
 
@@ -354,6 +400,8 @@ Every `Task` tool call the Queen makes MUST include the `model` parameter from t
 | Big Head | TeamCreate member | opus | Set in big-head-skeleton.md (`{MODEL}`) |
 | PC (team member) | TeamCreate member | sonnet | Runs DMVDC inside team; needs sonnet |
 | Fix Dirt Pushers | Task (dynamic type) | sonnet | Same rule as regular Dirt Pushers |
+| Scribe | Task (`general-purpose`) | sonnet | Reads session artifacts; writes exec-summary.md + CHANGELOG entry |
+| PC — ESV | Task (`pest-control`) | haiku | Mechanical verification — 6 checks, no judgment required |
 
 ## Concurrency Rules
 
@@ -362,7 +410,7 @@ Every `Task` tool call the Queen makes MUST include the `model` parameter from t
 - No two agents edit the same file — queue conflicting tasks sequentially
 - Each agent runs `git pull --rebase` before committing
 - Only the Queen pushes to remote
-- Only the Queen updates documentation files (CHANGELOG, README, CLAUDE.md)
+- Only the Queen updates README and CLAUDE.md; the Scribe writes CHANGELOG.md (Queen commits it at Step 6)
 - Pipeline wave N Dirt Pushers with wave N+1 Pantry in a single message (see Step 2 wave pipelining)
 
 ### Wave Management
@@ -406,6 +454,7 @@ Root-level artifacts in `${SESSION_DIR}`:
 - `queen-state.md` — session state for context recovery
 - `briefing.md` — written by Scout (Step 1a); strategy summary read by Queen before user approval
 - `session-summary.md` — written by Pantry (optional); end-of-session narrative summary
+- `exec-summary.md` — written by Scribe (Step 5b); canonical session record covering work completed, review findings, open issues, and narrative observations; source for the CHANGELOG derivative
 - `progress.log` — append-only milestone log; one pipe-delimited line per completed step; written by the Queen at each workflow milestone; never read or overwritten during normal operation; recovery sessions read this once to determine the resume point
 - `resume-plan.md` — written by `scripts/parse-progress-log.sh` on crash recovery; structured markdown resume plan presented to the user for approval before any action is taken
 
@@ -447,6 +496,7 @@ This prevents collisions when multiple Queens run in the same repo.
 | Conflict patterns (read by the Scout) | orchestration/reference/dependency-analysis.md |
 | Diagnosing a failure or post-mortem | orchestration/reference/known-failures.md |
 | Creating/recovering the Queen's state file | orchestration/templates/queen-state.md |
+| Exec summary authoring (Step 5b) | orchestration/templates/scribe-skeleton.md |
 | Setting up orchestration in new project | orchestration/SETUP.md |
 
 ## Retry Limits
@@ -458,6 +508,7 @@ This prevents collisions when multiple Queens run in the same repo.
 | Agent stuck (no commit within 15 turns) | 0 | Run stuck-agent diagnostic (see below); escalate to user |
 | Pantry CCO fails | 1 | Escalate to user; do not spawn Dirt Pushers without verified prompts |
 | Scout fails or returns no tasks | 1 | Escalate to user; do not proceed to Step 2 without task list |
+| Scribe fails ESV | 1 | Escalate to user with ESV report; user decides fix manually or push as-is |
 | Total retries per session | 5 | Pause all new spawns; triage with user |
 
 Counter interaction: each CCB re-run counts as 1 toward both the per-checkpoint limit (1) and the session total (5). A CCB re-run that hits the per-checkpoint limit also consumes one slot of the session total.
