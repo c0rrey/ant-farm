@@ -179,6 +179,39 @@ Your workflow:
     - Do NOT include P3 findings in the fix-or-defer prompt to the Queen
     - In round 1, skip this step — P3s are handled by the Queen's existing flow
 
+12. **Send bead list to Queen** — After all bead filing is complete (step 10 PASS for round 1; after step 11 for round 2+), send a structured handoff message to the Queen via SendMessage:
+
+    **Round 1**: Send after step 10 PASS filing is complete (no P3 auto-filing in round 1).
+    **Round 2+**: Send after step 11 P3 auto-filing is complete.
+
+    Use this exact format:
+
+    ```
+    Fix handoff: <N> root causes filed.
+    P1: <count>, P2: <count>, P3: <count>
+
+    Beads requiring fixes:
+    - <bead-id-1> (P1): <root cause title>
+    - <bead-id-2> (P2): <root cause title>
+    ...
+
+    P3 beads (no action required — auto-filed to Future Work):
+    - <bead-id-N> (P3): <root cause title>
+    ...
+
+    Consolidated report: {CONSOLIDATED_OUTPUT_PATH}
+    ```
+
+    Rules for this message:
+    - List P1 beads first, then P2, then P3 (separate P3 under its own header as shown)
+    - If there are no P3 beads, omit the "P3 beads" section entirely
+    - In round 1, P3s are not auto-filed — omit the "P3 beads" section entirely; the Queen handles P3 disposition in the fix-or-defer flow
+    - Include only beads that were newly filed in this round; exclude any root causes skipped as cross-session duplicates
+    - `<N>` in the first line is the total count of newly-filed beads (P1 + P2 + P3 combined)
+    - Do NOT include bead IDs for skipped duplicates; mention them in your output summary instead
+
+    After sending, your work is complete. End your turn.
+
 Your output MUST include (see brief for full format):
 - Root cause groups with all affected surfaces and merge rationale
 - Deduplication log (which findings merged, why)
