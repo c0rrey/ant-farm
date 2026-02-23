@@ -121,11 +121,10 @@ Your workflow:
      **Reason**: `bd list --status=open` failed. Bead filing aborted to prevent duplicate filing. This is likely a lock contention or bd connectivity issue.
      **Recovery**: Retry after the lock clears. If the issue persists, run `bd doctor` and re-spawn Big Head.
      EOF
-     # Notify the Queen so she can act immediately rather than waiting for stuck-agent timeout
-     SendMessage(Queen): "Big Head FAILED: bd list infrastructure error during cross-session dedup. Bead filing aborted to prevent duplicates. Consolidated output written to {CONSOLIDATED_OUTPUT_PATH}. Please check bd status and re-spawn Big Head when ready."
      exit 1
    fi
    ```
+   If the bash block above exits with code 1, stop immediately. Do NOT proceed to consolidation or bead filing. Use the SendMessage tool to notify the Queen: "Big Head FAILED: bd list infrastructure error during cross-session dedup. Bead filing aborted to prevent duplicates. Consolidated output written to {CONSOLIDATED_OUTPUT_PATH}. Please check bd status and re-spawn Big Head when ready." Then end your turn.
    For each root cause group, compare against existing bead titles (from `/tmp/open-beads-$$.txt`):
    - **Exact title match** (case-insensitive): Do NOT file. Log in the summary: "Dedup: RC-N matches existing bead ant-farm-XXXX — skipped."
    - **Similar title** (same root cause, different wording): Run `bd search "<key phrases>" --status open` to confirm. If the existing bead covers the same root cause, do NOT file. Log the match.
