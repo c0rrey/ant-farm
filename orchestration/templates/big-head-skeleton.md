@@ -120,8 +120,8 @@ Your workflow:
 8. Write consolidated summary to {CONSOLIDATED_OUTPUT_PATH}
 9. Send consolidated report path to Pest Control (SendMessage): "Consolidated report ready at {CONSOLIDATED_OUTPUT_PATH}. Please run DMVDC and CCB checkpoints and reply with verdict."
    - Do NOT file any beads before receiving Pest Control's reply
-10. Await Pest Control verdict — follow the timeout/retry protocol in reviews.md Step 4:
-    - Wait up to 60 seconds; retry once if no response; escalate to Queen after 120s total with no reply
+10. **End your turn** after sending to Pest Control. Do NOT sleep or poll — doing so blocks incoming messages. Pest Control's reply arrives as a new conversation turn. When it arrives, act on the verdict — follow the turn-based retry protocol in reviews.md Step 4:
+    - If no reply after 2 subsequent turns, retry once; if still no reply after 2 more turns, escalate to Queen
     - **PASS**: File ONE bead per root cause (skip any marked as duplicates in step 7). For each bead, write a description to a temp file, then create:
       ```bash
       cat > /tmp/bead-desc-$$.md << 'BEAD_DESC'

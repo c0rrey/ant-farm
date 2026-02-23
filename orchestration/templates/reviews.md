@@ -771,32 +771,33 @@ SendMessage(
 )
 ```
 
-**Wait for Pest Control reply (timeout: 60 seconds). Then act on verdict:**
+**End your turn immediately after sending to Pest Control. Pest Control's reply will arrive as a new teammate message on your next turn. Do NOT use sleep or poll — waiting blocks incoming messages.**
 
-**Timeout and retry protocol:**
-- After sending the SendMessage, wait up to 60 seconds for Pest Control's reply.
-- If no response arrives within 60 seconds, send one retry message to Pest Control:
+**Turn-based retry protocol:**
+- After sending the SendMessage, **end your turn**. Do not sleep or poll.
+- Pest Control's reply arrives as a new conversation turn. Process it when it arrives.
+- If Pest Control has not replied after 2 subsequent turns of processing other work, send one retry message:
   ```
   SendMessage(
     to="pest-control",
-    message="Retry request: Consolidated report ready at {CONSOLIDATED_OUTPUT_PATH}. Please run DMVDC and CCB checkpoints and reply with PASS or FAIL + specifics. (First message sent 60s ago — no reply received.)"
+    message="Retry request: Consolidated report ready at {CONSOLIDATED_OUTPUT_PATH}. Please run DMVDC and CCB checkpoints and reply with PASS or FAIL + specifics. (First message sent — no reply received after 2 turns.)"
   )
   ```
-- Wait an additional 60 seconds after the retry.
-- If still no response after the retry window, **escalate to the Queen immediately**:
+  Then end your turn again and await the reply.
+- If still no response after 2 more turns following the retry, **escalate to the Queen immediately**:
   ```bash
   cat > "{CONSOLIDATED_OUTPUT_PATH%.md}-pc-timeout.md" << 'EOF'
   # Big Head Consolidation — BLOCKED: Pest Control Timeout
   **Status**: FAILED — Pest Control checkpoint unavailable
   **Timestamp**: <current ISO 8601 timestamp>
-  **Reason**: Pest Control did not respond after 2 attempts (120s total). Consolidated report was written but checkpoints could not be validated.
+  **Reason**: Pest Control did not respond after 2 attempts (4 turns total). Consolidated report was written but checkpoints could not be validated.
   **Recovery**: Re-spawn Pest Control manually and provide the consolidated report path, or accept consolidated findings without checkpoint validation.
   EOF
   ```
   Then send to Queen:
   ```
   Big Head checkpoint escalation to Queen:
-  - Pest Control verdict: UNAVAILABLE (no response after 2 attempts, 120s total)
+  - Pest Control verdict: UNAVAILABLE (no response after 2 attempts, 4 turns total)
   - Consolidated report path: {CONSOLIDATED_OUTPUT_PATH}
   - Timeout failure artifact: {CONSOLIDATED_OUTPUT_PATH%.md}-pc-timeout.md
   - Action required: PC checkpoint could not be completed. User must decide: re-spawn Pest Control
