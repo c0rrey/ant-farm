@@ -41,7 +41,7 @@ CHANGELOG authoring moves from the Queen (Step 4) to the Scribe (Step 5b). The Q
 ### Agent Configuration
 - **subagent_type**: `technical-writer`
 - **model**: `sonnet`
-- **No custom agent file needed** — technical-writer has Bash, Read, Glob, Grep, Write, Edit
+- **Custom agent** — technical-writer with Bash added (Read, Write, Edit, Bash, Glob, Grep)
 
 ### Inputs (passed by Queen)
 
