@@ -531,6 +531,12 @@ PLACEHOLDER_ERROR=0
 for _path in \
   "<session-dir>/review-reports/correctness-review-<timestamp>.md" \
   "<session-dir>/review-reports/edge-cases-review-<timestamp>.md"; do
+  if [ -z "$_path" ]; then
+    echo "PLACEHOLDER ERROR: path resolved to empty string (SESSION_DIR or timestamp unset)"
+    echo "Root cause: unset or empty shell variable in Pantry prompt composition."
+    echo "Do NOT proceed. Return this error to the Queen immediately."
+    PLACEHOLDER_ERROR=1
+  fi
   case "$_path" in
     *'<'*|*'>'*|*'{'*|*'}'*)
       echo "PLACEHOLDER ERROR: path was not substituted by Pantry: $_path"
@@ -545,6 +551,12 @@ if [ "$REVIEW_ROUND" -eq 1 ]; then
 for _path in \
   "<session-dir>/review-reports/clarity-review-<timestamp>.md" \
   "<session-dir>/review-reports/drift-review-<timestamp>.md"; do
+  if [ -z "$_path" ]; then
+    echo "PLACEHOLDER ERROR: path resolved to empty string (SESSION_DIR or timestamp unset)"
+    echo "Root cause: unset or empty shell variable in Pantry prompt composition."
+    echo "Do NOT proceed. Return this error to the Queen immediately."
+    PLACEHOLDER_ERROR=1
+  fi
   case "$_path" in
     *'<'*|*'>'*|*'{'*|*'}'*)
       echo "PLACEHOLDER ERROR: path was not substituted by Pantry: $_path"
