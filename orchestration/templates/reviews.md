@@ -982,72 +982,134 @@ The Queen determines the fix action based on RULES.md Step 3c decision tree:
 
 ### Fix Workflow
 
-Triggered by auto-fix (round 1) or user choosing "fix now" (round 2+). The workflow splits by severity:
+Triggered by auto-fix (round 1) or user choosing "fix now" (round 2+). Fix agents spawn **into the persistent Nitpicker team** (not as standalone Task agents) using the Task tool with `team_name: "nitpickers"` so they can communicate directly with reviewers and iterate within the team via SendMessage.
 
-#### P1 Root Causes — TDD Workflow (test-first)
+#### Fix-Cycle Scout and Auto-Approval
 
-For each P1 root cause bead:
+Before spawning fix agents, the Queen runs a fix-cycle Scout to plan the fix strategy (which beads to fix, wave grouping, file conflict analysis).
 
-1. **Create test-writing task** — Queen creates a bead for the test-writing task
-2. **Compose test specification** — Queen extracts from the consolidated summary and includes in the task brief:
+**Auto-approval**: The fix-cycle Scout strategy is auto-approved — no user confirmation gate. The Scout's output feeds directly into fix agent spawning.
 
-   ~~~markdown
-   ## Test Specification (from review finding)
+**SSV gate**: SSV still runs as a mechanical safety net on the Scout's strategy:
+- SSV PASS → proceed to fix agent spawning
+- SSV FAIL → re-run Scout with violations listed, max 1 retry; if still failing, escalate to user
 
-   **Root cause**: <root cause description from consolidated summary>
-   **Affected surfaces**: <file:line references>
+#### Pantry and CCO Skip Rationale
 
-   ### Required test cases:
-   1. **Failing case**: <specific scenario from review finding>
-      - Input: <concrete input that triggers the bug>
-      - Expected: <what should happen>
-      - Actual: <what currently happens>
-   2. **Boundary condition**: <derived from affected surfaces>
-      - Input: <edge case input>
-      - Expected: <correct behavior at boundary>
-   3. **Regression guard**: <happy path that must still pass>
-      - Input: <normal input>
-      - Expected: <existing correct behavior preserved>
-   ~~~
+Fix briefs do **not** go through Pantry or CCO. Reason:
 
-3. **Spawn Dirt Pushers** (via Task tool, NOT agent teams) to write tests matching the spec
-4. **Verify tests fail** with expected error messages
-5. **Create fix implementation task** — Queen creates a bead for the fix task
-6. **Spawn Dirt Pushers** to implement fixes, run tests, verify they now PASS
-7. **DMVDC** on each fix agent
-8. **Close tasks** — `bd close` on both test and fix tasks after DMVDC passes
+- **Pantry skipped**: The Big Head beads already contain root cause, affected surfaces, fix suggestion, and acceptance criteria — validated by CCB. The bead IS the brief. Re-composing it through Pantry adds no value and wastes a round-trip.
+- **CCO skipped**: The bead content passed CCB (Colony Census Bureau) and the Scout's fix strategy passed SSV. Two independent mechanical gates have already validated correctness. A third CCO pass would be redundant.
 
-Group test tasks by file (use orchestration/reference/dependency-analysis.md for conflict analysis).
+Fix agents receive the bead ID directly as their source of truth.
 
-#### P2 Root Causes — Fix-Only Workflow (direct)
+#### Fix Team Member Naming
 
-For each P2 root cause bead:
+Fix agents spawn into the Nitpicker team with the following naming convention:
 
-1. **Create fix implementation task** — Queen creates a bead (skip test phase)
-2. **Compose fix brief** — include root cause, affected surfaces, and suggested fix from consolidated summary
-3. **Spawn Dirt Pushers** to implement fixes
-4. **DMVDC** on each fix agent
-5. **Close tasks** — `bd close` on fix tasks after DMVDC passes
+| Role | Round 1 name | Round 2+ name |
+|---|---|---|
+| Fix Dirt Pusher N | `fix-dp-1`, `fix-dp-2`, ... | `fix-dp-r2-1`, `fix-dp-r2-2`, ... |
+| Fix PC — What Was Done | `fix-pc-wwd` | `fix-pc-wwd-r2` |
+| Fix PC — DMVDC | `fix-pc-dmvdc` | `fix-pc-dmvdc-r2` |
 
-Group fix tasks by file (use orchestration/reference/dependency-analysis.md for conflict analysis).
+Round suffix (`-r2`, `-r3`, etc.) increments with each review round to avoid name collisions within the persistent team.
+
+#### Fix DP Prompt Structure
+
+Fix Dirt Pushers receive a lean prompt. The bead is the source of truth — the DP does not need a full brief composed by the Queen.
+
+```
+You are fix-dp-N, a fix Dirt Pusher in the Nitpicker team.
+
+Your task bead: <bead-id>
+Run: bd show <bead-id>
+
+The bead contains root cause, affected surfaces, fix approach, and acceptance criteria.
+Implement the fix. Follow the acceptance criteria exactly.
+
+After committing:
+1. Record your commit hash in your task bead: bd update <bead-id> --note="commit: <hash>"
+2. SendMessage to fix-pc-wwd: "Fix committed. Bead: <bead-id>. Commit: <hash>. Files changed: <list>."
+Then go idle and wait.
+```
+
+The prompt is intentionally minimal. Bead content drives the work, not the prompt text.
+
+#### Fix Inner Loop Protocol
+
+The fix inner loop runs between a fix DP and the two fix PCs within the team. The loop is fully asynchronous via SendMessage.
+
+```
+fix-dp-N  -->  [commit]  -->  SendMessage(fix-pc-wwd)
+                                    |
+                              fix-pc-wwd runs WWD check
+                                    |
+                         PASS ------+------ FAIL
+                          |                   |
+               SendMessage(fix-pc-dmvdc)   SendMessage(fix-dp-N) with specifics
+                          |                   |
+                    fix-pc-dmvdc          fix-dp-N iterates (max 2 retries total)
+                    runs DMVDC                |
+                          |             if retry limit hit → SendMessage(Queen) to escalate
+                 PASS ----+---- FAIL
+                  |              |
+              fix-dp-N       SendMessage(fix-dp-N) with specifics
+              goes idle       fix-dp-N iterates (max 2 retries total)
+                              if retry limit hit → SendMessage(Queen) to escalate
+```
+
+**Retry limit**: Each fix DP has a maximum of 2 retries total across both WWD and DMVDC failures. On the third failure, the DP sends a message to the Queen with the failure details and goes idle. The Queen escalates to the user.
+
+**fix-pc-wwd** (Haiku): Lightweight "What Was Done" check — verifies the commit touches only the files listed in the bead, no stray edits, and the commit message is well-formed. Fast and cheap.
+
+**fix-pc-dmvdc** (Sonnet): Full Dirt Moved vs Dirt Claimed check — verifies the fix satisfies the bead's acceptance criteria, tests pass, and no regressions introduced.
 
 #### Wave Composition
 
-P1 test tasks and P2 fix tasks target different root causes (different files), so they can be waved together:
+Group fix agents by file using orchestration/reference/dependency-analysis.md to detect conflicts. Max 7 fix DPs per wave, no file overlap within a wave.
+
+P1 and P2 fixes run in waves as follows:
 
 ```
-Wave 1: [P1 test tasks] + [P2 fix tasks]    (concurrent)
-Wave 2: [P1 fix tasks]                       (after P1 tests verified failing)
+Wave 1: [P1 fix-dp tasks] + [P2 fix-dp tasks]    (concurrent, no file overlap)
 ```
 
-Existing wave rules apply: max 7 Dirt Pushers per wave, no file overlap within a wave.
+Unlike the old TDD workflow, P1 fixes do not require a separate test-writing wave in the persistent team design. The bead's acceptance criteria serve as the verification specification; fix-pc-dmvdc enforces them.
+
+Spawn fix-pc-wwd and fix-pc-dmvdc once per round (they serve all fix DPs in that round via SendMessage). Do not re-spawn them per DP.
+
+#### Round Transition via SendMessage
+
+After all fix DPs complete and fix-pc-dmvdc has issued PASS for each:
+
+1. **Re-task Correctness reviewer**: SendMessage to `correctness` with:
+   - Review round: N+1
+   - Fix commit range: `<first-fix-commit>..<last-fix-commit>`
+   - Changed files: `<list from git diff>`
+   - Task IDs reviewed: `<bead-ids fixed this round>`
+   - Brief path: `{session-dir}/briefs/review-brief-<timestamp>.md` (same brief, new scope)
+   - Report output path: `{session-dir}/review-reports/correctness-r<N+1>-<timestamp>.md`
+
+2. **Re-task Edge Cases reviewer**: SendMessage to `edge-cases` with the same fields as above.
+
+3. **Re-task Big Head**: SendMessage to `big-head` with:
+   - Review round: N+1
+   - Expected report count: 2 (correctness + edge cases only)
+   - Report paths: paths from step 1 and 2 above
+   - Output path: `{session-dir}/review-reports/review-consolidated-r<N+1>-<timestamp>.md`
+
+4. **Clarity and Drift reviewers**: Leave idle after round 1. They are not re-tasked in subsequent rounds (round 2+ scopes only to fix commits, where style/drift issues are out of scope).
+
+The loop continues until a round produces zero P1/P2 findings.
 
 #### Re-Run Reviews (MANDATORY)
 
-After all fix agents complete and pass DMVDC:
-- Re-run Step 3b with `Review round: <N+1>`
-- Round 2+ uses only Correctness + Edge Cases reviewers, scoped to fix commits
-- The loop continues until a round produces zero P1/P2 findings
+After all fix agents complete and SendMessage round-transition messages are sent:
+- Correctness and Edge Cases reviewers produce round N+1 reports scoped to fix commits
+- Big Head consolidates and runs CCB
+- CCB PASS + zero P1/P2 → loop ends; proceed to RULES.md Step 4
+- CCB PASS + P1/P2 remain → return to "If P1 or P2 issues found" above (user prompt for round 2+)
 
 ### Handle P3 Issues (Queen's Step 3c)
 
