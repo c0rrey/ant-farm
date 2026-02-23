@@ -270,6 +270,7 @@ Target: finish a 40+ task session with >50% context window remaining, <10 file r
 | **WWD** — scope verification | Next agent in wave | haiku |
 | **DMVDC** — substance verification | Task closure | sonnet |
 | **CCB** — consolidation audit | Presenting results to user | haiku |
+| **ESV** — exec summary verification | Git push (Step 6) | haiku |
 
 All checkpoint artifacts are written to `<session-dir>/pc/` with timestamped filenames for full audit history.
 
