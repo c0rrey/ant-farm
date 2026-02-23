@@ -140,12 +140,23 @@ Do NOT fix adjacent issues you notice.
 
 ### Step 3: Write Combined Prompt Previews
 
+**MANDATORY OUTPUT**: Every task that produced a task brief in Step 2 MUST also produce a preview file in this step. Preview files are hard requirements — not optional. Do NOT proceed to Step 4 until every preview file is written and verified.
+
 1. Read `~/.claude/orchestration/templates/dirt-pusher-skeleton.md`
 2. For each task, construct a combined prompt preview:
    a. Take the skeleton template text (below the `---` separator)
    b. Fill in `{UPPERCASE}` placeholders with the task's values
    c. Append the task brief content below it
    d. Write to `{session-dir}/previews/task-{TASK_SUFFIX}-preview.md`
+   e. **Immediately after writing**: verify the file exists by reading it back. If the read fails or returns empty, halt and report: `PREVIEW FAILED: {TASK_ID} — preview file not written to {path}`
+
+**Write each preview file immediately after constructing it** — do not batch all previews and write at the end.
+
+**Pre-Step-4 verification (MANDATORY — do not skip)**:
+Before proceeding to Step 4, confirm that every expected preview file exists on disk:
+- List the expected preview paths for all tasks that produced task briefs
+- Read each preview file to confirm it is non-empty
+- If any preview file is missing or empty, halt and report which task's preview failed before continuing
 
 These preview files are what Pest Control will audit against the Colony Cartography Office (CCO).
 
@@ -198,6 +209,8 @@ Data sources:
 - **Epic**: from the `**Epic**` field in each task-metadata file (epic ID or literal `none`)
 
 ### Step 5: Return File Paths
+
+**MANDATORY**: Do NOT populate the `Preview File` column with a path unless you have verified that file exists on disk (Step 3e and Pre-Step-4 verification). If a preview file is missing, mark that row's Preview File as `MISSING` and report the failure — do NOT fabricate a path for a file that was not written.
 
 Return to the Queen in this exact format:
 
