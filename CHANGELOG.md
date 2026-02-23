@@ -1,5 +1,41 @@
 # Changelog
 
+## 2026-02-22 — Session d81536bb (Exec Summary Scribe Infrastructure)
+
+### Summary
+
+Epic ant-farm-68di: Created the Scribe agent infrastructure for automated session exec summaries and CHANGELOG entries. Added ESV (Exec Summary Verification) as the 6th Pest Control checkpoint. 5 implementation tasks across 3 waves, plus 7 P2 review fixes. 11 commits total (5 implementation + 6 fixes).
+
+### Implementation (3 waves, 5 tasks)
+
+- **ant-farm-68di.1**: feat: add Scribe skeleton template — new orchestration/templates/scribe-skeleton.md with 7-source input table, embedded exec-summary format, CHANGELOG derivation rules, and duration calculation instructions
+- **ant-farm-68di.2**: feat: add ESV checkpoint to checkpoints.md — 6 mechanical checks (task coverage, commit coverage, open bead accuracy, CHANGELOG fidelity, section completeness, metric consistency) with bd show guard and retry-then-escalate flow
+- **ant-farm-68di.3**: docs: integrate Scribe and ESV workflow into RULES.md — new Steps 5b/5c, Hard Gates table, Agent Types/Model Assignments tables, Session Directory artifacts, Template Lookup, Retry Limits
+- **ant-farm-68di.4**: feat: add SCRIBE_COMPLETE and ESV_PASS milestones to crash recovery script (parse-progress-log.sh)
+- **ant-farm-68di.5**: docs: update cross-references from Step 4 CHANGELOG to Step 5b/Scribe across reviews.md, SESSION_PLAN_TEMPLATE.md, README.md, GLOSSARY.md, queen-state.md
+
+### Review Fixes (Round 1, 7 P2 root causes)
+
+- **RC-1** (ant-farm-nra7): fix: propagate ESV to GLOSSARY checkpoint counts ("five" -> "six"), acronyms table, Pest Control role
+- **RC-2** (ant-farm-lbr9): fix: add ESV row to README Hard Gates table
+- **RC-3** (ant-farm-ru2v): fix: update RULES.md Step 3c defer path from "document in CHANGELOG" to Scribe/Step 5b
+- **RC-8** (ant-farm-tx0z): fix: complete ESV input specification — empty bead list handling, ^.. commit range, spawn fields
+- **RC-9** (ant-farm-ye5r): fix: add empty-data fallback instructions to Scribe skeleton (missing CHANGELOG, zero summaries)
+- **RC-16** (ant-farm-hodh): fix: move scribe-skeleton.md from FORBIDDEN to PERMITTED in Queen Read Permissions
+- **RC-22** (ant-farm-7026): fix: add empty-string guard to Big Head polling placeholder check
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 9 files, 5 tasks | 0 | 7 | 16 | PASS WITH ISSUES |
+
+23 root causes consolidated from 36 raw findings. 7 P2s fixed in-session. 15 P3s filed as beads (backlog). 1 no-action (RC-23).
+
+### Open P3 beads filed this session
+
+ant-farm-ix7m, ant-farm-3vye, ant-farm-7l1z, ant-farm-6t89, ant-farm-5vs8, ant-farm-hefc, ant-farm-qm8d, ant-farm-by3g, ant-farm-21q7, ant-farm-l70g, ant-farm-cqzj, ant-farm-hiyh, ant-farm-9p9q, ant-farm-0xr1, ant-farm-5nhs
+
 ## 2026-02-22 — Session 5da05acb (Documentation Bug Fixes + Review Fix Cycle)
 
 ### Summary
