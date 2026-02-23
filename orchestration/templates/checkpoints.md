@@ -788,8 +788,11 @@ Read the exec summary first. Then run all six checks below.
 
 ## Check 2: Commit Coverage
 
-1. Run `git log --oneline {SESSION_START_COMMIT}^..{SESSION_END_COMMIT}` to list all commits in this session's range.
-   > **Range boundary**: The `^` prefix on `{SESSION_START_COMMIT}` means "start from the parent of SESSION_START_COMMIT", which causes git to include SESSION_START_COMMIT itself in the output. This is intentional — `..` (without `^`) would exclude the first session commit. Always use `^..` here so the first commit of the session is included.
+1. Before running the git log range command, guard against a root-commit edge case:
+   - Run `git rev-parse {SESSION_START_COMMIT}^ 2>/dev/null` to check whether `{SESSION_START_COMMIT}` has a parent.
+   - **If the command succeeds** (exit code 0): run `git log --oneline {SESSION_START_COMMIT}^..{SESSION_END_COMMIT}` to list all commits in this session's range.
+     > **Range boundary**: The `^` suffix on `{SESSION_START_COMMIT}` means "start from the parent of SESSION_START_COMMIT", which causes git to include SESSION_START_COMMIT itself in the output. This is intentional — `..` (without `^`) would exclude the first session commit. Always use `^..` here so the first commit of the session is included.
+   - **If the command fails** (exit code non-zero, i.e. `{SESSION_START_COMMIT}` is the repo's root commit with no parent): run `git log --oneline {SESSION_START_COMMIT}..{SESSION_END_COMMIT}` instead, and note in your report: "SESSION_START_COMMIT is the repo root commit — used `..` range (no parent exists); SESSION_START_COMMIT itself is not included in the git log output."
 2. Extract all commit hashes mentioned in the exec summary.
 3. Every commit hash from the git log must be accounted for in the exec summary (either listed explicitly or covered by a task entry that references it).
 4. Report each unaccounted commit as: "Commit `{HASH}` (`{message}`) — in git log but not referenced in exec summary."
