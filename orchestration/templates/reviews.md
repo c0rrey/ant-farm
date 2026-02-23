@@ -79,25 +79,21 @@ Task IDs for acceptance criteria: <list of all task IDs worked this session>
 6. Pest Control (checkpoint validator) — receives consolidated report path from Big Head via SendMessage; runs DMVDC and CCB checkpoints and replies with verdict
 ~~~
 
-**Round 2+**: the Queen creates the Nitpicker team with **4 members** (2 reviewers + Big Head + Pest Control):
+**Round 2+**: the Nitpicker team is **persistent** — do NOT create a new team. Re-task the existing Correctness and Edge Cases reviewers via SendMessage (see Round Transition via SendMessage section). Big Head and Pest Control remain in the team and are re-tasked the same way. The team has 4 active members (Correctness + Edge Cases + Big Head + Pest Control); Clarity and Drift reviewers stay idle.
+
+Re-tasking message fields for each reviewer:
 
 ~~~markdown
-Create a team with these 4 members. The 2 reviewers work in parallel.
-Big Head waits for both reports, then consolidates.
-Pest Control is a team member so Big Head can SendMessage to it directly for checkpoint validation.
-
-Nitpickers produce REPORTS ONLY — do NOT file beads (`bd create`).
-Big Head consolidates all reports, groups findings by root cause, and files beads.
-Big Head auto-files P3 findings to "Future Work" epic (no user prompt needed).
-
 Review scope: fix commits only — <first-fix-commit> through <HEAD>
 Files to review: <files changed in fix commits only>
 Task IDs for acceptance criteria: <list of fix task IDs>
+Review round: <N+1>
+Report output path: <reviewer-specific path from Round Transition section>
 
-1. Correctness Review (P1-P2) — see prompt below
-2. Edge Cases Review (P2) — see prompt below
-3. Big Head (consolidation) — see prompt from big-head-skeleton.md
-4. Pest Control (checkpoint validator) — same role as round 1
+1. Correctness Review (P1-P2) — re-tasked via SendMessage
+2. Edge Cases Review (P2) — re-tasked via SendMessage
+3. Big Head (consolidation) — re-tasked via SendMessage with round N+1 and 2 expected report paths
+4. Pest Control (checkpoint validator) — remains available; Big Head SendMessages it as in round 1
 ~~~
 
 **Big Head is spawned as a team member using the big-head-skeleton.md template**, not as a separate Task agent. The Queen fills in the skeleton placeholders and uses the result as the teammate's prompt.
@@ -532,10 +528,18 @@ case "$REVIEW_ROUND" in
     ;;
 esac
 
+# --- Single-invocation constraint ---
+# This entire bash block (the while loop and all path checks below) MUST be
+# submitted as a single Bash tool call. Shell state (variables, sleep) does not
+# persist across turns. Do NOT attempt to poll by calling Bash repeatedly across
+# multiple conversation turns.
+
 # --- Timing constants (document rationale, not just values) ---
-# 30 seconds: enough for a slow reviewer to write its report; short enough to
-# return a clear error rather than block the Queen indefinitely.
-POLL_TIMEOUT_SECS=30
+# 60 seconds (30 iterations × 2s): enough for a slow reviewer to write its
+# report under typical load; short enough to return a clear error rather than
+# block the Queen indefinitely. If reviewers consistently time out, the Queen
+# should re-spawn Big Head rather than increasing this timeout.
+POLL_TIMEOUT_SECS=60
 # 2 seconds: balances responsiveness against unnecessary busy-polling.
 POLL_INTERVAL_SECS=2
 ELAPSED=0
@@ -551,27 +555,12 @@ ELAPSED=0
 # braces) in file paths cause every [ -f ] test to fail silently, producing a misleading
 # timeout error instead of a clear diagnosis.
 PLACEHOLDER_ERROR=0
+# Validate ALL four report paths unconditionally — even round-2+ briefs omit the
+# clarity/drift paths, so they'll still be checked here. A corrupt REVIEW_ROUND
+# must not prevent validation of the other paths.
 for _path in \
   "<session-dir>/review-reports/correctness-review-<timestamp>.md" \
-  "<session-dir>/review-reports/edge-cases-review-<timestamp>.md"; do
-  if [ -z "$_path" ]; then
-    echo "PLACEHOLDER ERROR: path resolved to empty string (SESSION_DIR or timestamp unset)"
-    echo "Root cause: unset or empty shell variable in Pantry prompt composition."
-    echo "Do NOT proceed. Return this error to the Queen immediately."
-    PLACEHOLDER_ERROR=1
-  fi
-  case "$_path" in
-    *'<'*|*'>'*|*'{'*|*'}'*)
-      echo "PLACEHOLDER ERROR: path was not substituted by Pantry: $_path"
-      echo "This brief was delivered with unresolved template placeholders."
-      echo "Root cause: upstream substitution failure in Pantry prompt composition."
-      echo "Do NOT proceed. Return this error to the Queen immediately."
-      PLACEHOLDER_ERROR=1
-      ;;
-  esac
-done
-if [ "$REVIEW_ROUND" -eq 1 ]; then
-for _path in \
+  "<session-dir>/review-reports/edge-cases-review-<timestamp>.md" \
   "<session-dir>/review-reports/clarity-review-<timestamp>.md" \
   "<session-dir>/review-reports/drift-review-<timestamp>.md"; do
   if [ -z "$_path" ]; then
@@ -590,7 +579,6 @@ for _path in \
       ;;
   esac
 done
-fi
 if [ $PLACEHOLDER_ERROR -eq 1 ]; then
   exit 1
 fi
@@ -639,7 +627,7 @@ If timeout is reached and any reports are still missing, IMMEDIATELY return an e
 ```markdown
 # Big Head Consolidation - BLOCKED: Missing Nitpicker Reports
 
-**Status**: FAILED (timeout after 30 seconds)
+**Status**: FAILED (timeout after 60 seconds)
 **Timestamp**: <current ISO 8601 timestamp>
 
 ## Missing Reports
@@ -719,6 +707,15 @@ Before writing the consolidated summary or filing any beads, check for open bead
 ```bash
 if ! bd list --status=open -n 0 --short > /tmp/open-beads-$$.txt 2>&1; then
   echo "ERROR: bd list failed (lock contention or bd error). Aborting bead filing to prevent duplicates."
+  cat > "{CONSOLIDATED_OUTPUT_PATH}" << 'EOF'
+  # Big Head Consolidation — BLOCKED: Cross-Session Dedup Infrastructure Error
+  **Status**: FAILED — bd list infrastructure error
+  **Timestamp**: <current ISO 8601 timestamp>
+  **Reason**: `bd list --status=open` failed. Bead filing aborted to prevent duplicate filing. This is likely a lock contention or bd connectivity issue.
+  **Recovery**: Retry after the lock clears. If the issue persists, run `bd doctor` and re-spawn Big Head.
+  EOF
+  # Notify the Queen so she can act immediately rather than waiting for stuck-agent timeout
+  SendMessage(Queen): "Big Head FAILED: bd list infrastructure error during cross-session dedup. Bead filing aborted to prevent duplicates. Consolidated output written to {CONSOLIDATED_OUTPUT_PATH}. Please check bd status and re-spawn Big Head when ready."
   exit 1
 fi
 ```
@@ -931,7 +928,7 @@ Before launching the review agent team, confirm:
 - [ ] Each prompt says "Do NOT file beads — Big Head handles all bead filing"
 - [ ] Messaging guidelines included (what to share, what not to share)
 - [ ] Reports write to `<session-dir>/review-reports/<review-type>-review-<timestamp>.md`
-- [ ] Round 1: Team has 6 members (4 Nitpickers + Big Head + Pest Control); Round 2+: 4 members (2 Nitpickers + Big Head + Pest Control)
+- [ ] Round 1: Team has 6 members (4 Nitpickers + Big Head + Pest Control); Round 2+: persistent team re-tasked via SendMessage (NOT a new TeamCreate) — Correctness + Edge Cases + Big Head + Pest Control active; Clarity + Drift idle
 - [ ] Round 2+: Big Head prompt includes review round number and P3 auto-filing instructions
 
 ### Big Head Consolidation Checklist (after all Nitpickers finish)
@@ -982,7 +979,7 @@ The Queen determines the fix action based on RULES.md Step 3c decision tree:
 
 ### Fix Workflow
 
-Triggered by auto-fix (round 1) or user choosing "fix now" (round 2+). Fix agents spawn **into the persistent Nitpicker team** (not as standalone Task agents) using the Task tool with `team_name: "nitpickers"` so they can communicate directly with reviewers and iterate within the team via SendMessage.
+Triggered by auto-fix (round 1) or user choosing "fix now" (round 2+). Fix agents spawn **into the persistent Nitpicker team** (not as standalone Task agents) using the Task tool with `team_name: "nitpicker-team"` so they can communicate directly with reviewers and iterate within the team via SendMessage.
 
 #### Fix-Cycle Scout and Auto-Approval
 
@@ -1088,10 +1085,14 @@ After all fix DPs complete and fix-pc-dmvdc has issued PASS for each:
    - Fix commit range: `<first-fix-commit>..<last-fix-commit>`
    - Changed files: `<list from git diff>`
    - Task IDs reviewed: `<bead-ids fixed this round>`
-   - Brief path: `{session-dir}/briefs/review-brief-<timestamp>.md` (same brief, new scope)
    - Report output path: `{session-dir}/review-reports/correctness-r<N+1>-<timestamp>.md`
 
-2. **Re-task Edge Cases reviewer**: SendMessage to `edge-cases` with the same fields as above.
+2. **Re-task Edge Cases reviewer**: SendMessage to `edge-cases` with:
+   - Review round: N+1
+   - Fix commit range: `<first-fix-commit>..<last-fix-commit>`
+   - Changed files: `<list from git diff>`
+   - Task IDs reviewed: `<bead-ids fixed this round>`
+   - Report output path: `{session-dir}/review-reports/edge-cases-r<N+1>-<timestamp>.md`
 
 3. **Re-task Big Head**: SendMessage to `big-head` with:
    - Review round: N+1

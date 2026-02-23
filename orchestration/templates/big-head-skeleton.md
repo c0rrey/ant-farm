@@ -88,6 +88,8 @@ This ensures downstream consumers (Queen, Pest Control) have a written record of
 Your workflow:
 1. Verify all expected report files exist (4 for round 1; 2 for round 2+) — follow the missing-report handling protocol in your consolidation brief (Step 0a)
    - The brief is authoritative for this step: it specifies the polling timeout, error return format, and failure conditions
+   - **Single-invocation constraint**: The polling bash block in the brief (the `while` loop with `sleep`) MUST be executed in a single Bash tool call. Do NOT attempt to poll by calling Bash repeatedly across multiple turns — the shell state does not persist between turns and you cannot `sleep` across turns. Submit the entire polling block as one Bash tool invocation and wait for its result.
+   - **Timeout note**: The polling timeout is 60 seconds (30 iterations × 2 seconds). This allows up to 60 seconds for all reviewers to finish writing their reports. If your reviewers are consistently timing out, the Queen should re-spawn Big Head rather than increasing the timeout — a longer timeout blocks the Queen's context with an idle agent.
    - **On timeout (REPORTS_FOUND=0)**: Before returning the error to the Queen, write a failure artifact using this bash block:
      ```bash
      # NOTE: {CONSOLIDATED_OUTPUT_PATH} below is a shell variable — it is substituted at
@@ -97,7 +99,7 @@ Your workflow:
      # Big Head Consolidation — BLOCKED: Missing Nitpicker Reports
      **Status**: FAILED — prerequisite gate timeout
      **Timestamp**: <current ISO 8601 timestamp>
-     **Reason**: Not all expected Nitpicker reports arrived within 30 seconds. <list missing reports>
+     **Reason**: Not all expected Nitpicker reports arrived within 60 seconds. <list missing reports>
      **Recovery**: Check reviewer logs. Once all expected reports are present, re-spawn Big Head consolidation.
      EOF
      ```
@@ -112,6 +114,15 @@ Your workflow:
    ```bash
    if ! bd list --status=open -n 0 --short > /tmp/open-beads-$$.txt 2>&1; then
      echo "ERROR: bd list failed (lock contention or bd error). Aborting bead filing to prevent duplicates."
+     cat > "{CONSOLIDATED_OUTPUT_PATH}" << 'EOF'
+     # Big Head Consolidation — BLOCKED: Cross-Session Dedup Infrastructure Error
+     **Status**: FAILED — bd list infrastructure error
+     **Timestamp**: <current ISO 8601 timestamp>
+     **Reason**: `bd list --status=open` failed. Bead filing aborted to prevent duplicate filing. This is likely a lock contention or bd connectivity issue.
+     **Recovery**: Retry after the lock clears. If the issue persists, run `bd doctor` and re-spawn Big Head.
+     EOF
+     # Notify the Queen so she can act immediately rather than waiting for stuck-agent timeout
+     SendMessage(Queen): "Big Head FAILED: bd list infrastructure error during cross-session dedup. Bead filing aborted to prevent duplicates. Consolidated output written to {CONSOLIDATED_OUTPUT_PATH}. Please check bd status and re-spawn Big Head when ready."
      exit 1
    fi
    ```
