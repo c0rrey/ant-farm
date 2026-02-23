@@ -388,9 +388,9 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 
 ## Information Diet (The Queen's Window)
 
-The Queen's read permissions are defined explicitly in the "Queen Read Permissions" section above.
+The Queen's read permissions are defined explicitly and authoritatively in the "Queen Read Permissions" section above. **Authoritative source: Queen Read Permissions above.**
 
-**Quick summary**:
+**Quick reference** (for mid-document orientation — see Queen Read Permissions for the full list with rationale):
 - **READ**: Briefing, verdict tables, skeleton files, orchestration artifacts from session dir, git log
 - **DO NOT READ**: Agent instruction files, source code, tests, configs, implementation details
 - **NEVER READ**: `orchestration/_archive/` — contains deprecated documents that contradict current workflows. A glob like `orchestration/**/*.md` will match these stale files. Exclude `_archive/` from all searches and reads.
@@ -568,7 +568,9 @@ If more than 50% of agents in a single wave fail (DMVDC failure, stuck, or unrec
 
 A wave is defined as a set of agents spawned concurrently in a single Step 2 batch. Failures from earlier waves do not carry over into the threshold calculation for a new wave.
 
-## Priority Calibration
+## Bead Priority Calibration
+
+> **Note**: This section defines project-level issue priorities for beads filed in the tracker. Nitpicker review severity (P1/P2/P3) is defined separately in `orchestration/templates/reviews.md` and applies to review findings, not bead filing priority.
 
 **P1** = build failure, broken links, data loss, security vulnerability
 

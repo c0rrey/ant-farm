@@ -364,6 +364,21 @@ Review these files:
 <list of files changed in session>
 ```
 
+## Review Quality Metrics
+
+Good reviews should:
+- Find 3-10 root-cause issues per review type (NOT 30+ per-occurrence issues)
+- Categorize issues correctly (clarity vs correctness)
+- Provide specific line numbers and examples
+- Suggest concrete fixes, not just identify problems
+- Avoid false positives (issues that aren't really issues)
+- Consider project context and constraints
+
+If a review finds 0 issues:
+- May indicate review was too superficial
+- Or work quality was genuinely excellent
+- Have user spot-check to calibrate
+
 ## Nitpicker Report Format (All Reviewers)
 
 Every reviewer MUST write their report to `<session-dir>/review-reports/<review-type>-review-<timestamp>.md` using this format. The Queen generates the timestamp once per review cycle and provides the exact output path in each reviewer's prompt.
@@ -1045,18 +1060,3 @@ bd epic create --title="Future Work" --description="Low-priority polish and impr
 
 After handling P3 issues, proceed to RULES.md Step 4 (Documentation — update README and CLAUDE.md only).
 The Scribe authors the session CHANGELOG entry at Step 5b.
-
-## Review Quality Metrics
-
-Good reviews should:
-- Find 3-10 root-cause issues per review type (NOT 30+ per-occurrence issues)
-- Categorize issues correctly (clarity vs correctness)
-- Provide specific line numbers and examples
-- Suggest concrete fixes, not just identify problems
-- Avoid false positives (issues that aren't really issues)
-- Consider project context and constraints
-
-If a review finds 0 issues:
-- May indicate review was too superficial
-- Or work quality was genuinely excellent
-- Have user spot-check to calibrate
