@@ -16,6 +16,7 @@ accessible at `~/.claude/orchestration/templates/scout.md`. To translate repo pa
 - **NEVER** run `bd show`, `bd ready`, `bd list`, `bd blocked`, or any `bd` query command — the Scout does this
 - **NEVER** read source code, tests, project data files, or config files — agents do this
 - **NEVER** read agent **instruction files** (scout.md, pantry.md, implementation.md, checkpoints.md, reviews.md, etc.) — pass the path to the agent, let it read its own instructions
+- **NEVER** send `shutdown_request` to any Nitpicker team member before Step 4. The **only** authorized shutdown trigger is the termination check in Step 3c (zero P1/P2 findings). Do NOT send shutdown_request at the Step 3c decision fork or anywhere else before convergence.
 
 Your first instinct will be to "gather context" by running `bd show` on the task list.
 **Do not do this.** Spawn the Scout and let it gather context for you.
@@ -65,13 +66,19 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             Check whether the user's message contains a session directory path
             (e.g. `.beads/agent-summaries/_session-<id>`). If a prior SESSION_DIR is
             supplied or you can identify an incomplete session from context:
-            1. Run `bash scripts/parse-progress-log.sh <prior_SESSION_DIR>`
-            2. On exit 0: read `<prior_SESSION_DIR>/resume-plan.md` and present it verbatim to the user.
+            1. Verify the session directory exists:
+               ```bash
+               [ -d "<prior_SESSION_DIR>" ] || echo "Session directory not found: <prior_SESSION_DIR>"
+               ```
+               If the directory does not exist, surface the message to the user and await instruction.
+               Do NOT proceed to run `parse-progress-log.sh` on a missing directory.
+            2. Run `bash scripts/parse-progress-log.sh <prior_SESSION_DIR>`
+            3. On exit 0: read `<prior_SESSION_DIR>/resume-plan.md` and present it verbatim to the user.
                Wait for the user to reply `resume` or `fresh start` before taking any further action.
                - `resume`: restore SESSION_DIR to the prior value and continue from the indicated step.
                - `fresh start`: generate a new SESSION_ID and proceed normally.
-            3. On exit 2: the prior session completed — proceed normally with a new SESSION_ID.
-            4. On exit 1: surface the error to the user and await instruction.
+            4. On exit 2: the prior session completed — proceed normally with a new SESSION_ID.
+            5. On exit 1: surface the error (including the path that was not found) to the user and await instruction.
             If no prior session is indicated, skip crash recovery and proceed normally.
 
 **Step 1:** Recon — Read `{SESSION_DIR}/briefing.md` written by the Scout's previous run, or spawn the Scout
@@ -290,8 +297,10 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             - Round 2+: P3s already auto-filed by Big Head to "Future Work" epic
             - Round 1: P3s filed via "Handle P3 Issues" flow in reviews.md
             - Update session state: `Termination: terminated (round N: 0 P1/P2)`
-            - Proceed directly to Step 4 (documentation)
+            - **This is the ONLY point where shutdown_request to team members is authorized.** Proceed directly to Step 4 (documentation), then send shutdown_request to team members as part of session teardown.
+            - **DO NOT send shutdown_request here** — proceed to Step 4 first; team shutdown is part of session cleanup, not triage.
             **If P1 or P2 issues found**:
+            **DO NOT send shutdown_request to any team member.** The team must remain active for the fix workflow.
             **Round cap — escalate after round 4** (check this FIRST before any fix decision):
             - If current round >= 4 and P1/P2 findings are still present, do NOT start another round
             - Present full round history to user (round numbers, finding counts, bead IDs)
