@@ -297,8 +297,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             - Round 2+: P3s already auto-filed by Big Head to "Future Work" epic
             - Round 1: P3s filed via "Handle P3 Issues" flow in reviews.md
             - Update session state: `Termination: terminated (round N: 0 P1/P2)`
-            - **This is the ONLY point where shutdown_request to team members is authorized.** Proceed directly to Step 4 (documentation), then send shutdown_request to team members as part of session teardown.
-            - **DO NOT send shutdown_request here** — proceed to Step 4 first; team shutdown is part of session cleanup, not triage.
+            - Shutdown is authorized at this point — but do NOT send `shutdown_request` yet. Proceed to Step 4 first; send `shutdown_request` to team members during session teardown (Step 6 cleanup).
             **If P1 or P2 issues found**:
             **DO NOT send shutdown_request to any team member.** The team must remain active for the fix workflow.
             **Round cap — escalate after round 4** (check this FIRST before any fix decision):
@@ -399,7 +398,9 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             1. **Re-task Correctness reviewer**: SendMessage to `correctness` with review round N+1,
                fix commit range, changed files, and task IDs; provide new report output path
                `{SESSION_DIR}/review-reports/correctness-r<N+1>-<timestamp>.md`
-            2. **Re-task Edge Cases reviewer**: SendMessage to `edge-cases` with same fields
+            2. **Re-task Edge Cases reviewer**: SendMessage to `edge-cases` with review round N+1,
+               fix commit range, changed files, and task IDs; provide new report output path
+               `{SESSION_DIR}/review-reports/edge-cases-r<N+1>-<timestamp>.md`
             3. **Re-task Big Head**: SendMessage to `big-head` with review round N+1, expected report
                count 2, both report paths, and new consolidated output path
                `{SESSION_DIR}/review-reports/review-consolidated-r<N+1>-<timestamp>.md`
