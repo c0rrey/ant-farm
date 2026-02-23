@@ -686,7 +686,7 @@ An intra-wave dependency means an agent that is supposed to start in parallel ac
 
 ## Verdict
 
-**PASS** — All 3 checks pass. Report PASS to the Queen. The Queen will present the strategy to the user for approval before spawning Pantry — do NOT spawn Pantry yourself.
+**PASS** — All 3 checks pass. Report PASS to the Queen. The Queen will auto-proceed to spawn Pantry (Step 2) — do NOT spawn Pantry yourself.
 
 **FAIL: <list each failing check>** — One or more checks failed. Do NOT spawn Pantry. Report specific violations so Scout can revise the strategy.
 
@@ -714,7 +714,7 @@ Where:
 
 ### The Queen's Response
 
-**On PASS**: Present the recommended strategy to the user for approval (Step 1b in RULES.md). **User approval is required even on SSV PASS — this is a deliberate design choice, not an omission.** The SSV only validates mechanical correctness (no file conflicts, no dependency violations); the user must approve the strategic intent before implementation begins. Only after the user explicitly approves, spawn Pantry (Step 2).
+**On PASS**: Auto-proceed to spawn Pantry (Step 2 in RULES.md). The SSV validates mechanical correctness (no file conflicts, no dependency violations); a PASS is sufficient to begin implementation without waiting for user approval.
 
 **On FAIL**:
 1. Log the violation details from the SSV report.

@@ -25,7 +25,7 @@ Your first instinct will be to "gather context" by running `bd show` on the task
 The Queen's window is restricted to prevent context bloat, but certain files are explicitly PERMITTED.
 
 **PERMITTED (Queen must read these):**
-- `{SESSION_DIR}/briefing.md` — Scout-generated strategy summary, required for Step 1 approval decision
+- `{SESSION_DIR}/briefing.md` — Scout-generated strategy summary; Queen reads after SSV PASS to confirm task count before auto-proceeding to Step 2
 - `{SESSION_DIR}/task-metadata/*.md` — Per-task scope, acceptance criteria (pre-digested by Scout)
 - `{SESSION_DIR}/previews/*.md` — Combined prompt previews (pre-digested by Pantry)
 - `{SESSION_DIR}/review-reports/*.md` — Individual reviewer reports and Big Head consolidated summary
@@ -97,8 +97,13 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             **On SSV PASS**: Proceed directly to Step 2. Do NOT wait for user approval. SSV is the
             mechanical safety gate — a passing strategy is structurally sound and ready to execute.
             No complexity threshold applies; auto-approve regardless of task count.
+            **Zero-task guard:** If the briefing's task count is 0, do NOT auto-proceed to Step 2.
+            Escalate to the user with the zero-task briefing for review and await instruction.
             **On SSV FAIL**: Re-run Scout with the specific violations from the SSV report (do NOT present
             a failed strategy to the user). After Scout revises briefing.md, re-run SSV.
+            **Retry cap:** The SSV FAIL -> re-Scout cycle has a maximum of 1 retry. If SSV fails again
+            after one re-Scout run, do NOT re-run Scout a second time. Surface the SSV violations to
+            the user and await instruction.
 
             **Risk analysis (documented per ant-farm-fomy):** Auto-approving after SSV PASS is safe
             because SSV verifies file overlap, file list integrity, and dependency ordering — the three
@@ -466,7 +471,7 @@ All session-scoped artifacts go here (6 subdirectories total; `review-reports/` 
 
 Root-level artifacts in `${SESSION_DIR}`:
 - `queen-state.md` — session state for context recovery
-- `briefing.md` — written by Scout (Step 1a); strategy summary read by Queen before user approval
+- `briefing.md` — written by Scout (Step 1a); strategy summary read by Queen after SSV PASS before auto-proceeding to Step 2
 - `session-summary.md` — written by Pantry (optional); end-of-session narrative summary
 - `exec-summary.md` — written by Scribe (Step 5b); canonical session record covering work completed, review findings, open issues, and narrative observations; source for the CHANGELOG derivative
 - `progress.log` — append-only milestone log; one pipe-delimited line per completed step; written by the Queen at each workflow milestone; never read or overwritten during normal operation; recovery sessions read this once to determine the resume point
@@ -522,6 +527,7 @@ This prevents collisions when multiple Queens run in the same repo.
 | Agent stuck (no commit within 15 turns) | 0 | Run stuck-agent diagnostic (see below); escalate to user |
 | Pantry CCO fails | 1 | Escalate to user; do not spawn Dirt Pushers without verified prompts |
 | Scout fails or returns no tasks | 1 | Escalate to user; do not proceed to Step 2 without task list |
+| SSV FAIL -> re-Scout cycle | 1 | Escalate to user with SSV violations; do not re-run Scout a third time |
 | Scribe fails ESV | 1 | Escalate to user with ESV report; user decides fix manually or push as-is |
 | Total retries per session | 5 | Pause all new spawns; triage with user |
 
