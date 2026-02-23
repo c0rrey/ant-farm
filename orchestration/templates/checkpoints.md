@@ -514,7 +514,7 @@ Where:
 ## Colony Census Bureau (CCB): Consolidation Audit
 
 **When**: After Big Head consolidation (after all review reports merged and beads filed — 4 reports in round 1, 2 in round 2+)
-**Model**: `haiku` (mechanical counting + record-checking)
+**Model**: `sonnet` (judgment required for bead quality and dedup correctness)
 
 **CCB must PASS before presenting results to the user.**
 
@@ -564,6 +564,30 @@ For each filed bead, verify its description contains:
 - Acceptance criteria or verification steps
 - Suggested fix
 Flag any beads missing these elements. List which elements are missing.
+
+## Check 3b: Root Cause Spot-Check
+
+Select up to 2 beads for deep validation. Prioritize P1 beads first; if fewer than 2 P1 beads exist, fill remaining slots with the highest-surface-count P2 beads (most file:line references).
+
+For each selected bead:
+1. Read the source file at every `file:line` reference in the bead description.
+2. Verify that the root cause explanation in the bead matches what the code actually shows at those locations.
+3. Assess whether the suggested fix direction is consistent with the actual code path.
+
+**SUSPECT severity distinction:**
+
+- **Minor** — Root cause is vague or ambiguous but not outright wrong (e.g., "the function is inefficient" with no specifics, but the referenced code does contain the function). Action: flag the bead for amendment, add a note to the CCB report, continue audit. Do NOT escalate.
+- **Material** — Root cause is factually incorrect (e.g., the referenced line does not contain the described problem, or the fix direction would not address the actual defect). Action: trigger the Material Spot-Check Escalation Path below.
+
+**Material Spot-Check Escalation Path:**
+1. Set CCB verdict to PARTIAL and include a `context-degradation-suspected` flag in the verdict line.
+2. The Queen shuts down the current Big Head instance.
+3. The Queen spawns a fresh Big Head with a handoff brief describing which beads failed spot-check and why.
+4. Fresh Big Head performs a full bead review (re-reads source files, corrects or re-files affected beads).
+5. Queen re-runs CCB.
+6. If the re-run CCB still returns SUSPECT on any spot-checked bead, escalate to the user with the CCB report attached.
+
+Report: "Spot-checked {N} bead(s): {list titles}. Result: {CONFIRMED / SUSPECT — minor / SUSPECT — material}. {brief explanation per bead}"
 
 ## Check 4: Priority Calibration
 Read P1 bead descriptions. Do they describe genuinely blocking issues (crashes, data loss, security vulnerabilities, broken functionality)?

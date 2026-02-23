@@ -426,7 +426,7 @@ Every `Task` tool call the Queen makes MUST include the `model` parameter from t
 | PC — CCO | Task (`pest-control`) | haiku | Mechanical checklist |
 | PC — WWD | Task (`pest-control`) | haiku | Mechanical file comparison |
 | PC — DMVDC | Task (`pest-control`) | sonnet | Judgment: claims vs actual code |
-| PC — CCB | Task (`pest-control`) | haiku | Mechanical counting |
+| PC — CCB | Task (`pest-control`) | sonnet | Judgment: bead quality and dedup correctness |
 | Nitpickers (all 4) | TeamCreate member | sonnet | Set in big-head-skeleton.md |
 | Big Head | TeamCreate member | opus | Set in big-head-skeleton.md (`{MODEL}`) |
 | PC (team member) | TeamCreate member | sonnet | Runs DMVDC inside team; needs sonnet |
