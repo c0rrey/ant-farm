@@ -507,6 +507,14 @@ If any report file is missing after the initial check, do NOT wait indefinitely.
 - If any reports are missing, enter the polling loop below
 
 **Polling loop (if files missing):**
+
+> **Template source note**: The angle-bracket values (`<session-dir>`, `<timestamp>`) in
+> the code block below are **template placeholders**. `build-review-prompts.sh` substitutes
+> them with real paths before this brief is delivered to Big Head. When Big Head runs this
+> block, every `<session-dir>` and `<timestamp>` token will already be replaced with the
+> actual session directory and timestamp strings. The angle-bracket guard below (`case "$_path" in *'<'*|*'>'*`)
+> is checking the **substituted** paths — a failure there means substitution was incomplete upstream.
+
 ```bash
 # IMPORTANT: This entire block must execute in a single Bash invocation.
 # Shell state (variables) does not persist across separate Bash tool calls.

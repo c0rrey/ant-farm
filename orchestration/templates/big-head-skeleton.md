@@ -16,7 +16,7 @@ Do NOT use the Task tool for Big Head — it runs inside the same TeamCreate cal
 
 **Step 1 — Fill placeholders before building the TeamCreate call.**
 Replace `{PLACEHOLDER}` values (uppercase) in the agent-facing template below:
-- `{MODEL}`: Big Head model (specified in the Big Head Consolidation Protocol section of orchestration/templates/reviews.md; currently `opus`)
+- `{MODEL}`: Big Head model — see the **Big Head Consolidation Protocol** section of `orchestration/templates/reviews.md` for the authoritative model assignment. Do NOT hardcode a model name here; consult that section instead.
 - `{DATA_FILE_PATH}`: Big Head consolidation brief written by build-review-prompts.sh
 - `{CONSOLIDATED_OUTPUT_PATH}`: `{SESSION_DIR}/review-reports/review-consolidated-{TIMESTAMP}.md`
 
@@ -90,6 +90,9 @@ Your workflow:
    - The brief is authoritative for this step: it specifies the polling timeout, error return format, and failure conditions
    - **On timeout (REPORTS_FOUND=0)**: Before returning the error to the Queen, write a failure artifact using this bash block:
      ```bash
+     # NOTE: {CONSOLIDATED_OUTPUT_PATH} below is a shell variable — it is substituted at
+     # runtime by build-review-prompts.sh via fill_slot, NOT a template-time placeholder
+     # you fill manually. By the time Big Head runs this block, the braces are gone.
      cat > "{CONSOLIDATED_OUTPUT_PATH}" << 'EOF'
      # Big Head Consolidation — BLOCKED: Missing Nitpicker Reports
      **Status**: FAILED — prerequisite gate timeout

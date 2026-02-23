@@ -321,7 +321,15 @@ build_big_head_prompt() {
         exit 1
     }
 
-    # 4. Fill any remaining {{SLOT}} markers in the template body
+    # 4. Fill any remaining {{SLOT}} markers in the template body.
+    #
+    # ORDERING DEPENDENCY: The DATA_FILE_PATH fill_slot call MUST come after step 3
+    # writes the file (above). DATA_FILE_PATH is substituted WITH the output file's
+    # own path ($out_file) INSIDE that same file — a self-referential substitution.
+    # This is safe only because $out_file already exists when fill_slot runs here.
+    # If these fill_slot calls are moved before step 3, or if DATA_FILE_PATH is
+    # filled in a file that has not yet been written, the substitution will fail or
+    # silently produce an empty/stale result.
     fill_slot "{{REVIEW_ROUND}}"              "$REVIEW_ROUND"          "$out_file"
     fill_slot "{{TIMESTAMP}}"                 "$TIMESTAMP"             "$out_file"
     fill_slot "{{DATA_FILE_PATH}}"            "$out_file"              "$out_file"
@@ -384,6 +392,49 @@ if [ "$ALL_OK" = false ]; then
     exit 1
 fi
 
+# ---------------------------------------------------------------------------
+# Post-write placeholder scan: check all output files for unfilled slots.
+# Catches cases where fill_slot was skipped or a new template placeholder was
+# added without a corresponding fill_slot call.
+# Patterns checked:
+#   {{UPPERCASE}} — double-brace template slots used by fill_slot; none should
+#     survive substitution in any output file
+# ---------------------------------------------------------------------------
+
+echo "build-review-prompts.sh: scanning for unfilled placeholders..."
+
+SCAN_FILES=()
+for review_type in "${ACTIVE_REVIEW_TYPES[@]}"; do
+    SCAN_FILES+=("${SESSION_DIR}/prompts/review-${review_type}.md")
+done
+SCAN_FILES+=("${SESSION_DIR}/prompts/review-big-head-consolidation.md")
+
+PLACEHOLDER_FOUND=false
+for f in "${SCAN_FILES[@]}"; do
+    # Check for unfilled {{UPPERCASE}} double-brace slots (applies to all output files).
+    # These are the mechanical fill_slot tokens — none should survive substitution.
+    # Note: angle-bracket path placeholders (<session-dir>, <timestamp>) are NOT
+    # scanned here because both Nitpicker templates (e.g. <task-id>) and the Big Head
+    # template (e.g. <P>, <title>, <new-bead-id>) contain intentional angle-bracket
+    # tokens in instructional examples that are meant to reach the agent verbatim.
+    # Those tokens are documented in the template source note added to reviews.md.
+    if grep -qP '\{\{[A-Z][A-Z_0-9]*\}\}' "$f" 2>/dev/null; then
+        echo "ERROR: Unfilled {{SLOT}} placeholder(s) found in: $f" >&2
+        grep -nP '\{\{[A-Z][A-Z_0-9]*\}\}' "$f" | while IFS= read -r line; do
+            echo "  $line" >&2
+        done
+        PLACEHOLDER_FOUND=true
+    fi
+done
+
+if [ "$PLACEHOLDER_FOUND" = true ]; then
+    echo "ERROR: One or more output files contain unfilled placeholders. Aborting." >&2
+    echo "Root cause: a fill_slot call is missing or a template placeholder was added without a corresponding substitution." >&2
+    exit 1
+fi
+
+echo "build-review-prompts.sh: placeholder scan passed — no unfilled slots detected."
+echo ""
 echo "build-review-prompts.sh: all review prompt files written successfully."
 echo ""
 echo "Return table:"
