@@ -321,11 +321,15 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             Task(
               subagent_type="pest-control",
               model="haiku",
-              prompt="ESV checkpoint. Session dir: {SESSION_DIR}. Commit range: {RANGE}.
+              prompt="ESV checkpoint. Session dir: {SESSION_DIR}.
+                      Session start commit: {SESSION_START_COMMIT} (first commit of this session).
+                      Session end commit: {SESSION_END_COMMIT} (final commit before push, typically HEAD).
+                      Session start date: {SESSION_START_DATE} (ISO 8601, e.g. 2026-02-22 — used to scope bd list).
                       Verify exec-summary.md and CHANGELOG.md.
                       Read orchestration/templates/checkpoints.md for full instructions."
             )
             ```
+            > **Field derivation**: `SESSION_START_COMMIT` is the first commit the Queen or any agent made this session (visible in `git log` since the pre-session HEAD). `SESSION_END_COMMIT` is the commit at HEAD immediately before Step 6's `git add CHANGELOG.md` commit. `SESSION_START_DATE` is the calendar date (UTC) when Step 0 ran (stored in queen-state.md or derivable from `SESSION_ID`).
             ESV checks: task coverage, commit coverage, open bead accuracy, CHANGELOG derivation
             fidelity, section completeness, metric consistency.
             Artifact written to `{SESSION_DIR}/pc/pc-session-esv-{timestamp}.md`.

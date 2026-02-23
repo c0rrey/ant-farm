@@ -764,7 +764,8 @@ Read the exec summary first. Then run all six checks below.
 
 ## Check 2: Commit Coverage
 
-1. Run `git log --oneline {SESSION_START_COMMIT}..{SESSION_END_COMMIT}` to list all commits in this session's range.
+1. Run `git log --oneline {SESSION_START_COMMIT}^..{SESSION_END_COMMIT}` to list all commits in this session's range.
+   > **Range boundary**: The `^` prefix on `{SESSION_START_COMMIT}` means "start from the parent of SESSION_START_COMMIT", which causes git to include SESSION_START_COMMIT itself in the output. This is intentional — `..` (without `^`) would exclude the first session commit. Always use `^..` here so the first commit of the session is included.
 2. Extract all commit hashes mentioned in the exec summary.
 3. Every commit hash from the git log must be accounted for in the exec summary (either listed explicitly or covered by a task entry that references it).
 4. Report each unaccounted commit as: "Commit `{HASH}` (`{message}`) — in git log but not referenced in exec summary."
@@ -786,11 +787,12 @@ If `bd show <id>` fails (task not found, unreadable, or bd command error):
 - If more than half the listed beads fail `bd show`, FAIL the check with: "Infrastructure failure: could not verify status for majority of listed beads."
 
 3. Run `bd list --status=open --after={SESSION_START_DATE}` to detect any open beads from this session that are NOT listed in the exec summary.
+   > **Empty list handling**: If `bd list --status=open --after={SESSION_START_DATE}` returns zero results AND the exec summary's "Open Issues" section says "None" (or equivalent), this is a PASS — no discrepancy exists. Proceed directly to Check 4. Only fail if the exec summary lists beads as open but `bd show` contradicts them, or if `bd list` returns beads that the exec summary omits.
 4. Report each discrepancy as one of:
    - "Bead `<id>` listed as open in exec summary but `bd show` reports status={status}."
    - "Bead `<id>` is open and filed during this session but not listed in exec summary's Open Issues."
 
-**PASS condition**: Every bead listed as open in exec summary is actually open (per `bd show`), and no unlisted open beads from this session exist.
+**PASS condition**: Every bead listed as open in exec summary is actually open (per `bd show`), and no unlisted open beads from this session exist. If `bd list` returns zero results and the exec summary states "None", this is also PASS.
 **FAIL condition**: Any status mismatch, or unlisted open beads exist. List every discrepancy.
 
 ## Check 4: CHANGELOG Derivation Fidelity
