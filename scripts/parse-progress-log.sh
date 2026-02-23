@@ -69,6 +69,8 @@ STEP_KEYS=(
     "REVIEW_TRIAGED"
     "DOCS_COMMITTED"
     "XREF_VERIFIED"
+    "SCRIBE_COMPLETE"
+    "ESV_PASS"
     "SESSION_COMPLETE"
 )
 
@@ -83,6 +85,8 @@ step_label() {
         REVIEW_TRIAGED)   echo "Review Triaged: Triage (P1/P2 decision)" ;;
         DOCS_COMMITTED)   echo "Docs Committed: Documentation (CHANGELOG/README/CLAUDE.md)" ;;
         XREF_VERIFIED)    echo "Xref Verified: Cross-reference verification" ;;
+        SCRIBE_COMPLETE)  echo "Scribe Complete: Step 5b (Scribe exec summary)" ;;
+        ESV_PASS)         echo "ESV Pass: Step 5c (Exec Summary Verification)" ;;
         SESSION_COMPLETE) echo "Session Complete: Land the plane (git push)" ;;
         *)                echo "$1" ;;
     esac
@@ -99,6 +103,8 @@ step_resume_action() {
         REVIEW_TRIAGED)   echo "Re-run REVIEW_TRIAGED: re-read the Big Head summary and re-present findings to the user." ;;
         DOCS_COMMITTED)   echo "Re-run DOCS_COMMITTED: update CHANGELOG, README, CLAUDE.md in a single commit." ;;
         XREF_VERIFIED)    echo "Re-run XREF_VERIFIED: verify cross-references and CHANGELOG entries for all tasks." ;;
+        SCRIBE_COMPLETE)  echo "Resume at Step 5b (Scribe): re-spawn the Scribe agent to generate the exec summary." ;;
+        ESV_PASS)         echo "Resume at Step 5c (ESV): re-run Exec Summary Verification against the existing exec summary." ;;
         SESSION_COMPLETE) echo "Re-run SESSION_COMPLETE: git pull --rebase, bd sync, git push." ;;
         *)                echo "Resume from this step." ;;
     esac
