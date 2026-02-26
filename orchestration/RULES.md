@@ -475,14 +475,6 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             ```
             Run `git status` after push — output MUST show "up to date with origin".
 
-            **Post-push sync check:** Verify `~/.claude/orchestration/` matches the repo:
-            ```bash
-            if ! diff -rq orchestration/ ~/.claude/orchestration/ --exclude=scripts --exclude=_archive >/dev/null 2>&1; then
-                echo "[ant-farm] WARNING: ~/.claude/ is out of sync — running sync script."
-                scripts/sync-to-claude.sh
-            fi
-            ```
-
             Clean up stashes and remote branches. Provide hand-off context for the next session.
             **Progress log (after git push succeeds):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SESSION_COMPLETE|pushed=true" >> ${SESSION_DIR}/progress.log`
 
