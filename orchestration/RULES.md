@@ -216,8 +216,8 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             bash ~/.claude/orchestration/scripts/build-review-prompts.sh \
               "${SESSION_DIR}" "<commit-range>" "<changed-files>" \
               "<task-IDs>" "<timestamp>" "<round>" \
-              "~/.claude/orchestration/templates/nitpicker-skeleton.md" \
-              "~/.claude/orchestration/templates/big-head-skeleton.md"
+              "$HOME/.claude/orchestration/templates/nitpicker-skeleton.md" \
+              "$HOME/.claude/orchestration/templates/big-head-skeleton.md"
             ```
             Note: `<changed-files>` and `<task-IDs>` accept an `@filepath` prefix to read multiline
             values from a file (e.g., `@/tmp/changed-files.txt`). Use this to avoid shell quoting
