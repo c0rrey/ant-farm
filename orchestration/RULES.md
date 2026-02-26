@@ -112,14 +112,6 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             after one re-Scout run, do NOT re-run Scout a second time. Surface the SSV violations to
             the user and await instruction.
 
-            **Risk analysis (documented per ant-farm-fomy):** Auto-approving after SSV PASS is safe
-            because SSV verifies file overlap, file list integrity, and dependency ordering — the three
-            failure modes that cause agent conflicts. The remaining risk is strategic scope error (wrong
-            tasks selected), which the Scout mitigates by deriving scope directly from the user's message.
-            A complexity threshold was evaluated and rejected: task count alone is not a useful risk signal;
-            a 15-task session that passes SSV is structurally sound. Additional safety nets remain in
-            effect: Dirt Pusher summaries (Step 3), DMVDC (Step 3), and WWD verification (Step 3).
-
             **Progress log (after SSV PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SCOUT_COMPLETE|briefing=${SESSION_DIR}/briefing.md|ssv=pass|tasks_accepted=<N>" >> ${SESSION_DIR}/progress.log`
             where `<N>` is the count of tasks in the briefing task list after SSV PASS (N=0 is not logged — it is caught by the zero-task guard earlier in Step 1b).
 
@@ -243,50 +235,6 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             contacted via SendMessage from inside the team. Fix agents spawn into the persistent Nitpicker
             team using the Task tool with `team_name: "nitpicker-team"`. Do NOT add a second TeamCreate
             call anywhere in the workflow.
-
-            **3b-v. Spawn dummy reviewer** (context usage instrumentation — sunset after ~30 sessions):
-            The dummy reviewer mirrors the correctness reviewer to produce empirical context-usage data.
-            Its report is discarded — Big Head does NOT read or consolidate it.
-
-            Step 1: Copy the correctness prompt as the dummy data file:
-            ```bash
-            cp "${SESSION_DIR}/prompts/review-correctness.md" \
-               "${SESSION_DIR}/prompts/review-dummy.md"
-            ```
-
-            Step 2: Launch a new tmux window for the dummy reviewer:
-            ```bash
-            # TIMESTAMP was assigned at the start of Step 3b-i: TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-            # TMUX_SESSION is the name of the tmux session the Queen is running in.
-            # Resolve it at runtime: TMUX_SESSION=$(tmux display-message -p '#S')
-            if command -v tmux > /dev/null 2>&1 && [ -n "$TMUX" ]; then
-              TMUX_SESSION=$(tmux display-message -p '#S')
-              DUMMY_WINDOW="dummy-reviewer-round-<N>"
-
-              tmux new-window -t "${TMUX_SESSION}" -n "${DUMMY_WINDOW}"
-              tmux send-keys -t "${TMUX_SESSION}:${DUMMY_WINDOW}" \
-                "cd $(pwd) && claude" Enter
-              # Wait for claude to be ready (up to 15s) before sending the prompt.
-              # A fixed sleep risks sending keys before the pane is responsive,
-              # silently losing the entire prompt.
-              for i in $(seq 1 15); do
-                if tmux capture-pane -t "${TMUX_SESSION}:${DUMMY_WINDOW}" -p 2>/dev/null | grep -q '>'; then
-                  break
-                fi
-                sleep 1
-              done
-              tmux send-keys -t "${TMUX_SESSION}:${DUMMY_WINDOW}" \
-                "Perform a correctness review of the completed work. Step 0: Read your full review brief from ${SESSION_DIR}/prompts/review-dummy.md (Format: markdown. Sections: Scope, Files, Focus, Detailed Instructions.) Follow the instructions in the brief exactly, including the report format and output path. Write your report to ${SESSION_DIR}/review-reports/dummy-review-${TIMESTAMP}.md" Enter
-            fi
-            ```
-
-            Notes:
-            - Replace `<N>` in `DUMMY_WINDOW` with the actual round number.
-            - The dummy reviewer runs in its own tmux pane; the user observes context usage via the Claude Code UI.
-            - The dummy reviewer's report path (`dummy-review-${TIMESTAMP}.md`) is intentionally excluded from the Big Head consolidation brief and from all CCB/DMVDC checks — it is measurement-only.
-            - The output report may not materialize. The dummy reviewer process runs in a tmux window with no supervision; if the session exits before the review completes or the agent does not write the file, the report simply does not appear. This is acceptable — the absence of the report file does not affect the review pipeline in any way.
-            - Do NOT wait for the dummy reviewer to finish before proceeding with Step 3c. It runs concurrently.
-            - Sunset clause: remove Step 3b-v after ~30 sessions of data collection or when a reliable file-budget threshold is established. Removal has no effect on the rest of the review workflow.
 
             **Progress log (after Nitpicker team completes round 1):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_COMPLETE|round=<N>|team=complete|report=${SESSION_DIR}/review-reports/review-consolidated-${TIMESTAMP}.md" >> ${SESSION_DIR}/progress.log`
 
@@ -493,18 +441,6 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 
 > **Note (Reviews gate):** Reviews are mandatory after ALL implementation completes (round 1). If findings require a fix cycle, reviews re-run with reduced scope — correctness and edge-cases only (round 2+).
 
-## Information Diet (The Queen's Window)
-
-The Queen's read permissions are defined explicitly and authoritatively in the "Queen Read Permissions" section above. **Authoritative source: Queen Read Permissions above.**
-
-**Quick reference** (for mid-document orientation — see Queen Read Permissions for the full list with rationale):
-- **READ**: Briefing, verdict tables, skeleton files, orchestration artifacts from session dir, git log
-- **DO NOT READ**: Agent instruction files, source code, tests, configs, implementation details
-- **NEVER READ**: `orchestration/_archive/` — contains deprecated documents that contradict current workflows. A glob like `orchestration/**/*.md` will match these stale files. Exclude `_archive/` from all searches and reads.
-- **Permitted**: Pre-digested artifacts written by Pantry/Scout to session directories
-
-For the complete detailed list and rationale, see "Queen Read Permissions" above.
-
 ## Agent Types
 
 | Agent | subagent_type | Rationale |
@@ -552,8 +488,6 @@ Every `Task` tool call the Queen makes MUST include the `model` parameter from t
 - Pipeline wave N Dirt Pushers with wave N+1 Pantry in a single message (see Step 2 wave pipelining)
 
 ### Wave Management
-
-**7-agent limit rationale**: Claude Code's Task tool runs concurrent calls from a single message. 7 Dirt Pushers is the practical ceiling for context-window pressure from interleaved agent outputs and API rate limits in a single orchestration session.
 
 **Retry counting**: Retry spawns count against the concurrent agent limit. A failed-and-respawned Dirt Pusher occupies a slot.
 
@@ -608,16 +542,11 @@ This prevents collisions when multiple Queens run in the same repo.
 
 - Reading every agent's output files — trust summaries and commit messages
 - Spawning agents one at a time — batch by file/priority
-- Doing implementation work in the Queen's window — delegate everything
 - Re-reading the same metadata — read once, take notes in session state file
 - Pushing mid-session — only push at end (atomic deployment)
 - Updating docs per-agent — batch all doc updates in Step 4
 - Verbose agent prompts — be concise, agents read their own task details from their task brief
-- Reading implementation.md or checkpoints.md directly — the Pantry and Pest Control read these
-- Running bd show, bd ready, or bd list before spawning the Scout — all task discovery belongs to Step 1, which the Scout owns
-- Reading agent template files (scout.md, dirt-pusher-skeleton.md, etc.) in the Queen's window — pass the path to the agent, let it read its own instructions
 - Running individual checkpoints per agent — spawn one Pest Control with the full batch
-- Composing full agent prompts in the Queen's context — use dirt-pusher-skeleton.md with task brief redirect
 
 ## Template Lookup
 
@@ -654,8 +583,6 @@ This prevents collisions when multiple Queens run in the same repo.
 | CCB material spot-check fail | 1 | Shut down current Big Head; spawn fresh Big Head into team with handoff brief identifying failed beads; re-run full bead review then re-run CCB |
 | Scribe fails ESV | 1 | Escalate to user with ESV report; user decides fix manually or push as-is |
 | Total retries per session | 5 | Pause all new spawns; triage with user |
-
-Counter interaction: each CCB re-run counts as 1 toward both the per-checkpoint limit (1) and the session total (5). A CCB re-run that hits the per-checkpoint limit also consumes one slot of the session total.
 
 Track retry count in the Queen's state file (→ templates/queen-state.md).
 
