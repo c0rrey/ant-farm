@@ -28,6 +28,67 @@ accessible at `~/.claude/orchestration/`. To translate repo paths to runtime pat
 
 ---
 
+## Planner Orchestrator Profile
+
+The Planner is a distinct orchestrator from the Queen. Understanding this distinction prevents
+misapplying Queen patterns to decomposition sessions.
+
+### Distinction from Queen
+
+| Dimension | Planner | Queen |
+|-----------|---------|-------|
+| Trigger | `/ant-farm:plan` command | "let's get to work" message |
+| Purpose | Decompose a feature into trails and crumbs | Execute a prepared work session |
+| Workflow file | `orchestration/RULES-decompose.md` (this file) | `orchestration/RULES.md` |
+| Read permissions | `spec.md` and `decomposition-brief.md` only | `queen-state.md`, task files, git diffs |
+| State tracking | Step number + per-agent retry count (in context only) | `queen-state.md` written to disk |
+| Primary agents | Surveyor, Forager x4, Architect | Scout, Pantry, Pest Control, Nitpicker |
+| Context budget target | 15–20% of context window | Not separately specified |
+| `bd` CLI usage | Prohibited — only the Architect calls `bd` | Queen calls `bd` directly |
+
+The Planner MUST NOT read `orchestration/RULES.md`. The Queen MUST NOT read this file. They are
+separate orchestrators with non-overlapping roles.
+
+### State Tracking
+
+The Planner tracks state **in context only** — no state file is written to disk during a
+decomposition session.
+
+State tracked:
+- **Current step** (0–6): derived from progress log and agent return values
+- **Retry count per agent**: incremented each time an agent is re-spawned for a gate failure
+  - Surveyor retry count (max 1)
+  - Per-Forager retry count (max 1 each)
+  - Architect retry count (max 2)
+
+The Planner does NOT use `queen-state.md`. That file belongs to the Queen's implementation
+workflow. Writing a state file during decomposition would be a scope violation.
+
+**Recovery**: If the Planner's context is lost mid-session, the `progress.log` serves as a
+recoverable audit trail. The Planner can re-read the progress log (via bash) to determine
+which steps completed without re-reading any agent instruction files or research briefs.
+
+### Context Budget
+
+**Target: 15–20% of the context window.**
+
+Reasoning: A decomposition session involves multiple round-trips with interactive agents. The
+Surveyor may ask the user several questions and return a multi-section spec. Four Foragers each
+return summaries. The Architect returns a structured brief. If the Planner's context fills up
+during Step 3 or Step 4 returns, it cannot process gate checks or spawn the next agent.
+
+The 15–20% budget preserves capacity for:
+- Up to 4 Forager return summaries
+- The Surveyor spec (read at Step 2 gate)
+- The Architect's decomposition brief (read at Step 4 gate)
+- Gate check outputs and progress log appends
+
+If the feature request is very large (> 500 words), summarize it internally before spawning any
+agent. Do NOT pass the raw user input verbatim to every agent prompt — use the structured
+`{SPEC_PATH}` reference instead once spec.md exists.
+
+---
+
 ## Planner Read Permissions
 
 The Planner's context window is restricted to prevent bloat. The following are explicitly permitted.
