@@ -6,6 +6,7 @@
 #   orchestration/      → ~/.claude/orchestration/  (non-_archive files)
 #   scripts/build-review-prompts.sh → ~/.claude/orchestration/scripts/
 #   crumb.py            → ~/.local/bin/crumb
+#   CLAUDE.md           → ~/.claude/CLAUDE.md
 #
 # Backs up any existing target file with a timestamped .bak suffix before
 # overwriting. Idempotent: re-running updates files; each run generates at
@@ -185,7 +186,20 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Step 5: Validate PATH includes ~/.local/bin
+# Step 5: Install CLAUDE.md → ~/.claude/CLAUDE.md
+# ---------------------------------------------------------------------------
+CLAUDE_SRC="$REPO_ROOT/CLAUDE.md"
+CLAUDE_DST="${HOME}/.claude/CLAUDE.md"
+
+if [ ! -f "$CLAUDE_SRC" ]; then
+    warn "CLAUDE.md not found: $CLAUDE_SRC — skipping CLAUDE.md sync"
+else
+    log "Syncing CLAUDE.md → ${HOME}/.claude/CLAUDE.md ..."
+    backup_and_copy "$CLAUDE_SRC" "$CLAUDE_DST"
+fi
+
+# ---------------------------------------------------------------------------
+# Step 6: Validate PATH includes ~/.local/bin
 # ---------------------------------------------------------------------------
 if [[ ":${PATH}:" != *":${HOME}/.local/bin:"* ]]; then
     warn "~/.local/bin is not in your PATH."
@@ -195,7 +209,7 @@ if [[ ":${PATH}:" != *":${HOME}/.local/bin:"* ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Step 6: Preflight checks
+# Step 7: Preflight checks
 # ---------------------------------------------------------------------------
 if [ ! -f "${HOME}/.claude/agents/code-reviewer.md" ]; then
     warn "~/.claude/agents/code-reviewer.md is missing."
