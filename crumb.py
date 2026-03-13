@@ -766,8 +766,77 @@ def cmd_blocked(args: argparse.Namespace) -> None:
 
 
 def cmd_link(args: argparse.Namespace) -> None:
-    """Manage crumb links. Implemented downstream."""
-    die("crumb link not yet implemented")
+    """Manage crumb links: parent, blocked_by, and discovered_from.
+
+    Multiple flags can be combined in a single invocation. Dangling
+    references are allowed — the doctor command validates referential
+    integrity.
+
+    Args:
+        args: Parsed arguments; args.id is the target crumb ID.
+            args.link_parent: Set the parent trail link.
+            args.blocked_by: Append to the blocked_by array.
+            args.remove_blocked_by: Remove from the blocked_by array.
+            args.discovered_from: Set the discovered_from provenance.
+    """
+    with FileLock():
+        path = require_tasks_jsonl()
+        tasks = read_tasks(path)
+
+        crumb = _find_crumb(tasks, args.id)
+        if crumb is None:
+            die(f"crumb '{args.id}' not found")
+
+        # Ensure the links sub-dict exists
+        links: Dict[str, Any] = crumb.get("links") or {}
+        if not isinstance(links, dict):
+            links = {}
+
+        changed = False
+
+        # --- --parent: set or replace the parent trail link ---
+        if args.link_parent is not None:
+            if links.get("parent") != args.link_parent:
+                links["parent"] = args.link_parent
+                changed = True
+
+        # --- --blocked-by: append without duplicates ---
+        if args.blocked_by is not None:
+            blocked: List[str] = links.get("blocked_by") or []
+            if not isinstance(blocked, list):
+                blocked = [blocked]
+            if args.blocked_by not in blocked:
+                blocked.append(args.blocked_by)
+                links["blocked_by"] = blocked
+                changed = True
+
+        # --- --remove-blocked-by: remove from blocked_by array ---
+        if args.remove_blocked_by is not None:
+            blocked_existing: List[str] = links.get("blocked_by") or []
+            if not isinstance(blocked_existing, list):
+                blocked_existing = [blocked_existing]
+            if args.remove_blocked_by in blocked_existing:
+                blocked_existing = [
+                    bid for bid in blocked_existing if bid != args.remove_blocked_by
+                ]
+                links["blocked_by"] = blocked_existing
+                changed = True
+
+        # --- --discovered-from: set or replace the provenance link ---
+        if args.discovered_from is not None:
+            if links.get("discovered_from") != args.discovered_from:
+                links["discovered_from"] = args.discovered_from
+                changed = True
+
+        if not changed:
+            print(f"no link changes to {args.id}")
+            return
+
+        crumb["links"] = links
+        crumb["updated_at"] = now_iso()
+        write_tasks(path, tasks)
+
+    print(f"updated links for {args.id}")
 
 
 def cmd_search(args: argparse.Namespace) -> None:
