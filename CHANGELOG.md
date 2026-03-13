@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-03-13 — Session 20260313-111851 (Infrastructure Cutover: Beads/Dolt to Crumbs)
+
+### Summary
+
+7 tasks completed the AF-T1 Infrastructure Cutover epic, fully migrating the ant-farm repo from the Beads/Dolt stack to Crumbs. The 4-task planned sequence (import, validate, delete, verify) executed cleanly in ~57 minutes; when the verification gate failed with 28 active files still referencing `bd` commands, 3 parallel fix agents (AF-3, AF-4, AF-5) were spawned to clear the remaining stale references. All operational files — agents, orchestration templates, root orchestration files, scripts, and AGENTS.md — are now fully migrated. Only intentional retention remains: the migration comparison table in `skills/work.md` and historical content in `docs/` and `reviews/`. No review rounds were run (operational/migration tasks). 5 commits total.
+
+### Implementation (Wave 1-4: 4 cutover tasks, sequential)
+
+- **ant-farm-2sar** (`dc410a8`): feat: migrate 531 beads issues to crumbs format — executed `crumb import --from-beads`, importing 531 records (21 epics → trails, 510 non-epics) into `.crumbs/tasks.jsonl` with zero collisions; `config.json` counters advanced correctly
+- **ant-farm-5jw0**: chore: validate migrated data with crumb doctor — confirmed 0 errors, 270 acceptable orphan-crumb warnings; `crumb ready` returned 195 open tasks (no files modified)
+- **ant-farm-t2xd** (`415c7c1`): chore: remove legacy Beads/Dolt artifacts — deleted `.beads/` directory, `scripts/scrub-pii.sh`, `scripts/sync-to-claude.sh`, `scripts/install-hooks.sh`, `config.yaml`, and all stale `.git/hooks/` variants; `.beads.bak/` safety backup retained
+- **ant-farm-l1lf**: chore: run verification gate — gate FAILED; produced per-file breakdown of 28 files with stale `bd` commands, 25 with `.beads/` paths, 14 with Beads/Dolt terminology (no files modified)
+
+### Implementation (Fix wave: 3 parallel reference-cleanup tasks)
+
+- **AF-3** (`761c048`): fix: replace bd/beads references with crumb equivalents in agents/ — updated `agents/architect.md`, `agents/big-head.md`, `agents/scout-organizer.md`, `agents/forager.md`, `agents/surveyor.md`
+- **AF-4** (`49e3c04`): fix: replace bd/beads references with crumb equivalents in orchestration/templates/ — updated 11 template files; removed Dolt mode warning block from `decomposition.md`; replaced all `bd` commands, `.beads/` paths, and terminology
+- **AF-5** (`4b63fb6`): fix: replace bd/beads references with crumb equivalents in orchestration root and scripts — updated `orchestration/GLOSSARY.md`, `orchestration/PLACEHOLDER_CONVENTIONS.md`, `orchestration/RULES-decompose.md`, `scripts/parse-progress-log.sh`, `AGENTS.md`; removed `bd sync` (no crumbs equivalent)
+
 ## 2026-03-13 — Session 20260313-021748 (Decomposition Workflow Infrastructure + Fix Loop)
 
 ### Summary
