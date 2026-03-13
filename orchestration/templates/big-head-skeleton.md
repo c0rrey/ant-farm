@@ -9,7 +9,7 @@ Do NOT use the Task tool for Big Head — it runs inside the same TeamCreate cal
 - `{TASK_ID}` — full bead ID including project prefix (e.g., `ant-farm-9oa`)
 - `{TASK_SUFFIX}` — suffix portion only; extracted by splitting on the LAST hyphen (e.g., `9oa` from `ant-farm-9oa`, or `74g1` from `my-project-74g.1`)
 - `{TIMESTAMP}` — UTC timestamp in `YYYYMMDD-HHmmss` format (e.g., `20260217-143000`)
-- `{SESSION_DIR}` — session artifact directory (e.g., `.beads/agent-summaries/_session-abc123`)
+- `{SESSION_DIR}` — session artifact directory (e.g., `.crumbs/sessions/_session-abc123`)
 - `{REVIEW_ROUND}`: review round number (1, 2, 3, ...). Determines report count and P3 handling.
 
 ### Wiring: TeamCreate + direct spawn prompt
