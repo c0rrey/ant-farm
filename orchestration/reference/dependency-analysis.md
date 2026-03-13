@@ -46,9 +46,9 @@ Suffix portion only, extracted from {TASK_ID} by splitting on the LAST hyphen an
 
 Session artifact directory path containing task metadata, prompts, summaries, and verification checkpoints.
 
-**Format**: `.beads/agent-summaries/_session-<id>`
+**Format**: `.crumbs/agent-summaries/_session-<id>`
 
-**Example**: `.beads/agent-summaries/_session-abc123` or `.beads/agent-summaries/_session-3be37d`
+**Example**: `.crumbs/agent-summaries/_session-abc123` or `.crumbs/agent-summaries/_session-3be37d`
 
 ---
 
@@ -56,8 +56,8 @@ Session artifact directory path containing task metadata, prompts, summaries, an
 
 Before spawning any agents:
 
-1. **Gather task metadata** (parallel `bd show` calls) — extract title, files modified, dependencies (blocks/blockedBy), priority
-2. **Check explicit dependencies** — run `bd blocked`, create dependency chains (A → B → C)
+1. **Gather task metadata** (parallel `crumb show` calls) — extract title, files modified, dependencies (blocks/blockedBy), priority
+2. **Check explicit dependencies** — run `crumb blocked`, create dependency chains (A → B → C)
 3. **Build file modification matrix** — map which tasks touch which files
 4. **Assess conflict risk** — use Decision Matrix below
 5. **Estimate agent load** — target balanced workload (±50%), max 7 tasks/agent
@@ -192,5 +192,5 @@ Legacy defaults retained for reference:
 
 ❌ Don't spawn blind — Always analyze first
 ❌ Don't assume sections won't overlap — Check actual code
-❌ Don't ignore explicit dependencies in bd show
+❌ Don't ignore explicit dependencies in crumb show
 ❌ Don't over-parallelize — 7 agents is maximum

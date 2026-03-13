@@ -29,7 +29,7 @@ For complete details, see `docs/installation-guide.md`. Quick reference:
 
 `install-hooks.sh` installs two hooks:
 - **pre-push** — runs `sync-to-claude.sh` to sync agent files on every push
-- **pre-commit** — runs `scripts/scrub-pii.sh` to strip email addresses from `.beads/issues.jsonl` before each commit (PII scrubbing)
+- **pre-commit** — runs `scripts/scrub-pii.sh` to strip email addresses from `.crumbs/issues.jsonl` before each commit (PII scrubbing)
 
 Both hooks are required. Re-run `install-hooks.sh` after pulling upstream changes to get updated hook behavior.
 
@@ -84,13 +84,13 @@ cp orchestration/templates/SESSION_PLAN_TEMPLATE.md .
 **Step 4: Test it**
 
 ```bash
-bd create --title="Test orchestration" --type=task --priority=3
+crumb create --title="Test orchestration" --type=task --priority=3
 
 # Start session:
 # "Let's get to work on: <task-id>"
 
 # Verify Claude (the Queen):
-# 1. Delegates to the Scout subagent (Scout runs bd show — Queen does NOT run bd show directly)
+# 1. Delegates to the Scout subagent (Scout runs crumb show — Queen does NOT run crumb show directly)
 # 2. Analyzes conflicts
 # 3. Presents strategy
 # 4. Waits for approval
@@ -223,7 +223,7 @@ Fix: Be explicit in kickoff:
 Let's get to work on: <task-ids>
 
 IMPORTANT: Before spawning any agents:
-1. Spawn the Scout subagent to gather all task metadata (do NOT run bd show directly as Queen)
+1. Spawn the Scout subagent to gather all task metadata (do NOT run crumb show directly as Queen)
 2. Analyze file conflicts (create file modification matrix)
 3. Present 2-3 execution strategies (Serial/Balanced/Parallel)
 4. Wait for my approval
@@ -237,7 +237,7 @@ Do NOT spawn agents until I approve the strategy.
 Fix: Remind about information diet:
 ```
 Orchestration discipline: Only read task metadata in this window.
-See RULES.md Information Diet section.
+See RULES.md Queen Read Permissions section.
 Delegate all implementation file reading to subagents.
 ```
 
