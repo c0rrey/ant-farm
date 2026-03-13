@@ -7,7 +7,7 @@ For detailed extraction rules and examples, see `~/.claude/orchestration/referen
 
 - `{TASK_ID}` — full bead ID including project prefix (e.g., `ant-farm-9oa` or `my-project-74g.1`)
 - `{TASK_SUFFIX}` — suffix portion only; extracted by splitting on the LAST hyphen (e.g., `9oa` from `ant-farm-9oa`, or `74g1` from `my-project-74g.1`)
-- `{SESSION_DIR}` — session artifact directory path (e.g., `.beads/agent-summaries/_session-abc123`)
+- `{SESSION_DIR}` — session artifact directory path (e.g., `.crumbs/sessions/_session-abc123`)
 - `{checkpoint}` — lowercase checkpoint abbreviation used in artifact filenames (e.g., `cco`, `wwd`, `dmvdc`, `ccb`, `cco-review`, `dmvdc-review`)
 
 ## Pest Control Overview
@@ -196,7 +196,7 @@ Write your verification report to:
 
 Where:
 - `{TASK_SUFFIX}`: suffix portion of bead ID with no project prefix (e.g., `74g1` from `my-project-74g.1`)
-- `{SESSION_DIR}`: session artifact directory (e.g., `.beads/agent-summaries/_session-abc123`)
+- `{SESSION_DIR}`: session artifact directory (e.g., `.crumbs/sessions/_session-abc123`)
 - timestamp: format defined in **Timestamp format** (Pest Control Overview)
 ```
 
@@ -262,7 +262,7 @@ Write your verification report to:
 `{SESSION_DIR}/pc/pc-session-cco-review-{timestamp}.md`
 
 Where:
-- `{SESSION_DIR}`: session artifact directory (e.g., `.beads/agent-summaries/_session-abc123`)
+- `{SESSION_DIR}`: session artifact directory (e.g., `.crumbs/sessions/_session-abc123`)
 - timestamp: format defined in **Timestamp format** (Pest Control Overview)
 ```
 
@@ -417,7 +417,7 @@ Write your verification report to:
 
 Where:
 - `{TASK_SUFFIX}`: suffix portion of bead ID with no project prefix (e.g., `74g1` from `my-project-74g.1`)
-- `{SESSION_DIR}`: session artifact directory (e.g., `.beads/agent-summaries/_session-abc123`)
+- `{SESSION_DIR}`: session artifact directory (e.g., `.crumbs/sessions/_session-abc123`)
 - timestamp: format defined in **Timestamp format** (Pest Control Overview)
 ```
 
@@ -490,7 +490,7 @@ Write your verification report to:
 
 Where:
 - `{TASK_SUFFIX}`: Nitpicker review type (e.g., `review-correctness`, `review-edge-cases`, `review-clarity`, `review-drift`)
-- `{SESSION_DIR}`: session artifact directory (e.g., `.beads/agent-summaries/_session-abc123`)
+- `{SESSION_DIR}`: session artifact directory (e.g., `.crumbs/sessions/_session-abc123`)
 - timestamp: format defined in **Timestamp format** (Pest Control Overview)
 ```
 
@@ -627,7 +627,7 @@ Write your verification report to:
 `{SESSION_DIR}/pc/pc-session-ccb-{timestamp}.md`
 
 Where:
-- `{SESSION_DIR}`: session artifact directory (e.g., `.beads/agent-summaries/_session-abc123`)
+- `{SESSION_DIR}`: session artifact directory (e.g., `.crumbs/sessions/_session-abc123`)
 - timestamp: format defined in **Timestamp format** (Pest Control Overview)
 
 **CRITICAL FIX**: The timestamp ensures each CCB audit is preserved. Previous versions used static filename `consolidation-audit.md` which caused overwrites on repeated consolidations. Now each audit has a unique timestamped filename, preserving complete audit history.
@@ -732,7 +732,7 @@ Write your verification report to:
 `{SESSION_DIR}/pc/pc-session-ssv-{timestamp}.md`
 
 Where:
-- `{SESSION_DIR}`: session artifact directory (e.g., `.beads/agent-summaries/_session-abc123`)
+- `{SESSION_DIR}`: session artifact directory (e.g., `.crumbs/sessions/_session-abc123`)
 - timestamp: format defined in **Timestamp format** (Pest Control Overview)
 ```
 
@@ -900,7 +900,7 @@ Write your verification report to:
 `{SESSION_DIR}/pc/pc-session-esv-{timestamp}.md`
 
 Where:
-- `{SESSION_DIR}`: session artifact directory (e.g., `.beads/agent-summaries/_session-abc123`)
+- `{SESSION_DIR}`: session artifact directory (e.g., `.crumbs/sessions/_session-abc123`)
 - timestamp: format defined in **Timestamp format** (Pest Control Overview)
 ```
 
@@ -1090,7 +1090,7 @@ Write your verification report to:
 `{SESSION_DIR}/pc/pc-session-tdv-{timestamp}.md`
 
 Where:
-- `{SESSION_DIR}`: session artifact directory (e.g., `.beads/agent-summaries/_session-abc123`)
+- `{SESSION_DIR}`: session artifact directory (e.g., `.crumbs/sessions/_session-abc123`)
 - `{TRAIL_ID}`: the trail bead ID being decomposed (e.g., `ant-farm-f4h5`)
 - timestamp: format defined in **Timestamp format** (Pest Control Overview)
 ```

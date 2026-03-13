@@ -15,7 +15,7 @@ unique `{FOCUS_AREA}` per call; all other values are identical across the four s
 **Term definitions (canonical across all orchestration templates):**
 - `{TASK_ID}` — full bead ID including project prefix (e.g., `ant-farm-9oa`)
 - `{TASK_SUFFIX}` — suffix portion only; extracted by splitting on the LAST hyphen (e.g., `9oa`)
-- `{SESSION_DIR}` — session artifact directory path (e.g., `.beads/agent-summaries/_session-abc123`)
+- `{SESSION_DIR}` — session artifact directory path (e.g., `.crumbs/sessions/_session-abc123`)
 
 Placeholders:
 - `{FOCUS_AREA}` — one of: `Stack`, `Architecture`, `Pitfall`, `Pattern`
