@@ -178,7 +178,11 @@ def read_tasks(path: Path) -> List[Dict[str, Any]]:
         List of parsed dicts, one per non-empty line.
     """
     records: List[Dict[str, Any]] = []
-    with open(path, "r", encoding="utf-8") as fh:
+    try:
+        fh_ctx = open(path, "r", encoding="utf-8")
+    except OSError as exc:
+        die(f"cannot read {path}: {exc}")
+    with fh_ctx as fh:
         for lineno, line in enumerate(fh, start=1):
             line = line.rstrip("\n")
             if not line:
@@ -219,7 +223,11 @@ def iter_jsonl(path: Path) -> Iterator[Dict[str, Any]]:
     Yields:
         Parsed dict records.
     """
-    with open(path, "r", encoding="utf-8") as fh:
+    try:
+        fh_ctx = open(path, "r", encoding="utf-8")
+    except OSError as exc:
+        die(f"cannot read {path}: {exc}")
+    with fh_ctx as fh:
         for lineno, line in enumerate(fh, start=1):
             line = line.rstrip("\n")
             if not line:
@@ -255,8 +263,11 @@ class FileLock:
     def __enter__(self) -> "FileLock":
         path = lock_path()
         # Ensure the lock file exists
-        path.touch()
-        self._lock_file = open(path, "w", encoding="utf-8")
+        try:
+            path.touch()
+            self._lock_file = open(path, "w", encoding="utf-8")
+        except OSError as exc:
+            die(f"cannot acquire lock: {exc}")
         fcntl.flock(self._lock_file, fcntl.LOCK_EX)
         return self
 
