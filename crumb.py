@@ -435,8 +435,8 @@ def _auto_close_trail_if_complete(
 
     links = crumb.get("links") or {}
     if not isinstance(links, dict):
-        return
-    parent_id = links.get("parent")
+        links = {}
+    parent_id = crumb.get("parent") or links.get("parent")
     if not parent_id:
         return
 
@@ -528,10 +528,17 @@ def cmd_list(args: argparse.Namespace) -> None:
         results = [t for t in results if t.get("agent_type") == args.agent_type]
 
     if args.parent:
-        results = [t for t in results if t.get("parent") == args.parent]
+        results = [
+            t for t in results
+            if t.get("parent") == args.parent
+            or (t.get("links") or {}).get("parent") == args.parent
+        ]
 
     if args.discovered:
-        results = [t for t in results if t.get("discovered_from")]
+        results = [
+            t for t in results
+            if t.get("discovered_from") or (t.get("links") or {}).get("discovered_from")
+        ]
 
     if args.after:
         # Compare ISO 8601 strings lexicographically; prepend date if needed
