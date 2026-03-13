@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # setup.sh — Install ant-farm plugin files to ~/.claude/ and PATH.
 #
-# Replaces sync-to-claude.sh. Copies:
+# Copies:
 #   agents/*.md         → ~/.claude/agents/
 #   orchestration/      → ~/.claude/orchestration/  (non-_archive files)
 #   scripts/build-review-prompts.sh → ~/.claude/orchestration/scripts/
 #   skills/*.md         → ~/.claude/skills/ant-farm-<name>/SKILL.md
 #   crumb.py            → ~/.local/bin/crumb
-#   CLAUDE.md           → ~/.claude/CLAUDE.md
+#   CLAUDE.md           → ~/.claude/CLAUDE.md  (block insert, not overwrite)
 #
 # Backs up any existing target file with a timestamped .bak suffix before
 # overwriting. Idempotent: re-running updates files; each run generates at
@@ -76,6 +76,120 @@ backup_and_copy() {
 
     cp "$src" "$dst"
     log "Installed: $dst"
+}
+
+ANTFARM_START="<!-- ant-farm:start -->"
+ANTFARM_END="<!-- ant-farm:end -->"
+
+# extract_block FILE
+#   Extracts the ant-farm block (inclusive of sentinels) using exact string
+#   matching. Returns empty string if no block found.
+extract_block() {
+    awk -v start="$ANTFARM_START" -v end="$ANTFARM_END" '
+        $0 == start { found=1 }
+        found { print }
+        $0 == end && found { exit }
+    ' "$1"
+}
+
+# sync_claude_block SRC DST
+#   Inserts or replaces the ant-farm block in DST using content from SRC.
+#   The block is delimited by sentinel comments so user content is preserved.
+#   Always backs up DST before modifying (unless unchanged).
+sync_claude_block() {
+    local src="$1"
+    local dst="$2"
+    local dst_dir
+    dst_dir="$(dirname "$dst")"
+
+    # Build the block we want to insert
+    local block
+    block="$(printf '%s\n' "$ANTFARM_START"; cat "$src"; printf '%s\n' "$ANTFARM_END")"
+
+    if [ "$DRY_RUN" = true ]; then
+        if [ ! -f "$dst" ]; then
+            log "[dry-run] would create: $dst (with ant-farm block)"
+        elif ! grep -qF "$ANTFARM_START" "$dst"; then
+            log "[dry-run] would append ant-farm block to: $dst"
+        else
+            local existing
+            existing="$(extract_block "$dst")"
+            if [ "$existing" = "$block" ]; then
+                log "[dry-run] unchanged: $dst (ant-farm block)"
+            else
+                log "[dry-run] would update ant-farm block in: $dst -> ${dst}.bak.${TS}"
+            fi
+        fi
+        return
+    fi
+
+    mkdir -p "$dst_dir"
+
+    if [ ! -f "$dst" ]; then
+        # No file yet — create with just the block
+        printf '%s\n' "$block" > "$dst"
+        log "Created: $dst (with ant-farm block)"
+        return
+    fi
+
+    if ! grep -qF "$ANTFARM_START" "$dst"; then
+        # File exists but no ant-farm block — back up then append
+        local bak="${dst}.bak.${TS}"
+        cp "$dst" "$bak" || { echo "[ant-farm] ERROR: backup failed for $dst" >&2; return 1; }
+        log "Backed up: $dst -> $bak"
+        # Ensure trailing newline before appending
+        if [ -s "$dst" ] && [ "$(tail -c 1 "$dst" | wc -l)" -eq 0 ]; then
+            printf '\n' >> "$dst"
+        fi
+        printf '\n%s\n' "$block" >> "$dst"
+        log "Appended ant-farm block to: $dst"
+        return
+    fi
+
+    # Guard: both markers must be present
+    if ! grep -qF "$ANTFARM_END" "$dst"; then
+        echo "[ant-farm] ERROR: Found start marker but not end marker in $dst — refusing to replace. Fix the file manually." >&2
+        return 1
+    fi
+
+    # Block exists — check if it needs updating
+    local existing
+    existing="$(extract_block "$dst")"
+    if [ "$existing" = "$block" ]; then
+        log "Unchanged: $dst (ant-farm block)"
+        return
+    fi
+
+    # Block differs — back up then replace
+    local bak="${dst}.bak.${TS}"
+    cp "$dst" "$bak" || { echo "[ant-farm] ERROR: backup failed for $dst" >&2; return 1; }
+    log "Backed up: $dst -> $bak"
+
+    # Replace block using awk with exact string matching.
+    # New block content is read from a temp file (not -v) to avoid BSD awk
+    # silently dropping multi-line strings passed via -v assignment.
+    local blockfile tmpfile
+    blockfile="$(mktemp)"
+    tmpfile="$(mktemp)"
+    printf '%s\n' "$block" > "$blockfile"
+
+    if awk -v start="$ANTFARM_START" -v end="$ANTFARM_END" -v blockfile="$blockfile" '
+        $0 == start {
+            while ((getline line < blockfile) > 0) print line
+            close(blockfile)
+            skip=1; next
+        }
+        skip && $0 == end { skip=0; next }
+        !skip { print }
+    ' "$dst" > "$tmpfile"; then
+        mv "$tmpfile" "$dst"
+        log "Updated ant-farm block in: $dst"
+    else
+        rm -f "$tmpfile"
+        echo "[ant-farm] ERROR: awk replacement failed for $dst — backup at $bak" >&2
+        return 1
+    fi
+    rm -f "$blockfile"
 }
 
 # ---------------------------------------------------------------------------
@@ -230,7 +344,9 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Step 6: Install CLAUDE.md → ~/.claude/CLAUDE.md
+# Step 6: Sync ant-farm block into ~/.claude/CLAUDE.md
+#   Inserts or updates a sentinel-delimited block. User content outside
+#   the <!-- ant-farm:start/end --> markers is preserved.
 # ---------------------------------------------------------------------------
 CLAUDE_SRC="$REPO_ROOT/CLAUDE.md"
 CLAUDE_DST="${HOME}/.claude/CLAUDE.md"
@@ -238,8 +354,8 @@ CLAUDE_DST="${HOME}/.claude/CLAUDE.md"
 if [ ! -f "$CLAUDE_SRC" ]; then
     warn "CLAUDE.md not found: $CLAUDE_SRC — skipping CLAUDE.md sync"
 else
-    log "Syncing CLAUDE.md → ${HOME}/.claude/CLAUDE.md ..."
-    backup_and_copy "$CLAUDE_SRC" "$CLAUDE_DST"
+    log "Syncing ant-farm block → ${HOME}/.claude/CLAUDE.md ..."
+    sync_claude_block "$CLAUDE_SRC" "$CLAUDE_DST"
 fi
 
 # ---------------------------------------------------------------------------
