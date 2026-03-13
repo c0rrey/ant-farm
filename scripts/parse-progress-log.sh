@@ -10,7 +10,7 @@
 #
 # Arguments:
 #   SESSION_DIR — path to the existing session artifact directory whose progress.log
-#                 should be parsed (e.g. .beads/agent-summaries/_session-abc123)
+#                 should be parsed (e.g. .crumbs/sessions/_session-abc123)
 #
 # Output:
 #   Writes {SESSION_DIR}/resume-plan.md — a structured markdown plan the Queen reads
@@ -105,7 +105,7 @@ step_resume_action() {
         XREF_VERIFIED)    echo "Re-run XREF_VERIFIED: verify cross-references and CHANGELOG entries for all tasks." ;;
         SCRIBE_COMPLETE)  echo "Resume at Step 5b (Scribe): re-spawn the Scribe agent to generate the exec summary." ;;
         ESV_PASS)         echo "Resume at Step 5c (ESV): re-run Exec Summary Verification against the existing exec summary." ;;
-        SESSION_COMPLETE) echo "Re-run SESSION_COMPLETE: git pull --rebase, bd sync, git push." ;;
+        SESSION_COMPLETE) echo "Re-run SESSION_COMPLETE: git pull --rebase, git push." ;;
         *)                echo "Resume from this step." ;;
     esac
 }

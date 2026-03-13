@@ -17,14 +17,14 @@ accessible at `~/.claude/orchestration/`. To translate repo paths to runtime pat
 
 ## Planner Prohibitions (read FIRST)
 
-- **NEVER** run `bd show`, `bd ready`, `bd list`, `bd blocked`, or any `bd` query command
+- **NEVER** run `crumb show`, `crumb ready`, `crumb list`, `crumb blocked`, or any `crumb` query command
 - **NEVER** read source code, test files, or application data files directly — agents do this
 - **NEVER** read agent instruction files (`surveyor.md`, `forager.md`, `decomposition.md`) —
   pass the path to the agent and let it read its own instructions
 - **NEVER** set `run_in_background` on Task agents — multiple Task calls in one message already
   run concurrently; background mode leaks JSONL transcripts into the Planner's context
 - **NEVER** spawn the Architect until ALL four Forager outputs exist and the spec quality gate passes
-- **NEVER** create trails or crumbs yourself — only the Architect does this via `bd` CLI
+- **NEVER** create trails or crumbs yourself — only the Architect does this via `crumb` CLI
 
 ---
 
@@ -44,7 +44,7 @@ misapplying Queen patterns to decomposition sessions.
 | State tracking | Step number + per-agent retry count (in context only) | `queen-state.md` written to disk |
 | Primary agents | Surveyor, Forager x4, Architect | Scout, Pantry, Pest Control, Nitpicker |
 | Context budget target | 15–20% of context window | Not separately specified |
-| `bd` CLI usage | Prohibited — only the Architect calls `bd` | Queen calls `bd` directly |
+| `crumb` CLI usage | Prohibited — only the Architect calls `crumb` | Queen calls `crumb` directly |
 
 The Planner MUST NOT read `orchestration/RULES.md`. The Queen MUST NOT read this file. They are
 separate orchestrators with non-overlapping roles.
@@ -105,7 +105,7 @@ The Planner's context window is restricted to prevent bloat. The following are e
 - `orchestration/templates/decomposition.md` — Architect's instruction file
 - `{DECOMPOSE_DIR}/research/*.md` — Forager research briefs (Architect reads these)
 - Source code files, test files, application configs, project data files
-- Raw `bd show`, `bd list`, `bd trail status` output (let the Architect handle CLI calls)
+- Raw `crumb show`, `crumb list`, `crumb trail status` output (let the Architect handle CLI calls)
 
 ---
 
@@ -115,7 +115,7 @@ The Planner's context window is restricted to prevent bloat. The following are e
 
 ```bash
 DECOMPOSE_ID=$(date +%Y%m%d-%H%M%S)
-DECOMPOSE_DIR=".beads/decompose/_decompose-${DECOMPOSE_ID}"
+DECOMPOSE_DIR=".crumbs/decompose/_decompose-${DECOMPOSE_ID}"
 mkdir -p "${DECOMPOSE_DIR}/research"
 ```
 
@@ -302,9 +302,9 @@ The Architect:
 2. Scans `{CODEBASE_ROOT}` to build a brownfield/greenfield map
 3. Groups requirements into trails (3–8 crumbs per trail)
 4. Decomposes trails into crumbs (5–8 files per crumb)
-5. Wires dependencies via `bd dep add`
+5. Wires dependencies via `crumb link`
 6. Verifies 100% spec coverage (mandatory gate — Architect does NOT proceed without PASS)
-7. Creates trails and crumbs via `bd` CLI
+7. Creates trails and crumbs via `crumb` CLI
 8. Writes `{DECOMPOSE_DIR}/decomposition-brief.md`
 
 **TDV gate** (HARD GATE — blocks Step 5):
@@ -431,7 +431,7 @@ Omitting `model` causes the agent to inherit the Planner's model, wasting tokens
 ## Decompose Directory Structure
 
 ```
-.beads/decompose/_decompose-{DECOMPOSE_ID}/
+.crumbs/decompose/_decompose-{DECOMPOSE_ID}/
 ├── spec.md                    ← Surveyor output (or user-provided structured spec)
 ├── decomposition-brief.md     ← Architect output
 ├── progress.log               ← Append-only milestone log
