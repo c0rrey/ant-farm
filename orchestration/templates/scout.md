@@ -11,7 +11,7 @@ keeping task metadata and conflict analysis out of the Queen's context window.
 
 - `{TASK_ID}` — full bead ID including project prefix (e.g., `ant-farm-9oa`, `my-project-74g.1`)
 - `{TASK_SUFFIX}` — suffix portion only; extracted by splitting on the LAST hyphen (e.g., `9oa` from `ant-farm-9oa`, or `74g1` from `my-project-74g.1`). See reference file for extraction algorithm.
-- `{SESSION_DIR}` — session artifact directory path (e.g., `.crumbs/agent-summaries/_session-abc123`)
+- `{SESSION_DIR}` — session artifact directory path (e.g., `.crumbs/sessions/_session-abc123`)
 
 ---
 

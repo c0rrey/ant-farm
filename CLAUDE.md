@@ -68,7 +68,7 @@ Present these as multiple-choice questions using the platform's question tool (4
    git status  # MUST show "up to date with origin"
    ```
 6. **Clean up** - Clear stashes, prune remote branches
-   (Session artifacts in .crumbs/agent-summaries/_session-*/ are retained for posterity. Prune old sessions manually when needed.)
+   (Session artifacts in .crumbs/sessions/_session-*/ are retained for posterity. Prune old sessions manually when needed.)
 7. **Verify** - All changes committed AND pushed
 8. **Hand off** - Provide context for next session
 

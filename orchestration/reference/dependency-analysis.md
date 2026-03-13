@@ -46,9 +46,9 @@ Suffix portion only, extracted from {TASK_ID} by splitting on the LAST hyphen an
 
 Session artifact directory path containing task metadata, prompts, summaries, and verification checkpoints.
 
-**Format**: `.crumbs/agent-summaries/_session-<id>`
+**Format**: `.crumbs/sessions/_session-<id>`
 
-**Example**: `.crumbs/agent-summaries/_session-abc123` or `.crumbs/agent-summaries/_session-3be37d`
+**Example**: `.crumbs/sessions/_session-abc123` or `.crumbs/sessions/_session-3be37d`
 
 ---
 

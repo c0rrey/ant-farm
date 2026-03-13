@@ -8,7 +8,7 @@ The agent-facing text starts below the `---` separator. Do NOT include this inst
 **Model**: The Task tool call MUST include `model: "sonnet"`. subagent_type: `technical-writer`.
 
 **Term definitions (canonical across all orchestration templates):**
-- `{SESSION_DIR}` — session artifact directory path (e.g., `.crumbs/agent-summaries/_session-abc123`)
+- `{SESSION_DIR}` — session artifact directory path (e.g., `.crumbs/sessions/_session-abc123`)
 - `{SESSION_ID}` — short session identifier (e.g., `abc123` — the hex suffix of the session dir)
 - `{COMMIT_RANGE}` — git range for the session (e.g., `abc1234..HEAD`)
 - `{OPEN_BEAD_IDS}` — space-separated list of crumb IDs still open from the session (e.g., `ant-farm-9oa ant-farm-x3b`)
