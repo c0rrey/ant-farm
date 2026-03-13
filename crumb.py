@@ -1495,7 +1495,6 @@ def _convert_beads_record(
     # --- dependency mapping ---
     deps: List[Dict[str, Any]] = beads_rec.get("dependencies") or []
     if isinstance(deps, list) and deps:
-        blocked_by: List[str] = []
         parent_id: Optional[str] = None
         for dep in deps:
             if not isinstance(dep, dict):
@@ -1505,14 +1504,11 @@ def _convert_beads_record(
             if dep_type == "parent-child" and depends_on:
                 # This record is a child of depends_on (epic/trail)
                 parent_id = dep.get("depends_on_id", "")
-            elif dep_type == "blocks" and depends_on:
-                blocked_by.append(depends_on)
+            # "blocks" deps are handled by _apply_blocks_deps post-pass
 
         links: Dict[str, Any] = {}
         if parent_id:
             links["parent"] = parent_id
-        if blocked_by:
-            links["blocked_by"] = blocked_by
         if links:
             record["links"] = links
 
@@ -1543,6 +1539,58 @@ def _resolve_beads_epic_refs(
             links["blocked_by"] = [
                 epic_id_map.get(bid, bid) for bid in blocked_by
             ]
+
+
+def _apply_blocks_deps(
+    raw_beads: List[Dict[str, Any]],
+    records: List[Dict[str, Any]],
+    epic_id_map: Dict[str, str],
+) -> None:
+    """Apply blocks-type dependencies to the correct target records.
+
+    A Beads dep {issue_id: A, depends_on_id: B, type: "blocks"} means
+    "A blocks B", so B's links.blocked_by should contain A (not A's).
+    Mutates records in-place.
+
+    Args:
+        raw_beads: Original Beads records (used to read dependency lists).
+        records: List of converted crumb records to mutate.
+        epic_id_map: Maps Beads epic ID → generated trail ID.
+    """
+    record_index: Dict[str, Dict[str, Any]] = {
+        r["id"]: r for r in records if r.get("id")
+    }
+    # Also index by original Beads ID for records that weren't epics
+    beads_id_to_crumb_id: Dict[str, str] = {}
+    for beads_rec in raw_beads:
+        beads_id = beads_rec.get("id", "")
+        if beads_id in epic_id_map:
+            beads_id_to_crumb_id[beads_id] = epic_id_map[beads_id]
+        else:
+            beads_id_to_crumb_id[beads_id] = beads_id
+
+    for beads_rec in raw_beads:
+        source_beads_id = beads_rec.get("id", "")
+        source_crumb_id = beads_id_to_crumb_id.get(source_beads_id, source_beads_id)
+        deps: List[Dict[str, Any]] = beads_rec.get("dependencies") or []
+        if not isinstance(deps, list):
+            continue
+        for dep in deps:
+            if not isinstance(dep, dict):
+                continue
+            if dep.get("type") != "blocks":
+                continue
+            target_beads_id = dep.get("depends_on_id", "")
+            if not target_beads_id:
+                continue
+            target_crumb_id = beads_id_to_crumb_id.get(target_beads_id, target_beads_id)
+            target_record = record_index.get(target_crumb_id)
+            if target_record is None:
+                continue
+            links = target_record.setdefault("links", {})
+            blocked_by: List[str] = links.setdefault("blocked_by", [])
+            if source_crumb_id not in blocked_by:
+                blocked_by.append(source_crumb_id)
 
 
 def cmd_import(args: argparse.Namespace) -> None:
@@ -1622,6 +1670,8 @@ def cmd_import(args: argparse.Namespace) -> None:
 
             # Resolve epic ID references after all records are converted
             _resolve_beads_epic_refs(converted, epic_id_map)
+            # Apply blocks deps in reverse: A blocks B → B.blocked_by = [A]
+            _apply_blocks_deps(raw_beads, converted, epic_id_map)
 
             existing_tasks.extend(converted)
             imported_count = len(converted)
