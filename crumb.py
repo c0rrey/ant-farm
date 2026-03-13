@@ -1284,9 +1284,302 @@ def cmd_tree(args: argparse.Namespace) -> None:
     die("crumb tree not yet implemented")
 
 
+_BEADS_PRIORITY_MAP: Dict[int, str] = {
+    0: "P0",
+    1: "P1",
+    2: "P2",
+    3: "P3",
+    4: "P4",
+}
+
+_BEADS_STATUS_MAP: Dict[str, str] = {
+    "open": "open",
+    "in_progress": "in_progress",
+    "closed": "closed",
+}
+
+
+def _convert_beads_record(
+    beads_rec: Dict[str, Any],
+    epic_id_map: Dict[str, str],
+    config: Dict[str, Any],
+) -> Dict[str, Any]:
+    """Convert a single Beads issue record to crumb format.
+
+    Args:
+        beads_rec: A single record from Beads issues.jsonl.
+        epic_id_map: Maps Beads epic IDs to their generated trail IDs.
+        config: Current config dict (may be mutated to advance next_trail_id).
+
+    Returns:
+        A crumb-format record dict.
+    """
+    beads_id: str = beads_rec.get("id", "")
+    issue_type: str = beads_rec.get("issue_type", "task")
+    is_epic = issue_type == "epic"
+
+    # --- type mapping ---
+    if is_epic:
+        crumb_type = "trail"
+    elif issue_type in ("task", "bug", "feature"):
+        crumb_type = issue_type
+    else:
+        crumb_type = "task"
+
+    # --- ID assignment ---
+    if is_epic:
+        prefix = config["prefix"]
+        next_tid = int(config.get("next_trail_id", 1))
+        trail_id = f"{prefix}-T{next_tid}"
+        config["next_trail_id"] = next_tid + 1
+        epic_id_map[beads_id] = trail_id
+        crumb_id = trail_id
+    else:
+        crumb_id = beads_id
+
+    # --- priority mapping ---
+    raw_priority = beads_rec.get("priority")
+    if isinstance(raw_priority, int) and raw_priority in _BEADS_PRIORITY_MAP:
+        priority = _BEADS_PRIORITY_MAP[raw_priority]
+    elif isinstance(raw_priority, str) and raw_priority in VALID_PRIORITIES:
+        priority = raw_priority
+    else:
+        priority = config.get("default_priority", "P2")
+
+    # --- status mapping ---
+    raw_status = beads_rec.get("status", "open")
+    status = _BEADS_STATUS_MAP.get(raw_status, "open")
+
+    now = now_iso()
+    record: Dict[str, Any] = {
+        "id": crumb_id,
+        "type": crumb_type,
+        "title": beads_rec.get("title", ""),
+        "status": status,
+        "priority": priority,
+        "created_at": beads_rec.get("created_at", now),
+        "updated_at": beads_rec.get("updated_at", now),
+    }
+
+    if beads_rec.get("description"):
+        record["description"] = beads_rec["description"]
+    if beads_rec.get("closed_at"):
+        record["closed_at"] = beads_rec["closed_at"]
+
+    # --- dependency mapping ---
+    deps: List[Dict[str, Any]] = beads_rec.get("dependencies") or []
+    if isinstance(deps, list) and deps:
+        blocked_by: List[str] = []
+        parent_id: Optional[str] = None
+        for dep in deps:
+            if not isinstance(dep, dict):
+                continue
+            dep_type = dep.get("type", "")
+            depends_on = dep.get("depends_on_id", "")
+            if dep_type == "parent-child" and depends_on:
+                # This record is a child of depends_on (epic/trail)
+                parent_id = dep.get("depends_on_id", "")
+            elif dep_type == "blocks" and depends_on:
+                blocked_by.append(depends_on)
+
+        links: Dict[str, Any] = {}
+        if parent_id:
+            links["parent"] = parent_id
+        if blocked_by:
+            links["blocked_by"] = blocked_by
+        if links:
+            record["links"] = links
+
+    return record
+
+
+def _resolve_beads_epic_refs(
+    records: List[Dict[str, Any]], epic_id_map: Dict[str, str]
+) -> None:
+    """Update links in records to replace Beads epic IDs with trail IDs.
+
+    Called after all records are converted so epic_id_map is fully populated.
+    Mutates records in-place.
+
+    Args:
+        records: List of converted crumb records.
+        epic_id_map: Maps Beads epic ID → generated trail ID.
+    """
+    for record in records:
+        links = record.get("links")
+        if not isinstance(links, dict):
+            continue
+        parent = links.get("parent")
+        if parent and parent in epic_id_map:
+            links["parent"] = epic_id_map[parent]
+        blocked_by: List[str] = links.get("blocked_by") or []
+        if isinstance(blocked_by, list) and blocked_by:
+            links["blocked_by"] = [
+                epic_id_map.get(bid, bid) for bid in blocked_by
+            ]
+
+
 def cmd_import(args: argparse.Namespace) -> None:
-    """Import crumbs from a JSONL file. Implemented downstream."""
-    die("crumb import not yet implemented")
+    """Import crumbs from a JSONL file, with optional Beads format migration.
+
+    Plain mode: reads the file line-by-line, skips malformed JSON (with
+    warning), skips duplicate IDs (with warning), appends valid entries to
+    tasks.jsonl. Updates config counters after import.
+
+    Beads mode (--from-beads): converts Beads issues.jsonl format to crumb
+    format. Priority integers map to P0-P4. Type 'epic' becomes 'trail'
+    with a T-prefixed ID. Dependencies are mapped to links.parent /
+    links.blocked_by.
+
+    Args:
+        args: Parsed arguments; args.file is the input path,
+              args.from_beads enables Beads migration mode.
+    """
+    import_path = Path(args.file)
+    if not import_path.exists():
+        die(f"file not found: {import_path}")
+
+    with FileLock():
+        path = tasks_path()
+        if path.exists():
+            existing_tasks = read_tasks(path)
+        else:
+            existing_tasks = []
+            path.parent.mkdir(parents=True, exist_ok=True)
+
+        existing_ids: set = {t.get("id") for t in existing_tasks if t.get("id")}
+        config = read_config()
+
+        imported_count = 0
+        skipped_malformed = 0
+        skipped_duplicate = 0
+
+        if getattr(args, "from_beads", False):
+            # --- Beads migration mode ---
+            # Two-pass: first collect all records, then resolve epic refs
+            raw_beads: List[Dict[str, Any]] = []
+            try:
+                with open(import_path, "r", encoding="utf-8") as fh:
+                    for lineno, line in enumerate(fh, start=1):
+                        line = line.rstrip("\n")
+                        if not line:
+                            continue
+                        try:
+                            raw_beads.append(json.loads(line))
+                        except json.JSONDecodeError as exc:
+                            print(
+                                f"warning: skipping malformed JSON on line {lineno}: {exc}",
+                                file=sys.stderr,
+                            )
+                            skipped_malformed += 1
+            except OSError as exc:
+                die(f"cannot read {import_path}: {exc}")
+
+            # Sort epics first so epic_id_map is populated before children
+            epic_id_map: Dict[str, str] = {}
+            epics = [r for r in raw_beads if r.get("issue_type") == "epic"]
+            non_epics = [r for r in raw_beads if r.get("issue_type") != "epic"]
+
+            converted: List[Dict[str, Any]] = []
+            for beads_rec in epics + non_epics:
+                record = _convert_beads_record(beads_rec, epic_id_map, config)
+                crumb_id = record.get("id", "")
+                if crumb_id in existing_ids:
+                    print(
+                        f"warning: skipping duplicate ID '{crumb_id}'",
+                        file=sys.stderr,
+                    )
+                    skipped_duplicate += 1
+                    continue
+                existing_ids.add(crumb_id)
+                converted.append(record)
+
+            # Resolve epic ID references after all records are converted
+            _resolve_beads_epic_refs(converted, epic_id_map)
+
+            existing_tasks.extend(converted)
+            imported_count = len(converted)
+
+        else:
+            # --- Plain JSONL import mode ---
+            try:
+                with open(import_path, "r", encoding="utf-8") as fh:
+                    for lineno, line in enumerate(fh, start=1):
+                        line = line.rstrip("\n")
+                        if not line:
+                            continue
+                        try:
+                            record: Dict[str, Any] = json.loads(line)
+                        except json.JSONDecodeError as exc:
+                            print(
+                                f"warning: skipping malformed JSON on line {lineno}: {exc}",
+                                file=sys.stderr,
+                            )
+                            skipped_malformed += 1
+                            continue
+
+                        crumb_id = record.get("id", "")
+                        if not crumb_id:
+                            print(
+                                f"warning: skipping record on line {lineno}: missing 'id' field",
+                                file=sys.stderr,
+                            )
+                            skipped_malformed += 1
+                            continue
+
+                        if crumb_id in existing_ids:
+                            print(
+                                f"warning: skipping duplicate ID '{crumb_id}' on line {lineno}",
+                                file=sys.stderr,
+                            )
+                            skipped_duplicate += 1
+                            continue
+
+                        existing_ids.add(crumb_id)
+                        existing_tasks.append(record)
+                        imported_count += 1
+            except OSError as exc:
+                die(f"cannot read {import_path}: {exc}")
+
+        # --- Update config counters to exceed highest imported numeric ID ---
+        max_crumb_num = int(config.get("next_crumb_id", 1)) - 1
+        max_trail_num = int(config.get("next_trail_id", 1)) - 1
+        prefix = config["prefix"]
+        prefix_dash = f"{prefix}-"
+        prefix_trail = f"{prefix}-T"
+
+        for task in existing_tasks:
+            tid = task.get("id", "")
+            if not tid:
+                continue
+            if tid.startswith(prefix_trail):
+                try:
+                    num = int(tid[len(prefix_trail):])
+                    if num > max_trail_num:
+                        max_trail_num = num
+                except ValueError:
+                    pass
+            elif tid.startswith(prefix_dash):
+                suffix = tid[len(prefix_dash):]
+                try:
+                    num = int(suffix)
+                    if num > max_crumb_num:
+                        max_crumb_num = num
+                except ValueError:
+                    pass
+
+        config["next_crumb_id"] = max_crumb_num + 1
+        config["next_trail_id"] = max_trail_num + 1
+
+        if imported_count > 0:
+            write_tasks(path, existing_tasks)
+            write_config(config)
+
+    print(
+        f"imported {imported_count} record(s)"
+        + (f", skipped {skipped_malformed} malformed" if skipped_malformed else "")
+        + (f", skipped {skipped_duplicate} duplicate(s)" if skipped_duplicate else "")
+    )
 
 
 def cmd_doctor(args: argparse.Namespace) -> None:
