@@ -5,6 +5,7 @@
 #   agents/*.md         → ~/.claude/agents/
 #   orchestration/      → ~/.claude/orchestration/  (non-_archive files)
 #   scripts/build-review-prompts.sh → ~/.claude/orchestration/scripts/
+#   skills/*.md         → ~/.claude/skills/ant-farm-<name>/SKILL.md
 #   crumb.py            → ~/.local/bin/crumb
 #   CLAUDE.md           → ~/.claude/CLAUDE.md
 #
@@ -181,7 +182,38 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Step 4: Install crumb.py → ~/.local/bin/crumb
+# Step 4: Install skills → ~/.claude/skills/ant-farm-<name>/SKILL.md
+#   Claude Code expects: ~/.claude/skills/<skill-name>/SKILL.md
+#   Each skills/*.md becomes its own directory named ant-farm-<basename>.
+# ---------------------------------------------------------------------------
+log "Installing skills → ~/.claude/skills/ ..."
+skills_installed=0
+
+if [ -d "$REPO_ROOT/skills" ]; then
+    shopt -s nullglob
+    for skill_file in "$REPO_ROOT/skills/"*.md; do
+        name="$(basename "$skill_file" .md)"
+        skill_dir="${HOME}/.claude/skills/ant-farm-${name}"
+        dst="${skill_dir}/SKILL.md"
+        if [ "$DRY_RUN" = false ]; then
+            mkdir -p "$skill_dir"
+        fi
+        backup_and_copy "$skill_file" "$dst" || { warn "Failed to install skill: $skill_file"; continue; }
+        skills_installed=$((skills_installed + 1))
+    done
+    shopt -u nullglob
+
+    if [ "$skills_installed" -eq 0 ]; then
+        warn "skills/ directory exists but contains no .md files — no skills installed."
+    else
+        log "Skills installed: $skills_installed"
+    fi
+else
+    warn "skills/ directory not found: $REPO_ROOT/skills — skipping skills install"
+fi
+
+# ---------------------------------------------------------------------------
+# Step 5: Install crumb.py → ~/.local/bin/crumb
 # ---------------------------------------------------------------------------
 CRUMB_SRC="$REPO_ROOT/crumb.py"
 CRUMB_DST="${HOME}/.local/bin/crumb"
@@ -198,7 +230,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Step 5: Install CLAUDE.md → ~/.claude/CLAUDE.md
+# Step 6: Install CLAUDE.md → ~/.claude/CLAUDE.md
 # ---------------------------------------------------------------------------
 CLAUDE_SRC="$REPO_ROOT/CLAUDE.md"
 CLAUDE_DST="${HOME}/.claude/CLAUDE.md"
@@ -211,7 +243,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Step 6: Validate PATH includes ~/.local/bin
+# Step 7: Validate PATH includes ~/.local/bin
 # ---------------------------------------------------------------------------
 if [[ ":${PATH}:" != *":${HOME}/.local/bin:"* ]]; then
     warn "~/.local/bin is not in your PATH."
@@ -221,7 +253,7 @@ if [[ ":${PATH}:" != *":${HOME}/.local/bin:"* ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Step 7: Preflight checks
+# Step 8: Preflight checks
 # ---------------------------------------------------------------------------
 if [ ! -f "${HOME}/.claude/agents/code-reviewer.md" ]; then
     warn "~/.claude/agents/code-reviewer.md is missing."
