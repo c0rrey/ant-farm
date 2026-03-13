@@ -35,7 +35,7 @@ Present these as multiple-choice questions using the platform's question tool (4
 **Trigger**: When the user says "let's get to work" (case-insensitive, anywhere in message).
 
 **CRITICAL — read before doing ANYTHING:**
-- **NEVER** run `bd show`, `bd ready`, `bd list`, `bd blocked`, or any `bd` query command — the Scout does this
+- **NEVER** run `crumb show`, `crumb ready`, `crumb list`, `crumb blocked`, or any `crumb` query command — the Scout does this
 - NEVER read task/issue details from the user's message and act on them directly.
 - NEVER set `run_in_background` on Task agents. Multiple Task calls in one message already run concurrently. Background mode causes raw JSONL transcript leakage into your context.
 - Read `~/.claude/orchestration/RULES.md` FIRST and ALONE — no parallel tool calls. Then follow it.
@@ -64,12 +64,11 @@ Present these as multiple-choice questions using the platform's question tool (4
 5. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
    git pull --rebase
-   bd sync
    git push
    git status  # MUST show "up to date with origin"
    ```
 6. **Clean up** - Clear stashes, prune remote branches
-   (Session artifacts in .beads/agent-summaries/_session-*/ are retained for posterity. Prune old sessions manually when needed.)
+   (Session artifacts in .crumbs/agent-summaries/_session-*/ are retained for posterity. Prune old sessions manually when needed.)
 7. **Verify** - All changes committed AND pushed
 8. **Hand off** - Provide context for next session
 
