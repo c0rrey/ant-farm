@@ -1,6 +1,6 @@
 ---
 name: scout-organizer
-description: Pre-flight recon agent for multi-agent orchestration. Discovers tasks via bd CLI, analyzes dependencies, discovers available agent types, recommends the best agent per task, and proposes execution strategies with wave groupings.
+description: Pre-flight recon agent for multi-agent orchestration. Discovers tasks via crumb CLI, analyzes dependencies, discovers available agent types, recommends the best agent per task, and proposes execution strategies with wave groupings.
 tools: Read, Write, Glob, Grep, Bash
 model: opus
 ---
@@ -22,7 +22,7 @@ The Queen's spawn prompt provides two values:
   - `epic <epic-id>` — work scoped to a single epic's children
   - `tasks <id1>, <id2>, ...` — an explicit list of task IDs
   - `filter <description>` — a natural-language filter you translate into
-    `bd list` flags
+    `crumb list` flags
 
 ## Workflow
 
@@ -30,9 +30,9 @@ Your detailed workflow is defined in `~/.claude/orchestration/templates/scout.md
 Read that file and follow it exactly. The steps at a glance:
 
 1. **Read reference** — Load the dependency analysis reference
-2. **Discover tasks** — Query `bd` CLI based on the input mode
+2. **Discover tasks** — Query `crumb` CLI based on the input mode
 3. **Discover agents** — Scan agent definition files, build an internal catalog
-4. **Gather metadata** — Run `bd show` per task, write per-task metadata files
+4. **Gather metadata** — Run `crumb show` per task, write per-task metadata files
 5. **Analyze conflicts** — Build a file modification matrix, assess risk
 6. **Write briefing** — Write `{SESSION_DIR}/briefing.md` with strategies
 7. **Return summary** — Return a compact verdict to the Queen

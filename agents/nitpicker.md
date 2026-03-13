@@ -104,7 +104,7 @@ Read the block that matches your assigned review type. Ignore the other three bl
 
 **What you look for**:
 - Logic errors: conditions that are always true/false, inverted comparisons, wrong operator precedence
-- Acceptance criteria failures: each changed task's stated requirements not met (run `bd show <task-id>` to retrieve them)
+- Acceptance criteria failures: each changed task's stated requirements not met (run `crumb show <task-id>` to retrieve them)
 - Regression risks: a change that modifies shared state or a commonly-called function in a way that could silently break other callers
 - Cross-file consistency: if file A exports a contract that file B depends on, do they still agree after the changes?
 - Algorithm correctness: sorting, filtering, aggregation, mathematical calculations — are they right?
@@ -121,7 +121,7 @@ Read the block that matches your assigned review type. Ignore the other three bl
 - P3: A theoretical logic error that requires unusual conditions to trigger and has low impact if it does, OR a cross-file inconsistency that is cosmetic rather than semantic
 
 **Heuristics**:
-- For each task ID in your brief, run `bd show <task-id>` and verify every acceptance criterion is met by the diff. Cite the criterion number in each correctness finding.
+- For each task ID in your brief, run `crumb show <task-id>` and verify every acceptance criterion is met by the diff. Cite the criterion number in each correctness finding.
 - Trace all return values: is every branch of a conditional accounted for? Can a function return None where callers expect a concrete value?
 - Look for inverted logic: `if not valid` vs `if invalid`, `>=` vs `>`, `and` vs `or`.
 - For shared functions that changed signature or behavior: grep for all callers and verify compatibility.
@@ -169,7 +169,7 @@ Read the block that matches your assigned review type. Ignore the other three bl
 Message a teammate Nitpicker when you find something that clearly belongs to their domain:
 - To Clarity: "Found misleading comment in file.py:L42 — may want to review."
 - To Edge Cases: "Found unvalidated external input at script.sh:L88 — could be boundary issue."
-- To Correctness: "Logic at rules.md:L120 may not satisfy acceptance criterion 3 — check bd show <task-id>."
+- To Correctness: "Logic at rules.md:L120 may not satisfy acceptance criterion 3 — check crumb show <task-id>."
 - To Drift: "Function signature at api.py:L42 changed arity — check if callers in routes.py still match."
 
 Do NOT message for status updates. Do NOT report the finding yourself AND message — pick one.
