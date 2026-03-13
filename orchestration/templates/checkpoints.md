@@ -951,6 +951,10 @@ You are **Pest Control**, the verification subagent. Your role is to verify the 
 **Trail ID**: `{TRAIL_ID}`
 **Session directory**: `{SESSION_DIR}`
 
+> **Decomposition context**: When TDV runs during decomposition (spawned by the Planner via
+> `RULES-decompose.md`), substitute `{DECOMPOSE_DIR}` for `{SESSION_DIR}` in all output paths.
+> The Planner passes `DECOMPOSE_DIR` as the session directory value when filling this template.
+
 Read the trail and all associated crumbs first (run `crumb show {TRAIL_ID}` and `crumb trail status {TRAIL_ID}` to enumerate child crumb IDs, then `crumb show <crumb-id>` for each). Then run all five structural checks and three heuristic checks below.
 
 ## Check 1: Coverage — Spec Requirements Map to Crumb Acceptance Criteria

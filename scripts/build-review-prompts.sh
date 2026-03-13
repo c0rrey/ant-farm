@@ -255,7 +255,7 @@ build_nitpicker_prompt() {
         echo ""
         echo "**Timestamp**: ${TIMESTAMP}"
         echo ""
-        echo "Do NOT file beads — Big Head handles all bead filing."
+        echo "Do NOT file crumbs — Big Head handles all crumb filing."
     } > "$out_prompt" || {
         echo "ERROR: Failed to write prompt file: $out_prompt" >&2
         exit 1
@@ -419,7 +419,7 @@ for f in "${SCAN_FILES[@]}"; do
     # These are the mechanical fill_slot tokens — none should survive substitution.
     # Note: angle-bracket path placeholders (<session-dir>, <timestamp>) are NOT
     # scanned here because both Nitpicker templates (e.g. <task-id>) and the Big Head
-    # template (e.g. <P>, <title>, <new-bead-id>) contain intentional angle-bracket
+    # template (e.g. <P>, <title>, <new-crumb-id>) contain intentional angle-bracket
     # tokens in instructional examples that are meant to reach the agent verbatim.
     # Those tokens are documented in the template source note added to reviews.md.
     if grep -qP '\{\{[A-Z][A-Z_0-9]*\}\}' "$f" 2>/dev/null; then

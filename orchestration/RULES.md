@@ -98,7 +98,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             (`pest-control`, `model: "haiku"`) for Scout Strategy Verification (SSV).
             Pass `Session directory: <value of SESSION_DIR>` and the path `orchestration/templates/checkpoints.md`
             as its instruction file. Pest Control reads `{SESSION_DIR}/briefing.md` itself and runs all three
-            mechanical checks (file overlap within waves, file list match against beads, intra-wave dependency
+            mechanical checks (file overlap within waves, file list match against crumbs, intra-wave dependency
             ordering). **SSV must PASS before proceeding.**
 
             **On SSV PASS**: Proceed directly to Step 2. Do NOT wait for user approval. SSV is the
@@ -239,7 +239,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             **Progress log (after Nitpicker team completes round 1):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_COMPLETE|round=<N>|team=complete|report=${SESSION_DIR}/review-reports/review-consolidated-${TIMESTAMP}.md" >> ${SESSION_DIR}/progress.log`
 
 **Step 3c:** User triage — **after CCB PASS and Big Head consolidation completes**:
-            1. Read the consolidated review summary (Big Head sends bead list to Queen via SendMessage — see big-head-skeleton.md step 12)
+            1. Read the consolidated review summary (Big Head sends crumb list to Queen via SendMessage — see big-head-skeleton.md step 12)
             2. Check finding counts: P1, P2, P3
             **Termination check**: If zero P1 and zero P2 findings:
             - Round 2+: P3s already auto-filed by Big Head to "Future Work" epic
@@ -250,7 +250,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             **DO NOT send shutdown_request to any team member.** The team must remain active for the fix workflow.
             **Round cap — escalate after round 4** (check this FIRST before any fix decision):
             - If current round >= 4 and P1/P2 findings are still present, do NOT start another round
-            - Present full round history to user (round numbers, finding counts, bead IDs)
+            - Present full round history to user (round numbers, finding counts, crumb IDs)
             - Ask user: "Review loop has not converged after 4 rounds. Continue or abort?"
             - Await user decision before taking any further action
             **Only if current round < 4**: determine fix action:
@@ -267,7 +267,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             - Present findings to user: "Reviews found X P1 and Y P2 issues. Fix now or defer?"
             - **If "fix now"**: proceed to Fix Workflow below, then transition to round N+1 via SendMessage
               - Update session state: increment review round, record fix commit range
-            - **If "defer"**: P1/P2 beads stay open; note deferred items for the Scribe to document at Step 5b; proceed to Step 4
+            - **If "defer"**: P1/P2 crumbs stay open; note deferred items for the Scribe to document at Step 5b; proceed to Step 4
 
             **Fix Workflow** (triggered by auto-fix or "fix now"):
 
@@ -276,8 +276,8 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             iterate within the team via SendMessage.
 
             **Step 3c-i. Fix-cycle Scout** — Before spawning fix agents, run a fix-cycle Scout
-            (`scout-organizer`, `model: "opus"`) to plan the fix strategy: which beads to fix, wave
-            grouping, and file conflict analysis. The fix-cycle Scout reads the bead list from Big Head's
+            (`scout-organizer`, `model: "opus"`) to plan the fix strategy: which crumbs to fix, wave
+            grouping, and file conflict analysis. The fix-cycle Scout reads the crumb list from Big Head's
             SendMessage handoff (big-head-skeleton.md step 12).
 
             **Auto-approval**: The fix-cycle Scout's strategy is auto-approved — no user confirmation
@@ -287,10 +287,10 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             - SSV PASS → proceed to fix agent spawning (auto-approved)
             - SSV FAIL → re-run Scout with violations listed (max 1 retry); if still failing, escalate to user
 
-            **Progress log (after fix Scout SSV PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_SCOUT_COMPLETE|round=<N>|ssv=pass|fix_beads=<bead-ids>" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after fix Scout SSV PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_SCOUT_COMPLETE|round=<N>|ssv=pass|fix_crumbs=<crumb-ids>" >> ${SESSION_DIR}/progress.log`
 
             **Step 3c-ii. Spawn fix agents into team** — Pantry and CCO are skipped for fix agents
-            (the Big Head bead IS the brief; bead content passed CCB; SSV independently verified the
+            (the Big Head crumb IS the brief; crumb content passed CCB; SSV independently verified the
             strategy). Spawn fix agents into the team in a single message:
             - **N fix DPs** (`model: "sonnet"`, `team_name: "nitpicker-team"`): names `fix-dp-1..N`
               (round 2+: `fix-dp-r2-1..N`)
@@ -299,15 +299,15 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             - **fix-pc-dmvdc** (`model: "sonnet"`, `team_name: "nitpicker-team"`): one per round;
               serves all fix DPs in the round via SendMessage
 
-            **Fix DP prompt structure**: minimal — bead is the source of truth:
+            **Fix DP prompt structure**: minimal — crumb is the source of truth:
             ```
             You are fix-dp-N, a fix Dirt Pusher in the Nitpicker team.
-            Your task bead: <bead-id>
-            Run: crumb show <bead-id>
+            Your task crumb: <crumb-id>
+            Run: crumb show <crumb-id>
             Implement the fix. Follow the acceptance criteria exactly.
             After committing:
-            1. Record commit hash: crumb update <bead-id> --note="commit: <hash>"
-            2. SendMessage to fix-pc-wwd: "Fix committed. Bead: <bead-id>. Commit: <hash>. Files changed: <list>."
+            1. Record commit hash: crumb update <crumb-id> --note="commit: <hash>"
+            2. SendMessage to fix-pc-wwd: "Fix committed. Crumb: <crumb-id>. Commit: <hash>. Files changed: <list>."
             Then go idle and wait.
             ```
 
@@ -358,7 +358,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             **Progress log (after round transition messages sent):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|ROUND_TRANSITION|from_round=<N>|to_round=<N+1>|fix_commits=<range>" >> ${SESSION_DIR}/progress.log`
 
             After the round transition, the loop returns to the top of Step 3c: Big Head consolidates
-            round N+1 reports, CCB runs inside the team, and the Queen reads the new bead list from
+            round N+1 reports, CCB runs inside the team, and the Queen reads the new crumb list from
             Big Head's SendMessage. If zero P1/P2 → proceed to Step 4. If P1/P2 remain and round < 4
             → repeat fix workflow. If round >= 4 → escalate to user.
 
@@ -382,7 +382,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
               subagent_type="technical-writer",
               model="sonnet",
               prompt="Write session exec summary. Session dir: {SESSION_DIR}. Commit range: {RANGE}.
-                      Open beads: {IDS}. CHANGELOG path: CHANGELOG.md.
+                      Open crumbs: {IDS}. CHANGELOG path: CHANGELOG.md.
                       Read orchestration/templates/scribe-skeleton.md for full instructions."
             )
             ```
@@ -407,7 +407,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             )
             ```
             > **Field derivation**: `SESSION_START_COMMIT` is the first commit the Queen or any agent made this session (visible in `git log` since the pre-session HEAD). `SESSION_END_COMMIT` is the commit at HEAD immediately before Step 6's `git add CHANGELOG.md` commit. `SESSION_START_DATE` is the calendar date (UTC) when Step 0 ran (stored in queen-state.md or derivable from `SESSION_ID`).
-            ESV checks: task coverage, commit coverage, open bead accuracy, CHANGELOG derivation
+            ESV checks: task coverage, commit coverage, open crumb accuracy, CHANGELOG derivation
             fidelity, section completeness, metric consistency.
             Artifact written to `{SESSION_DIR}/pc/pc-session-esv-{timestamp}.md`.
             **On ESV FAIL**: Re-spawn Scribe with specific violations from ESV report (max 1 retry).
@@ -469,7 +469,7 @@ Every `Task` tool call the Queen makes MUST include the `model` parameter from t
 | PC — CCO | Task (`pest-control`) | haiku | Mechanical checklist |
 | PC — WWD | Task (`pest-control`) | haiku | Mechanical file comparison |
 | PC — DMVDC | Task (`pest-control`) | sonnet | Judgment: claims vs actual code |
-| PC — CCB | Task (`pest-control`) | sonnet | Judgment: bead quality and dedup correctness |
+| PC — CCB | Task (`pest-control`) | sonnet | Judgment: crumb quality and dedup correctness |
 | Nitpickers (all 4) | TeamCreate member | sonnet | Set in big-head-skeleton.md |
 | Big Head | TeamCreate member | opus | Set in big-head-skeleton.md (`{MODEL}`) |
 | PC (team member) | TeamCreate member | sonnet | Runs DMVDC inside team; needs sonnet |
@@ -497,7 +497,7 @@ Every `Task` tool call the Queen makes MUST include the `model` parameter from t
 
 | Scenario | Action |
 |----------|--------|
-| Agent failure | Log failure, file a beads issue for the failed task, continue with remaining agents. Re-attempt in next wave if slots available. |
+| Agent failure | Log failure, file a crumb for the failed task, continue with remaining agents. Re-attempt in next wave if slots available. |
 | Early completion | Do NOT backfill mid-wave. Wait for the full wave to complete before starting the next. Rationale: backfilling creates interleaved commits that complicate review scope tracking. |
 | All agents fail | Stop. Surface failures to user. Do not auto-retry the entire wave. |
 
@@ -578,11 +578,11 @@ This prevents collisions when multiple Queens run in the same repo.
 | Pantry CCO fails | 1 | Escalate to user; do not spawn Dirt Pushers without verified prompts |
 | Scout fails or returns no tasks | 1 | Escalate to user; do not proceed to Step 2 without task list |
 | SSV FAIL -> re-Scout cycle | 1 | Escalate to user with SSV violations; do not re-run Scout a third time |
-| Fix DP stuck/crash (no commit in team) | 0 | Run stuck-agent diagnostic; file a bead for the failed fix; escalate to user. Do NOT re-spawn without user approval |
+| Fix DP stuck/crash (no commit in team) | 0 | Run stuck-agent diagnostic; file a crumb for the failed fix; escalate to user. Do NOT re-spawn without user approval |
 | Fix PC crash (fix-pc-wwd or fix-pc-dmvdc) | 1 | Spawn replacement into team (`team_name: "nitpicker-team"`); resume from last SendMessage |
 | Reviewer failure (round 2+, re-task via SendMessage fails) | 1 | Spawn fresh reviewer into team as replacement; re-send the round transition message |
-| Big Head crash (before bead filing complete) | 1 | Spawn fresh Big Head into team with handoff brief describing which beads were filed and which remain; re-run CCB after |
-| CCB material spot-check fail | 1 | Shut down current Big Head; spawn fresh Big Head into team with handoff brief identifying failed beads; re-run full bead review then re-run CCB |
+| Big Head crash (before crumb filing complete) | 1 | Spawn fresh Big Head into team with handoff brief describing which crumbs were filed and which remain; re-run CCB after |
+| CCB material spot-check fail | 1 | Shut down current Big Head; spawn fresh Big Head into team with handoff brief identifying failed crumbs; re-run full crumb review then re-run CCB |
 | Scribe fails ESV | 1 | Escalate to user with ESV report; user decides fix manually or push as-is |
 | Total retries per session | 5 | Pause all new spawns; triage with user |
 
@@ -611,9 +611,9 @@ If more than 50% of agents in a single wave fail (DMVDC failure, stuck, or unrec
 
 A wave is defined as a set of agents spawned concurrently in a single Step 2 batch. Failures from earlier waves do not carry over into the threshold calculation for a new wave.
 
-## Bead Priority Calibration
+## Crumb Priority Calibration
 
-> **Note**: This section defines project-level issue priorities for beads filed in the tracker. Nitpicker review severity (P1/P2/P3) is defined separately in `orchestration/templates/reviews.md` and applies to review findings, not bead filing priority.
+> **Note**: This section defines project-level issue priorities for crumbs filed in the tracker. Nitpicker review severity (P1/P2/P3) is defined separately in `orchestration/templates/reviews.md` and applies to review findings, not crumb filing priority.
 
 **P1** = build failure, broken links, data loss, security vulnerability
 

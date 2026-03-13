@@ -1,7 +1,6 @@
 .DS_Store
 *.swp
 *~
-.beads/agent-summaries/
 .crumbs/sessions/
 .crumbs/tasks.lock
 reviews/

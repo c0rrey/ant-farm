@@ -4,11 +4,10 @@ A multi-agent orchestration and quality review system for Claude Code. Coordinat
 
 ## Quick Start
 
-1. **Clone and install hooks**
+1. **Clone and run setup**
    ```bash
    git clone <repo-url> && cd ant-farm
-   ./scripts/install-hooks.sh   # installs pre-push (sync) + pre-commit (PII scrub) hooks
-   ./scripts/sync-to-claude.sh
+   ./scripts/setup.sh           # installs agents, orchestration, skills, crumb CLI, and CLAUDE.md
    ```
 
 2. **Restart Claude Code** so the custom agent types in `agents/` are loaded.
@@ -240,7 +239,7 @@ Spawn the Scribe agent to write the session exec summary (`{SESSION_DIR}/exec-su
 
 ### Step 5c: ESV (Exec Summary Verification)
 
-Pest Control runs the ESV checkpoint — a hard gate that must PASS before Step 6. It verifies task coverage, commit coverage, open bead accuracy, CHANGELOG derivation fidelity, section completeness, and metric consistency.
+Pest Control runs the ESV checkpoint — a hard gate that must PASS before Step 6. It verifies task coverage, commit coverage, open crumb accuracy, CHANGELOG derivation fidelity, section completeness, and metric consistency.
 
 ### Step 6: Land
 
@@ -300,7 +299,7 @@ Documented in `orchestration/reference/known-failures.md`. Key incidents that sh
 
 ## Custom agents
 
-Custom Claude Code agent types live in `agents/` and are synced to `~/.claude/agents/` on push via the pre-push hook. Changes to agent files require restarting Claude Code (fully quit and reopen) to take effect.
+Custom Claude Code agent types live in `agents/` and are installed to `~/.claude/agents/` by `scripts/setup.sh`. Changes to agent files require restarting Claude Code (fully quit and reopen) to take effect.
 
 | Agent | Tools | Purpose |
 |-------|-------|---------|
@@ -327,9 +326,9 @@ The `.crumbs/tasks.jsonl` file is the issue database for **this** project's deve
    ```bash
    crumb init --from-jsonl --prefix <your-project-name>
    ```
-4. Install the git hooks so agent files sync to `~/.claude/agents/` on push:
+4. Run the setup script to install agent files, orchestration, and the crumb CLI:
    ```bash
-   # See orchestration/SETUP.md for full hook installation instructions
+   ./scripts/setup.sh
    ```
 
 The `.crumbs/tasks.jsonl` in this repo contains sample issues from ant-farm's own development history. They are included as reference material showing how the system has been used but are not required for operation. Running `crumb init` replaces them with a fresh database.

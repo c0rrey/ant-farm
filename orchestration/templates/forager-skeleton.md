@@ -1,6 +1,6 @@
 # Forager Skeleton Template
 
-## Instructions for the Queen
+## Instructions for the Planner
 
 Fill in all `{PLACEHOLDER}` values (uppercase) and use the result as the Task tool `prompt` parameter.
 The agent-facing text starts below the `---` separator. Do NOT include this instruction block.
@@ -9,13 +9,8 @@ The agent-facing text starts below the `---` separator. Do NOT include this inst
 regardless of focus area.
 
 **Spawning pattern**: Spawn all four Foragers in a single message with four concurrent Task calls.
-Do NOT spawn them sequentially — they are designed for parallel execution. The Queen provides a
+Do NOT spawn them sequentially — they are designed for parallel execution. The Planner provides a
 unique `{FOCUS_AREA}` per call; all other values are identical across the four spawns.
-
-**Term definitions (canonical across all orchestration templates):**
-- `{TASK_ID}` — full bead ID including project prefix (e.g., `ant-farm-9oa`)
-- `{TASK_SUFFIX}` — suffix portion only; extracted by splitting on the LAST hyphen (e.g., `9oa`)
-- `{SESSION_DIR}` — session artifact directory path (e.g., `.crumbs/sessions/_session-abc123`)
 
 Placeholders:
 - `{FOCUS_AREA}` — one of: `Stack`, `Architecture`, `Pitfall`, `Pattern`
@@ -42,7 +37,7 @@ Execute these steps in order:
 3. Execute the `{FOCUS_AREA}` focus area workflow defined in the template.
 4. Write your output to `{DECOMPOSE_DIR}/research/{focus-area-lowercase}.md`.
    **Hard cap: 100 lines maximum.** Truncate at line 100 if needed.
-5. Return your summary to the Queen (format specified in the template).
+5. Return your summary to the Planner (format specified in the template).
 
 SCOPE: Read the spec and existing codebase files only (Pattern focus) or documentation/web
 sources only (Stack/Architecture/Pitfall focus). Do NOT read other Foragers' output files.

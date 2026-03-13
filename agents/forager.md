@@ -19,7 +19,7 @@ Your spawn prompt contains:
 - **Focus area** — one of: Stack, Architecture, Pitfall, Pattern
 - **Spec path** — absolute path to the spec file you must read
 - **Decompose dir** — absolute path to the decomposition working directory
-  (e.g., `.crumbs/decompose/_decompose-abc123/`). Write your output here.
+  (e.g., `.crumbs/sessions/_decompose-abc123/`). Write your output here.
 
 ## Workflow
 
@@ -29,4 +29,4 @@ Read that file and follow it exactly. The steps at a glance:
 1. **Read spec** — Load the spec file. Extract requirements and constraints.
 2. **Execute focus area** — Follow the workflow section matching your focus area.
 3. **Write output** — Write `{DECOMPOSE_DIR}/research/{focus}.md` (100-line hard cap).
-4. **Return summary** — Return path and a one-sentence verdict to the Queen.
+4. **Return summary** — Return path and a one-sentence verdict to the Planner.

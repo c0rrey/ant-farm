@@ -2,39 +2,41 @@
 
 ## Prerequisites
 
-The orchestration system uses custom Claude Code agent types defined in `agents/`. These are synced to `~/.claude/agents/` automatically on `git push` via the pre-push hook.
+The orchestration system uses custom Claude Code agent types defined in `agents/`. These are installed to `~/.claude/agents/` by `scripts/setup.sh`.
 
-**First-time setup:** See the Quick Setup and Full Setup sections below for installation, sync behavior, backup, and uninstall documentation.
+**First-time setup:** See the Quick Setup and Full Setup sections below for installation, backup, and uninstall documentation.
 
 Quick reference:
 ```bash
-./scripts/install-hooks.sh          # Install the hook
-./scripts/sync-to-claude.sh         # Initial sync to ~/.claude/
+./scripts/setup.sh                  # Install everything to ~/.claude/ and PATH
 # Then restart Claude Code
 ```
 
-For details on what gets synced, how to back up `~/.claude/`, and how to uninstall, see the Full Setup section below.
+For details on what gets installed, how to back up `~/.claude/`, and how to uninstall, see the Full Setup section below.
 
 ## Quick Setup (5 minutes)
 
-**Step 1: Install the hook and sync**
+**Step 1: Run setup**
 
 For complete details, see `docs/installation-guide.md`. Quick reference:
 
 ```bash
-./scripts/install-hooks.sh          # Install both git hooks (see below)
-./scripts/sync-to-claude.sh         # Sync to ~/.claude/
+./scripts/setup.sh                  # Install agents, orchestration, skills, crumb CLI, CLAUDE.md
 # Then restart Claude Code
 ```
 
-`install-hooks.sh` installs two hooks:
-- **pre-push** — runs `sync-to-claude.sh` to sync agent files on every push
-- **pre-commit** — runs `scripts/scrub-pii.sh` to strip email addresses from `.crumbs/issues.jsonl` before each commit (PII scrubbing)
+`setup.sh` installs:
+- Agent definitions (`agents/*.md`) to `~/.claude/agents/`
+- Orchestration files to `~/.claude/orchestration/` (excluding `_archive/`)
+- `build-review-prompts.sh` to `~/.claude/orchestration/scripts/`
+- Skills (`skills/*.md`) to `~/.claude/skills/ant-farm-<name>/SKILL.md`
+- `crumb.py` to `~/.local/bin/crumb` (marked executable)
+- `CLAUDE.md` to `~/.claude/CLAUDE.md`
 
-Both hooks are required. Re-run `install-hooks.sh` after pulling upstream changes to get updated hook behavior.
+Re-run `setup.sh` after pulling upstream changes to update installed files. Use `--dry-run` to preview changes.
 
 **Note on `code-reviewer` agent**: The `code-reviewer` agent type (used by Nitpicker reviewers in the
-review pipeline) is a custom Claude Code agent. It is NOT deployed by `sync-to-claude.sh` because it
+review pipeline) is a custom Claude Code agent. It is NOT deployed by `setup.sh` because it
 lives in the user's global `~/.claude/agents/` directory, not in this repo's `agents/` folder. If you
 are setting up this orchestration system on a new machine, you must copy or create
 `~/.claude/agents/code-reviewer.md` manually. You can find the source file in the original

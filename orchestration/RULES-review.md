@@ -20,7 +20,7 @@
             **3b-i. Gather inputs** from the Queen's state file:
             - Review round: read from session state (default: 1)
             - Commit range: round 1 = first session commit..HEAD; round 2+ = first fix commit..HEAD
-            - File list: `git diff --name-only <commit-range>` (deduplicated; exclude `.crumbs/issues.jsonl` and other auto-generated crumbs files)
+            - File list: `git diff --name-only <commit-range>` (deduplicated; exclude `.crumbs/tasks.jsonl` and other auto-generated crumbs files)
             - Task IDs: round 1 = all task IDs; round 2+ = fix task IDs only
             - Timestamp: The Queen generates ONE timestamp at the start of Step 3b using `date +%Y%m%d-%H%M%S` format (YYYYMMDD-HHmmss). Store as `{TIMESTAMP}` (shell: `${TIMESTAMP}`):
               ```bash
@@ -88,7 +88,7 @@
             **Progress log (after Nitpicker team completes round 1):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_COMPLETE|round=<N>|team=complete|report=${SESSION_DIR}/review-reports/review-consolidated-${TIMESTAMP}.md" >> ${SESSION_DIR}/progress.log`
 
 **Step 3c:** User triage — **after CCB PASS and Big Head consolidation completes**:
-            1. Read the consolidated review summary (Big Head sends bead list to Queen via SendMessage — see big-head-skeleton.md step 12)
+            1. Read the consolidated review summary (Big Head sends crumb list to Queen via SendMessage — see big-head-skeleton.md step 12)
             2. Check finding counts: P1, P2, P3
             **Termination check**: If zero P1 and zero P2 findings:
             - Round 2+: P3s already auto-filed by Big Head to "Future Work" epic
@@ -99,7 +99,7 @@
             **DO NOT send shutdown_request to any team member.** The team must remain active for the fix workflow.
             **Round cap — escalate after round 4** (check this FIRST before any fix decision):
             - If current round >= 4 and P1/P2 findings are still present, do NOT start another round
-            - Present full round history to user (round numbers, finding counts, bead IDs)
+            - Present full round history to user (round numbers, finding counts, crumb IDs)
             - Ask user: "Review loop has not converged after 4 rounds. Continue or abort?"
             - Await user decision before taking any further action
             **Only if current round < 4**: determine fix action:
@@ -116,7 +116,7 @@
             - Present findings to user: "Reviews found X P1 and Y P2 issues. Fix now or defer?"
             - **If "fix now"**: proceed to Fix Workflow below, then transition to round N+1 via SendMessage
               - Update session state: increment review round, record fix commit range
-            - **If "defer"**: P1/P2 beads stay open; note deferred items for the Scribe to document at Step 5b; proceed to Step 4
+            - **If "defer"**: P1/P2 crumbs stay open; note deferred items for the Scribe to document at Step 5b; proceed to Step 4
 
             **Fix Workflow** (triggered by auto-fix or "fix now"):
 
@@ -125,8 +125,8 @@
             iterate within the team via SendMessage.
 
             **Step 3c-i. Fix-cycle Scout** — Before spawning fix agents, run a fix-cycle Scout
-            (`scout-organizer`, `model: "opus"`) to plan the fix strategy: which beads to fix, wave
-            grouping, and file conflict analysis. The fix-cycle Scout reads the bead list from Big Head's
+            (`scout-organizer`, `model: "opus"`) to plan the fix strategy: which crumbs to fix, wave
+            grouping, and file conflict analysis. The fix-cycle Scout reads the crumb list from Big Head's
             SendMessage handoff (big-head-skeleton.md step 12).
 
             **Auto-approval**: The fix-cycle Scout's strategy is auto-approved — no user confirmation
@@ -136,10 +136,10 @@
             - SSV PASS → proceed to fix agent spawning (auto-approved)
             - SSV FAIL → re-run Scout with violations listed (max 1 retry); if still failing, escalate to user
 
-            **Progress log (after fix Scout SSV PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_SCOUT_COMPLETE|round=<N>|ssv=pass|fix_beads=<bead-ids>" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after fix Scout SSV PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_SCOUT_COMPLETE|round=<N>|ssv=pass|fix_crumbs=<crumb-ids>" >> ${SESSION_DIR}/progress.log`
 
             **Step 3c-ii. Spawn fix agents into team** — Pantry and CCO are skipped for fix agents
-            (the Big Head bead IS the brief; bead content passed CCB; SSV independently verified the
+            (the Big Head crumb IS the brief; crumb content passed CCB; SSV independently verified the
             strategy). Spawn fix agents into the team in a single message:
             - **N fix DPs** (`model: "sonnet"`, `team_name: "nitpicker-team"`): names `fix-dp-1..N`
               (round 2+: `fix-dp-r2-1..N`)
@@ -148,15 +148,15 @@
             - **fix-pc-dmvdc** (`model: "sonnet"`, `team_name: "nitpicker-team"`): one per round;
               serves all fix DPs in the round via SendMessage
 
-            **Fix DP prompt structure**: minimal — bead is the source of truth:
+            **Fix DP prompt structure**: minimal — crumb is the source of truth:
             ```
             You are fix-dp-N, a fix Dirt Pusher in the Nitpicker team.
-            Your task bead: <bead-id>
-            Run: crumb show <bead-id>
+            Your task crumb: <crumb-id>
+            Run: crumb show <crumb-id>
             Implement the fix. Follow the acceptance criteria exactly.
             After committing:
-            1. Record commit hash: crumb update <bead-id> --note="commit: <hash>"
-            2. SendMessage to fix-pc-wwd: "Fix committed. Bead: <bead-id>. Commit: <hash>. Files changed: <list>."
+            1. Record commit hash: crumb update <crumb-id> --note="commit: <hash>"
+            2. SendMessage to fix-pc-wwd: "Fix committed. Crumb: <crumb-id>. Commit: <hash>. Files changed: <list>."
             Then go idle and wait.
             ```
 
@@ -207,7 +207,7 @@
             **Progress log (after round transition messages sent):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|ROUND_TRANSITION|from_round=<N>|to_round=<N+1>|fix_commits=<range>" >> ${SESSION_DIR}/progress.log`
 
             After the round transition, the loop returns to the top of Step 3c: Big Head consolidates
-            round N+1 reports, CCB runs inside the team, and the Queen reads the new bead list from
+            round N+1 reports, CCB runs inside the team, and the Queen reads the new crumb list from
             Big Head's SendMessage. If zero P1/P2 → proceed to Step 4. If P1/P2 remain and round < 4
             → repeat fix workflow. If round >= 4 → escalate to user.
 

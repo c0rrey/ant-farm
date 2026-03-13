@@ -1,3 +1,5 @@
+> **Note**: This document was written during the Beads era. CLI commands shown as `bd` have been replaced by `crumb` equivalents.
+
 # Audit Findings: Domains A + E (Agent Definitions + Term Consistency)
 **Audited:** 2026-02-21
 **Checks performed:** 10 (A1–A6, E1–E4)

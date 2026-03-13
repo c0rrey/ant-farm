@@ -1,13 +1,13 @@
-# Installation Guide: Hook/Sync Workflow
+# Installation Guide
 
-This guide covers installing and managing the ant-farm orchestration system's pre-push hook and sync mechanism. The hook automatically syncs your agent definitions, templates, and configuration to `~/.claude/` on every `git push`.
+This guide covers installing and managing the ant-farm orchestration system. The setup script (`scripts/setup.sh`) installs agent definitions, orchestration files, skills, the `crumb` CLI, and `CLAUDE.md` to their runtime locations.
 
 ## Table of Contents
 
 1. [Installation](#installation)
-2. [Understanding Sync Behavior](#understanding-sync-behavior)
+2. [Understanding Setup Behavior](#understanding-setup-behavior)
 3. [Backup Strategy](#backup-strategy)
-4. [Uninstalling the Hook](#uninstalling-the-hook)
+4. [Uninstalling](#uninstalling)
 
 ## Installation
 
@@ -15,167 +15,159 @@ This guide covers installing and managing the ant-farm orchestration system's pr
 
 - Git repository initialized in your project (`.git/` directory exists)
 - Bash shell or compatible shell environment
-- Read/write permissions to `.git/hooks/` and `~/.claude/`
+- Read/write permissions to `~/.claude/` and `~/.local/bin/`
 
-### Step 1: Install the Hooks
+### Step 1: Run the Setup Script
 
-`install-hooks.sh` installs two hooks into `.git/hooks/`. Run this command from your project root:
-
-```bash
-./scripts/install-hooks.sh
-```
-
-#### Pre-Push Hook (`pre-push`)
-
-**Purpose**: Automatically syncs agent definitions, templates, and configuration to `~/.claude/` on every `git push`.
-
-This script:
-- Creates `.git/hooks/pre-push` with the hook code
-- Backs up any existing hook to `.git/hooks/pre-push.bak` (safe to re-run)
-- Makes the hook executable
-
-#### Pre-Commit Hook (`pre-commit`)
-
-**Purpose**: Scrubs PII (personally identifiable information) from `.crumbs/tasks.jsonl` before each commit.
-
-`crumb sync` exports raw email addresses from the database into `.crumbs/tasks.jsonl`. The pre-commit hook runs `scripts/scrub-pii.sh` automatically to strip those addresses before the file enters git history.
-
-**Behavior**:
-- Runs only when `.crumbs/tasks.jsonl` is staged for a commit
-- Calls `scripts/scrub-pii.sh` to redact email addresses in place
-- Re-stages the scrubbed file so the clean version is what gets committed
-- Blocks the commit with an error if `scrub-pii.sh` is not found or not executable (only when `tasks.jsonl` is staged)
-
-This script:
-- Creates `.git/hooks/pre-commit` with the hook code
-- Backs up any existing hook to `.git/hooks/pre-commit.bak` (safe to re-run)
-- Makes the hook executable
-
-### Step 2: Perform Initial Sync
-
-After installing the hook, manually run the sync script to update `~/.claude/` immediately:
+`setup.sh` installs all ant-farm components to their runtime locations. Run this command from the project root:
 
 ```bash
-./scripts/sync-to-claude.sh
+./scripts/setup.sh
 ```
 
-This script:
-- Creates `~/.claude/orchestration/` and `~/.claude/agents/` if they don't exist
-- Backs up your existing `~/.claude/CLAUDE.md` to `~/.claude/CLAUDE.md.bak.[timestamp]`
-- Copies your project's `CLAUDE.md` to `~/.claude/CLAUDE.md`
-- Syncs all files from `orchestration/` to `~/.claude/orchestration/` (using rsync --delete)
-- Copies all agent definitions from `agents/` to `~/.claude/agents/`
-- Reports if any agent files were updated (see Step 3 below)
+To preview what would change without writing anything:
+
+```bash
+./scripts/setup.sh --dry-run
+```
+
+The script performs these steps:
+
+1. **Agent definitions** -- copies `agents/*.md` to `~/.claude/agents/`
+2. **Orchestration files** -- copies `orchestration/` to `~/.claude/orchestration/` (excluding `_archive/`)
+3. **Review script** -- copies `scripts/build-review-prompts.sh` to `~/.claude/orchestration/scripts/` and marks it executable
+4. **Skills** -- copies `skills/*.md` to `~/.claude/skills/ant-farm-<name>/SKILL.md`
+5. **Crumb CLI** -- copies `crumb.py` to `~/.local/bin/crumb` and marks it executable
+6. **CLAUDE.md** -- copies `CLAUDE.md` to `~/.claude/CLAUDE.md`
+7. **PATH check** -- warns if `~/.local/bin` is not in your PATH
+8. **Preflight check** -- warns if `~/.claude/agents/code-reviewer.md` is missing (required by the Nitpicker review team)
+
+### Step 2: Verify PATH
+
+If the setup script warns that `~/.local/bin` is not in your PATH, add it to your shell profile:
+
+```bash
+# Add to ~/.zshrc or ~/.bashrc:
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+Then restart your shell or run `source ~/.zshrc`.
+
+Verify the `crumb` CLI is available:
+
+```bash
+crumb --help
+```
 
 ### Step 3: Restart Claude Code
 
-If the sync script reports that agent files were updated:
+If the setup script reports that agent files were installed or updated:
 
 ```
-[ant-farm] Agent files were updated. Reload Claude Code for changes to take effect.
+[ant-farm] Agent files were installed or updated.
+[ant-farm] You MUST restart Claude Code for new/changed agent
+[ant-farm] definitions to take effect.
 ```
 
 Then **fully quit and reopen Claude Code**. Agent types are loaded at startup and won't appear in the available agents list until Claude Code is restarted.
 
 ### Verification
 
-To verify both hooks are installed and executable:
+To verify the installation:
 
 ```bash
-# Confirm both hook files exist and are executable
-ls -la .git/hooks/pre-push
-ls -la .git/hooks/pre-commit
+# Confirm agent files are installed
+ls ~/.claude/agents/
+
+# Confirm orchestration files are installed
+ls ~/.claude/orchestration/
+
+# Confirm crumb CLI is available
+crumb --help
+
+# Confirm skills are installed
+ls ~/.claude/skills/ant-farm-*/
 ```
 
-Both should show `-rwxr-xr-x` permissions.
-
-**Verify the pre-push hook** (syncs `~/.claude/` on push):
+**Verify the pre-commit PII scrubbing** (if `.crumbs/tasks.jsonl` contains email addresses):
 
 ```bash
-# Make a small change to a file
-echo "# Test" >> docs/test.md
-
-# Commit and push
-git add docs/test.md
-git commit -m "test: verify hook installation"
-git push
-
-# Check that ~/.claude/ was updated
-ls -la ~/.claude/orchestration/
-ls -la ~/.claude/agents/
-```
-
-You should see the current date/time in the file modification times.
-
-**Verify the pre-commit hook** (scrubs PII from issues.jsonl):
-
-```bash
-# Stage issues.jsonl and commit — the hook should run automatically
+# Stage tasks.jsonl and commit -- the hook should run automatically
 git add .crumbs/tasks.jsonl
 git commit -m "test: verify pre-commit scrub hook"
 ```
 
 You should see the message: `[ant-farm] PII scrub applied and re-staged: .crumbs/tasks.jsonl`
 
-## Understanding Sync Behavior
+## Understanding Setup Behavior
 
-The sync process performs these operations:
+The setup process copies files from the repo to runtime locations. It is idempotent: re-running updates changed files and leaves unchanged files alone.
 
-### CLAUDE.md Synchronization
+### CLAUDE.md Installation
 
 - **Source**: `{repo-root}/CLAUDE.md`
 - **Target**: `~/.claude/CLAUDE.md`
-- **Behavior**: Unconditional copy with timestamped backup
+- **Behavior**: Copies with timestamped backup of existing file
 - **Why**: Project-specific instructions (like Parallel Work Mode) must be available in `~/.claude/` for the Queen to load at startup
 
 **Backup Location**: `~/.claude/CLAUDE.md.bak.[YYYYMMDDTHHMMSS]`
 
-If you edit `~/.claude/CLAUDE.md` directly, those changes will be overwritten on the next `git push`. Backup files are created but never automatically deleted.
+If you edit `~/.claude/CLAUDE.md` directly, those changes will be overwritten next time you run `setup.sh`. Backup files are created but never automatically deleted.
 
-### Orchestration Directory Synchronization
+### Orchestration Directory Installation
 
 - **Source**: `{repo-root}/orchestration/`
 - **Target**: `~/.claude/orchestration/`
-- **Behavior**: One-way sync without `--delete` (adds/updates files from source, preserves user-created files in target)
+- **Behavior**: File-by-file copy (adds/updates files from source, preserves user-created files in target). Files under `_archive/` are excluded.
 - **Contents**: RULES.md, templates/, reference/, SETUP.md, etc.
 
-Files deleted from the repo's `orchestration/` directory will **not** be automatically removed from `~/.claude/orchestration/`. This preserves any custom files adopters have placed in the target. If you need to remove a stale source file from the target, delete it manually from `~/.claude/orchestration/`.
+Files deleted from the repo's `orchestration/` directory will **not** be automatically removed from `~/.claude/orchestration/`. This preserves any custom files adopters have placed in the target. If you need to remove a stale file from the target, delete it manually from `~/.claude/orchestration/`.
 
-### Agent Definitions Synchronization
+### Agent Definitions Installation
 
 - **Source**: `{repo-root}/agents/`
 - **Target**: `~/.claude/agents/`
 - **Behavior**: File-by-file copy with change detection
 - **Contents**: Custom agent type definitions (.md files)
 
-New agent files require a Claude Code restart to load. Existing agents are updated but don't require a restart unless they define new capabilities.
+New or changed agent files require a Claude Code restart to load.
 
-### File Permissions
+### Skills Installation
 
-The hook preserves file permissions:
-- `~/.claude/CLAUDE.md` — readable by user (600)
-- `~/.claude/orchestration/` files — readable by user (644)
-- `~/.claude/agents/` files — readable by user (644)
+- **Source**: `{repo-root}/skills/*.md`
+- **Target**: `~/.claude/skills/ant-farm-<name>/SKILL.md`
+- **Behavior**: Each skill file gets its own directory named `ant-farm-<basename>`
+- **Contents**: Slash command definitions (e.g., `/ant-farm:work`, `/ant-farm:plan`)
+
+### Crumb CLI Installation
+
+- **Source**: `{repo-root}/crumb.py`
+- **Target**: `~/.local/bin/crumb`
+- **Behavior**: Copy with backup, marked executable
+- **Contents**: The task-tracking CLI used by all agents
+
+### File Backups
+
+The setup script backs up any existing target file that differs from the source before overwriting. Backups use a timestamped `.bak` suffix (e.g., `CLAUDE.md.bak.20260313T142500`). Each run uses a single timestamp for all backups. Unchanged files are not backed up or rewritten.
 
 ## Backup Strategy
 
-The sync process automatically creates timestamped backups of critical files. Understand what is backed up and why.
+The setup process automatically creates timestamped backups of changed files. Understand what is backed up and why.
 
 ### Automatic Backups
 
 **CLAUDE.md Backup**
 
-Every sync backs up the existing `~/.claude/CLAUDE.md` before overwriting:
+Every setup run backs up the existing `~/.claude/CLAUDE.md` before overwriting (if the content differs):
 
 ```
 ~/.claude/CLAUDE.md.bak.20260217T214523
 ~/.claude/CLAUDE.md.bak.20260217T215015
-~/.claude/CLAUDE.md.bak.20260217T220133
 ```
 
-Format: `CLAUDE.md.bak.[YYYYMMDDTHHMMSS]`
+Format: `<filename>.bak.<YYYYMMDDTHHMMSS>`
 
-**When**: Every time `git push` runs the hook
+**When**: Every time `setup.sh` runs and the file has changed
 **Why**: If the repo's CLAUDE.md becomes corrupted or accidentally breaks your Claude Code behavior, you can restore a previous version
 
 **How to Restore**:
@@ -186,20 +178,6 @@ ls -la ~/.claude/CLAUDE.md.bak.*
 
 # Restore a specific backup
 cp ~/.claude/CLAUDE.md.bak.20260217T214523 ~/.claude/CLAUDE.md
-```
-
-**Hook Backups** (if you had previous hooks)
-
-If you re-run `install-hooks.sh` and an existing hook is found, it is backed up before being replaced:
-
-- Pre-push hook backup: `.git/hooks/pre-push.bak`
-- Pre-commit hook backup: `.git/hooks/pre-commit.bak`
-
-These are stored in your local git directory (not synced to remote):
-
-```
-.git/hooks/pre-push.bak
-.git/hooks/pre-commit.bak
 ```
 
 ### Manual Backups
@@ -219,7 +197,7 @@ cp -r ~/.claude.backup.20260217_214523/* ~/.claude/
 
 - **orchestration/** directory — The source is in version control (.git), so restoring from there is safer than relying on backups
 - **agents/** directory — Same rationale as orchestration/
-- **Individual session artifacts** — `.crumbs/agent-summaries/` and other session state are working files, not meant for backup
+- **Session artifacts** — `.crumbs/sessions/` contains working files, not meant for backup
 
 If you need to recover orchestration files, use git:
 
@@ -227,34 +205,38 @@ If you need to recover orchestration files, use git:
 git show HEAD:orchestration/RULES.md > /tmp/recovered-RULES.md
 ```
 
-## Uninstalling the Hooks
+## Uninstalling
 
-If you want to remove the orchestration hooks and stop syncing to `~/.claude/`, follow these steps. Run all commands from your project root.
+If you want to remove ant-farm from your system, follow these steps.
 
-### Step 1: Remove the Hooks
+### Step 1: Remove Installed Files
 
 ```bash
-# Delete the pre-push hook (runs from repo root — not from home directory)
-rm .git/hooks/pre-push
+# Remove agents installed by ant-farm
+rm ~/.claude/agents/scout-organizer.md
+rm ~/.claude/agents/pantry-impl.md
+rm ~/.claude/agents/pest-control.md
+rm ~/.claude/agents/nitpicker.md
+rm ~/.claude/agents/big-head.md
 
-# Delete the pre-commit hook
-rm .git/hooks/pre-commit
+# Remove orchestration directory
+rm -rf ~/.claude/orchestration/
 
-# Alternatively, restore your previous hooks if backups exist
-cp .git/hooks/pre-push.bak .git/hooks/pre-push
-cp .git/hooks/pre-commit.bak .git/hooks/pre-commit
+# Remove skills
+rm -rf ~/.claude/skills/ant-farm-*/
+
+# Remove crumb CLI
+rm ~/.local/bin/crumb
 ```
 
 ### Step 2: Clean Up `~/.claude/` (Optional)
-
-The sync files remain in `~/.claude/` even after removing the hook. To clean up:
 
 ```bash
 # Full removal (WARNING: This deletes all ~/.claude/ content)
 rm -rf ~/.claude/
 
 # Or selective removal (keep only CLAUDE.md)
-rm -rf ~/.claude/orchestration/ ~/.claude/agents/
+rm -rf ~/.claude/orchestration/ ~/.claude/agents/ ~/.claude/skills/
 ```
 
 ### Step 3: Restore Manual CLAUDE.md (If Desired)
@@ -274,57 +256,25 @@ cp ~/.claude/CLAUDE.md.bak.XXXXXXX ~/.claude/CLAUDE.md
 Verify removal:
 
 ```bash
-# Both hooks should no longer exist (commands below should return errors)
-ls -la .git/hooks/pre-push
-ls -la .git/hooks/pre-commit
-
-# This should show error or be empty (depending on your cleanup choice)
+# Check that orchestration is removed
 ls -la ~/.claude/orchestration/
+
+# Check that crumb is removed
+which crumb
 ```
 
 ### Reinstalling After Removal
 
-You can safely reinstall the hook later by re-running the installation steps:
+You can safely reinstall later by re-running the setup script:
 
 ```bash
-./scripts/install-hooks.sh
-./scripts/sync-to-claude.sh
+./scripts/setup.sh
 # Restart Claude Code
 ```
 
-The scripts back up existing files, so re-running is safe.
+The script backs up existing files, so re-running is safe.
 
 ## Troubleshooting
-
-### Hook Not Running on `git push`
-
-**Symptom**: Agents are not updated in `~/.claude/` after pushing.
-
-**Solutions**:
-
-1. Verify the hook is executable:
-   ```bash
-   ls -la .git/hooks/pre-push
-   ```
-   Should show `-rwxr-xr-x` (executable). If not:
-   ```bash
-   chmod +x .git/hooks/pre-push
-   ```
-
-2. Verify the hook file exists and is correct:
-   ```bash
-   cat .git/hooks/pre-push
-   ```
-   Should show the sync script path. If corrupted, reinstall:
-   ```bash
-   ./scripts/install-hooks.sh
-   ```
-
-3. Check if `sync-to-claude.sh` is executable:
-   ```bash
-   ls -la scripts/sync-to-claude.sh
-   chmod +x scripts/sync-to-claude.sh
-   ```
 
 ### Agents Not Appearing in Claude Code
 
@@ -333,19 +283,39 @@ The scripts back up existing files, so re-running is safe.
 **Solution**: Fully quit and reopen Claude Code. Agent types are loaded at startup only.
 
 ```bash
-# Quit Claude Code (⌘Q on macOS, Ctrl+Q on Linux, etc.)
+# Quit Claude Code (Cmd+Q on macOS, Ctrl+Q on Linux, etc.)
 # Then reopen Claude Code application
 ```
+
+### `crumb` Command Not Found
+
+**Symptom**: Running `crumb` returns "command not found".
+
+**Solutions**:
+
+1. Verify `~/.local/bin` is in your PATH:
+   ```bash
+   echo $PATH | tr ':' '\n' | grep local
+   ```
+   If missing, add to your shell profile:
+   ```bash
+   export PATH="$HOME/.local/bin:$PATH"
+   ```
+
+2. Verify the file exists and is executable:
+   ```bash
+   ls -la ~/.local/bin/crumb
+   ```
 
 ### `~/.claude/CLAUDE.md` Overwritten Too Frequently
 
 **Symptom**: Personal edits to `~/.claude/CLAUDE.md` keep getting overwritten.
 
-**Why**: The hook overwrites `~/.claude/CLAUDE.md` on every `git push` to keep project instructions in sync.
+**Why**: The setup script overwrites `~/.claude/CLAUDE.md` to keep project instructions in sync.
 
 **Solutions**:
 
-1. **Edit the repo's CLAUDE.md instead**: Changes made to the repo's `CLAUDE.md` will sync to `~/.claude/CLAUDE.md`.
+1. **Edit the repo's CLAUDE.md instead**: Changes made to the repo's `CLAUDE.md` will be installed to `~/.claude/CLAUDE.md` on the next setup run.
 
 2. **Create a personal global instructions file**: If you have personal Claude Code preferences, store them in a separate file and source them from the synced CLAUDE.md:
    ```markdown
@@ -354,40 +324,30 @@ The scripts back up existing files, so re-running is safe.
    ```
    Then create `~/.claude-personal.md` for your personal rules.
 
-3. **Use git hooks to preserve local changes**: Advanced users can modify `.git/hooks/pre-push` to preserve local CLAUDE.md edits, but this breaks the intended sync behavior.
+### Permission Denied on `~/.claude/`
 
-### Sync Script Errors
+**Symptom**: Running `setup.sh` produces permission errors.
 
-**Symptom**: Running `sync-to-claude.sh` produces errors.
+**Solution**:
+```bash
+# Check permissions
+ls -ld ~/.claude/
 
-**Common issues**:
+# Fix permissions
+chmod 755 ~/.claude/
+chmod 755 ~/.claude/orchestration/
+chmod 755 ~/.claude/agents/
+```
 
-1. **rsync not installed** (rare on macOS/Linux):
-   ```bash
-   # Install rsync
-   brew install rsync  # macOS
-   sudo apt-get install rsync  # Linux
-   ```
+### Disk Space Issues
 
-2. **Permission denied on `~/.claude/`**:
-   ```bash
-   # Check permissions
-   ls -ld ~/.claude/
+```bash
+# Check available disk space
+df -h ~
 
-   # Fix permissions
-   chmod 755 ~/.claude/
-   chmod 755 ~/.claude/orchestration/
-   chmod 755 ~/.claude/agents/
-   ```
-
-3. **Disk space issues**:
-   ```bash
-   # Check available disk space
-   df -h ~
-
-   # Clear old CLAUDE.md backups if needed
-   rm ~/.claude/CLAUDE.md.bak.*
-   ```
+# Clear old CLAUDE.md backups if needed
+rm ~/.claude/CLAUDE.md.bak.*
+```
 
 ## Next Steps
 
@@ -396,11 +356,9 @@ After installation:
 1. **Read orchestration/RULES.md**: Understand the Queen's workflow rules
 2. **Read orchestration/templates/**: Review available agent templates for your use case
 3. **Start a session**: Use "Let's get to work on: <task-ids>" to begin collaborative work
-4. **Monitor syncs**: Check `~/.claude/` after pushes to confirm agents and rules are current
 
 ## See Also
 
-- `orchestration/SETUP.md` — Orchestration system overview and quick setup
-- `orchestration/RULES.md` — Queen and subagent workflow rules
-- `scripts/install-hooks.sh` — Installation script source
-- `scripts/sync-to-claude.sh` — Sync script source
+- `orchestration/SETUP.md` -- Orchestration system overview and quick setup
+- `orchestration/RULES.md` -- Queen and subagent workflow rules
+- `scripts/setup.sh` -- Setup script source

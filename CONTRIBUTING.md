@@ -6,7 +6,7 @@ For project setup and wiring orchestration into a new project, see `orchestratio
 
 ## Adding a New Agent
 
-Agent files live in `agents/` and are synced to `~/.claude/agents/` by the pre-push hook.
+Agent files live in `agents/` and are installed to `~/.claude/agents/` by `scripts/setup.sh`.
 
 ### File format
 
@@ -104,7 +104,7 @@ Templates live in `orchestration/templates/`. Each template has a specific reade
 Templates use `{PLACEHOLDER}` (single braces) for values filled by the Queen or Pantry at spawn time. Review skeletons use `{{SLOT_NAME}}` (double braces) for values filled by `build-review-prompts.sh`.
 
 Common placeholders:
-- `{TASK_ID}`, `{TASK_SUFFIX}` -- bead identifiers
+- `{TASK_ID}`, `{TASK_SUFFIX}` -- crumb identifiers
 - `{SESSION_DIR}` -- session artifact directory path
 - `{REVIEW_ROUND}`, `{TIMESTAMP}` -- review cycle metadata
 - `{{COMMIT_RANGE}}`, `{{CHANGED_FILES}}`, `{{TASK_IDS}}` -- review slot markers
@@ -120,9 +120,9 @@ Common placeholders:
 
 ### Manual validation
 
-1. **Run the sync script** to deploy changes to `~/.claude/`:
+1. **Run the setup script** to deploy changes to `~/.claude/`:
    ```bash
-   ./scripts/sync-to-claude.sh
+   ./scripts/setup.sh
    ```
 
 2. **Restart Claude Code** if you changed any agent files in `agents/`.
@@ -160,32 +160,34 @@ The orchestration framework runs from `~/.claude/`, not from the repo. Changes i
 
 ### What gets synced
 
-`scripts/sync-to-claude.sh` copies:
-- `CLAUDE.md` to `~/.claude/CLAUDE.md` (backs up existing file first)
-- `orchestration/` to `~/.claude/orchestration/` (via rsync without `--delete`, excluding `scripts/` and `_archive/` — existing files in the target that are not in the source are preserved, not deleted)
-- `scripts/build-review-prompts.sh` to `~/.claude/orchestration/scripts/`
+`scripts/setup.sh` installs:
 - `agents/*.md` to `~/.claude/agents/`
+- `orchestration/` to `~/.claude/orchestration/` (excluding `_archive/` — existing files in the target that are not in the source are preserved)
+- `scripts/build-review-prompts.sh` to `~/.claude/orchestration/scripts/`
+- `skills/*.md` to `~/.claude/skills/ant-farm-<name>/SKILL.md`
+- `crumb.py` to `~/.local/bin/crumb`
+- `CLAUDE.md` to `~/.claude/CLAUDE.md` (backs up existing file first)
 
 ### When syncing happens
 
-- **Automatically** on every `git push`, via the pre-push hook installed by `scripts/install-hooks.sh`
-- **Manually** by running `./scripts/sync-to-claude.sh` for testing before you push
+- **Manually** by running `./scripts/setup.sh` after pulling changes or editing local files
+- The setup script is idempotent: re-running it updates files and backs up any changed targets with a timestamped `.bak` suffix
 
-### Installing the hooks
+### Running setup
 
 ```bash
-./scripts/install-hooks.sh
+./scripts/setup.sh
 ```
 
-This installs two hooks:
-- **pre-push** -- runs `sync-to-claude.sh` on every push
-- **pre-commit** -- runs `scrub-pii.sh` to strip email addresses from `.crumbs/tasks.jsonl` before commits
+Use `--dry-run` to preview changes without writing:
 
-**Re-run after pulling changes.** If `scripts/install-hooks.sh` is updated upstream (e.g. after a `git pull`), re-run it to get the new hook behavior. The installed hook in `.git/hooks/` is not updated automatically — it only changes when you run `install-hooks.sh` again.
+```bash
+./scripts/setup.sh --dry-run
+```
 
 ### After syncing
 
-If agent files changed, restart Claude Code. The sync script prints a warning when agent files differ.
+If agent files changed, restart Claude Code. The setup script prints a warning when agent files differ.
 
 ## Cross-File Dependencies
 
@@ -246,6 +248,6 @@ Changes to one file often require updates to others. This table lists the critic
 
 1. Identify which file you changed and check the tables above
 2. Update all listed dependent files
-3. Run `./scripts/sync-to-claude.sh`
+3. Run `./scripts/setup.sh`
 4. Restart Claude Code if agent files changed
 5. Test with a single-task orchestration run

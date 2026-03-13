@@ -1,6 +1,6 @@
 # Architect Skeleton Template
 
-## Instructions for the Queen
+## Instructions for the Planner
 
 Fill in all `{PLACEHOLDER}` values (uppercase) and use the result as the Task tool
 `prompt` parameter. The agent-facing text starts below the `---` separator.
@@ -21,12 +21,12 @@ If any prerequisite is missing, do NOT spawn the Architect — the missing input
 will produce incomplete decomposition.
 
 **Term definitions (canonical across all orchestration templates):**
-- `{DECOMPOSE_DIR}` — decomposition working directory (e.g., `.crumbs/decompose/_decompose-abc123/`)
+- `{DECOMPOSE_DIR}` — decomposition working directory (e.g., `.crumbs/sessions/_decompose-abc123/`)
 - `{CODEBASE_ROOT}` — absolute path to the repository root
 - `{SPEC_PATH}` — absolute path to spec.md (typically `{DECOMPOSE_DIR}/spec.md`)
 
 Placeholders:
-- `{DECOMPOSE_DIR}`: absolute path to the decomposition working directory — pre-created by Queen
+- `{DECOMPOSE_DIR}`: absolute path to the decomposition working directory — pre-created by Planner
 - `{CODEBASE_ROOT}`: absolute path to the repository root
 - `{SPEC_PATH}`: absolute path to spec.md (set to `{DECOMPOSE_DIR}/spec.md`)
 
@@ -77,15 +77,15 @@ At a glance:
    crumb trail create "{trail-title}"
    crumb create --from-json /tmp/crumb-{slug}.json
    crumb link {crumb-id} --parent {trail-id}
-   crumb link {blocker-id} --blocks {blocked-id}
+   crumb link {blocked-id} --blocked-by {blocker-id}
    ```
-   The CHILD/BLOCKED crumb is the first argument in both link patterns.
+   The BLOCKED crumb is the positional argument in both link patterns.
 
 8. **Write decomposition-brief.md** — Write `{DECOMPOSE_DIR}/decomposition-brief.md`
    with: codebase map, trail structure, spec coverage table, dependency graph,
    cross-trail deps, agent type summary, research integration notes.
 
-9. **Return summary** — Return trail IDs, crumb count, coverage verdict to Queen.
+9. **Return summary** — Return trail IDs, crumb count, coverage verdict to Planner.
 
 ---
 
@@ -101,7 +101,7 @@ should be merged unless it stands alone for complexity reasons (document why).
 
 Every requirement and acceptance criterion in spec.md must map to at least one
 crumb. No requirement may be silently dropped. If the spec is incomplete, note
-the gap in decomposition-brief.md and flag it for the Queen — do NOT invent
+the gap in decomposition-brief.md and flag it for the Planner — do NOT invent
 requirements to fill gaps.
 
 ### Prohibitions (no exceptions)
@@ -131,7 +131,7 @@ requirements to fill gaps.
 
 ## Output
 
-After successful completion, return to the Queen:
+After successful completion, return to the Planner:
 
 ```
 Spec: {SPEC_PATH}

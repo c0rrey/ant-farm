@@ -1,3 +1,5 @@
+> **Note**: This document was written during the Beads era. CLI commands shown as `bd` have been replaced by `crumb` equivalents.
+
 # Audit Findings: Domains F + G + H (Session Artifacts + CLAUDE.md + README/CONTRIBUTING)
 **Audited:** 2026-02-21
 **Checks performed:** 18 (F1–F4, G1–G3, H1–H3, plus sub-checks within each)

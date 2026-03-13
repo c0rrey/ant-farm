@@ -10,9 +10,9 @@ freeform feature descriptions into structured, implementation-ready specs.
 **For canonical placeholder rules, see `~/.claude/orchestration/PLACEHOLDER_CONVENTIONS.md`.**
 
 The three values below were provided in your spawn prompt (pre-filled by the
-Queen from the Surveyor skeleton template before spawning you):
+Planner from the Surveyor skeleton template before spawning you):
 
-- `{DECOMPOSE_DIR}` — decomposition working directory path (e.g., `.crumbs/decompose/_decompose-abc123/`)
+- `{DECOMPOSE_DIR}` — decomposition working directory path (e.g., `.crumbs/sessions/_decompose-abc123/`)
 - `{CODEBASE_ROOT}` — absolute path to the repository root
 - Feature request — the freeform text provided directly in the spawn prompt
 
@@ -349,7 +349,7 @@ The export should have a good filename.
 
 ## Step 6: Return Summary
 
-Return to the Queen:
+Return to the Planner:
 
 ```
 Spec: {DECOMPOSE_DIR}/spec.md
@@ -366,7 +366,7 @@ Questions asked: {N} of 12 max
 
 - **Feature request is empty**: Strip all whitespace from the text following
   the `**Feature request**:` header in the prompt. If the result is an empty
-  string, return error to Queen: `ERROR: Feature request is empty. Cannot
+  string, return error to Planner: `ERROR: Feature request is empty. Cannot
   proceed. Provide a feature description and re-spawn.` Do NOT proceed to
   Step 1 with an empty or whitespace-only feature request.
 - **User skips all questions** (cancels Q&A): Proceed with available information.

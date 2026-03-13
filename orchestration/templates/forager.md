@@ -9,13 +9,13 @@ one focus area against a feature spec and write a concise research brief.
 
 **For canonical placeholder rules, see `~/.claude/orchestration/PLACEHOLDER_CONVENTIONS.md`.**
 
-The values below were provided in your spawn prompt (pre-filled by the Queen
+The values below were provided in your spawn prompt (pre-filled by the Planner
 from the Forager skeleton template before spawning you):
 
 - `{FOCUS_AREA}` — one of: `Stack`, `Architecture`, `Pitfall`, `Pattern`
 - `{SPEC_PATH}` — absolute path to the spec file
 - `{DECOMPOSE_DIR}` — decomposition working directory path
-  (e.g., `.crumbs/decompose/_decompose-abc123/`)
+  (e.g., `.crumbs/sessions/_decompose-abc123/`)
 
 ---
 
@@ -25,7 +25,7 @@ These rules are **mechanically enforced**. Violating them causes your output
 to be discarded and the Forager re-spawned.
 
 1. **100-line hard cap** — Your output file MUST NOT exceed 100 lines. The
-   Queen truncates at line 100 before passing your output downstream. Every
+   Planner truncates at line 100 before passing your output downstream. Every
    line must earn its place. Prefer bullet points over prose. Omit preamble,
    summaries, and transitional sentences.
 
@@ -337,7 +337,7 @@ draft exceeds 100 lines, cut in this order:
 
 ## Step 4: Return Summary
 
-Return to the Queen in this exact format:
+Return to the Planner in this exact format:
 
 ```
 Focus area: {FOCUS_AREA}
@@ -353,13 +353,13 @@ Verdict: {one sentence: what the Architect most needs to know from this research
 
 ## Error Handling
 
-- **Spec file not found**: Return error to Queen:
+- **Spec file not found**: Return error to Planner:
   `ERROR: Spec file not found at {SPEC_PATH}. Cannot proceed. Verify path and re-spawn.`
-- **Spec file empty**: Return error to Queen:
+- **Spec file empty**: Return error to Planner:
   `ERROR: Spec file at {SPEC_PATH} is empty. Cannot proceed.`
 - **Decompose dir does not exist**: Create it with `mkdir -p {DECOMPOSE_DIR}/research`
   before writing output.
-- **Focus area not recognized**: Return error to Queen:
+- **Focus area not recognized**: Return error to Planner:
   `ERROR: Unknown focus area "{FOCUS_AREA}". Valid values: Stack, Architecture, Pitfall, Pattern.`
 - **Greenfield project (Pattern only)**: Write skip file and return.
   See Pattern section above for exact skip format.

@@ -1,6 +1,6 @@
 # Surveyor Skeleton Template
 
-## Instructions for the Queen
+## Instructions for the Planner
 
 Fill in all `{PLACEHOLDER}` values (uppercase) and use the result as the Task tool
 `prompt` parameter.
@@ -10,12 +10,12 @@ user interaction (`AskUserQuestion`) and requirements synthesis — these requir
 most capable model.
 
 **Term definitions (canonical across all orchestration templates):**
-- `{DECOMPOSE_DIR}` — decomposition working directory path (e.g., `.crumbs/decompose/_decompose-abc123/`)
+- `{DECOMPOSE_DIR}` — decomposition working directory path (e.g., `.crumbs/sessions/_decompose-abc123/`)
 - `{CODEBASE_ROOT}` — absolute path to the repository root (e.g., `/Users/dev/myproject`)
 - `{FEATURE_REQUEST}` — freeform text of the feature request, provided by the user
 
 Placeholders:
-- `{DECOMPOSE_DIR}`: absolute path to the decomposition working directory — pre-created by Queen
+- `{DECOMPOSE_DIR}`: absolute path to the decomposition working directory — pre-created by Planner
 - `{CODEBASE_ROOT}`: absolute path to the repository root
 - `{FEATURE_REQUEST}`: the full text of the user's feature request (may be multi-line)
 
@@ -171,7 +171,7 @@ Errors should be handled gracefully.
 
 ## Return Format
 
-After writing spec.md, return to the Queen:
+After writing spec.md, return to the Planner:
 
 ```
 Spec: {DECOMPOSE_DIR}/spec.md

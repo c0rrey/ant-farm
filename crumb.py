@@ -530,9 +530,16 @@ def cmd_list(args: argparse.Namespace) -> None:
         results = [t for t in results if t.get("type") == args.filter_type]
 
     if args.agent_type:
-        results = [t for t in results if t.get("agent_type") == args.agent_type]
+        results = [
+            t for t in results
+            if (t.get("scope") or {}).get("agent_type") == args.agent_type
+            or t.get("agent_type") == args.agent_type  # flat fallback
+        ]
 
     if args.parent:
+        # Check both top-level "parent" and "links.parent" for forward
+        # compatibility — some records may use the flat layout while the
+        # spec-canonical location is links.parent.
         results = [
             t for t in results
             if t.get("parent") == args.parent
@@ -622,6 +629,7 @@ def cmd_show(args: argparse.Namespace) -> None:
         ("notes", "Notes"),
         ("created_at", "Created At"),
         ("updated_at", "Updated At"),
+        ("closed_at", "Closed At"),
     ]
 
     for key, label in fields:
@@ -693,6 +701,10 @@ def cmd_create(args: argparse.Namespace) -> None:
                 payload["type"] = args.crumb_type
             if args.description:
                 payload["description"] = args.description
+
+        # Reject trail creation via crumb create; use 'crumb trail create' instead
+        if payload.get("type") == "trail":
+            die("use 'crumb trail create' to create trails")
 
         # --- assign ID ---
         if "id" in payload and payload["id"]:
@@ -766,7 +778,7 @@ def cmd_update(args: argparse.Namespace) -> None:
         # --- status transition guard ---
         if args.status is not None:
             current_status = crumb.get("status", "open")
-            if current_status == "closed" and args.status != "open":
+            if current_status == "closed":
                 die(
                     f"cannot transition from 'closed' to '{args.status}'. "
                     f"Use 'crumb reopen {args.id}' to reopen first."
@@ -790,6 +802,28 @@ def cmd_update(args: argparse.Namespace) -> None:
             if crumb.get("description") != args.description:
                 crumb["description"] = args.description
                 changed = True
+
+        # --- partial JSON merge ---
+        if getattr(args, "from_json", None) is not None:
+            try:
+                extra: Dict[str, Any] = json.loads(args.from_json)
+            except json.JSONDecodeError as exc:
+                die(f"invalid JSON in --from-json: {exc}")
+            if not isinstance(extra, dict):
+                die("--from-json must be a JSON object, not a list or scalar")
+            # Merge fields; skip protected keys that have dedicated flags or
+            # guarded transitions.  "status" must go through --status (which
+            # enforces the closed→open gate).  "closed_at" is managed by
+            # close/reopen and must not be set directly.
+            protected = {"id", "created_at", "status", "closed_at"}
+            for key, value in extra.items():
+                if key in protected:
+                    continue
+                if isinstance(value, dict) and isinstance(crumb.get(key), dict):
+                    crumb[key].update(value)
+                else:
+                    crumb[key] = value
+            changed = True
 
         # --- note append ---
         if args.note is not None:
@@ -954,6 +988,8 @@ def cmd_ready(args: argparse.Namespace) -> None:
         t["id"]: t for t in tasks if "id" in t
     }
 
+    # Only status=="open" crumbs are included; in_progress crumbs are
+    # intentionally excluded — they've already been claimed by an agent.
     results = [
         t
         for t in tasks
@@ -1002,6 +1038,8 @@ def cmd_blocked(args: argparse.Namespace) -> None:
         t["id"]: t for t in tasks if "id" in t
     }
 
+    # Only status=="open" crumbs are included; in_progress crumbs are
+    # intentionally excluded — they've already been claimed by an agent.
     results = [
         t
         for t in tasks
@@ -1309,16 +1347,13 @@ def _cmd_trail_close(args: argparse.Namespace) -> None:
             c for c in children if c.get("status") != "closed"
         ]
         if open_children:
-            print(
-                f"error: cannot close trail '{args.id}': {len(open_children)} open child(ren):",
-                file=sys.stderr,
-            )
+            lines = [f"cannot close trail '{args.id}': {len(open_children)} open child(ren):"]
             for child in open_children:
                 cid = child.get("id", "?")
                 title = child.get("title", "")
                 status = child.get("status", "")
-                print(f"  {cid}  {status}  {title}", file=sys.stderr)
-            sys.exit(1)
+                lines.append(f"  {cid}  {status}  {title}")
+            die("\n".join(lines))
 
         now = now_iso()
         trail["status"] = "closed"
@@ -1769,6 +1804,9 @@ def cmd_doctor(args: argparse.Namespace) -> None:
     - Orphan crumbs (non-trail records with no parent — warning)
 
     With --fix, removes dangling blocked_by references atomically.
+    Note: --fix is an implementation extension not documented in the
+    design spec; the spec says "optionally auto-repairs" without naming
+    the flag.
 
     Exit code: 0 if no errors (warnings alone do not set exit code 1);
                1 if any errors are found.
@@ -1986,6 +2024,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_update.add_argument("--title", metavar="TITLE")
     p_update.add_argument("--priority", choices=VALID_PRIORITIES)
     p_update.add_argument("--description", metavar="TEXT")
+    p_update.add_argument("--from-json", dest="from_json", metavar="JSON",
+                          help="Merge a JSON object into the crumb (partial update)")
     p_update.set_defaults(func=cmd_update)
 
     # --- close ---

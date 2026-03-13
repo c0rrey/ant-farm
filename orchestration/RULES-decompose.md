@@ -115,7 +115,7 @@ The Planner's context window is restricted to prevent bloat. The following are e
 
 ```bash
 DECOMPOSE_ID=$(date +%Y%m%d-%H%M%S)
-DECOMPOSE_DIR=".crumbs/decompose/_decompose-${DECOMPOSE_ID}"
+DECOMPOSE_DIR=".crumbs/sessions/_decompose-${DECOMPOSE_ID}"
 mkdir -p "${DECOMPOSE_DIR}/research"
 ```
 
@@ -169,7 +169,15 @@ A structured spec has ALL of these:
 A freeform request lacks one or more of these. When in doubt, treat as freeform.
 
 **If structured spec:** Write the input verbatim to `{DECOMPOSE_DIR}/spec.md`. Skip Step 2
-(Surveyor). Proceed directly to Step 3 (Research). Record in progress log:
+(Surveyor). Then prompt the user:
+
+> "This looks like a structured spec. Want me to run research agents to investigate technical
+> decisions before decomposing, or decompose directly?"
+
+- If research requested → proceed to Step 3 (Foragers).
+- If direct decomposition → skip to Step 4 (Architect).
+
+Record in progress log:
 ```bash
 echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|INPUT_CLASS|structured|spec=${DECOMPOSE_DIR}/spec.md" \
   >> "${DECOMPOSE_DIR}/progress.log"
@@ -307,23 +315,47 @@ The Architect:
 7. Creates trails and crumbs via `crumb` CLI
 8. Writes `{DECOMPOSE_DIR}/decomposition-brief.md`
 
-**TDV gate** (HARD GATE — blocks Step 5):
+**Architect output gate** (quick sanity check before TDV):
 
-After the Architect returns, verify `{DECOMPOSE_DIR}/decomposition-brief.md` passes ALL of the
-following:
-- [ ] File exists and is non-empty
-- [ ] `**Coverage verdict**` line shows PASS (not FAIL)
-- [ ] Trail count is 1 or more
-- [ ] Crumb count is 1 or more
-- [ ] No circular dependencies noted in the Dependency Graph section
+After the Architect returns, verify these prerequisites before spawning TDV:
+- [ ] `{DECOMPOSE_DIR}/decomposition-brief.md` exists and is non-empty
 - [ ] Return summary from the Architect includes `Coverage: N/N spec requirements — PASS`
 
-**On TDV PASS**: Read `{DECOMPOSE_DIR}/decomposition-brief.md` (permitted) to confirm trail and
-crumb counts. Proceed to Step 5.
+If either check fails, re-spawn the Architect with the specific issue. Do NOT spawn TDV on
+a missing or incomplete brief.
 
-**On TDV FAIL**: Re-spawn the Architect with the specific violations (coverage gaps, circular
-deps, or missing sections). Maximum **2 retries**. If TDV still fails after two retries:
-present the failure details to the user and await instruction.
+```bash
+echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|ARCHITECT_COMPLETE|brief=${DECOMPOSE_DIR}/decomposition-brief.md" \
+  >> "${DECOMPOSE_DIR}/progress.log"
+```
+
+---
+
+**Step 5:** Verification — spawn Pest Control for TDV (Trail Decomposition Verification).
+
+TDV is a **Pest Control spawn**, not an inline check. Spawn Pest Control using the TDV checkpoint
+from `orchestration/templates/checkpoints.md` (section "Trail Decomposition Verification (TDV)").
+
+**Note**: The TDV checkpoint template uses `{SESSION_DIR}` as its output path placeholder. During
+decomposition, substitute `{DECOMPOSE_DIR}` for `{SESSION_DIR}` when filling the spawn prompt.
+
+```
+Task(
+  subagent_type="pest-control",
+  model="haiku",
+  prompt="<TDV checkpoint from checkpoints.md, with {SESSION_DIR} replaced by {DECOMPOSE_DIR}>"
+)
+```
+
+**TDV gate** (HARD GATE — blocks Step 6):
+
+**On TDV PASS**: Read `{DECOMPOSE_DIR}/decomposition-brief.md` (permitted) to confirm trail and
+crumb counts. Proceed to Step 6.
+
+**On TDV FAIL**: Re-spawn the Architect with the specific violations from the TDV report
+(coverage gaps, circular deps, missing fields, scope conflicts). Maximum **2 retries**. After
+each Architect retry, re-run TDV. If TDV still fails after two Architect retries, present the
+failure details to the user and await instruction.
 
 ```bash
 echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|TDV|pass|trails=<N>|crumbs=<N>|brief=${DECOMPOSE_DIR}/decomposition-brief.md" \
@@ -332,33 +364,14 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|TDV|pass|trails=<N>|crumbs=<N>|brief=${DECO
 
 ---
 
-**Step 5:** Verification — confirm the decomposition is ready for implementation sessions.
+**Step 6:** Handoff — copy artifacts, present results, and close the decomposition session.
 
-Run these checks:
-```bash
-# Verify spec.md exists and is readable
-[ -s "${DECOMPOSE_DIR}/spec.md" ] || echo "ERROR: spec.md missing or empty"
-
-# Verify decomposition-brief.md exists and is readable
-[ -s "${DECOMPOSE_DIR}/decomposition-brief.md" ] || echo "ERROR: decomposition-brief.md missing or empty"
-
-# Verify all four research briefs exist
-for focus in stack architecture pitfall pattern; do
-  [ -s "${DECOMPOSE_DIR}/research/${focus}.md" ] \
-    || echo "ERROR: research/${focus}.md missing or empty"
-done
-```
-
-If any check fails, surface the error to the user before proceeding.
+Copy the decomposition brief to the tracked `.crumbs/` directory and stage it:
 
 ```bash
-echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|DECOMPOSE_VERIFIED|complete|spec=${DECOMPOSE_DIR}/spec.md|brief=${DECOMPOSE_DIR}/decomposition-brief.md" \
-  >> "${DECOMPOSE_DIR}/progress.log"
+cp "${DECOMPOSE_DIR}/decomposition-brief.md" ".crumbs/decomposition-brief.md"
+git add .crumbs/decomposition-brief.md
 ```
-
----
-
-**Step 6:** Handoff — present results to the user and close the decomposition session.
 
 Report the following to the user:
 
@@ -389,7 +402,7 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|DECOMPOSE_COMPLETE|handoff=done" \
 |------|------|--------|----------------|
 | Spec quality gate | After Step 2 (Surveyor) | Step 3 (Forager spawn) | Re-spawn Surveyor with violations; max 1 retry; escalate to user |
 | Research complete | After Step 3 (all Foragers) | Step 4 (Architect spawn) | Re-spawn failed Forager(s); max 1 retry each; escalate to user |
-| TDV PASS | After Step 4 (Architect) | Step 5 (Verification) | Re-spawn Architect with violations; max 2 retries; escalate to user |
+| TDV PASS | After Step 5 (Pest Control TDV) | Step 6 (Handoff) | Re-spawn Architect with violations; max 2 retries; escalate to user |
 
 ---
 
@@ -431,7 +444,7 @@ Omitting `model` causes the agent to inherit the Planner's model, wasting tokens
 ## Decompose Directory Structure
 
 ```
-.crumbs/decompose/_decompose-{DECOMPOSE_ID}/
+.crumbs/sessions/_decompose-{DECOMPOSE_ID}/
 ├── spec.md                    ← Surveyor output (or user-provided structured spec)
 ├── decomposition-brief.md     ← Architect output
 ├── progress.log               ← Append-only milestone log

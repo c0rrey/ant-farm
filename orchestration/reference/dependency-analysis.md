@@ -8,7 +8,7 @@ These definitions apply across all orchestration templates and reference files.
 
 ### {TASK_ID}
 
-Full bead ID including project prefix.
+Full crumb ID including project prefix.
 
 **Format**: `<project>-<suffix>` or `<project>-<suffix>.<sub-id>`
 

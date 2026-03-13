@@ -1,4 +1,4 @@
-<!-- Reader: the Architect agent. The Queen does NOT read this file. -->
+<!-- Reader: the Architect agent. The Planner does NOT read this file. -->
 # Decomposition Workflow
 
 You are **the Architect**. This file defines your complete workflow.
@@ -8,7 +8,7 @@ Follow every step exactly. Do NOT skip steps, reorder steps, or stop early.
 
 ## Term Definitions
 
-- `{DECOMPOSE_DIR}` — decomposition working directory (e.g., `.crumbs/decompose/_decompose-abc123/`)
+- `{DECOMPOSE_DIR}` — decomposition working directory (e.g., `.crumbs/sessions/_decompose-abc123/`)
 - `{CODEBASE_ROOT}` — absolute path to the repository root
 - A **trail** — a named, independently deployable group of related crumbs (analogous to an epic)
 - A **crumb** — one atomic unit of work: 5-8 files, one agent, concrete verifiable acceptance criteria
@@ -212,16 +212,26 @@ Record the returned trail ID. You will use it when creating crumbs.
 
 ### Create Crumbs
 
-For each crumb, construct a JSON object with these fields:
+For each crumb, construct a JSON object with nested `scope` and `links` objects:
 
 ```json
 {
   "title": "...",
+  "type": "task",
+  "status": "open",
   "description": "...",
-  "agent_type": "...",
   "acceptance_criteria": ["...", "..."],
-  "files": ["path/to/file.py", "path/to/test_file.py"],
-  "blocked_by": []
+  "scope": {
+    "files": ["path/to/file.py", "path/to/test_file.py"],
+    "agent_type": "..."
+  },
+  "links": {
+    "blocked_by": [],
+    "parent": "",
+    "discovered_from": null
+  },
+  "notes": [],
+  "priority": "P2"
 }
 ```
 
@@ -230,8 +240,9 @@ For each crumb, construct a JSON object with these fields:
 ```json
 {
   "title": "Add session store with TTL expiry",
+  "type": "task",
+  "status": "open",
   "description": "Implement the Redis-backed session store used by the login flow. Sessions must expire after 24 hours. The store must be injected as a dependency so it can be replaced with an in-memory stub in tests.",
-  "agent_type": "python-pro",
   "acceptance_criteria": [
     "Running `pytest tests/test_session_store.py` passes with zero failures.",
     "`SessionStore.create(user_id)` returns a token string of exactly 64 hex characters.",
@@ -239,14 +250,23 @@ For each crumb, construct a JSON object with these fields:
     "`SessionStore.get(token)` returns the user_id dict for a valid, non-expired token.",
     "If the Redis connection is unavailable at import time, the module raises `ConfigurationError` with message 'Redis host not reachable'."
   ],
-  "files": [
-    "auth/session_store.py",
-    "auth/errors.py",
-    "tests/test_session_store.py",
-    "tests/conftest.py",
-    "config/settings.py"
-  ],
-  "blocked_by": []
+  "scope": {
+    "files": [
+      "auth/session_store.py",
+      "auth/errors.py",
+      "tests/test_session_store.py",
+      "tests/conftest.py",
+      "config/settings.py"
+    ],
+    "agent_type": "python-pro"
+  },
+  "links": {
+    "blocked_by": [],
+    "parent": "",
+    "discovered_from": null
+  },
+  "notes": [],
+  "priority": "P2"
 }
 ```
 
@@ -284,10 +304,10 @@ Reversing the arguments creates a wrong-direction dependency. Verify with
 For each crumb that has `blocked_by` entries:
 
 ```bash
-crumb link {blocker-crumb-id} --blocks {blocked-crumb-id}
+crumb link {blocked-crumb-id} --blocked-by {blocker-crumb-id}
 ```
 
-The BLOCKER is the first argument; the BLOCKED crumb is the second.
+The BLOCKED crumb is the positional argument; the BLOCKER goes after `--blocked-by`.
 
 ---
 
@@ -363,9 +383,9 @@ How each Forager brief influenced decomposition decisions:
 
 ---
 
-## Step 9: Return Summary to Queen
+## Step 9: Return Summary to Planner
 
-After writing decomposition-brief.md, return to the Queen:
+After writing decomposition-brief.md, return to the Planner:
 
 ```
 Spec: {DECOMPOSE_DIR}/spec.md
@@ -396,5 +416,5 @@ Cross-trail deps: {N} (see brief for details)
    Split it.
 8. **No invented requirements.** Do not add requirements the spec does not contain.
    If the spec is missing something important, note it in the decomposition-brief.md
-   under a `## Gaps` section and flag it for the Queen — but do NOT create crumbs
+   under a `## Gaps` section and flag it for the Planner — but do NOT create crumbs
    for things outside the spec.

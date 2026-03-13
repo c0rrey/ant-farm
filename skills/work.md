@@ -114,18 +114,7 @@ Store `SESSION_ID` and `SESSION_DIR` in context. Pass `SESSION_DIR` explicitly t
 
 ## Step 3 — Launch Queen Orchestration
 
-Read `orchestration/RULES.md`. Follow its workflow from **Step 1** (Recon / Scout spawn) onward, **EXCEPT** substitute the following crumbs-specific commands wherever RULES.md references `bd` equivalents:
-
-| RULES.md `bd` command | crumbs substitute |
-|---|---|
-| `bd ready` | `crumb ready` |
-| `bd list --in-progress` | `crumb list --in-progress` |
-| `bd blocked` | `crumb blocked` |
-| `bd close <id>` | `crumb close <id>` |
-| `bd create --title "..."` | `crumb create --title "..."` |
-| `.beads/agent-summaries/` (SESSION_DIR) | `.crumbs/sessions/_session-${SESSION_ID}` |
-
-The Scout reads `.crumbs/tasks.jsonl` via the `crumb` CLI, not `bd` commands.
+Read `orchestration/RULES.md`. Follow its workflow from **Step 1** (Recon / Scout spawn) onward. The Scout reads `.crumbs/tasks.jsonl` via the `crumb` CLI.
 
 All other orchestration rules from `orchestration/RULES.md` apply without exception: wave management, concurrency limits, hard gates (SSV, CCO, WWD, DMVDC, ESV), model assignments, and landing-the-plane protocol.
 

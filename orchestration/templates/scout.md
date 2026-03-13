@@ -9,7 +9,7 @@ keeping task metadata and conflict analysis out of the Queen's context window.
 
 **For canonical extraction rules and detailed examples, see `~/.claude/orchestration/reference/dependency-analysis.md` (Term Definitions section).**
 
-- `{TASK_ID}` — full bead ID including project prefix (e.g., `ant-farm-9oa`, `my-project-74g.1`)
+- `{TASK_ID}` — full crumb ID including project prefix (e.g., `ant-farm-9oa`, `my-project-74g.1`)
 - `{TASK_SUFFIX}` — suffix portion only; extracted by splitting on the LAST hyphen (e.g., `9oa` from `ant-farm-9oa`, or `74g1` from `my-project-74g.1`). See reference file for extraction algorithm.
 - `{SESSION_DIR}` — session artifact directory path (e.g., `.crumbs/sessions/_session-abc123`)
 
@@ -34,7 +34,7 @@ Based on input mode:
 - **`ready`** (no specific scope): Run `crumb ready --limit=20 --sort=priority`
   to grab the 20 highest-priority unblocked tasks. Use this when the user
   says "let's get to work" without specifying an epic, task list, or filter.
-- **`epic <epic-id>`**: Run `crumb show <epic-id> --children`, extract child task IDs
+- **`epic <epic-id>`**: Run `crumb trail show <epic-id>`, extract child task IDs
 - **`tasks <id1>, <id2>, ...`**: Use the provided list directly
 - **`filter <description>`**: Translate the description into `crumb list` flags
   (e.g., "all P2 bugs" → `crumb list --priority=2 --type=bug --status=open`).
@@ -98,10 +98,10 @@ For each task (ready AND blocked):
 - ...
 
 ## Root Cause
-{root cause text from bead}
+{root cause text from crumb}
 
 ## Expected Behavior
-{expected behavior text from bead}
+{expected behavior text from crumb}
 
 ## Acceptance Criteria
 1. {criterion 1}
@@ -308,7 +308,7 @@ Recommended strategy: {strategy name}
   could not be populated — crumb show failed. This task will be excluded from conflict
   analysis and deferred to the final wave in all proposed strategies.
   ```
-- **If `crumb show <epic-id> --children` or `crumb list` fails**: Return an error
+- **If `crumb trail show <epic-id>` or `crumb list` fails**: Return an error
   verdict to the Queen immediately: `ERROR: {command} failed — {error message}`.
   Do not proceed with analysis.
 - **If filter returns zero results**: Return a verdict noting zero tasks found.

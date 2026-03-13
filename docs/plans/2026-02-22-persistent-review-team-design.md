@@ -1,3 +1,5 @@
+> **Note**: This document was written during the Beads era. CLI commands shown as `bd` have been replaced by `crumb` equivalents.
+
 # Persistent Review Team with Fix Inner Loop
 
 **Date**: 2026-02-22

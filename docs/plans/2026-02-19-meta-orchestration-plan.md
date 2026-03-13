@@ -1,3 +1,5 @@
+> **Note**: This document was written during the Beads era. CLI commands shown as `bd` have been replaced by `crumb` equivalents.
+
 # Meta-Orchestration: Multi-Queen Parallel Workflow
 
 ## Problem
