@@ -1,5 +1,0 @@
-README.md
-CONTRIBUTING.md
-orchestration/SETUP.md
-orchestration/GLOSSARY.md
-orchestration/templates/SESSION_PLAN_TEMPLATE.md

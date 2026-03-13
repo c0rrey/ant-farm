@@ -1,7 +1,0 @@
-2026-02-22T18:57:39Z|SESSION_INIT|complete|session_dir=.beads/agent-summaries/_session-79d4200e
-2026-02-22T19:05:58Z|SCOUT_COMPLETE|briefing=.beads/agent-summaries/_session-79d4200e/briefing.md|ssv=pass|tasks_approved=12
-2026-02-22T19:22:37Z|WAVE_SPAWNED|wave=1|commits=94e350d,c09bfcf,e90258f,c6e3a38,c472ba6,166a832
-2026-02-22T19:27:16Z|WAVE_VERIFIED|wave=1|dmvdc=pass|tasks_verified=9iyp,m5lg,x9yx,trfb,f1xn,a87o,geou,ng0e,70ti,9hxz,lbcy,x9eu|commits=94e350d,c09bfcf,e90258f,c6e3a38,c472ba6,166a832,e4230cf
-2026-02-22T19:43:54Z|REVIEW_COMPLETE|round=1|team=complete|report=.beads/agent-summaries/_session-79d4200e/review-reports/review-consolidated-20260222-142808.md
-2026-02-22T19:47:32Z|REVIEW_TRIAGED|round=1|p1=0|p2=3|decision=fix_now
-2026-02-22T19:48:07Z|SESSION_COMPLETE|pushed=true
