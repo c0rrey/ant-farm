@@ -11,7 +11,7 @@ keeping task metadata and conflict analysis out of the Queen's context window.
 
 - `{TASK_ID}` — full bead ID including project prefix (e.g., `ant-farm-9oa`, `my-project-74g.1`)
 - `{TASK_SUFFIX}` — suffix portion only; extracted by splitting on the LAST hyphen (e.g., `9oa` from `ant-farm-9oa`, or `74g1` from `my-project-74g.1`). See reference file for extraction algorithm.
-- `{SESSION_DIR}` — session artifact directory path (e.g., `.beads/agent-summaries/_session-abc123`)
+- `{SESSION_DIR}` — session artifact directory path (e.g., `.crumbs/agent-summaries/_session-abc123`)
 
 ---
 
@@ -31,19 +31,19 @@ you'll use in Steps 4-5.
 ## Step 2: Discover Tasks
 
 Based on input mode:
-- **`ready`** (no specific scope): Run `bd ready --limit=20 --sort=priority`
+- **`ready`** (no specific scope): Run `crumb ready --limit=20 --sort=priority`
   to grab the 20 highest-priority unblocked tasks. Use this when the user
   says "let's get to work" without specifying an epic, task list, or filter.
-- **`epic <epic-id>`**: Run `bd show <epic-id> --children`, extract child task IDs
+- **`epic <epic-id>`**: Run `crumb show <epic-id> --children`, extract child task IDs
 - **`tasks <id1>, <id2>, ...`**: Use the provided list directly
-- **`filter <description>`**: Translate the description into `bd list` flags
-  (e.g., "all P2 bugs" → `bd list --priority=2 --type=bug --status=open`).
+- **`filter <description>`**: Translate the description into `crumb list` flags
+  (e.g., "all P2 bugs" → `crumb list --priority=2 --type=bug --status=open`).
   Use your judgment to construct the query. If the filter is ambiguous,
   note the ambiguity in the briefing so the Queen can clarify with the user.
 
 Then (skip for `ready` mode — tasks are already unblocked):
-- Run `bd ready` to identify which discovered tasks are unblocked
-- Run `bd blocked` to map dependency chains
+- Run `crumb ready` to identify which discovered tasks are unblocked
+- Run `crumb blocked` to map dependency chains
 - Separate tasks into "ready" (wave 1 candidates) and "blocked" (later wave candidates)
 - **Plan the full execution**: blocked tasks are NOT out of scope — they belong in later waves
   based on their dependency chains. The goal is a complete multi-wave plan covering ALL tasks.
@@ -80,7 +80,7 @@ the fallback when no discovered specialist fits.
 Create the metadata directory: `mkdir -p {SESSION_DIR}/task-metadata/`
 
 For each task (ready AND blocked):
-1. Run `bd show <task-id>`
+1. Run `crumb show <task-id>`
 2. Write to `{SESSION_DIR}/task-metadata/{task-suffix}.md` using this exact format:
 
 ```markdown
@@ -135,7 +135,7 @@ Using the decision matrix from dependency-analysis.md:
    - **HIGH**: 3+ tasks on same file, or 2 tasks on same section
    - **MEDIUM**: 2 tasks on same file, different sections
    - **LOW**: independent files
-3. Identify dependency chains from `bd blocked` output
+3. Identify dependency chains from `crumb blocked` output
 
 ## Step 5: Propose Strategies
 
@@ -264,8 +264,8 @@ Recommended strategy: {strategy name}
 
 ## Error Handling
 
-- **If `bd show` fails for a task**: Write a metadata file with `**Status**: error`.
-  Include the error message from `bd show` in a `**Error Details**` field.
+- **If `crumb show` fails for a task**: Write a metadata file with `**Status**: error`.
+  Include the error message from `crumb show` in a `**Error Details**` field.
   Note it in the briefing under a "## Errors" section with the error message.
   Continue with remaining tasks.
 
@@ -273,16 +273,16 @@ Recommended strategy: {strategy name}
   ```markdown
   # Task: {task-id}
   **Status**: error
-  **Title**: {title from bd list, or "unknown — not in listing"}
-  **Type**: {type from bd list, or "unknown"}
-  **Priority**: {priority from bd list, or "unknown"}
-  **Epic**: {epic-id from bd list, or "unknown"}
-  **Error Details**: {exact error message from bd show}
+  **Title**: {title from crumb list, or "unknown — not in listing"}
+  **Type**: {type from crumb list, or "unknown"}
+  **Priority**: {priority from crumb list, or "unknown"}
+  **Epic**: {epic-id from crumb list, or "unknown"}
+  **Error Details**: {exact error message from crumb show}
 
   Note: Affected Files, Root Cause, Agent Type, Dependencies, and Acceptance Criteria
-  could not be populated — bd show failed.
+  could not be populated — crumb show failed.
   ```
-- **If `bd show <epic-id> --children` or `bd list` fails**: Return an error
+- **If `crumb show <epic-id> --children` or `crumb list` fails**: Return an error
   verdict to the Queen immediately: `ERROR: {command} failed — {error message}`.
   Do not proceed with analysis.
 - **If filter returns zero results**: Return a verdict noting zero tasks found.

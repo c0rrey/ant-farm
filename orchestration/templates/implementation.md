@@ -22,8 +22,8 @@ Tasks: <task-id-1>, <task-id-2>, ...
 For each task, execute these 6 steps in order:
 
 ## Step 1: Claim
-- Run `bd show <id>` to get full details and acceptance criteria
-- Run `bd update <id> --status=in_progress` to claim
+- Run `crumb show <id>` to get full details and acceptance criteria
+- Run `crumb update <id> --status=in_progress` to claim
 
 ## Step 2: Design (MANDATORY)
 Design at least 4 **genuinely distinct** approaches to solve the problem.
@@ -44,7 +44,7 @@ Implement the chosen approach. Write clean, minimal code that satisfies the acce
 ## Step 4: Per-File Correctness Review (MANDATORY)
 After implementation, review EVERY file you changed or created:
 - Re-read each file in full
-- Verify it meets all acceptance criteria from `bd show`
+- Verify it meets all acceptance criteria from `crumb show`
 - Check for logic errors, typos, missing edge cases
 - Verify cross-file consistency (do references between files still work?)
 - Run any available build/test commands to validate
@@ -68,7 +68,7 @@ The summary MUST contain ALL of these sections — incomplete summaries will be 
 
 ```markdown
 # Summary: <task-id>
-**Task**: <title from bd show>
+**Task**: <title from crumb show>
 **Agent**: <subagent type>
 **Status**: completed | failed
 **Files changed**: <list>
@@ -112,7 +112,7 @@ For each file changed:
 
 After all tasks in this batch:
 - Run `git pull --rebase` to stack commits cleanly
-- Close all tasks: `bd close <id1> <id2> ...`
+- Close all tasks: `crumb close <id1> <id2> ...`
 - DO NOT push to remote (the Queen handles this)
 - DO NOT modify documentation files (CHANGELOG, README, CLAUDE.md)
 
@@ -165,7 +165,7 @@ Before sending any agent prompt, confirm it includes:
 - [ ] **Context section** with exact files/lines from bead (pre-digested, not "discover the problem")
 - [ ] **Scope boundaries** limiting what files to read
 - [ ] Root cause and acceptance criteria extracted from bead
-- [ ] **Step 1**: `bd show` + `bd update --status=in_progress`
+- [ ] **Step 1**: `crumb show` + `crumb update --status=in_progress`
 - [ ] **Step 2**: "Design at least 4 approaches" with pros/cons (MANDATORY)
 - [ ] **Step 3**: Implementation instructions
 - [ ] **Step 4**: "Review EVERY file you changed" with explicit checks (MANDATORY)
@@ -191,10 +191,10 @@ Every bead description includes:
 
 ### The Queen's Extraction Pattern
 
-Before spawning an agent, extract this info from `bd show <id>`:
+Before spawning an agent, extract this info from `crumb show <id>`:
 
 ```bash
-bd show <task-id>  # Read ONCE in the Queen's window
+crumb show <task-id>  # Read ONCE in the Queen's window
 
 # Extract and provide to agent:
 # - Affected files/lines from "Affected surfaces:" section
