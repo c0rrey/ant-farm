@@ -1,8 +1,8 @@
 # ant-farm
 
-`ant-farm` is a bounded multi-agent orchestration framework for Claude Code. It packages custom agent definitions, decomposition and execution workflows, verification checkpoints, a local JSONL task tracker (`crumb`), and helper scripts for installation, prompt generation, and session recovery.
+`ant-farm` is a bounded multi-agent orchestration framework for Claude Code with two linked workflows: **planning** and **execution**. It turns vague requests into validated specs by gathering requirements and researching technical decisions where needed, then decomposes those specs into dependency-aware tasks and drives implementation through specialized subagents, hard verification gates, persistent session artifacts, and review/fix loops designed to make agent work auditable, recoverable, and hard to fake.
 
-Rather than implementing its own standalone runtime, it layers a governed software-delivery workflow on top of Claude Code: decompose work into tasks, execute those tasks through specialized subagents, review and verify the results through hard gates, recover interrupted sessions from disk artifacts, and only push once the session passes its landing checks.
+Rather than implementing its own standalone runtime, it layers a governed software-delivery workflow on top of Claude Code. It is **not** an open-ended autonomous coding agent; it is a constrained orchestration layer that separates planning from execution and uses mechanical checkpoints to keep both honest.
 
 ## Quick Start
 
