@@ -1,5 +1,81 @@
 # Changelog
 
+## 2026-03-13 — Session 20260313-021827 (Beads Migration + New Agent Infrastructure + Fix Loop)
+
+### Summary
+
+Two migration epics (ant-farm-irgq: 6 mechanical tasks; ant-farm-f4h5: 9 semantic tasks) replaced all `bd`/`.beads/` references with `crumb`/`.crumbs/` equivalents across 15 template, script, and documentation files in 3 waves. The same session also introduced the Architect and Forager agent definitions, a 7-step decomposition workflow (RULES-decompose.md), four slash-skill definitions (init, work, plan, status), and the setup.sh installer. Review round 1 covered 36 changed files, finding 3 P1 and 10 P2 root causes from 51 raw findings (23 consolidated); all 13 were fixed across 3 sub-waves. Round 2 found 1 residual P2 (ant-farm-tbis fix incomplete on pantry.md and big-head-skeleton.md); fixed in 1 commit. Round 3 found 1 P3 only — terminated. 46 commits total.
+
+### Implementation (Wave 1: bd-to-crumb Mechanical Migration — 6 tasks)
+
+- **ant-farm-6gg6** (`5708d88`): docs: migrate Scout and implementation templates to crumb CLI — all `bd` references replaced in `orchestration/templates/scout.md` and `orchestration/templates/implementation.md`
+- **ant-farm-eifm** (`06c0011`): docs: migrate queen-state and session plan templates to crumb CLI — `orchestration/templates/queen-state.md` and `orchestration/templates/SESSION_PLAN_TEMPLATE.md`
+- **ant-farm-gvd4** (`b0dab79`): chore: migrate dirt-pusher, nitpicker, scribe skeletons bd to crumb — `dirt-pusher-skeleton.md`, `nitpicker-skeleton.md`, `scribe-skeleton.md`
+- **ant-farm-k03k** (`2ac0e86`): docs: replace bd references with crumb equivalents in reference and setup docs — `orchestration/reference/dependency-analysis.md`, `orchestration/SETUP.md`
+- **ant-farm-mmo3** (`76d02ad`): docs: replace bd command references with crumb equivalents in agent definitions — `agents/scout-organizer.md`, `agents/nitpicker.md`
+- **ant-farm-vjhe** (`37cce08`): docs: migrate project docs from bd/beads to crumb/crumbs — `README.md`, `AGENTS.md`, `CONTRIBUTING.md`, `docs/installation-guide.md`
+
+### Implementation (Waves 1–3: bd-to-crumb Semantic Migration — 9 tasks)
+
+- **ant-farm-6d3f** (`8aa01a7`): chore: replace `bd show` with `crumb show` in `scripts/build-review-prompts.sh`
+- **ant-farm-a50b** (`cb2204b`): fix: migrate big-head-skeleton.md bd commands to crumb CLI — `orchestration/templates/big-head-skeleton.md`
+- **ant-farm-ax38** (`5260783`): docs: migrate CLAUDE.md bd references to crumb CLI — `CLAUDE.md` and `~/.claude/CLAUDE.md`
+- **ant-farm-epmv** (`3fe4b6e`): docs: migrate pantry.md bd CLI references to crumb equivalents — `orchestration/templates/pantry.md`
+- **ant-farm-h2gu** (`15fe938`): docs: migrate bd CLI references to crumb equivalents in checkpoints.md
+- **ant-farm-n56q** (`b9892fe`): docs: migrate reviews.md bd CLI references to crumb CLI
+- **ant-farm-o0wu** (`710ec47`): docs: migrate RULES-review.md bd commands and .beads/ paths to crumb/.crumbs/ — new file added (214 lines)
+- **ant-farm-rue4** (`4147daf`): docs: migrate RULES.md bd commands and paths to crumb/.crumbs/ equivalents
+- **ant-farm-veht** (`b8bbdb4`): docs: add TDV checkpoint definition to checkpoints.md
+
+### Implementation (New Agent Infrastructure and Skills)
+
+- **ant-farm-xtu9** (`eb1fae4`): feat: add Architect agent definition, decomposition workflow, and skeleton — `agents/architect.md`, `orchestration/templates/decomposition.md`, `orchestration/templates/architect-skeleton.md`
+- **ant-farm-y4hl** (`8312b12`): feat: add Forager agent definition, workflow template, and skeleton — `agents/forager.md`, `orchestration/templates/forager.md`, `orchestration/templates/forager-skeleton.md`
+- **ant-farm-rwsk** (`8ab12f5`): feat: add RULES-decompose.md with 7-step decomposition workflow (457 lines)
+- **ant-farm-hlv6** (`ebcffeb`): feat: add full JSON payload example to decomposition orchestration template
+- **ant-farm-3mdg** (`6f3485e`): docs: define Planner orchestrator profile in RULES-decompose.md
+- **ant-farm-3imu** (`57d7a66`): feat: add /ant-farm:init skill definition — `skills/init.md` (239 lines)
+- **ant-farm-2hx8** (`7fdcc1e`): feat: add /ant-farm:work skill definition — `skills/work.md` (142 lines)
+- **ant-farm-a5lq** (`467aa6e`): feat: add /ant-farm:plan skill definition — `skills/plan.md` (169 lines)
+- **ant-farm-n3qr** (`f54578b`): feat: add /ant-farm:status skill definition — `skills/status.md` (183 lines)
+- **ant-farm-3bz5** (`7dde9ce`): feat: add setup.sh install script replacing sync-to-claude.sh — `scripts/setup.sh` (245 lines)
+
+### Review Fixes (Round 1, Wave 1 — 7 P1/P2 root causes)
+
+- **ant-farm-5ujg** (`e668d8e`, `68006ac`): fix: remove non-existent `crumb sync` from AGENTS.md quick-reference and push block
+- **ant-farm-rlne** (`6e6357c`): fix: clarify Condition 3 contamination detection with precise regex and example (`orchestration/templates/pantry.md`)
+- **ant-farm-rgg3** (`d2d3f1f`): fix: add `-r` check to FOCUS_AREAS_FILE validation (`scripts/build-review-prompts.sh`)
+- **ant-farm-9ahp** (`28baea2`): fix: add CLAUDE.md sync step to setup.sh (`scripts/setup.sh`)
+- **ant-farm-52ka** (`b8bbdb4`): fix: add substitution instruction before brownfield detection block (`orchestration/RULES-decompose.md`)
+- **ant-farm-5fq0** (`55381ec`): fix: add rollback error handling to Dolt mode switch (`orchestration/templates/decomposition.md`)
+- **ant-farm-nmpw** (`34712c8`): fix: exclude error-status tasks from conflict analysis and wave 1 (`orchestration/templates/scout.md`)
+
+### Review Fixes (Round 1, Wave 2 — 4 P2 root causes)
+
+- **ant-farm-tbis** (`cef1915`): fix: update stale SESSION_DIR path in 6 files — `AGENTS.md`, `CLAUDE.md`, `scout.md`, `dependency-analysis.md`, `dirt-pusher-skeleton.md`, `scribe-skeleton.md`
+- **ant-farm-5ohl** (`75aaea0`): fix: propagate resolve_arg failures from command substitutions (`scripts/build-review-prompts.sh`)
+- **ant-farm-7fc3** (`2ef18a7`): fix: remove hardcoded polling timeout from big-head-skeleton (`orchestration/templates/big-head-skeleton.md`)
+- **ant-farm-z305** (`e6a0a27`): fix: filter pre-flight task count to tasks only (`skills/work.md`)
+
+### Review Fixes (Round 1, Wave 3 — 2 P2 root causes)
+
+- **ant-farm-c47w** (`1749415`): fix: clarify crumb vs bd CLI relationship in AGENTS.md — added explanatory note; aligned prohibition language
+- **ant-farm-qv4a** (`344a18d`): fix: clean up temp files on error paths in fill_slot and big-head dedup (`scripts/build-review-prompts.sh`, `orchestration/templates/big-head-skeleton.md`)
+
+### Review Fixes (Round 2, 1 P2 root cause)
+
+- **ant-farm-tack** (`ca13ddf`): fix: update stale SESSION_DIR examples in pantry.md and big-head-skeleton.md — two files missed by ant-farm-tbis in Round 1
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 36 files, 15 migration + infra tasks | 3 | 10 | 11+ | NEEDS WORK |
+| 2 | 13 fix commits | 0 | 1 | 0 | PASS WITH ISSUES |
+| 3 | 1 fix commit | 0 | 0 | 1 | PASS WITH ISSUES |
+
+51 raw findings (round 1) → 23 root causes consolidated; 3 skipped (cross-session dedup); 13 P1/P2 root causes fixed across 3 sub-waves. Round 2: 2 raw findings → 1 root cause fixed. Round 3: 1 raw finding → 1 P3 auto-filed to Future Work (ant-farm-sj3f).
+
 ## 2026-03-13 — Session 20260313-001327 (Crumb CLI Build + Review Fix Loop)
 
 ### Summary
