@@ -1,5 +1,41 @@
 # Changelog
 
+## 2026-03-13 — Session 20260313-155355 (crumb.py Test Suite + Docstring Audit + Review Fix Loop)
+
+### Summary
+
+15 tasks built the full pytest test suite for crumb.py (264 tests across 8 files) and audited its docstrings, then a review fix loop resolved all P1/P2 findings in round 1 with no regressions surfacing in round 2. The implementation tasks ran across 4 waves: Wave 1 established test infrastructure and docstrings (AF-15, AF-22); Wave 2 added CRUD, query, link, trail, and import/doctor tests in parallel (AF-16 through AF-20); Wave 3 added subprocess integration tests (AF-21); Wave 4 verified the full suite green (AF-23). Review round 1 found 2 P1 AC text errors and 4 P2 robustness gaps; all 6 were fixed in a parallel fix wave. Round 2 returned 0 P1/P2 — loop terminated. 17 P3 findings filed to Future Work. 15 commits total.
+
+### Implementation (Waves 1–4: 9 feature/verification tasks)
+
+- **AF-15** (`0fce1ae`): feat: create test infrastructure and helper function tests — `tests/__init__.py`, `tests/conftest.py` (function-scoped `crumbs_env` fixture), `tests/test_helpers.py` (45 tests for all 11 helper functions)
+- **AF-16** (`14320e4`): feat: add comprehensive CRUD command tests — `tests/test_crud.py` (45 tests across TestCreate, TestShow, TestUpdate, TestClose, TestReopen)
+- **AF-17** (`14320e4`): feat: add query command tests — `tests/test_queries.py` (53 tests across TestList, TestReady, TestBlocked, TestSearch)
+- **AF-18** (`ab9a618`): feat: add link management tests — `tests/test_links.py` (18 tests in TestLink; documented spec-vs-code discrepancy on dangling reference behavior)
+- **AF-19** (`9055dd9`): feat: add trail subcommand and tree command tests — `tests/test_trails.py` (50 tests across TestTrail and TestTree)
+- **AF-20** (`ba45d70`): feat: add import and doctor command tests — `tests/test_import.py` (29 tests), `tests/test_doctor.py` (18 tests)
+- **AF-21** (`30e6ed1`): feat: add CLI integration subprocess tests — `tests/test_cli.py` (6 tests in TestCLIIntegration using real subprocess invocations with isolated `.crumbs/` environments)
+- **AF-22** (`ec5beff`): docs: audit and improve crumb.py docstrings and inline comments — minimal gap-fill: Args/Returns/Raises added to all public functions, FileLock method docstrings added, step-by-step inline comments added to three beads import pipeline functions; 140 insertions, 19 deletions, zero logic changes
+- **AF-23** (`3ff54eb`): chore: verify full test suite passes green — 264 passed, 0 failed, exit code 0, no warnings (Python 3.14.2 / pytest 9.0.2)
+
+### Review Fixes (Round 1 — 6 P1/P2 root causes)
+
+- **AF-24** (`ee34a0e`): fix: correct AF-15 AC 4 status sort key values to match implementation — AC text inverted `open`/`in_progress` ordering; corrected to `open=0, in_progress=1, closed=2, unknown=3`
+- **AF-25** (`f44f6ef`): fix: update AF-18 AC 6 to reflect dangling reference behavior in cmd_link — AC text claimed `cmd_link` rejects nonexistent IDs; corrected to document that dangling refs are permitted and validated by `crumb doctor`
+- **AF-26** (`2730160`): fix: remove dead dual-field parent/discovered access pattern — eliminated top-level `crumb.get("parent")` / `t.get("parent")` / `t.get("discovered_from")` checks from `_auto_close_trail_if_complete` and `cmd_list` filters in `crumb.py`; aligned to `links.get(...)` resolution only
+- **AF-27** (`2730160`): fix: add LOCK_NB retry loop with 10-second timeout to FileLock — replaced indefinitely-blocking `LOCK_EX` with `LOCK_EX | LOCK_NB` plus retry/sleep loop and human-readable "waiting for lock..." message in `crumb.py`
+- **AF-28** (`2730160`): fix: clean up .tmp file on os.rename failure in write_config and write_tasks — added try/finally unlink guard to both atomic-write functions in `crumb.py`
+- **AF-29** (`d074b82`): fix: tighten weak assertion in test_import_updates_config_counter — changed `>= 11` to `== 11` in `tests/test_import.py`
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 15 files, 9 tasks | 2 | 4 | 15 | PASS WITH ISSUES |
+| 2 | 5 fix commits | 0 | 0 | 2 | PASS |
+
+29 raw findings (round 1) → 21 root causes consolidated (4 merges, 1 retraction); 6 P1/P2 root causes fixed across 4 parallel fix agents. Round 2: 3 raw findings → 2 root causes, both P3; loop terminated. 17 P3 findings filed to Future Work (AF-30 through AF-46).
+
 ## 2026-03-13 — Session 20260313-111851 (Infrastructure Cutover: Beads/Dolt to Crumbs)
 
 ### Summary
