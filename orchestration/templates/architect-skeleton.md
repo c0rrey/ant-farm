@@ -21,7 +21,7 @@ If any prerequisite is missing, do NOT spawn the Architect — the missing input
 will produce incomplete decomposition.
 
 **Term definitions (canonical across all orchestration templates):**
-- `{DECOMPOSE_DIR}` — decomposition working directory (e.g., `.beads/decompose/_decompose-abc123/`)
+- `{DECOMPOSE_DIR}` — decomposition working directory (e.g., `.crumbs/decompose/_decompose-abc123/`)
 - `{CODEBASE_ROOT}` — absolute path to the repository root
 - `{SPEC_PATH}` — absolute path to spec.md (typically `{DECOMPOSE_DIR}/spec.md`)
 
@@ -74,12 +74,12 @@ At a glance:
 
 7. **Create via CLI** — Create trails and crumbs:
    ```bash
-   bd trail create "{trail-title}"
-   bd create --from-json /tmp/crumb-{slug}.json
-   bd dep add {crumb-id} {trail-id} --type parent-child
-   bd dep add {blocker-id} {blocked-id} --type blocks
+   crumb trail create "{trail-title}"
+   crumb create --from-json /tmp/crumb-{slug}.json
+   crumb link {crumb-id} --parent {trail-id}
+   crumb link {blocker-id} --blocks {blocked-id}
    ```
-   The CHILD/BLOCKED crumb is the first argument in both dep-add patterns.
+   The CHILD/BLOCKED crumb is the first argument in both link patterns.
 
 8. **Write decomposition-brief.md** — Write `{DECOMPOSE_DIR}/decomposition-brief.md`
    with: codebase map, trail structure, spec coverage table, dependency graph,
@@ -108,7 +108,7 @@ requirements to fill gaps.
 
 - **No code writing.** Describe implementation work in crumbs; do not implement it.
 - **No orphan crumbs.** Every crumb must be parented to a trail via
-  `bd dep add --type parent-child`.
+  `crumb link --parent`.
 - **No circular dependencies.** Topological sort is mandatory before creating deps.
 - **No vague scope.** Every crumb must list concrete file paths. "Various files"
   or "relevant modules" are not acceptable.

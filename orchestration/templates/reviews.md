@@ -3,14 +3,14 @@
 
 ## Transition Gate Checklist
 
-**When**: After all Dirt Pushers from Step 3 complete across ALL epics, BEFORE launching the Nitpickers.
+**When**: After all Dirt Pushers from Step 3 complete across ALL trails, BEFORE launching the Nitpickers.
 
-Verify all 4 criteria before proceeding to team launch. These checks span ALL epics worked in this session:
+Verify all 4 criteria before proceeding to team launch. These checks span ALL trails worked in this session:
 
-1. **All Dirt Pushers completed across ALL epics** — none stuck or errored (check the Queen's state file for every epic)
+1. **All Dirt Pushers completed across ALL trails** — none stuck or errored (check the Queen's state file for every trail)
 2. **Dirt Moved vs Dirt Claimed (DMVDC) PASS for every agent** — verify at least one artifact exists at `<session-dir>/pc/pc-<task-id>-dmvdc-*.md`; if multiple files match (e.g., after retries), check the most recent by timestamp — it must contain an explicit `PASS` verdict, not merely exist
-3. **The Queen's state file updated** — all completions tracked, checkpoint results recorded for all epics
-4. **Git log shows expected commits** — run `git log --oneline -N` (where N = total number of agents across all epics) to confirm commits exist
+3. **The Queen's state file updated** — all completions tracked, checkpoint results recorded for all trails
+4. **Git log shows expected commits** — run `git log --oneline -N` (where N = total number of agents across all trails) to confirm commits exist
 
 **If any check fails**: Do NOT launch reviews. Investigate stuck agents, re-run failed checkpoints, or escalate to user.
 
@@ -24,7 +24,7 @@ Directory creation is handled by the Queen in RULES.md Step 3b-iii. All active r
 
 ## Agent Teams Protocol
 
-After the transition gate passes, the Queen launches **the Nitpickers** using **TeamCreate** (NOT the Task tool) — four specialized reviewers plus **Big Head** (the consolidator) plus **Pest Control** (checkpoint validator), all as members of the same team. Reviewers produce **reports only** and do NOT file beads. Big Head consolidates all findings, deduplicates by root cause, and files beads.
+After the transition gate passes, the Queen launches **the Nitpickers** using **TeamCreate** (NOT the Task tool) — four specialized reviewers plus **Big Head** (the consolidator) plus **Pest Control** (checkpoint validator), all as members of the same team. Reviewers produce **reports only** and do NOT file crumbs. Big Head consolidates all findings, deduplicates by root cause, and files crumbs.
 
 **CRITICAL**: Reviews MUST use Agent Teams (TeamCreate + SendMessage), NOT plain Task tool subagents. The team structure enables cross-pollination between reviewers. **Big Head MUST be spawned as a team member** (not a separate Task agent) so it can receive messages from reviewers and coordinate within the team.
 
@@ -32,7 +32,7 @@ After the transition gate passes, the Queen launches **the Nitpickers** using **
 
 - **Wall-clock time**: 4 parallel reviews vs 4 sequential = ~4x faster
 - **Cross-pollination**: Reviewers can message each other about overlapping findings, reducing duplicate work
-- **Unified dedup**: Lead sees ALL findings before filing, so root-cause grouping is authoritative — no duplicate beads
+- **Unified dedup**: Lead sees ALL findings before filing, so root-cause grouping is authoritative — no duplicate crumbs
 
 ### Model Assignments
 
@@ -64,11 +64,11 @@ Create a team with these 6 members. The 4 reviewers work in parallel.
 Big Head waits for all 4 reports, then consolidates.
 Pest Control is a team member so Big Head can SendMessage to it directly for checkpoint validation.
 
-Nitpickers produce REPORTS ONLY — do NOT file beads (`crumb create`).
-Big Head consolidates all reports, groups findings by root cause, and files beads.
+Nitpickers produce REPORTS ONLY — do NOT file crumbs (`crumb create`).
+Big Head consolidates all reports, groups findings by root cause, and files crumbs.
 
-Review scope: commits <first-commit> through <last-commit> (<N> commits total, across epics: <epic-list>)
-Files to review: <deduplicated list of ALL files changed across all epics>
+Review scope: commits <first-commit> through <last-commit> (<N> commits total, across trails: <trail-list>)
+Files to review: <deduplicated list of ALL files changed across all trails>
 Task IDs for acceptance criteria: <list of all task IDs worked this session>
 
 1. Clarity Review (P3) — see prompt below
@@ -100,7 +100,7 @@ Report output path: <reviewer-specific path from Round Transition section>
 
 ### Fallback: Sequential Reviews with File-Based Coordination (When TeamCreate Unavailable)
 
-**When to use this fallback**: If the runtime environment does not support TeamCreate (e.g., the team slot is already in use for another epic, or messaging is unavailable), use this alternative workflow.
+**When to use this fallback**: If the runtime environment does not support TeamCreate (e.g., the team slot is already in use for another trail, or messaging is unavailable), use this alternative workflow.
 
 **Key difference from Team Protocol**: Reviewers are spawned as individual Task agents (not team members). Coordination happens via shared files instead of SendMessage.
 
@@ -136,13 +136,13 @@ Report output path: <reviewer-specific path from Round Transition section>
 
 - **No parallel review execution**: Sequential or batched spawning is slower than team parallelism
 - **No cross-reviewer messaging**: Reviewers cannot flag overlaps or share context (Big Head deduplication handles this)
-- **Same consolidation logic**: Big Head still performs full deduplication, root-cause grouping, and bead filing
+- **Same consolidation logic**: Big Head still performs full deduplication, root-cause grouping, and crumb filing
 - **Same output quality**: Final reports and consolidated summary are identical to Team Protocol
 
 #### When to Prefer Team Protocol Over Fallback
 
 - Team Protocol preferred when: TeamCreate is available, you want ~4x faster wall-clock time, you want cross-reviewer coordination during review phase
-- Fallback required when: TeamCreate unavailable (team slot exhausted by another epic, environment limitation, messaging unavailable)
+- Fallback required when: TeamCreate unavailable (team slot exhausted by another trail, environment limitation, messaging unavailable)
 
 ### Messaging Guidelines
 
@@ -179,19 +179,19 @@ This is the existing protocol — no changes to round 1 behavior.
   - **Runtime failure**: an agent, tool call, or workflow step would crash or error
   - **Silently wrong results**: an agent would succeed but produce incorrect output (e.g., stale cross-references pointing the Queen to the wrong section)
 - **Not reportable out-of-scope**: naming conventions, style preferences, documentation gaps, improvement opportunities, hypothetical edge cases requiring unusual conditions
-- **P3 handling**: Big Head auto-files P3s to "Future Work" epic (no user prompt)
+- **P3 handling**: Big Head auto-files P3s to "Future Work" trail (no user prompt)
 
 ### Termination Rule
 
 The review loop terminates when a round produces **zero P1 or P2 findings**. At termination:
 
-1. Big Head auto-files any P3 findings to "Future Work" epic (round 2+ only)
+1. Big Head auto-files any P3 findings to "Future Work" trail (round 2+ only)
 2. In round 1, P3s are filed via the existing "Handle P3 Issues" flow in the Queen's Step 3c below
 3. Queen proceeds directly to RULES.md Step 4 (documentation — README and CLAUDE.md only)
    - Note: CHANGELOG is authored by the Scribe at Step 5b, not here
 4. No user prompt needed — the loop simply ends
 
-**Escalation cap**: After round 4 with no convergence (P1 or P2 findings still present), do NOT start round 5. Instead, escalate to the user with the full round history (round numbers, finding counts per round, bead IDs) and ask whether to continue or abort. The reduced scope + reduced reviewers + P3 auto-filing make convergence fast; if it has not converged by round 4, human judgment is required.
+**Escalation cap**: After round 4 with no convergence (P1 or P2 findings still present), do NOT start round 5. Instead, escalate to the user with the full round history (round numbers, finding counts per round, crumb IDs) and ask whether to continue or abort. The reduced scope + reduced reviewers + P3 auto-filing make convergence fast; if it has not converged by round 4, human judgment is required.
 
 ### Round 2+ Reviewer Instructions
 
@@ -227,7 +227,7 @@ Group findings into preliminary root causes where possible.
 
 ## Report (MANDATORY)
 Write your report to `<session-dir>/review-reports/clarity-review-<timestamp>.md` using the format below. (the Queen provides the exact filename in your prompt.)
-Do NOT file beads — Big Head handles all bead filing.
+Do NOT file crumbs — Big Head handles all crumb filing.
 
 If you find something that looks like an edge case or correctness bug, message the
 relevant Nitpicker so they can investigate in depth.
@@ -261,7 +261,7 @@ Group findings into preliminary root causes where possible.
 
 ## Report (MANDATORY)
 Write your report to `<session-dir>/review-reports/edge-cases-review-<timestamp>.md` using the format below. (the Queen provides the exact filename in your prompt.)
-Do NOT file beads — Big Head handles all bead filing.
+Do NOT file crumbs — Big Head handles all crumb filing.
 
 Pay special attention to:
 - Functions that read/write files
@@ -301,7 +301,7 @@ Group findings into preliminary root causes where possible.
 
 ## Report (MANDATORY)
 Write your report to `<session-dir>/review-reports/correctness-review-<timestamp>.md` using the format below. (the Queen provides the exact filename in your prompt.)
-Do NOT file beads — Big Head handles all bead filing.
+Do NOT file crumbs — Big Head handles all crumb filing.
 
 Review these files and their acceptance criteria:
 <list of files and their original task requirements>
@@ -347,7 +347,7 @@ Group findings into preliminary root causes where possible.
 
 ## Report (MANDATORY)
 Write your report to `<session-dir>/review-reports/drift-review-<timestamp>.md` using the format below. (the Queen provides the exact filename in your prompt.)
-Do NOT file beads — Big Head handles all bead filing.
+Do NOT file crumbs — Big Head handles all crumb filing.
 
 For each change in scope, check:
 - Old value still present elsewhere in scoped files
@@ -723,9 +723,9 @@ For each group of related findings across all reviews:
 - **Acceptance criteria**: <how to verify across all surfaces>
 ```
 
-### Step 2.5: Deduplicate Against Existing Beads
+### Step 2.5: Deduplicate Against Existing Crumbs
 
-Before writing the consolidated summary or filing any beads, check for open beads that already cover your root causes. This prevents duplicate tracking of issues found in previous sessions.
+Before writing the consolidated summary or filing any crumbs, check for open crumbs that already cover your root causes. This prevents duplicate tracking of issues found in previous sessions.
 
 ```bash
 if ! crumb list --open --short > /tmp/open-crumbs-$$.txt 2>&1; then
@@ -751,7 +751,7 @@ For each root cause group, compare against existing crumb titles (from `/tmp/ope
 
 When uncertain whether a match is truly the same root cause, err on the side of filing — a human can merge later; a missed filing is harder to recover.
 
-Include a **Cross-Session Dedup** section in the consolidated summary listing, for each root cause, whether it was filed (new bead ID), skipped (matched existing bead ID and why), or merged with an existing bead.
+Include a **Cross-Session Dedup** section in the consolidated summary listing, for each root cause, whether it was filed (new crumb ID), skipped (matched existing crumb ID and why), or merged with an existing crumb.
 
 ### Step 3: Write Consolidated Summary
 
@@ -764,7 +764,7 @@ Write the consolidated summary to `<session-dir>/review-reports/review-consolida
 **Reviews completed**: <Round 1: Clarity, Edge Cases, Correctness, Drift | Round 2+: Correctness, Edge Cases>
 **Total raw findings**: <N across all reviews>
 **Root causes identified**: <N after dedup>
-**Beads filed**: <N>
+**Crumbs filed**: <N>
 
 ## Read Confirmation
 
@@ -781,7 +781,7 @@ Round 2+: 2 reports (correctness, edge-cases)
 
 ## Root Causes Filed
 
-| Bead ID | Priority | Title | Contributing Reviews | Surfaces |
+| Crumb ID | Priority | Title | Contributing Reviews | Surfaces |
 |---------|----------|-------|---------------------|----------|
 | <id> | P<N> | <title> | clarity, edge-cases | <N> files |
 | ... | ... | ... | ... | ... |
@@ -793,18 +793,18 @@ Findings merged:
 - ...
 
 ## Priority Breakdown
-- P1 (blocking): <N> beads
-- P2 (important): <N> beads
-- P3 (polish): <N> beads
+- P1 (blocking): <N> crumbs
+- P2 (important): <N> crumbs
+- P3 (polish): <N> crumbs
 
 ## Verdict
 <PASS / PASS WITH ISSUES / NEEDS WORK>
 <overall quality assessment>
 ```
 
-### Step 4: Checkpoint Gate — Await Pest Control Validation Before Filing Beads
+### Step 4: Checkpoint Gate — Await Pest Control Validation Before Filing Crumbs
 
-**Do NOT file any beads yet.** After writing the consolidated summary (Step 3), notify Pest Control and wait for its verdict before calling `crumb create`.
+**Do NOT file any crumbs yet.** After writing the consolidated summary (Step 3), notify Pest Control and wait for its verdict before calling `crumb create`.
 
 **Notification to Pest Control (SendMessage):**
 ```
@@ -846,28 +846,28 @@ SendMessage(
   - Action required: PC checkpoint could not be completed. User must decide: re-spawn Pest Control
     manually, or accept consolidated findings without checkpoint validation.
   ```
-  Do NOT file any beads when escalating due to Pest Control timeout.
+  Do NOT file any crumbs when escalating due to Pest Control timeout.
 
-- **PASS**: File ONE bead per root cause. See bead filing instructions below.
-- **FAIL**: Big Head MUST escalate to the Queen with specifics. File beads ONLY for findings that passed. Do NOT file beads for flagged findings. Use this escalation format:
+- **PASS**: File ONE crumb per root cause. See crumb filing instructions below.
+- **FAIL**: Big Head MUST escalate to the Queen with specifics. File crumbs ONLY for findings that passed. Do NOT file crumbs for flagged findings. Use this escalation format:
 
 ```
 Big Head checkpoint escalation to Queen:
 - Pest Control verdict: FAIL
 - Findings that failed validation: <list with reasons per finding>
 - Findings that passed: <list>
-- Beads filed for validated findings: <ids or "none">
+- Crumbs filed for validated findings: <ids or "none">
 - Action required: User decides whether to drop, adjust, or re-review failed findings.
 ```
 
-**Bead filing (validated findings only):**
+**Crumb filing (validated findings only):**
 
-File ONE bead per root cause (not per finding, not per review).
+File ONE crumb per root cause (not per finding, not per review).
 
-**Important**: Beads filed during session review are standalone. Do NOT assign them to a specific epic via `crumb link --parent`. They represent session-wide findings, not epic-specific work.
+**Important**: Crumbs filed during session review are standalone. Do NOT assign them to a specific trail via `crumb link --parent`. They represent session-wide findings, not trail-specific work.
 
 ```bash
-cat > /tmp/bead-desc-$$.md << 'BEAD_DESC'
+cat > /tmp/crumb-desc-$$.md << 'CRUMB_DESC'
 ## Root Cause
 <What is specifically wrong — cite the code path, pattern, or design flaw.
 Reference file:line locations where the issue originates. This must be
@@ -888,15 +888,15 @@ substantive analysis, NOT a restatement of the title.>
 - [ ] <First independently testable criterion>
 - [ ] <Second independently testable criterion>
 - [ ] <Third independently testable criterion>
-BEAD_DESC
+CRUMB_DESC
 
-crumb create --from-json "{\"type\":\"bug\",\"priority\":\"P<combined-priority>\",\"title\":\"<root cause title>\",\"description\":\"$(cat /tmp/bead-desc-$$.md)\",\"review_source\":\"<primary-review-type>\",\"acceptance_criteria\":[],\"scope\":{},\"links\":{}}"
-rm -f /tmp/bead-desc-$$.md
+crumb create --from-json "{\"type\":\"bug\",\"priority\":\"P<combined-priority>\",\"title\":\"<root cause title>\",\"description\":\"$(cat /tmp/crumb-desc-$$.md)\",\"review_source\":\"<primary-review-type>\",\"acceptance_criteria\":[],\"scope\":{},\"links\":{}}"
+rm -f /tmp/crumb-desc-$$.md
 ```
 
 ### P3 Auto-Filing (Round 2+ Only)
 
-In round 2+, Big Head auto-files P3 findings to the "Future Work" epic without user involvement:
+In round 2+, Big Head auto-files P3 findings to the "Future Work" trail without user involvement:
 
 1. Find or create the "Future Work" trail:
    ```bash
@@ -908,7 +908,7 @@ In round 2+, Big Head auto-files P3 findings to the "Future Work" epic without u
 
 2. For each P3 root cause:
    ```bash
-   cat > /tmp/bead-desc-$$.md << 'BEAD_DESC'
+   cat > /tmp/crumb-desc-$$.md << 'CRUMB_DESC'
    ## Root Cause
    <What is wrong — file:line refs to the primary location.>
 
@@ -917,17 +917,17 @@ In round 2+, Big Head auto-files P3 findings to the "Future Work" epic without u
 
    ## Acceptance Criteria
    - [ ] <testable criterion>
-   BEAD_DESC
+   CRUMB_DESC
 
-   crumb create --from-json "{\"type\":\"bug\",\"priority\":\"P3\",\"title\":\"<root cause title>\",\"description\":\"$(cat /tmp/bead-desc-$$.md)\",\"acceptance_criteria\":[],\"scope\":{},\"links\":{}}"
+   crumb create --from-json "{\"type\":\"bug\",\"priority\":\"P3\",\"title\":\"<root cause title>\",\"description\":\"$(cat /tmp/crumb-desc-$$.md)\",\"acceptance_criteria\":[],\"scope\":{},\"links\":{}}"
    crumb link <new-crumb-id> --parent <future-work-trail-id>
-   rm -f /tmp/bead-desc-$$.md
+   rm -f /tmp/crumb-desc-$$.md
    ```
 
-3. In the consolidated summary, list P3 beads in a separate section:
+3. In the consolidated summary, list P3 crumbs in a separate section:
    ~~~markdown
    ## Auto-Filed P3s (Future Work)
-   | Bead ID | Title | Epic |
+   | Crumb ID | Title | Trail |
    |---------|-------|------|
    | <id> | <title> | Future Work |
    ~~~
@@ -947,7 +947,7 @@ Before launching the review agent team, confirm:
 - [ ] Round 2+ reviewers include out-of-scope finding bar instructions from the Round 2+ Reviewer Instructions section
 - [ ] Catalog phase instructions included (find all, group preliminarily)
 - [ ] Report format instructions included (use standard Nitpicker report format)
-- [ ] Each prompt says "Do NOT file beads — Big Head handles all bead filing"
+- [ ] Each prompt says "Do NOT file crumbs — Big Head handles all crumb filing"
 - [ ] Messaging guidelines included (what to share, what not to share)
 - [ ] Reports write to `<session-dir>/review-reports/<review-type>-review-<timestamp>.md`
 - [ ] Round 1: Team has 6 members (4 Nitpickers + Big Head + Pest Control); Round 2+: persistent team re-tasked via SendMessage (NOT a new TeamCreate) — Correctness + Edge Cases + Big Head + Pest Control active; Clarity + Drift idle
@@ -955,16 +955,16 @@ Before launching the review agent team, confirm:
 
 ### Big Head Consolidation Checklist (after all Nitpickers finish)
 
-Before filing beads, confirm Big Head has:
+Before filing crumbs, confirm Big Head has:
 - [ ] Round 1: Read all 4 Nitpicker reports; Round 2+: Read 2 reports (Correctness, Edge Cases)
 - [ ] Merged duplicate findings across reviews
 - [ ] Grouped all findings by root cause (not per-occurrence)
 - [ ] Written consolidated summary to `<session-dir>/review-reports/review-consolidated-<timestamp>.md`
 - [ ] Sent consolidated report path to Pest Control via SendMessage
 - [ ] Received Pest Control verdict (PASS or FAIL + specifics)
-- [ ] On PASS: filed ONE bead per root cause with all affected surfaces listed
-- [ ] Round 2+ on PASS: P3 beads auto-filed to "Future Work" epic (not presented to user)
-- [ ] On FAIL: escalated failed findings to Queen; filed beads only for validated findings
+- [ ] On PASS: filed ONE crumb per root cause with all affected surfaces listed
+- [ ] Round 2+ on PASS: P3 crumbs auto-filed to "Future Work" trail (not presented to user)
+- [ ] On FAIL: escalated failed findings to Queen; filed crumbs only for validated findings
 
 ## After Consolidation Complete
 
@@ -983,7 +983,7 @@ The Queen reads Big Head's consolidated summary and follows the procedures below
 
 If the consolidated summary shows zero P1 and zero P2 findings, the review loop has converged:
 
-1. **Round 2+**: Big Head has already auto-filed any P3 findings to "Future Work" epic — no action needed
+1. **Round 2+**: Big Head has already auto-filed any P3 findings to "Future Work" trail — no action needed
 2. **Round 1**: P3 findings follow the existing "Handle P3 Issues" flow below — the Queen files them to Future Work
 3. Queen updates session state: `Termination: terminated (round N: 0 P1/P2)`
 4. Proceed to RULES.md Step 4 (Documentation — update README and CLAUDE.md only)
@@ -997,7 +997,7 @@ The Queen determines the fix action based on RULES.md Step 3c decision tree:
 - **Auto-fix** (round 1, ≤5 root causes): proceed directly to Fix Workflow below
 - **Escalation** (round 1, >5 root causes): present to user, await decision
 - **User prompt** (round 2+): present to user, "Fix now or defer?"
-- **Defer**: P1/P2 beads stay open; document deferred items for the Scribe (Step 5b CHANGELOG); proceed to Step 4
+- **Defer**: P1/P2 crumbs stay open; document deferred items for the Scribe (Step 5b CHANGELOG); proceed to Step 4
 
 ### Fix Workflow
 
@@ -1005,7 +1005,7 @@ Triggered by auto-fix (round 1) or user choosing "fix now" (round 2+). Fix agent
 
 #### Fix-Cycle Scout and Auto-Approval
 
-Before spawning fix agents, the Queen runs a fix-cycle Scout to plan the fix strategy (which beads to fix, wave grouping, file conflict analysis).
+Before spawning fix agents, the Queen runs a fix-cycle Scout to plan the fix strategy (which crumbs to fix, wave grouping, file conflict analysis).
 
 **Auto-approval**: The fix-cycle Scout strategy is auto-approved — no user confirmation gate. The Scout's output feeds directly into fix agent spawning.
 
@@ -1017,10 +1017,10 @@ Before spawning fix agents, the Queen runs a fix-cycle Scout to plan the fix str
 
 Fix briefs do **not** go through Pantry or CCO. Reason:
 
-- **Pantry skipped**: The Big Head beads already contain root cause, affected surfaces, fix suggestion, and acceptance criteria — validated by CCB. The bead IS the brief. Re-composing it through Pantry adds no value and wastes a round-trip.
-- **CCO skipped**: The bead content passed CCB (Colony Census Bureau) and the Scout's fix strategy passed SSV. Two independent mechanical gates have already validated correctness. A third CCO pass would be redundant.
+- **Pantry skipped**: The Big Head crumbs already contain root cause, affected surfaces, fix suggestion, and acceptance criteria — validated by CCB. The crumb IS the brief. Re-composing it through Pantry adds no value and wastes a round-trip.
+- **CCO skipped**: The crumb content passed CCB (Colony Census Bureau) and the Scout's fix strategy passed SSV. Two independent mechanical gates have already validated correctness. A third CCO pass would be redundant.
 
-Fix agents receive the bead ID directly as their source of truth.
+Fix agents receive the crumb ID directly as their source of truth.
 
 #### Fix Team Member Naming
 
@@ -1036,24 +1036,24 @@ Round suffix (`-r2`, `-r3`, etc.) increments with each review round to avoid nam
 
 #### Fix DP Prompt Structure
 
-Fix Dirt Pushers receive a lean prompt. The bead is the source of truth — the DP does not need a full brief composed by the Queen.
+Fix Dirt Pushers receive a lean prompt. The crumb is the source of truth — the DP does not need a full brief composed by the Queen.
 
 ```
 You are fix-dp-N, a fix Dirt Pusher in the Nitpicker team.
 
-Your task bead: <bead-id>
-Run: crumb show <bead-id>
+Your task crumb: <crumb-id>
+Run: crumb show <crumb-id>
 
-The bead contains root cause, affected surfaces, fix approach, and acceptance criteria.
+The crumb contains root cause, affected surfaces, fix approach, and acceptance criteria.
 Implement the fix. Follow the acceptance criteria exactly.
 
 After committing:
-1. Record your commit hash in your task bead: crumb update <bead-id> --note="commit: <hash>"
-2. SendMessage to fix-pc-wwd: "Fix committed. Bead: <bead-id>. Commit: <hash>. Files changed: <list>."
+1. Record your commit hash in your task crumb: crumb update <crumb-id> --note="commit: <hash>"
+2. SendMessage to fix-pc-wwd: "Fix committed. Crumb: <crumb-id>. Commit: <hash>. Files changed: <list>."
 Then go idle and wait.
 ```
 
-The prompt is intentionally minimal. Bead content drives the work, not the prompt text.
+The prompt is intentionally minimal. Crumb content drives the work, not the prompt text.
 
 #### Fix Inner Loop Protocol
 
@@ -1080,9 +1080,9 @@ fix-dp-N  -->  [commit]  -->  SendMessage(fix-pc-wwd)
 
 **Retry limit**: Each fix DP has a maximum of 2 retries total across both WWD and DMVDC failures. On the third failure, the DP sends a message to the Queen with the failure details and goes idle. The Queen escalates to the user.
 
-**fix-pc-wwd** (Haiku): Lightweight "What Was Done" check — verifies the commit touches only the files listed in the bead, no stray edits, and the commit message is well-formed. Fast and cheap.
+**fix-pc-wwd** (Haiku): Lightweight "What Was Done" check — verifies the commit touches only the files listed in the crumb, no stray edits, and the commit message is well-formed. Fast and cheap.
 
-**fix-pc-dmvdc** (Sonnet): Full Dirt Moved vs Dirt Claimed check — verifies the fix satisfies the bead's acceptance criteria, tests pass, and no regressions introduced.
+**fix-pc-dmvdc** (Sonnet): Full Dirt Moved vs Dirt Claimed check — verifies the fix satisfies the crumb's acceptance criteria, tests pass, and no regressions introduced.
 
 #### Wave Composition
 
@@ -1094,7 +1094,7 @@ P1 and P2 fixes run in waves as follows:
 Wave 1: [P1 fix-dp tasks] + [P2 fix-dp tasks]    (concurrent, no file overlap)
 ```
 
-Unlike the old TDD workflow, P1 fixes do not require a separate test-writing wave in the persistent team design. The bead's acceptance criteria serve as the verification specification; fix-pc-dmvdc enforces them.
+Unlike the old TDD workflow, P1 fixes do not require a separate test-writing wave in the persistent team design. The crumb's acceptance criteria serve as the verification specification; fix-pc-dmvdc enforces them.
 
 Spawn fix-pc-wwd and fix-pc-dmvdc once per round (they serve all fix DPs in that round via SendMessage). Do not re-spawn them per DP.
 
@@ -1106,14 +1106,14 @@ After all fix DPs complete and fix-pc-dmvdc has issued PASS for each:
    - Review round: N+1
    - Fix commit range: `<first-fix-commit>..<last-fix-commit>`
    - Changed files: `<list from git diff>`
-   - Task IDs reviewed: `<bead-ids fixed this round>`
+   - Task IDs reviewed: `<crumb-ids fixed this round>`
    - Report output path: `{session-dir}/review-reports/correctness-r<N+1>-<timestamp>.md`
 
 2. **Re-task Edge Cases reviewer**: SendMessage to `edge-cases` with:
    - Review round: N+1
    - Fix commit range: `<first-fix-commit>..<last-fix-commit>`
    - Changed files: `<list from git diff>`
-   - Task IDs reviewed: `<bead-ids fixed this round>`
+   - Task IDs reviewed: `<crumb-ids fixed this round>`
    - Report output path: `{session-dir}/review-reports/edge-cases-r<N+1>-<timestamp>.md`
 
 3. **Re-task Big Head**: SendMessage to `big-head` with:
@@ -1145,8 +1145,8 @@ crumb trail list | grep -i "future work" || \
 crumb trail create --title "Future Work" --description "Low-priority polish and improvements from review sessions"
 ```
 
-**File P3 beads under the trail**:
-- All P3 beads from consolidation should be children of the future-work trail
+**File P3 crumbs under the trail**:
+- All P3 crumbs from consolidation should be children of the future-work trail
 - Use `crumb link <p3-crumb-id> --parent <future-work-trail-id>` for each P3 issue
 - These can be addressed in future sessions
 - No immediate action required — they're queued for later

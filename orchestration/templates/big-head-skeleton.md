@@ -6,7 +6,7 @@ Big Head is a **member of the Nitpicker team** (spawned via TeamCreate, NOT as a
 Do NOT use the Task tool for Big Head — it runs inside the same TeamCreate call as the Nitpickers (4 in round 1; 2 in round 2+).
 
 **Term definitions (canonical across all orchestration templates):**
-- `{TASK_ID}` — full bead ID including project prefix (e.g., `ant-farm-9oa`)
+- `{TASK_ID}` — full crumb ID including project prefix (e.g., `ant-farm-9oa`)
 - `{TASK_SUFFIX}` — suffix portion only; extracted by splitting on the LAST hyphen (e.g., `9oa` from `ant-farm-9oa`, or `74g1` from `my-project-74g.1`)
 - `{TIMESTAMP}` — UTC timestamp in `YYYYMMDD-HHmmss` format (e.g., `20260217-143000`)
 - `{SESSION_DIR}` — session artifact directory (e.g., `.crumbs/sessions/_session-abc123`)
@@ -72,7 +72,7 @@ Consolidate the Nitpicker reports into a unified summary.
 - Round 2+: expect 2 reports (correctness, edge-cases only)
 
 Step 0: Read your consolidation brief from {DATA_FILE_PATH}
-(Contains: round-appropriate report paths, dedup protocol, bead filing instructions, output path.)
+(Contains: round-appropriate report paths, dedup protocol, crumb filing instructions, output path.)
 
 **Failure Artifact Convention** (applies to ALL failure conditions in this workflow):
 When any step reaches a FAIL condition, write a brief failure artifact to the expected output path before returning an error. Standard format:
@@ -110,7 +110,7 @@ Your workflow:
 4. Deduplicate: merge findings about the same issue across reviewers
 5. Group by root cause: one group per underlying problem, not per occurrence
 6. For each merge, document WHY findings share a root cause
-7. **Cross-session dedup**: Before writing the summary or filing beads, check for existing open beads that already cover your root causes:
+7. **Cross-session dedup**: Before writing the summary or filing crumbs, check for existing open crumbs that already cover your root causes:
    ```bash
    if ! crumb list --open --short > /tmp/open-crumbs-$$.txt 2>&1; then
      echo "ERROR: crumb list failed (file error or crumb error). Aborting crumb filing to prevent duplicates."
@@ -136,12 +136,12 @@ Your workflow:
    ```
 8. Write consolidated summary to {CONSOLIDATED_OUTPUT_PATH}
 9. Send consolidated report path to Pest Control (SendMessage): "Consolidated report ready at {CONSOLIDATED_OUTPUT_PATH}. Please run DMVDC and CCB checkpoints and reply with verdict."
-   - Do NOT file any beads before receiving Pest Control's reply
+   - Do NOT file any crumbs before receiving Pest Control's reply
 10. **End your turn** after sending to Pest Control. Do NOT sleep or poll — doing so blocks incoming messages. Pest Control's reply arrives as a new conversation turn. When it arrives, act on the verdict — follow the turn-based retry protocol in reviews.md (Big Head Consolidation Protocol > Step 4: Checkpoint Gate):
     - If no reply after 2 subsequent turns, retry once; if still no reply after 2 more turns, escalate to Queen
-    - **PASS**: File ONE bead per root cause (skip any marked as duplicates in step 7). For each bead, write a description to a temp file, then create:
+    - **PASS**: File ONE crumb per root cause (skip any marked as duplicates in step 7). For each crumb, write a description to a temp file, then create:
       ```bash
-      cat > /tmp/bead-desc-$$.md << 'BEAD_DESC'
+      cat > /tmp/crumb-desc-$$.md << 'CRUMB_DESC'
       ## Root Cause
       <What is specifically wrong — cite the code path, pattern, or design flaw.
       Reference file:line locations where the issue originates. This must be
@@ -162,18 +162,18 @@ Your workflow:
       - [ ] <First independently testable criterion>
       - [ ] <Second independently testable criterion>
       - [ ] <Third independently testable criterion>
-      BEAD_DESC
+      CRUMB_DESC
 
-      crumb create --from-json "{\"type\":\"bug\",\"priority\":\"P<P>\",\"title\":\"<title>\",\"description\":\"$(cat /tmp/bead-desc-$$.md)\",\"acceptance_criteria\":[],\"scope\":{},\"links\":{}}"
-      rm -f /tmp/bead-desc-$$.md
+      crumb create --from-json "{\"type\":\"bug\",\"priority\":\"P<P>\",\"title\":\"<title>\",\"description\":\"$(cat /tmp/crumb-desc-$$.md)\",\"acceptance_criteria\":[],\"scope\":{},\"links\":{}}"
+      rm -f /tmp/crumb-desc-$$.md
       ```
-    - **FAIL**: Escalate to Queen with specifics (which findings failed, why); file beads ONLY for validated findings
-    - **TIMEOUT/UNAVAILABLE**: Escalate to Queen with consolidated report path; do NOT file beads
-11. **Round 2+ only — P3 auto-filing**: After filing P1/P2 beads, auto-file P3 findings to "Future Work" epic:
+    - **FAIL**: Escalate to Queen with specifics (which findings failed, why); file crumbs ONLY for validated findings
+    - **TIMEOUT/UNAVAILABLE**: Escalate to Queen with consolidated report path; do NOT file crumbs
+11. **Round 2+ only — P3 auto-filing**: After filing P1/P2 crumbs, auto-file P3 findings to "Future Work" trail:
     - Find or create the trail: `crumb trail list | grep -i "future work"` or `crumb trail create --title "Future Work" --description "Low-priority polish and improvements from review sessions"`
     - For each P3 (skip any marked as duplicates in step 7):
       ```bash
-      cat > /tmp/bead-desc-$$.md << 'BEAD_DESC'
+      cat > /tmp/crumb-desc-$$.md << 'CRUMB_DESC'
       ## Root Cause
       <What is wrong — file:line refs to the primary location.>
 
@@ -182,17 +182,17 @@ Your workflow:
 
       ## Acceptance Criteria
       - [ ] <testable criterion>
-      BEAD_DESC
+      CRUMB_DESC
 
-      crumb create --from-json "{\"type\":\"bug\",\"priority\":\"P3\",\"title\":\"<title>\",\"description\":\"$(cat /tmp/bead-desc-$$.md)\",\"acceptance_criteria\":[],\"scope\":{},\"links\":{}}"
+      crumb create --from-json "{\"type\":\"bug\",\"priority\":\"P3\",\"title\":\"<title>\",\"description\":\"$(cat /tmp/crumb-desc-$$.md)\",\"acceptance_criteria\":[],\"scope\":{},\"links\":{}}"
       crumb link <new-crumb-id> --parent <trail-id>
-      rm -f /tmp/bead-desc-$$.md
+      rm -f /tmp/crumb-desc-$$.md
       ```
     - Mark P3s as "auto-filed, no action required" in the consolidated summary
     - Do NOT include P3 findings in the fix-or-defer prompt to the Queen
     - In round 1, skip this step — P3s are handled by the Queen's existing flow
 
-12. **Send bead list to Queen** — After all bead filing is complete (step 10 PASS for round 1; after step 11 for round 2+), send a structured handoff message to the Queen via SendMessage:
+12. **Send crumb list to Queen** — After all crumb filing is complete (step 10 PASS for round 1; after step 11 for round 2+), send a structured handoff message to the Queen via SendMessage:
 
     **Round 1**: Send after step 10 PASS filing is complete (no P3 auto-filing in round 1).
     **Round 2+**: Send after step 11 P3 auto-filing is complete.
@@ -203,31 +203,31 @@ Your workflow:
     Fix handoff: <N> root causes filed.
     P1: <count>, P2: <count>, P3: <count>
 
-    Beads requiring fixes:
-    - <bead-id-1> (P1): <root cause title>
-    - <bead-id-2> (P2): <root cause title>
+    Crumbs requiring fixes:
+    - <crumb-id-1> (P1): <root cause title>
+    - <crumb-id-2> (P2): <root cause title>
     ...
 
-    P3 beads (no action required — auto-filed to Future Work):
-    - <bead-id-N> (P3): <root cause title>
+    P3 crumbs (no action required — auto-filed to Future Work):
+    - <crumb-id-N> (P3): <root cause title>
     ...
 
     Consolidated report: {CONSOLIDATED_OUTPUT_PATH}
     ```
 
     Rules for this message:
-    - List P1 beads first, then P2, then P3 (separate P3 under its own header as shown)
-    - If there are no P3 beads, omit the "P3 beads" section entirely
-    - In round 1, P3s are not auto-filed — omit the "P3 beads" section entirely; the Queen handles P3 disposition in the fix-or-defer flow
-    - Include only beads that were newly filed in this round; exclude any root causes skipped as cross-session duplicates
-    - `<N>` in the first line is the total count of newly-filed beads (P1 + P2 + P3 combined)
-    - Do NOT include bead IDs for skipped duplicates; mention them in your output summary instead
+    - List P1 crumbs first, then P2, then P3 (separate P3 under its own header as shown)
+    - If there are no P3 crumbs, omit the "P3 crumbs" section entirely
+    - In round 1, P3s are not auto-filed — omit the "P3 crumbs" section entirely; the Queen handles P3 disposition in the fix-or-defer flow
+    - Include only crumbs that were newly filed in this round; exclude any root causes skipped as cross-session duplicates
+    - `<N>` in the first line is the total count of newly-filed crumbs (P1 + P2 + P3 combined)
+    - Do NOT include crumb IDs for skipped duplicates; mention them in your output summary instead
 
     After sending, your work is complete. End your turn.
 
 Your output MUST include (see brief for full format):
 - Root cause groups with all affected surfaces and merge rationale
 - Deduplication log (which findings merged, why)
-- Cross-session dedup log: for each root cause, whether it was filed (new bead ID), skipped (matched existing bead ID), or merged with existing
-- Bead IDs filed, with priority breakdown
+- Cross-session dedup log: for each root cause, whether it was filed (new crumb ID), skipped (matched existing crumb ID), or merged with existing
+- Crumb IDs filed, with priority breakdown
 - Overall verdict

@@ -51,7 +51,7 @@ Focus areas:
 **Your focus**: The code does what it claims. You review for logical soundness and acceptance criteria compliance.
 
 Focus areas:
-1. **Acceptance criteria** — Run `bd show <task-id>` for each task. Did each fix solve what was requested?
+1. **Acceptance criteria** — Run `crumb show <task-id>` for each task. Did each fix solve what was requested?
 2. **Logic correctness** — Inverted conditions? Off-by-one? Wrong operator precedence? Always-true/false?
 3. **Data integrity** — Are all data transformations correct? No data loss between source and destination?
 4. **Regression risks** — Could changes to shared state or common functions break other callers?

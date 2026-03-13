@@ -5,7 +5,7 @@
 
 For detailed extraction rules and examples, see `~/.claude/orchestration/reference/dependency-analysis.md` (Term Definitions section).
 
-- `{TASK_ID}` — full bead ID including project prefix (e.g., `ant-farm-9oa` or `my-project-74g.1`)
+- `{TASK_ID}` — full crumb ID including project prefix (e.g., `ant-farm-9oa` or `my-project-74g.1`)
 - `{TASK_SUFFIX}` — suffix portion only; extracted by splitting on the LAST hyphen (e.g., `9oa` from `ant-farm-9oa`, or `74g1` from `my-project-74g.1`)
 - `{SESSION_DIR}` — session artifact directory path (e.g., `.crumbs/sessions/_session-abc123`)
 - `{checkpoint}` — lowercase checkpoint abbreviation used in artifact filenames (e.g., `cco`, `wwd`, `dmvdc`, `ccb`, `cco-review`, `dmvdc-review`)
@@ -35,7 +35,7 @@ All checkpoint verifications (SSV, CCO, WWD, DMVDC, CCB, ESV) are executed by **
   - Example: `pc-session-ccb-20260215-010520.md`
   - Example: `pc-session-esv-20260215-012345.md`
   - Note: Dirt Pusher CCO uses session-wide naming because the Queen audits all prompts for a wave in a single CCO run. Per-task CCO naming (`pc-{TASK_SUFFIX}-cco-{timestamp}.md`) applies only when auditing a single Dirt Pusher prompt in isolation (rare).
-- **Historical (pre-_session-068ecc83):** Earlier sessions used varied naming formats that do not match the conventions above. Common patterns included wave-based checkpoint letters (`pest-control-{session}-checkpoint-{A|B}-{timestamp}.md`), epic-scoped directories (`{epic}/verification/pc/` instead of `{SESSION_DIR}/pc/`), and non-standardized prefixes (`pc-review-cco-`, `pest-control-`). `_session-068ecc83` is the first session to use the current standard fully. Artifacts from earlier sessions are expected to diverge from the current convention; do not treat those divergences as errors.
+- **Historical (pre-_session-068ecc83):** Earlier sessions used varied naming formats that do not match the conventions above. Common patterns included wave-based checkpoint letters (`pest-control-{session}-checkpoint-{A|B}-{timestamp}.md`), trail-scoped directories (`{trail}/verification/pc/` instead of `{SESSION_DIR}/pc/`), and non-standardized prefixes (`pc-review-cco-`, `pest-control-`). `_session-068ecc83` is the first session to use the current standard fully. Artifacts from earlier sessions are expected to diverge from the current convention; do not treat those divergences as errors.
 
 All checkpoints write to `{SESSION_DIR}/pc/`.
 
@@ -45,7 +45,7 @@ All checkpoints write to `{SESSION_DIR}/pc/`.
 
 **Directory creation**: the Queen creates `{SESSION_DIR}/pc/` at session start (Step 0 in RULES.md). Agents and Pest Control can write immediately without creating directories.
 
-**The Queen's responsibility**: the Queen MUST include `**Summary output path**` in Dirt Pusher prompt context. For review prompts, include the session-scoped review report paths and all participating epic IDs (for context). Reviewers write to `{SESSION_DIR}/review-reports/`, not per-epic directories.
+**The Queen's responsibility**: the Queen MUST include `**Summary output path**` in Dirt Pusher prompt context. For review prompts, include the session-scoped review report paths and all participating trail IDs (for context). Reviewers write to `{SESSION_DIR}/review-reports/`, not per-trail directories.
 
 **Review timestamp convention**: the Queen generates a single timestamp per review cycle (format defined in **Timestamp format** above) and passes the exact output filenames to each reviewer and Big Head. This prevents reviewers from independently generating different timestamps.
 
@@ -79,13 +79,13 @@ All checkpoints use the following verdict states:
 | **WWD** | Small file = <100 lines | First-listed changed file | WARN does not block queue; FAIL blocks queue |
 | **DMVDC (Dirt Pushers)** | Pick 2 criteria: first-listed OR identified-as-critical OR all if <2 | First-listed acceptance criterion | PARTIAL allows resubmission; FAIL escalates |
 | **DMVDC (Nitpickers)** | Sample size = min(N, max(3, min(5, ceil(N/3)))) — see Check 1 for worked examples | Include highest-severity + all tiers | PARTIAL allows resubmission; FAIL escalates |
-| **CCB** | Finding count must reconcile to 100% | Earliest-filed bead per root cause | PARTIAL: fix and re-run; FAIL blocks user presentation |
+| **CCB** | Finding count must reconcile to 100% | Earliest-filed crumb per root cause | PARTIAL: fix and re-run; FAIL blocks user presentation |
 | **ESV** | All 6 checks must pass | First-listed violation per check | FAIL blocks git push; one Scribe retry allowed before escalation |
 
 ### Details by Checkpoint
 
 **SSV Verdict Specifics:**
-- PASS: All 3 checks pass (no file overlaps within a wave, file lists match bead descriptions, no intra-wave dependency violations)
+- PASS: All 3 checks pass (no file overlaps within a wave, file lists match crumb descriptions, no intra-wave dependency violations)
 - FAIL: Any check fails. Blocks Pantry spawn and all downstream spawning until Scout re-runs or issue is resolved.
 
 **CCO Verdict Specifics:**
@@ -104,12 +104,12 @@ All checkpoints use the following verdict states:
 - FAIL: Multiple checks fail or critical fabrication (escalate to user)
 
 **CCB Verdict Specifics:**
-- PASS: All 8 checks confirm (finding reconciliation, bead quality, priority calibration, traceability, dedup correctness, provenance)
+- PASS: All 8 checks confirm (finding reconciliation, crumb quality, priority calibration, traceability, dedup correctness, provenance)
 - PARTIAL: Some checks fail (fix and re-run)
 - FAIL: Critical failures (e.g., missing reports, orphaned findings). Must resolve before presenting to user.
 
 **ESV Verdict Specifics:**
-- PASS: All 6 checks pass (task coverage, commit coverage, open bead accuracy, CHANGELOG fidelity, section completeness, metric consistency)
+- PASS: All 6 checks pass (task coverage, commit coverage, open crumb accuracy, CHANGELOG fidelity, section completeness, metric consistency)
 - FAIL: Any check fails. Blocks git push. Re-spawn Scribe with specific violations (max 1 retry). Second failure escalates to user.
 
 ---
@@ -151,8 +151,8 @@ Do NOT execute the prompt — only verify its contents.
 ## Verify each item (PASS or FAIL with evidence):
 
 1. **Real task IDs**: Contains actual task IDs (e.g., `my-project-abc`), NOT placeholders like `<task-id>` or `<id>`
-2. **Real file paths**: Contains actual file paths with line numbers (e.g., `build.py:L200`), NOT placeholders like `<list from bead>` or `<file>`
-3. **Root cause text**: Contains a specific root cause description, NOT `<copy from bead>` or similar placeholders
+2. **Real file paths**: Contains actual file paths with line numbers (e.g., `build.py:L200`), NOT placeholders like `<list from crumb>` or `<file>`
+3. **Root cause text**: Contains a specific root cause description, NOT `<copy from crumb>` or similar placeholders
 4. **All 6 mandatory steps present**:
    - Step 1: `crumb show` + `crumb update --status=in_progress`
    - Step 2: "Design at least 4 approaches" (MANDATORY keyword present)
@@ -177,7 +177,7 @@ Do NOT execute the prompt — only verify its contents.
 > **Verdict: FAIL**
 >
 > Failed checks:
-> - Check 2 (Real file paths): FAIL — prompt contains placeholder `<list from bead>` instead of actual file paths with line numbers.
+> - Check 2 (Real file paths): FAIL — prompt contains placeholder `<list from crumb>` instead of actual file paths with line numbers.
 > - Check 5 (Scope boundaries): FAIL — no explicit file or directory limits; prompt says "explore the codebase for related issues."
 >
 > Passing checks: 1, 3, 4, 6, 7
@@ -195,7 +195,7 @@ Write your verification report to:
 - Example: `{SESSION_DIR}/pc/pc-74g1-cco-{timestamp}.md`
 
 Where:
-- `{TASK_SUFFIX}`: suffix portion of bead ID with no project prefix (e.g., `74g1` from `my-project-74g.1`)
+- `{TASK_SUFFIX}`: suffix portion of crumb ID with no project prefix (e.g., `74g1` from `my-project-74g.1`)
 - `{SESSION_DIR}`: session artifact directory (e.g., `.crumbs/sessions/_session-abc123`)
 - timestamp: format defined in **Timestamp format** (Pest Control Overview)
 ```
@@ -240,7 +240,7 @@ Both rounds — paste these 2 prompts:
 
 ## Verify each item (PASS or FAIL with evidence):
 
-1. **File list matches git diff**: the Queen provides the commit range (`<first-commit>..<last-commit>`) in the spawn prompt — use those exact values. This is session-wide, spanning all epics. Run `git diff --name-only <first-commit>..<last-commit>` and verify the prompt file list matches exactly. Every file in the diff must appear in the prompt, and every file in the prompt must appear in the diff. If there is a mismatch, FAIL with the list of missing/extra files.
+1. **File list matches git diff**: the Queen provides the commit range (`<first-commit>..<last-commit>`) in the spawn prompt — use those exact values. This is session-wide, spanning all trails. Run `git diff --name-only <first-commit>..<last-commit>` and verify the prompt file list matches exactly. Every file in the diff must appear in the prompt, and every file in the prompt must appear in the diff. If there is a mismatch, FAIL with the list of missing/extra files.
    > **Known limitation**: The commit range is Queen-provided. If the Queen passes incorrect commit hashes (e.g., too narrow or too broad), this check validates against wrong ground truth. There is no independent way for Pest Control to derive the "correct" commit range. Mitigation: WWD (Post-Commit Scope Verification) independently validates per-task scope after each agent commits, catching scope errors that slip through here.
 2. **Same file list**: All prompts contain the same set of files to review (not different subsets)
 3. **Same commit range**: All prompts reference the same commit range
@@ -250,7 +250,7 @@ Both rounds — paste these 2 prompts:
    - Correctness: acceptance criteria, logic errors, data integrity, regressions, cross-file
    - Drift: stale cross-file references, incomplete propagation, broken assumptions (round 1 only)
    (Flag if focus areas are copy-pasted identically across prompts)
-5. **No bead filing instruction**: Each prompt contains "Do NOT file beads" or equivalent
+5. **No crumb filing instruction**: Each prompt contains "Do NOT file crumbs" or equivalent
 6. **Report format reference**: Each prompt specifies the output path `{SESSION_DIR}/review-reports/{type}-review-{timestamp}.md`
 7. **Messaging guidelines**: Each prompt includes guidance on when to message other Nitpickers
 
@@ -314,7 +314,7 @@ You are **Pest Control**, the verification subagent. Your role is to verify agen
 - Examples: template changes that cascade into multiple HTML files, configuration changes affecting derived docs
 - Queen decision: approve as legitimate build artifact, or escalate to user if suspicious
 
-**FAIL verdict**: Scope creep detected — agent edited files outside the expected scope (different feature, unrelated config, cross-epic work). Indicates a real work attribution problem that needs correction.
+**FAIL verdict**: Scope creep detected — agent edited files outside the expected scope (different feature, unrelated config, cross-trail work). Indicates a real work attribution problem that needs correction.
 
 ## Verdict
 - **PASS** — Files match expected scope (or extra files are legitimate build outputs)
@@ -416,7 +416,7 @@ Write your verification report to:
 `{SESSION_DIR}/pc/pc-{TASK_SUFFIX}-dmvdc-{timestamp}.md`
 
 Where:
-- `{TASK_SUFFIX}`: suffix portion of bead ID with no project prefix (e.g., `74g1` from `my-project-74g.1`)
+- `{TASK_SUFFIX}`: suffix portion of crumb ID with no project prefix (e.g., `74g1` from `my-project-74g.1`)
 - `{SESSION_DIR}`: session artifact directory (e.g., `.crumbs/sessions/_session-abc123`)
 - timestamp: format defined in **Timestamp format** (Pest Control Overview)
 ```
@@ -475,10 +475,10 @@ For each finding, check that it is actionable:
 - List any findings that fail the specificity bar
 
 ## Check 4: Process Compliance
-Search the report for `crumb create`, `crumb update`, `crumb close`, or bead ID patterns (e.g., `my-project-xxx`).
-- Nitpickers must NOT file beads
-- If any bead-filing commands or IDs are found, FAIL this check
-- If unauthorized bead filing is detected, this is a FAIL (not just a flag). The remediation step is: delete the unauthorized bead (`crumb close <id> --reason="unauthorized filing during review"`) and document the violation in the verification report.
+Search the report for `crumb create`, `crumb update`, `crumb close`, or crumb ID patterns (e.g., `my-project-xxx`).
+- Nitpickers must NOT file crumbs
+- If any crumb-filing commands or IDs are found, FAIL this check
+- If unauthorized crumb filing is detected, this is a FAIL (not just a flag). The remediation step is: delete the unauthorized crumb (`crumb close <id> --reason="unauthorized filing during review"`) and document the violation in the verification report.
 
 ## Verdict
 - **PASS** — All 4 checks confirm substance and compliance
@@ -513,8 +513,8 @@ Where:
 
 ## Colony Census Bureau (CCB): Consolidation Audit
 
-**When**: After Big Head consolidation (after all review reports merged and beads filed — 4 reports in round 1, 2 in round 2+)
-**Model**: `sonnet` (judgment required for bead quality and dedup correctness)
+**When**: After Big Head consolidation (after all review reports merged and crumbs filed — 4 reports in round 1, 2 in round 2+)
+**Model**: `sonnet` (judgment required for crumb quality and dedup correctness)
 
 **CCB must PASS before presenting results to the user.**
 
@@ -527,7 +527,7 @@ Audit the review consolidation for completeness, accuracy, and traceability.
 
 **Consolidated summary**: `{SESSION_DIR}/review-reports/review-consolidated-{timestamp}.md`
 **Individual reports**: (the Queen provides exact filenames and the review round number in the consolidation prompt.)
-**Session start date**: `{SESSION_START_DATE}` (ISO 8601 date, e.g., `2026-02-20` — Queen-supplied; used to scope bead list in Check 7)
+**Session start date**: `{SESSION_START_DATE}` (ISO 8601 date, e.g., `2026-02-20` — Queen-supplied; used to scope crumb list in Check 7)
 
 Round 1:
 - `{SESSION_DIR}/review-reports/clarity-review-{timestamp}.md`
@@ -552,54 +552,54 @@ Count total findings referenced in the consolidated summary.
 Every finding must be accounted for — either standalone, merged into a group, or explicitly marked as duplicate in the deduplication log.
 Report the math: "Round 1: Clarity: N, Edge Cases: N, Correctness: N, Drift: N = TOTAL total. Round 2+: Correctness: N, Edge Cases: N = TOTAL total. Consolidated references TOTAL findings across N root causes. N findings merged as duplicates. RECONCILED / NOT RECONCILED — {list orphaned findings}"
 
-## Check 2: Bead Existence Check
-For each bead ID in the consolidated summary, run `crumb show <id>`.
+## Check 2: Crumb Existence Check
+For each crumb ID in the consolidated summary, run `crumb show <id>`.
 Verify it exists and has status=open.
 Report any IDs that don't resolve or have unexpected status.
 
-## Check 3: Bead Quality Check
-For each filed bead, verify its description contains:
+## Check 3: Crumb Quality Check
+For each filed crumb, verify its description contains:
 - Root cause explanation (not just symptom)
 - At least one file:line reference
 - Acceptance criteria or verification steps
 - Suggested fix
-Flag any beads missing these elements. List which elements are missing.
+Flag any crumbs missing these elements. List which elements are missing.
 
 ## Check 3b: Root Cause Spot-Check
 
-Select up to 2 beads for deep validation. Prioritize P1 beads first; if fewer than 2 P1 beads exist, fill remaining slots with the highest-surface-count P2 beads (most file:line references).
+Select up to 2 crumbs for deep validation. Prioritize P1 crumbs first; if fewer than 2 P1 crumbs exist, fill remaining slots with the highest-surface-count P2 crumbs (most file:line references).
 
-For each selected bead:
-1. Read the source file at every `file:line` reference in the bead description.
-2. Verify that the root cause explanation in the bead matches what the code actually shows at those locations.
+For each selected crumb:
+1. Read the source file at every `file:line` reference in the crumb description.
+2. Verify that the root cause explanation in the crumb matches what the code actually shows at those locations.
 3. Assess whether the suggested fix direction is consistent with the actual code path.
 
 **SUSPECT severity distinction:**
 
-- **Minor** — Root cause is vague or ambiguous but not outright wrong (e.g., "the function is inefficient" with no specifics, but the referenced code does contain the function). Action: flag the bead for amendment, add a note to the CCB report, continue audit. Do NOT escalate.
+- **Minor** — Root cause is vague or ambiguous but not outright wrong (e.g., "the function is inefficient" with no specifics, but the referenced code does contain the function). Action: flag the crumb for amendment, add a note to the CCB report, continue audit. Do NOT escalate.
 - **Material** — Root cause is factually incorrect (e.g., the referenced line does not contain the described problem, or the fix direction would not address the actual defect). Action: trigger the Material Spot-Check Escalation Path below.
 
 **Material Spot-Check Escalation Path:**
 1. Set CCB verdict to PARTIAL and include a `context-degradation-suspected` flag in the verdict line.
 2. The Queen shuts down the current Big Head instance.
-3. The Queen spawns a fresh Big Head with a handoff brief describing which beads failed spot-check and why.
-4. Fresh Big Head performs a full bead review (re-reads source files, corrects or re-files affected beads).
+3. The Queen spawns a fresh Big Head with a handoff brief describing which crumbs failed spot-check and why.
+4. Fresh Big Head performs a full crumb review (re-reads source files, corrects or re-files affected crumbs).
 5. Queen re-runs CCB.
-6. If the re-run CCB still returns SUSPECT on any spot-checked bead, escalate to the user with the CCB report attached.
+6. If the re-run CCB still returns SUSPECT on any spot-checked crumb, escalate to the user with the CCB report attached.
 
-Report: "Spot-checked {N} bead(s): {list titles}. Result: {CONFIRMED / SUSPECT — minor / SUSPECT — material}. {brief explanation per bead}"
+Report: "Spot-checked {N} crumb(s): {list titles}. Result: {CONFIRMED / SUSPECT — minor / SUSPECT — material}. {brief explanation per crumb}"
 
 ## Check 4: Priority Calibration
-Read P1 bead descriptions. Do they describe genuinely blocking issues (crashes, data loss, security vulnerabilities, broken functionality)?
+Read P1 crumb descriptions. Do they describe genuinely blocking issues (crashes, data loss, security vulnerabilities, broken functionality)?
 Or are they style preferences or minor improvements mislabeled as P1?
 Flag any suspicious priority assignments with reasoning.
 
 ## Check 5: Traceability Matrix
-Build a matrix: Finding → Root Cause Group → Bead ID.
+Build a matrix: Finding → Root Cause Group → Crumb ID.
 For every finding from every report, trace it to either:
-- A bead ID (via root cause group), OR
+- A crumb ID (via root cause group), OR
 - An explicit entry in the dedup log marking it as merged/duplicate
-Report any orphaned findings (not traceable to a bead or dedup entry).
+Report any orphaned findings (not traceable to a crumb or dedup entry).
 
 ## Check 6: Deduplication Correctness
 For each merged group of 3+ findings:
@@ -611,12 +611,12 @@ Spot-check 2 merged groups by reading the actual code at each finding's location
 - Do the findings genuinely share a root cause, or were unrelated issues incorrectly merged?
 - Report: "Group '<title>' merges N findings across files {list}. Common pattern: {yes/no — explanation}. CONFIRMED / SUSPECT"
 
-## Check 7: Bead Provenance Audit
-Run `crumb list --open --after {SESSION_START_DATE}` and cross-reference against the consolidated summary's "Beads filed" list.
-- `{SESSION_START_DATE}`: the Queen-supplied session start date (ISO 8601 format, e.g., `2026-02-20`). This scopes results to beads filed during this session only and prevents pulling thousands of unrelated open beads from earlier sessions.
-- Every open bead from this session should trace back to the consolidation step
-- Flag any beads that were filed during the review phase (not consolidation) — these are unauthorized
-- Verify bead count matches the consolidated summary's count
+## Check 7: Crumb Provenance Audit
+Run `crumb list --open --after {SESSION_START_DATE}` and cross-reference against the consolidated summary's "Crumbs filed" list.
+- `{SESSION_START_DATE}`: the Queen-supplied session start date (ISO 8601 format, e.g., `2026-02-20`). This scopes results to crumbs filed during this session only and prevents pulling thousands of unrelated open crumbs from earlier sessions.
+- Every open crumb from this session should trace back to the consolidation step
+- Flag any crumbs that were filed during the review phase (not consolidation) — these are unauthorized
+- Verify crumb count matches the consolidated summary's count
 
 ## Verdict
 - **PASS** — All 8 checks confirm consolidation integrity
@@ -638,7 +638,7 @@ Where:
 **On PASS**: Proceed to present results to user.
 
 **On PARTIAL or FAIL**:
-1. Fix consolidation gaps (re-read reports, file missing beads, update dedup log)
+1. Fix consolidation gaps (re-read reports, file missing crumbs, update dedup log)
 2. Re-run CCB
 3. If it fails a second time, present to user with the verification report attached so they can see what was flagged
 
@@ -675,12 +675,12 @@ A file overlap within a wave means two agents would edit the same file simultane
 **PASS condition**: No file appears in more than one task within any single wave.
 **FAIL condition**: One or more files appear in multiple tasks within the same wave. List every violation.
 
-## Check 2: File Lists Match Bead Descriptions
+## Check 2: File Lists Match Crumb Descriptions
 
 For each task in the strategy:
-1. Run `crumb show {TASK_ID}` to retrieve the bead's recorded affected files.
-2. Compare the Scout's reported affected files (from briefing.md) against the bead's actual affected files.
-3. Report each mismatch as: "Task {TASK_ID}: Scout lists `<file>` but bead does not — OR — bead lists `<file>` but Scout omits it."
+1. Run `crumb show {TASK_ID}` to retrieve the crumb's recorded affected files.
+2. Compare the Scout's reported affected files (from briefing.md) against the crumb's actual affected files.
+3. Report each mismatch as: "Task {TASK_ID}: Scout lists `<file>` but crumb does not — OR — crumb lists `<file>` but Scout omits it."
 
 **GUARD: crumb show Failure Handling (INFRASTRUCTURE FAILURE)**
 If `crumb show {TASK_ID}` fails (task not found, unreadable, or crumb command error):
@@ -690,7 +690,7 @@ If `crumb show {TASK_ID}` fails (task not found, unreadable, or crumb command er
 - Clearly mark skipped tasks in your findings: "[SKIPPED: crumb show failed]"
 - If more than half the tasks fail `crumb show`, FAIL the check with: "Infrastructure failure: could not verify file lists for majority of tasks."
 
-**PASS condition**: For every task where `crumb show` succeeds, the Scout's file list exactly matches the bead's recorded affected files (same set, order-insensitive).
+**PASS condition**: For every task where `crumb show` succeeds, the Scout's file list exactly matches the crumb's recorded affected files (same set, order-insensitive).
 **FAIL condition**: Any file list mismatch detected, or infrastructure failure threshold exceeded. List every discrepancy.
 
 ## Check 3: No Intra-Wave Dependency Violations
@@ -759,7 +759,7 @@ Where:
 **When**: After Scribe writes `{SESSION_DIR}/exec-summary.md` and CHANGELOG.md, BEFORE `git push` (Step 5c in RULES.md)
 **Model**: `haiku` (mechanical counting and set comparisons — no judgment required)
 
-**Why**: The Scribe produces an exec summary and CHANGELOG entry that are the permanent record of the session. Errors here (missed tasks, phantom commits, stale bead statuses) mislead future sessions and create audit gaps. A lightweight automated check before push catches output defects at zero implementation cost — the session is already complete, so no rework cascades.
+**Why**: The Scribe produces an exec summary and CHANGELOG entry that are the permanent record of the session. Errors here (missed tasks, phantom commits, stale crumb statuses) mislead future sessions and create audit gaps. A lightweight automated check before push catches output defects at zero implementation cost — the session is already complete, so no rework cascades.
 
 **Why haiku**: All six checks are set comparisons, count reconciliations, and status lookups with no ambiguity. No judgment or code comprehension is required. Haiku handles this class of verification faster and cheaper than sonnet.
 
@@ -800,27 +800,27 @@ Read the exec summary first. Then run all six checks below.
 **PASS condition**: Every commit in the session range is accounted for in the exec summary.
 **FAIL condition**: One or more commits are unaccounted for. List every missing commit hash and its message.
 
-## Check 3: Open Bead Accuracy
+## Check 3: Open Crumb Accuracy
 
-1. Read the exec summary's "Open Issues" section and extract every bead ID listed as open.
-2. Run `crumb show <id>` for each listed bead to verify it is actually open.
+1. Read the exec summary's "Open Issues" section and extract every crumb ID listed as open.
+2. Run `crumb show <id>` for each listed crumb to verify it is actually open.
 
 **GUARD: crumb show Failure Handling (INFRASTRUCTURE FAILURE)**
 If `crumb show <id>` fails (task not found, unreadable, or crumb command error):
 - Record the infrastructure failure: "`<id>` — crumb show failed: {error details}"
-- Write a note in your verification report: "Could not verify status of `<id>` via `crumb show`: {error}. Skipping this bead's status check."
-- Do NOT abort the review; continue with remaining beads.
-- Clearly mark skipped beads in your findings: "[SKIPPED: crumb show failed]"
-- If more than half the listed beads fail `crumb show`, FAIL the check with: "Infrastructure failure: could not verify status for majority of listed beads."
+- Write a note in your verification report: "Could not verify status of `<id>` via `crumb show`: {error}. Skipping this crumb's status check."
+- Do NOT abort the review; continue with remaining crumbs.
+- Clearly mark skipped crumbs in your findings: "[SKIPPED: crumb show failed]"
+- If more than half the listed crumbs fail `crumb show`, FAIL the check with: "Infrastructure failure: could not verify status for majority of listed crumbs."
 
-3. Run `crumb list --open --after {SESSION_START_DATE}` to detect any open beads from this session that are NOT listed in the exec summary.
-   > **Empty list handling**: If `crumb list --open --after {SESSION_START_DATE}` returns zero results AND the exec summary's "Open Issues" section says "None" (or equivalent), this is a PASS — no discrepancy exists. Proceed directly to Check 4. Only fail if the exec summary lists beads as open but `crumb show` contradicts them, or if `crumb list` returns beads that the exec summary omits.
+3. Run `crumb list --open --after {SESSION_START_DATE}` to detect any open crumbs from this session that are NOT listed in the exec summary.
+   > **Empty list handling**: If `crumb list --open --after {SESSION_START_DATE}` returns zero results AND the exec summary's "Open Issues" section says "None" (or equivalent), this is a PASS — no discrepancy exists. Proceed directly to Check 4. Only fail if the exec summary lists crumbs as open but `crumb show` contradicts them, or if `crumb list` returns crumbs that the exec summary omits.
 4. Report each discrepancy as one of:
-   - "Bead `<id>` listed as open in exec summary but `crumb show` reports status={status}."
-   - "Bead `<id>` is open and filed during this session but not listed in exec summary's Open Issues."
+   - "Crumb `<id>` listed as open in exec summary but `crumb show` reports status={status}."
+   - "Crumb `<id>` is open and filed during this session but not listed in exec summary's Open Issues."
 
-**PASS condition**: Every bead listed as open in exec summary is actually open (per `crumb show`), and no unlisted open beads from this session exist. If `crumb list` returns zero results and the exec summary states "None", this is also PASS.
-**FAIL condition**: Any status mismatch, or unlisted open beads exist. List every discrepancy.
+**PASS condition**: Every crumb listed as open in exec summary is actually open (per `crumb show`), and no unlisted open crumbs from this session exist. If `crumb list` returns zero results and the exec summary states "None", this is also PASS.
+**FAIL condition**: Any status mismatch, or unlisted open crumbs exist. List every discrepancy.
 
 ## Check 4: CHANGELOG Derivation Fidelity
 
@@ -838,7 +838,7 @@ If `crumb show <id>` fails (task not found, unreadable, or crumb command error):
    - **At a Glance** — summary table with key metrics
    - **Work Completed** — per-task outcome list
    - **Review Findings** — Nitpicker findings summary (may be "None" if no review ran)
-   - **Open Issues** — list of open beads from this session (may be "None")
+   - **Open Issues** — list of open crumbs from this session (may be "None")
    - **Observations** — process notes, patterns, or handoff context
 
 2. Report each missing section as: "Section '{section name}' is absent from exec summary."
@@ -848,11 +848,11 @@ If `crumb show <id>` fails (task not found, unreadable, or crumb command error):
 
 ## Check 6: Metric Consistency
 
-1. Read the "At a Glance" table in the exec summary and extract all numeric counts (e.g., "Tasks completed: N", "Commits: N", "Beads filed: N").
+1. Read the "At a Glance" table in the exec summary and extract all numeric counts (e.g., "Tasks completed: N", "Commits: N", "Crumbs filed: N").
 2. For each count, verify it against the actual item count in the corresponding body section:
    - "Tasks completed" count must match the number of task entries in "Work Completed"
    - "Commits" count must match the number of commits in the session range (`git log --oneline` output)
-   - "Beads filed" count must match the number of bead IDs listed in "Open Issues" (or the review findings section if beads were filed there)
+   - "Crumbs filed" count must match the number of crumb IDs listed in "Open Issues" (or the review findings section if crumbs were filed there)
 3. Report each mismatch as: "At a Glance says '{label}: {claimed}' but actual count in body is {actual}."
 
 **PASS condition**: All numeric counts in "At a Glance" match the actual item counts in the body sections.
@@ -865,7 +865,7 @@ Per-check status — report each check individually:
 ```
 Check 1 (Task Coverage): PASS / FAIL — {evidence or "All task IDs present"}
 Check 2 (Commit Coverage): PASS / FAIL — {evidence or "All commits accounted for"}
-Check 3 (Open Bead Accuracy): PASS / FAIL — {evidence or "All bead statuses confirmed"}
+Check 3 (Open Crumb Accuracy): PASS / FAIL — {evidence or "All crumb statuses confirmed"}
 Check 4 (CHANGELOG Fidelity): PASS / FAIL — {evidence or "All items present in CHANGELOG"}
 Check 5 (Section Completeness): PASS / FAIL — {evidence or "All 5 sections present"}
 Check 6 (Metric Consistency): PASS / FAIL — {evidence or "All counts consistent"}
@@ -882,10 +882,10 @@ Check 6 (Metric Consistency): PASS / FAIL — {evidence or "All counts consisten
 > Check 1 (Task Coverage): PASS
 >
 > Check 2 (Commit Coverage): FAIL
-> - Commit `a3f9c12` ("chore: sync beads JSONL") — in git log but not referenced in exec summary.
+> - Commit `a3f9c12` ("chore: sync crumbs JSONL") — in git log but not referenced in exec summary.
 >
-> Check 3 (Open Bead Accuracy): FAIL
-> - Bead `ant-farm-99z` listed as open in exec summary but `crumb show` reports status=closed.
+> Check 3 (Open Crumb Accuracy): FAIL
+> - Crumb `ant-farm-99z` listed as open in exec summary but `crumb show` reports status=closed.
 >
 > Check 4 (CHANGELOG Fidelity): PASS
 >
@@ -924,7 +924,7 @@ Where:
 
 ## Trail Decomposition Verification (TDV): Post-Decomposition Structure Audit
 
-**When**: After Architect completes trail decomposition and writes crumbs to the bead store, BEFORE handoff to the implementation wave
+**When**: After Architect completes trail decomposition and writes crumbs to the crumb store, BEFORE handoff to the implementation wave
 **Model**: `haiku` (set comparisons, graph traversals, field existence checks — no judgment required)
 
 **Why**: The Architect produces a decomposition (trail + crumbs) that defines all downstream implementation work. Structural defects here — missing fields, circular dependencies, file conflicts within a wave, broken trail linkage — cannot be caught by the implementing agents and cascade into incorrect or conflicting work. A lightweight automated check immediately after decomposition catches defects at the cheapest possible point.
@@ -951,7 +951,7 @@ You are **Pest Control**, the verification subagent. Your role is to verify the 
 **Trail ID**: `{TRAIL_ID}`
 **Session directory**: `{SESSION_DIR}`
 
-Read the trail and all associated crumbs first (run `bd show {TRAIL_ID}` and `bd epic status {TRAIL_ID}` to enumerate child crumb IDs, then `bd show <crumb-id>` for each). Then run all five structural checks and three heuristic checks below.
+Read the trail and all associated crumbs first (run `crumb show {TRAIL_ID}` and `crumb trail status {TRAIL_ID}` to enumerate child crumb IDs, then `crumb show <crumb-id>` for each). Then run all five structural checks and three heuristic checks below.
 
 ## Check 1: Coverage — Spec Requirements Map to Crumb Acceptance Criteria
 
@@ -972,7 +972,7 @@ For each crumb in the decomposition, verify the presence and non-emptiness of th
 - `scope.agent_type` — crumb specifies an agent type
 - `links.parent` — crumb references a parent trail ID
 
-Run `bd show <crumb-id>` for each crumb and check each field.
+Run `crumb show <crumb-id>` for each crumb and check each field.
 
 Report each missing or empty field as: "Crumb `{crumb-id}`: missing or empty field `{field}`."
 
@@ -982,18 +982,18 @@ Report each missing or empty field as: "Crumb `{crumb-id}`: missing or empty fie
 ## Check 3: Dependency Validity — No Circular Chains, All Referenced IDs Exist
 
 1. For each crumb, read its `blocked_by` list (dependencies).
-2. Verify that every referenced ID exists in the bead store (run `bd show <id>` for each).
+2. Verify that every referenced ID exists in the crumb store (run `crumb show <id>` for each).
 3. Detect circular dependency chains: starting from each crumb, follow the `blocked_by` chain. If you return to the starting crumb, a cycle exists.
    - Represent the cycle as: "Circular dependency: `{crumb-id-A}` → `{crumb-id-B}` → ... → `{crumb-id-A}`."
 4. Report each non-existent ID as: "Crumb `{crumb-id}`: `blocked_by` references `{missing-id}` which does not exist."
 
-**GUARD: bd show Failure Handling (INFRASTRUCTURE FAILURE)**
-If `bd show <id>` fails (ID not found, unreadable, or bd command error):
-- Record the failure: "`<id>` — bd show failed: {error details}"
-- Write a note in your verification report: "Could not verify `<id>` via `bd show`: {error}. Skipping dependency check for this ID."
+**GUARD: crumb show Failure Handling (INFRASTRUCTURE FAILURE)**
+If `crumb show <id>` fails (ID not found, unreadable, or crumb command error):
+- Record the failure: "`<id>` — crumb show failed: {error details}"
+- Write a note in your verification report: "Could not verify `<id>` via `crumb show`: {error}. Skipping dependency check for this ID."
 - Continue with the remaining IDs — do NOT abort the entire check.
-- Clearly mark skipped IDs: "[SKIPPED: bd show failed]"
-- If more than half the referenced IDs fail `bd show`, FAIL the check with: "Infrastructure failure: could not verify dependencies for majority of crumbs."
+- Clearly mark skipped IDs: "[SKIPPED: crumb show failed]"
+- If more than half the referenced IDs fail `crumb show`, FAIL the check with: "Infrastructure failure: could not verify dependencies for majority of crumbs."
 
 **PASS condition**: No circular chains exist and all referenced IDs resolve.
 **FAIL condition**: Any circular dependency or unresolvable ID reference found. List every violation.
@@ -1091,7 +1091,7 @@ Write your verification report to:
 
 Where:
 - `{SESSION_DIR}`: session artifact directory (e.g., `.crumbs/sessions/_session-abc123`)
-- `{TRAIL_ID}`: the trail bead ID being decomposed (e.g., `ant-farm-f4h5`)
+- `{TRAIL_ID}`: the trail crumb ID being decomposed (e.g., `ant-farm-f4h5`)
 - timestamp: format defined in **Timestamp format** (Pest Control Overview)
 ```
 
@@ -1106,7 +1106,7 @@ Where:
    ```
    TDV found decomposition errors that must be corrected before implementation can begin:
    <paste specific violations from TDV report>
-   Please revise the decomposition to resolve these issues and update the crumbs in the bead store.
+   Please revise the decomposition to resolve these issues and update the crumbs in the crumb store.
    ```
 4. After Architect revises the decomposition, re-run TDV.
 5. If TDV fails a second time, escalate to user with the full violation report — do NOT attempt a third Architect retry automatically.

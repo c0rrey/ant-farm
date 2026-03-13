@@ -10,10 +10,10 @@ Execute <task-type> for <file-or-component>:
 
 Tasks: <task-id-1>, <task-id-2>, ...
 
-## Context (from bead - do not re-discover)
-- **Affected files**: <list from bead with line numbers>
-- **Root cause**: <copy from bead>
-- **Expected behavior**: <copy from bead>
+## Context (from crumb - do not re-discover)
+- **Affected files**: <list from crumb with line numbers>
+- **Root cause**: <copy from crumb>
+- **Expected behavior**: <copy from crumb>
 - **Scope boundaries**: Read ONLY the files/lines listed above
 - **Summary output path**: `<session-dir>/summaries/<task-id>.md`
 
@@ -162,9 +162,9 @@ If you find other issues during your work:
 ## The Queen's Pre-Spawn Checklist
 
 Before sending any agent prompt, confirm it includes:
-- [ ] **Context section** with exact files/lines from bead (pre-digested, not "discover the problem")
+- [ ] **Context section** with exact files/lines from crumb (pre-digested, not "discover the problem")
 - [ ] **Scope boundaries** limiting what files to read
-- [ ] Root cause and acceptance criteria extracted from bead
+- [ ] Root cause and acceptance criteria extracted from crumb
 - [ ] **Step 1**: `crumb show` + `crumb update --status=in_progress`
 - [ ] **Step 2**: "Design at least 4 approaches" with pros/cons (MANDATORY)
 - [ ] **Step 3**: Implementation instructions
@@ -178,11 +178,11 @@ If any checkbox is missing, DO NOT spawn the agent — fix the prompt first.
 
 ## Information Diet for Agents
 
-**CRITICAL**: Beads contain pre-digested context. Extract and provide it to agents to prevent wasteful exploration.
+**CRITICAL**: Crumbs contain pre-digested context. Extract and provide it to agents to prevent wasteful exploration.
 
-### What Beads Contain (Don't Make Agents Re-Discover)
+### What Crumbs Contain (Don't Make Agents Re-Discover)
 
-Every bead description includes:
+Every crumb description includes:
 - ✅ **Root cause** - The exact problem and why it exists
 - ✅ **Affected surfaces** - Specific files and line numbers
 - ✅ **Expected vs actual behavior** - What should happen vs what does
@@ -205,15 +205,15 @@ crumb show <task-id>  # Read ONCE in the Queen's window
 ### Agent Prompt: What to Include
 
 **✅ DO provide:**
-- Exact file paths and line numbers from bead
-- Root cause explanation from bead
-- Acceptance criteria checklist from bead
+- Exact file paths and line numbers from crumb
+- Root cause explanation from crumb
+- Acceptance criteria checklist from crumb
 - Scope boundaries: "Read ONLY: build.py lines 200-250, site.yaml contact section"
 
 **❌ DON'T say:**
 - "Read the codebase and understand the problem" (too broad)
-- "Explore the templates to find usage" (bead already lists usage)
-- "Investigate which files are affected" (bead already specifies)
+- "Explore the templates to find usage" (crumb already lists usage)
+- "Investigate which files are affected" (crumb already specifies)
 
 ### Example: Before vs After
 

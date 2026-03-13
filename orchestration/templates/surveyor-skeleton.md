@@ -10,7 +10,7 @@ user interaction (`AskUserQuestion`) and requirements synthesis — these requir
 most capable model.
 
 **Term definitions (canonical across all orchestration templates):**
-- `{DECOMPOSE_DIR}` — decomposition working directory path (e.g., `.beads/decompose/_decompose-abc123/`)
+- `{DECOMPOSE_DIR}` — decomposition working directory path (e.g., `.crumbs/decompose/_decompose-abc123/`)
 - `{CODEBASE_ROOT}` — absolute path to the repository root (e.g., `/Users/dev/myproject`)
 - `{FEATURE_REQUEST}` — freeform text of the feature request, provided by the user
 

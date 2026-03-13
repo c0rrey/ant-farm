@@ -15,7 +15,7 @@ from the Forager skeleton template before spawning you):
 - `{FOCUS_AREA}` — one of: `Stack`, `Architecture`, `Pitfall`, `Pattern`
 - `{SPEC_PATH}` — absolute path to the spec file
 - `{DECOMPOSE_DIR}` — decomposition working directory path
-  (e.g., `.beads/decompose/_decompose-abc123/`)
+  (e.g., `.crumbs/decompose/_decompose-abc123/`)
 
 ---
 

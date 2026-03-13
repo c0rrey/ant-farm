@@ -12,7 +12,7 @@ freeform feature descriptions into structured, implementation-ready specs.
 The three values below were provided in your spawn prompt (pre-filled by the
 Queen from the Surveyor skeleton template before spawning you):
 
-- `{DECOMPOSE_DIR}` — decomposition working directory path (e.g., `.beads/decompose/_decompose-abc123/`)
+- `{DECOMPOSE_DIR}` — decomposition working directory path (e.g., `.crumbs/decompose/_decompose-abc123/`)
 - `{CODEBASE_ROOT}` — absolute path to the repository root
 - Feature request — the freeform text provided directly in the spawn prompt
 

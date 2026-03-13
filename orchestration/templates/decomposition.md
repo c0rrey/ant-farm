@@ -8,7 +8,7 @@ Follow every step exactly. Do NOT skip steps, reorder steps, or stop early.
 
 ## Term Definitions
 
-- `{DECOMPOSE_DIR}` — decomposition working directory (e.g., `.beads/decompose/_decompose-abc123/`)
+- `{DECOMPOSE_DIR}` — decomposition working directory (e.g., `.crumbs/decompose/_decompose-abc123/`)
 - `{CODEBASE_ROOT}` — absolute path to the repository root
 - A **trail** — a named, independently deployable group of related crumbs (analogous to an epic)
 - A **crumb** — one atomic unit of work: 5-8 files, one agent, concrete verifiable acceptance criteria
@@ -112,9 +112,9 @@ seen this codebase must be able to determine PASS or FAIL without asking anyone.
 
 Good example:
 ```
-- Running `bd trail create "Add user login"` returns exit code 0 and prints
+- Running `crumb trail create "Add user login"` returns exit code 0 and prints
   the new trail ID to stdout.
-- `bd show <trail-id>` displays the title "Add user login" and status "open".
+- `crumb show <trail-id>` displays the title "Add user login" and status "open".
 ```
 
 Bad example:
@@ -205,7 +205,7 @@ After all design is complete and verified, create the trails and crumbs.
 For each trail:
 
 ```bash
-bd trail create "{trail-title}"
+crumb trail create "{trail-title}"
 ```
 
 Record the returned trail ID. You will use it when creating crumbs.
@@ -262,7 +262,7 @@ cat > /tmp/crumb-session-store.json << 'EOF'
 EOF
 
 # Create the crumb
-bd create --from-json /tmp/crumb-session-store.json
+crumb create --from-json /tmp/crumb-session-store.json
 ```
 
 Record the returned crumb ID.
@@ -272,50 +272,22 @@ Record the returned crumb ID.
 After creating each crumb, assign it to its trail:
 
 ```bash
-bd dep add {crumb-id} {trail-id} --type parent-child
+crumb link {crumb-id} --parent {trail-id}
 ```
 
 Note: the CHILD (crumb) is the first argument; the TRAIL (parent) is the second.
 Reversing the arguments creates a wrong-direction dependency. Verify with
-`bd show {trail-id}` after wiring.
+`crumb show {trail-id}` after wiring.
 
 ### Wire Blocked-By Dependencies
 
 For each crumb that has `blocked_by` entries:
 
 ```bash
-bd dep add {blocker-crumb-id} {blocked-crumb-id} --type blocks
+crumb link {blocker-crumb-id} --blocks {blocked-crumb-id}
 ```
 
 The BLOCKER is the first argument; the BLOCKED crumb is the second.
-
-**Dolt mode warning**: If the environment uses `bd dolt` in server mode
-(`--no-auto-commit`), `bd dep add` may silently fail to persist. Switch to
-embedded mode before running dep commands, with rollback on failure:
-
-```bash
-# Switch to embedded mode; abort if this fails
-if ! bd dolt set mode embedded; then
-  echo "ERROR: Failed to switch to embedded mode. dep add commands not run." >&2
-  exit 1
-fi
-
-# Run all bd dep add commands here
-# e.g.: bd dep add {blocker-crumb-id} {blocked-crumb-id} --type blocks
-dep_add_failed=0
-# ... (repeat the pattern below for each dep add)
-# bd dep add ... || dep_add_failed=1
-
-# Restore server mode unconditionally, even if dep adds failed
-if ! bd dolt set mode server || ! bd dolt start; then
-  echo "WARNING: Failed to restore server mode. Manual intervention may be required: run 'bd dolt set mode server && bd dolt start'." >&2
-fi
-
-if [ "$dep_add_failed" -eq 1 ]; then
-  echo "ERROR: One or more 'bd dep add' commands failed. Review output above." >&2
-  exit 1
-fi
-```
 
 ---
 
@@ -412,7 +384,7 @@ Cross-trail deps: {N} (see brief for details)
 1. **No code writing.** You create crumbs that describe implementation work. You
    do NOT implement any code yourself.
 2. **No orphan crumbs.** Every crumb must belong to exactly one trail via a
-   `bd dep add --type parent-child` call.
+   `crumb link --parent` call.
 3. **No circular dependencies.** Topological sort is mandatory before creating deps.
 4. **No vague scope.** Every crumb must list concrete files (exact paths or
    clearly marked "new"). "Various files" or "relevant modules" are not acceptable.

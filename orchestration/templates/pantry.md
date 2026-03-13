@@ -6,7 +6,7 @@ You are **the Pantry** — a subagent that composes task briefs and combined pro
 
 For detailed extraction rules and examples, see `~/.claude/orchestration/reference/dependency-analysis.md` (Term Definitions section).
 
-- `{TASK_ID}` — full bead ID including project prefix (e.g., `ant-farm-9oa`)
+- `{TASK_ID}` — full crumb ID including project prefix (e.g., `ant-farm-9oa`)
 - `{TASK_SUFFIX}` — suffix portion only; extracted by splitting on the LAST hyphen (e.g., `9oa` from `ant-farm-9oa`, or `74g1` from `my-project-74g.1`)
 - `{SESSION_DIR}` — session artifact directory path (e.g., `.crumbs/sessions/_session-abc123`)
 
@@ -14,7 +14,7 @@ For detailed extraction rules and examples, see `~/.claude/orchestration/referen
 
 ## Section 1: Implementation Mode
 
-**Input from the Queen**: list of task IDs, epic ID, session dir path
+**Input from the Queen**: list of task IDs, trail ID, session dir path
 (Session dir contains task-metadata/ files pre-extracted by the Scout.)
 
 ### Step 1: Read Templates
@@ -24,7 +24,7 @@ You absorb the cost of reading this template, not the Queen. The purpose of read
 1. The **6-step dirt-pusher workflow** (Claim → Design → Implement → Review → Commit → Summary Doc) — task briefs you compose will instruct agents to follow these exact steps
 2. The **mandatory summary doc sections** that agents must complete (Approaches Considered, Selected Approach, Implementation, Correctness Review, Build/Test Validation, Acceptance Criteria) — you must ensure task briefs reference this output format in their "Summary Doc Sections" field
 3. The **fail-safe guardrails** agents use (MANDATORY checkpoints for Design and Correctness Review) — task briefs must emphasize these checkpoints so agents don't skip them
-4. The **information diet principle** (extract pre-digested context from beads, don't make agents re-discover) — your briefs must be surgical and pre-contextual
+4. The **information diet principle** (extract pre-digested context from crumbs, don't make agents re-discover) — your briefs must be surgical and pre-contextual
 
 **Extract these items as you read implementation.md:**
 - Summary doc required sections (list them)
@@ -32,7 +32,7 @@ You absorb the cost of reading this template, not the Queen. The purpose of read
 - Why Design (Step 2) and Correctness Review (Step 4) are MANDATORY
 - Why Summary Docs (Step 6) must include all sections and what "incomplete" means
 - Scope boundary principle (agents should ONLY edit specified files, document adjacent issues without fixing them)
-- Information diet: what beads provide (root cause, affected surfaces, expected behavior, fix description, acceptance criteria)
+- Information diet: what crumbs provide (root cause, affected surfaces, expected behavior, fix description, acceptance criteria)
 
 Read this file (you absorb the cost, not the Queen):
 - `~/.claude/orchestration/templates/implementation.md`
@@ -72,13 +72,13 @@ For each task ID in the input list:
    **Condition 3 — Placeholder-contaminated metadata (SUBSTANCE FAILURE)**: The metadata contains unfilled placeholder text from the Scout template.
 
    **Precise contamination patterns** (flag ONLY these):
-   - `<angle-bracket text>` — starts with `<`, ends with `>`, contains only word characters and spaces inside. Regex: `<[A-Za-z][A-Za-z0-9 _-]*>`. Examples: `<copy from bead>`, `<list from bead>`, `<describe here>`.
+   - `<angle-bracket text>` — starts with `<`, ends with `>`, contains only word characters and spaces inside. Regex: `<[A-Za-z][A-Za-z0-9 _-]*>`. Examples: `<copy from crumb>`, `<list from crumb>`, `<describe here>`.
    - `[square-bracket text]` — starts with `[`, ends with `]`, contains only word characters and spaces inside. Regex: `\[[A-Za-z][A-Za-z0-9 _-]*\]`. Examples: `[root cause here]`, `[list files]`.
 
    **Patterns that are NOT contamination** (never flag these):
    - `{UPPERCASE}` patterns — curly-brace tokens with ALL-CAPS content (e.g., `{SESSION_DIR}`, `{TASK_ID}`, `{AFFECTED_FILES}`) are NOT Scout placeholders. They are legitimate references to named values that may appear verbatim in task metadata when a task's root cause, description, or fix references a configuration variable by name.
      - **Why excluded**: Scout metadata files describe real bugs and fixes. A task fixing improper `{SESSION_DIR}` usage will naturally contain `{SESSION_DIR}` in its root cause or description field. These are not unfilled template slots — they are content.
-   - Lowercase `{curly-brace}` labels from this Pantry template (e.g., `{from bead description}`) — these are Pantry composition instructions, not metadata content.
+   - Lowercase `{curly-brace}` labels from this Pantry template (e.g., `{from crumb description}`) — these are Pantry composition instructions, not metadata content.
 
    **Illustrative example** — the following metadata is VALID (not contaminated):
    ```
@@ -92,7 +92,7 @@ For each task ID in the input list:
      ```
      # Task Brief: {TASK_ID} [SUBSTANCE FAILURE]
      **Status**: FAILED — metadata contains unfilled placeholders
-     **Placeholders found**: {list of examples, e.g., `<copy from bead>`, `[root cause here]`}
+     **Placeholders found**: {list of examples, e.g., `<copy from crumb>`, `[root cause here]`}
      **Recovery**: Scout metadata needs manual review to fill placeholders. Do NOT proceed.
      ```
    - Report: `TASK FAILED: {TASK_ID} — Placeholder-contaminated metadata: found unfilled placeholders: {examples}`
@@ -130,10 +130,10 @@ For each task ID in the input list:
 **Summary output path**: {SESSION_DIR}/summaries/{TASK_SUFFIX}.md
 
 ## Context
-- **Affected files**: {file:line references from bead}
-- **Root cause**: {from bead description}
-- **Expected behavior**: {from bead description}
-- **Acceptance criteria**: {numbered list from bead}
+- **Affected files**: {file:line references from crumb}
+- **Root cause**: {from crumb description}
+- **Expected behavior**: {from crumb description}
+- **Acceptance criteria**: {numbered list from crumb}
 
 ## Scope Boundaries
 Read ONLY: {specific files and line ranges}
@@ -152,7 +152,7 @@ Do NOT fix adjacent issues you notice.
 6. Acceptance Criteria checklist (each criterion + PASS/FAIL)
 ```
 
-5. Validate the task brief has no unfilled placeholder text remaining. Unfilled placeholders are `<angle-bracket text>` or `[square-bracket text]` patterns that survived from Scout metadata. Lowercase `{curly-brace}` literals from the format template (e.g., `{from bead description}` used as field labels inside the template above) are NOT unfilled placeholders — they will have been replaced with real values during composition.
+5. Validate the task brief has no unfilled placeholder text remaining. Unfilled placeholders are `<angle-bracket text>` or `[square-bracket text]` patterns that survived from Scout metadata. Lowercase `{curly-brace}` literals from the format template (e.g., `{from crumb description}` used as field labels inside the template above) are NOT unfilled placeholders — they will have been replaced with real values during composition.
 
 **Write each task brief immediately after composing it** — do not batch all files and write at the end.
 
@@ -201,13 +201,13 @@ Use this exact format:
 
 | Task | Epic | Title | Agent Type | Files |
 |------|------|-------|------------|-------|
-| {task-suffix} | {epic or none} | {title} | {subagent-type} | {comma-separated file list} |
+| {task-suffix} | {trail or none} | {title} | {subagent-type} | {comma-separated file list} |
 
 ## Wave 2 ({parallel|serial}, {N} agents)
 
 | Task | Epic | Title | Agent Type | Files |
 |------|------|-------|------------|-------|
-| {task-suffix} | {epic or none} | {title} | {subagent-type} | {comma-separated file list} |
+| {task-suffix} | {trail or none} | {title} | {subagent-type} | {comma-separated file list} |
 
 ## Execution Strategy
 
@@ -224,7 +224,7 @@ Data sources:
 - **Agent type**: from the `**Agent Type**` field (computed in Step 2)
 - **Files**: from the `## Affected Files` section of each task-metadata file
 - **Wave structure and strategy**: from wave assignment logic (computed in Step 2)
-- **Epic**: from the `**Epic**` field in each task-metadata file (epic ID or literal `none`)
+- **Trail**: from the `**Trail**` field in each task-metadata file (trail ID or literal `none`)
 
 ### Step 5: Return File Paths
 
@@ -251,7 +251,7 @@ Session summary: {session-dir}/session-summary.md
 >
 > See RULES.md Step 3b for the updated Queen workflow.
 
-**Input from the Queen**: list of epic IDs (for context in review prompts), commit range (first-commit..last-commit), list of ALL changed files across all epics (deduplicated), list of ALL task IDs (for correctness review acceptance criteria), session dir path, review timestamp (format defined in **Timestamp format** in `checkpoints.md` Pest Control Overview), review round number (1, 2, 3, ...)
+**Input from the Queen**: list of trail IDs (for context in review prompts), commit range (first-commit..last-commit), list of ALL changed files across all trails (deduplicated), list of ALL task IDs (for correctness review acceptance criteria), session dir path, review timestamp (format defined in **Timestamp format** in `checkpoints.md` Pest Control Overview), review round number (1, 2, 3, ...)
 
 ### Step 1: Read Templates
 
@@ -267,7 +267,7 @@ Use the review timestamp provided by the Queen. The Queen generates ONE timestam
 Create the prompts directory if needed: `{session-dir}/prompts/` (The Queen pre-creates this directory at Step 0, but create if needed as a safety net for robustness.)
 
 **GUARD: Empty File List Check (SUBSTANCE FAILURE)**
-Before composing review briefs, verify that the "list of ALL changed files across all epics" provided by the Queen is non-empty.
+Before composing review briefs, verify that the "list of ALL changed files across all trails" provided by the Queen is non-empty.
 - **If the file list is empty or contains only whitespace**:
   - Write failure artifact to `{session-dir}/prompts/review-FAILED.md`:
     ```
@@ -285,13 +285,13 @@ Before composing review briefs, verify that the "list of ALL changed files acros
 
 Each brief contains:
 - Commit range
-- Full file list (identical across all reviewers in this round, deduplicated across all epics)
+- Full file list (identical across all reviewers in this round, deduplicated across all trails)
 - Focus areas specific to that review type (from reviews.md)
 - Report output path: `{session-dir}/review-reports/{type}-review-{timestamp}.md`
-- "Do NOT file beads — Big Head handles all bead filing"
+- "Do NOT file crumbs — Big Head handles all crumb filing"
 - Messaging guidelines (when to message teammates, when not to)
 - Full report format (from reviews.md Nitpicker Report Format section)
-- For the **correctness** review brief: include the full list of ALL task IDs so the correctness reviewer can run `crumb show <task-id>` for acceptance criteria verification across all epics
+- For the **correctness** review brief: include the full list of ALL task IDs so the correctness reviewer can run `crumb show <task-id>` for acceptance criteria verification across all trails
 
 Files to write:
 - **Round 1**:
@@ -308,9 +308,9 @@ Files to write:
 Write `{session-dir}/prompts/review-big-head-consolidation.md` containing:
 - Round-appropriate report paths (with the timestamp): round 1: all 4; round 2+: 2 (correctness, edge-cases)
 - Deduplication protocol (specified below)
-- Bead filing instructions (specified below; note: Big Head must NOT file beads until Pest Control confirms via team message)
+- Crumb filing instructions (specified below; note: Big Head must NOT file crumbs until Pest Control confirms via team message)
 - Consolidated output path: `{session-dir}/review-reports/review-consolidated-{timestamp}.md`
-- Pest Control coordination note: after writing the consolidated summary, Big Head sends the report path to Pest Control (team member) via SendMessage and awaits verdict before filing any beads
+- Pest Control coordination note: after writing the consolidated summary, Big Head sends the report path to Pest Control (team member) via SendMessage and awaits verdict before filing any crumbs
 - Review round number (so Big Head knows how many reports to expect and whether to auto-file P3s)
 - Round 1: all 4 report paths; Round 2+: 2 report paths (correctness, edge-cases)
 - Round 2+ P3 auto-filing instructions (specified below)
@@ -341,9 +341,9 @@ For each group of related findings across reports in the current round:
 - **Acceptance criteria**: <how to verify across all surfaces>
 ```
 
-**Big Head bead filing instructions** (inline specification for this file):
-- File ONE bead per root cause (not per finding, not per review)
-- Beads filed during session review are standalone
+**Big Head crumb filing instructions** (inline specification for this file):
+- File ONE crumb per root cause (not per finding, not per review)
+- Crumbs filed during session review are standalone
 - Do NOT assign them to a specific epic via `crumb link --parent`
 - They represent session-wide findings, not epic-specific work
 - Command: use `crumb create --from-json` pattern (see big-head-skeleton.md step 10 for canonical example)
@@ -361,7 +361,7 @@ Write consolidated summary to `{session-dir}/review-reports/review-consolidated-
 **Reports verified**: <timestamp-marked report files>
 **Total raw findings**: <N across all reports>
 **Root causes identified**: <N after dedup>
-**Beads filed**: <N>
+**Crumbs filed**: <N>
 
 ## Read Confirmation
 **All reports read and processed by Big Head consolidation:**
@@ -375,7 +375,7 @@ Write consolidated summary to `{session-dir}/review-reports/review-consolidated-
 **Total findings from all reports**: <N>
 
 ## Root Causes Filed
-| Bead ID | Priority | Title | Contributing Reviews | Surfaces |
+| Crumb ID | Priority | Title | Contributing Reviews | Surfaces |
 |---------|----------|-------|---------------------|----------|
 | <id> | P<N> | <title> | clarity, edge-cases | <N> files |
 
@@ -384,9 +384,9 @@ Findings merged:
 - <Finding X from clarity> + <Finding Y from edge-cases> → Root Cause A
 
 ## Priority Breakdown
-- P1 (blocking): <N> beads
-- P2 (important): <N> beads
-- P3 (polish): <N> beads
+- P1 (blocking): <N> crumbs
+- P2 (important): <N> crumbs
+- P3 (polish): <N> crumbs
 
 ## Verdict
 <PASS / PASS WITH ISSUES / NEEDS WORK>
