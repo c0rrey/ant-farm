@@ -1,0 +1,13 @@
+2026-02-21T02:49:57Z|SESSION_INIT|complete|session_dir=.beads/agent-summaries/_session-7edaafbb
+2026-02-21T03:01:39Z|SCOUT_COMPLETE|briefing=.beads/agent-summaries/_session-7edaafbb/briefing.md|ssv=pass|tasks_approved=30
+2026-02-21T03:46:25Z|WAVE_SPAWNED|wave=1|spawned=7|previews_dir=.beads/agent-summaries/_session-7edaafbb/previews
+2026-02-21T03:55:57Z|WAVE_VERIFIED|wave=1|dmvdc=pass|tasks_verified=39zq,i2zd,lc97,ti6g,9wk8,ns95,9vq,50m,wtp,40z,g29r,szcy,3r9,rja,3mg,4fx,4g7,dv9g,o058,yn1r,npfx,e1u6,qoig,a66,kwp,lhq|commits=0feb74c,2b7990a,781a592,e4b5e96,a8f6b92,9c5e5d5,b713600,79b5ad3,9673c91,e445a40,9bba01f,02058b6,8e17b46,4c2f963,6b6e495,739a370,54ffeed,28a7548,614779c,338618f,b5bf26b,5b6a9f6,927bafe,c224931,dc2e7de,6c45fe4
+2026-02-21T04:07:10Z|WAVE_SPAWNED|wave=2|spawned=2|previews_dir=.beads/agent-summaries/_session-7edaafbb/previews
+2026-02-21T04:10:02Z|WAVE_VERIFIED|wave=2|dmvdc=pass|tasks_verified=352c1,w2i1,j6jq,a1rf|commits=1906d23,62ef8c8,306a457,e584ba5
+2026-02-21T04:24:46Z|REVIEW_COMPLETE|round=1|team=complete|report=.beads/agent-summaries/_session-7edaafbb/review-reports/review-consolidated-20260220-231026.md
+2026-02-21T04:24:46Z|REVIEW_TRIAGED|round=1|p1=1|p2=6|decision=fix_now
+2026-02-21T04:44:36Z|REVIEW_COMPLETE|round=2|team=complete|report=.beads/agent-summaries/_session-7edaafbb/review-reports/review-consolidated-20260220-233433.md
+2026-02-21T04:44:36Z|REVIEW_TRIAGED|round=2|p1=0|p2=0|decision=terminated
+2026-02-21T04:46:20Z|DOCS_COMMITTED|complete|commit=757dfc3
+2026-02-21T04:46:20Z|XREF_VERIFIED|complete|tasks_with_changelog=all_30_plus_7_fixes
+2026-02-21T04:46:49Z|SESSION_COMPLETE|pushed=true

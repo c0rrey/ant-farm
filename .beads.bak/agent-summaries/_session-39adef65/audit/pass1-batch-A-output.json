@@ -1,0 +1,332 @@
+[
+  {
+    "bead_id": "ant-farm-07ai",
+    "title": "Cross-file step numbering mismatch between reviews.md and big-head-skeleton.md",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "RULES.md lines 195-198 reference Nitpicker team setup but provide no mapping note between reviews.md step numbering (Step 0/0a/1/2/3/4) and big-head-skeleton.md step numbering (1-9). No such mapping exists anywhere in the current codebase.",
+    "priority_check": "P3 appropriate",
+    "duplicate_of": null,
+    "notes": "The bead references 'see steps 8-9' in RULES.md:103 and pantry.md:252; those line numbers have shifted with recent edits but the underlying cross-file navigation gap (no mapping between the two step schemes) remains unfixed."
+  },
+  {
+    "bead_id": "ant-farm-0c28",
+    "title": "WWD mode selection rule missing from checkpoints.md",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "checkpoints.md lines 262-264 describe serial and batch modes (definitions, when they apply) but do not include the mode selection rule from RULES.md:129-130: 'If you spawned agents in a single message (parallel wave), use batch mode. If you spawned agents individually in separate messages, use serial mode.' Grep for 'mode selection' in checkpoints.md returns no results.",
+    "priority_check": "P3 appropriate",
+    "duplicate_of": null,
+    "notes": "commit c78875b added WWD serial/batch documentation to RULES.md (ant-farm-zuae) but checkpoints.md was only updated to describe the two modes, not to include the selection rule. Dual-maintenance gap confirmed."
+  },
+  {
+    "bead_id": "ant-farm-19r3",
+    "title": "fix: SESSION_PLAN_TEMPLATE.md uses stale Boss-Bot term and Claude Sonnet 4.5 model",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "orchestration/templates/SESSION_PLAN_TEMPLATE.md line 8 still contains 'Boss-Bot: Claude Sonnet 4.5' and line 340 still contains 'boss-bot window'. These are the exact lines the bead identifies. No commit in the git log targets ant-farm-19r3 or modifies SESSION_PLAN_TEMPLATE.md for this issue.",
+    "priority_check": "P3 appropriate",
+    "duplicate_of": null,
+    "notes": "'Boss-Bot' is used nowhere else in the active framework; GLOSSARY.md:79 defines the role as 'Queen'. Fix is straightforward find-and-replace."
+  },
+  {
+    "bead_id": "ant-farm-70ti",
+    "title": "fix: GLOSSARY says 4 checkpoints but framework has 5 (SSV omitted)",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "GLOSSARY.md line 46 still reads 'There are four checkpoints: CCO, WWD, DMVDC, and CCB.' Line 56 still reads 'All four checkpoints (CCO, WWD, DMVDC, CCB) are hard gates.' Line 64 still reads 'All four checkpoints are executed by Pest Control.' Line 82 still reads 'Runs all four checkpoints (CCO, WWD, DMVDC, CCB).' SSV was added to checkpoints.md (commit bc3fbd1) but GLOSSARY.md was never updated.",
+    "priority_check": "suggest P2",
+    "duplicate_of": null,
+    "notes": "GLOSSARY.md is documented as 'the single source of truth for term definitions.' A reader using it as authoritative will not find SSV at all, which is a P2-level navigational defect given SSV is a blocking hard gate."
+  },
+  {
+    "bead_id": "ant-farm-8y39",
+    "title": "RULES.md: mixed [[ and [ bracket styles in validation block",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "RULES.md validation block (lines 156-176): line 157 uses 'if ! echo ... | grep -qE' (no bracket), line 166 uses 'if [[ -z \"${CHANGED_FILES//[[:space:]]/}\" ]]; then' (bash [[), line 172 uses 'if [ -z \"$(echo ...)\" ]; then' (POSIX [). The mixed style is confirmed present.",
+    "priority_check": "P3 appropriate",
+    "duplicate_of": null,
+    "notes": "The inconsistency is cosmetic but the script targets bash (shebang implied by the [[ usage), so all guards should use [[. Line 172's POSIX [ with a subshell is functional but inconsistent with line 166."
+  },
+  {
+    "bead_id": "ant-farm-9dp7",
+    "title": "fix: minor bd prohibition wording drift between CLAUDE.md and RULES.md",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "CLAUDE.md line 38: 'NEVER run `bd show`...' (plain NEVER) and 'The Scout subagent does this.' RULES.md line 16: '**NEVER** run `bd show`...' (bold NEVER) and 'the Scout does this'. Functionally identical but cosmetically different. No fixing commit found targeting ant-farm-9dp7.",
+    "priority_check": "P3 appropriate",
+    "duplicate_of": null,
+    "notes": "The drift is purely cosmetic. sync-to-claude.sh copies CLAUDE.md to ~/.claude/CLAUDE.md so only one source needs updating. Low effort fix."
+  },
+  {
+    "bead_id": "ant-farm-9iyp",
+    "title": "fix: remove 3 dead artifact entries from RULES.md Session Directory list",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "RULES.md Session Directory list (lines 358-364) still contains all 3 dead entries: 'orchestrator-state*.md' (line 360), 'step3b-transition-gate.md' (line 361), 'HANDOFF-*.md' (line 362). No session directory in .beads/agent-summaries/ contains files matching these patterns. briefing.md and session-summary.md are still absent from the list.",
+    "priority_check": "suggest P2",
+    "duplicate_of": null,
+    "notes": "briefing.md is referenced at RULES.md:86 and 99 as the Scout's primary output but is absent from the Session Directory artifact list. This is a reader-visible inconsistency in a frequently consulted reference section."
+  },
+  {
+    "bead_id": "ant-farm-9nws",
+    "title": "Retry count asymmetry between RULES.md (1 retry) and reviews.md (2-attempt) undocumented",
+    "verdict": "STILL_VALID",
+    "confidence": "MEDIUM",
+    "evidence": "RULES.md Retry Limits table (lines 408-416) specifies 1 retry for CCB. The bead references reviews.md having a 2-attempt pattern. No cross-reference or reconciliation note was added to RULES.md. No commit targets ant-farm-9nws.",
+    "priority_check": "P3 appropriate",
+    "duplicate_of": null,
+    "notes": "Medium confidence because the bead has no description; the title implies the asymmetry exists but the exact reviews.md location was not verified in this pass (out of scope per task brief). RULES.md's own section shows no reconciliation note."
+  },
+  {
+    "bead_id": "ant-farm-9s2a",
+    "title": "fix: dummy reviewer prompt created but output report never materializes",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "RULES.md Step 3b-v (lines 201-234) describes the dummy reviewer. Line 233 says 'Do NOT wait for the dummy reviewer to finish before proceeding with Step 3c. It runs concurrently.' Line 234 has a sunset clause. Neither line documents that the output report may not materialize or clarifies expected failure behavior for the context-measurement purpose.",
+    "priority_check": "P3 appropriate",
+    "duplicate_of": null,
+    "notes": "The bead's proposed fix is to either add a note about expected output non-materialization or advance the sunset timeline. The sunset clause exists but says 'after ~30 sessions of data collection' — if output never materializes, data is never collected. The note would clarify whether sunset should be triggered earlier."
+  },
+  {
+    "bead_id": "ant-farm-a2ot",
+    "title": "fix: CONTRIBUTING.md cross-file update checklist omits GLOSSARY.md",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "CONTRIBUTING.md contains an agent update checklist that lists README.md, RULES.md Agent Types and Model Assignments tables, and scout.md (noted as usually unnecessary). GLOSSARY.md Ant Metaphor Roles table (lines 77-85) is not listed. No commit targeting ant-farm-a2ot was found.",
+    "priority_check": "P3 appropriate",
+    "duplicate_of": null,
+    "notes": "GLOSSARY.md line 82 lists all agents with file paths and model assignments. Adding an agent without updating this table leaves the stated 'single source of truth' incomplete."
+  },
+  {
+    "bead_id": "ant-farm-a87o",
+    "title": "fix: CCO artifact naming uses session-wide format in practice but checkpoints.md specifies per-task",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "checkpoints.md lines 27-32 show two naming patterns: 'Task-specific checkpoints (CCO, WWD, DMVDC for Dirt Pushers): pc-{TASK_SUFFIX}-{checkpoint}-{timestamp}.md' and 'Session-wide checkpoints (SSV, CCO-review, CCB): pc-session-{checkpoint}-{timestamp}.md'. CCO for Dirt Pusher implementation batched runs is listed only under task-specific, but in practice the Queen runs one batched CCO for the wave using session-wide naming (pc-session-cco-{timestamp}.md). The batch variant for implementation CCO is undocumented.",
+    "priority_check": "suggest P2",
+    "duplicate_of": null,
+    "notes": "The RULES.md Hard Gates table uses a wildcard *-cco-*.md that accommodates both patterns, so there is no runtime failure. However the naming spec mismatch would mislead a future Pest Control agent following checkpoints.md literally."
+  },
+  {
+    "bead_id": "ant-farm-aozr",
+    "title": "README Hard Gates table stale for WWD",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "README.md line 269: '| **WWD** — scope verification | Next agent in wave | haiku |' — the 'Blocks' column still says 'Next agent in wave'. RULES.md Hard Gates table (line 275) now reads: 'Serial mode: next agent spawn; Batch mode: DMVDC spawn (all wave agents checked before DMVDC)'. The README was not updated when RULES.md was corrected by commit c78875b.",
+    "priority_check": "P3 appropriate",
+    "duplicate_of": null,
+    "notes": "A reader consulting the README would get incorrect blocking semantics for WWD batch mode."
+  },
+  {
+    "bead_id": "ant-farm-b89w",
+    "title": "[HALF-BAKED] Group co-located tasks into single Dirt Pusher assignments",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "Feature request: requires architectural changes to Scout (Step 5 wave groupings), Pantry (combined briefs), Dirt Pusher skeleton (multi-task iteration), Pest Control DMVDC/WWD (multi-task scope checks), and RULES.md (group-aware agent counting). None of these changes are present in the current codebase. RULES.md still assumes 1-agent-1-task throughout.",
+    "priority_check": "P3 appropriate",
+    "duplicate_of": null,
+    "notes": "Per acceptance criterion 5: feature requests must not be marked ALREADY_FIXED because RULES.md changed. This bead requires new functionality across 6+ components, not documentation fixes."
+  },
+  {
+    "bead_id": "ant-farm-ch3m",
+    "title": "Session state bootstrapping gap: queen-state.md creation not specified in RULES.md Step 0",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "RULES.md Step 0 (lines 56-73) specifies: SESSION_ID generation, SESSION_DIR creation, progress log entry, and crash recovery detection. It does not mention creating queen-state.md. The Template Lookup table (line 403) references 'orchestration/templates/queen-state.md' for 'Creating/recovering the Queen's state file' but Step 0 has no instruction to create it.",
+    "priority_check": "P3 appropriate",
+    "duplicate_of": null,
+    "notes": "The queen-state.md template exists (referenced at line 403 and 419) but Step 0 gives no instruction on when or how to create the state file. A new Queen following Step 0 literally would have no state file until a crash occurred."
+  },
+  {
+    "bead_id": "ant-farm-d3bk",
+    "title": "fix: fill-review-slots.sh @file argument notation undocumented in RULES.md",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "RULES.md Step 3b-ii (lines 181-186) documents the build-review-prompts.sh invocation (note: fill-review-slots.sh was renamed/merged into build-review-prompts.sh by commit 1b0037e). The current script still supports @file notation (scripts/build-review-prompts.sh lines 16-17, 24-25, 76-80). RULES.md Step 3b-ii does not mention @file. The bead title references the old script name but the core gap remains.",
+    "priority_check": "P3 appropriate",
+    "duplicate_of": null,
+    "notes": "The bead's title mentions fill-review-slots.sh which no longer exists as a standalone script. However the @file feature was preserved in build-review-prompts.sh and remains undocumented in RULES.md. The bead should be updated to reference the new script name when fixed."
+  },
+  {
+    "bead_id": "ant-farm-eq77",
+    "title": "fix: docs don't clarify code-reviewer is a custom agent outside the repo",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "code-reviewer agent type is referenced in orchestration/templates/reviews.md (lines 211, 244, 282, 327) and orchestration/templates/SESSION_PLAN_TEMPLATE.md (lines 206, 212, 218). The RULES.md Agent Types table does not list code-reviewer. No documentation explains that code-reviewer exists only at ~/.claude/agents/code-reviewer.md and is not deployed by sync-to-claude.sh.",
+    "priority_check": "P3 appropriate",
+    "duplicate_of": null,
+    "notes": "The bead notes dependency on ant-farm-h94m (DRIFT-002) resolution. If ant-farm-h94m chose to remove spawn language, this bead becomes IRRELEVANT. Without knowing h94m's resolution, STILL_VALID is the safe verdict."
+  },
+  {
+    "bead_id": "ant-farm-f0x",
+    "title": "Sentinel-file completion protocol for background subagents",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "Feature request requiring: (1) signals/ directory in session setup, (2) sentinel write step in dirt-pusher-skeleton.md, (3) CLAUDE.md run_in_background prohibition replaced with targeted protocol, (4) RULES.md polling protocol. None of these are present. RULES.md Session Directory (line 351) does not include signals/. CLAUDE.md still has the blanket run_in_background prohibition. dirt-pusher-skeleton.md has no sentinel write step.",
+    "priority_check": "P3 appropriate",
+    "duplicate_of": null,
+    "notes": "Per acceptance criterion 5: feature requests must not be marked ALREADY_FIXED because RULES.md changed. The CLAUDE.md prohibition that motivated this bead is intentional and documented in MEMORY.md as a known design decision."
+  },
+  {
+    "bead_id": "ant-farm-f1xn",
+    "title": "fix: CLAUDE.md Landing the Plane annotation says Step 6 but content spans Steps 4-6 with gaps",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "CLAUDE.md line 54 still reads '(Corresponds to RULES.md Step 6.)'. RULES.md has Step 4 (documentation commit) and Step 5 (cross-reference verification) which are absent from CLAUDE.md's landing checklist. CLAUDE.md has quality gates, issue status updates, and git status verification steps that are absent from RULES.md Steps 4-6.",
+    "priority_check": "suggest P2",
+    "duplicate_of": null,
+    "notes": "The false annotation (Step 6 vs Steps 4-6) is the most concrete symptom. The content divergence between the two landing checklists means a Queen following CLAUDE.md would skip the CHANGELOG documentation commit (RULES.md Step 4)."
+  },
+  {
+    "bead_id": "ant-farm-hf9a",
+    "title": "Batch mode boundary conditions underdocumented",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "RULES.md Step 3 batch mode documentation (lines 119-131) does not address: (a) partial wave commits where some agents crash without committing — no instruction on when to run WWD for the committed subset; (b) N=1 single-agent wave — technically triggers batch mode but serial mode is simpler and unambiguous. The Mid-wave decision tree (lines 338-343) addresses agent failure scenarios but not WWD timing for partial commits.",
+    "priority_check": "P3 appropriate",
+    "duplicate_of": null,
+    "notes": "commit c78875b added batch/serial mode documentation (ant-farm-zuae) but did not address these boundary conditions."
+  },
+  {
+    "bead_id": "ant-farm-irix",
+    "title": "Priority calibration examples use web-UI vocabulary in orchestration context",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "RULES.md Priority Calibration section (lines 447-452): P2 examples are 'visual regression, accessibility issue, functional degradation'. These are web-frontend terms with no meaning in an orchestration-only codebase. No fixing commit was found targeting ant-farm-irix.",
+    "priority_check": "P3 appropriate",
+    "duplicate_of": null,
+    "notes": "The note at line 452 says 'Project-specific overrides belong in the project's CLAUDE.md or QUALITY_PROCESS.md' which suggests the examples are intentionally generic, but they still use inappropriate vocabulary for this context."
+  },
+  {
+    "bead_id": "ant-farm-jegj",
+    "title": "Commit range and file list validation gaps in RULES.md Step 3b and Pantry guard",
+    "verdict": "STILL_VALID",
+    "confidence": "MEDIUM",
+    "evidence": "RULES.md Step 3b-i.5 (lines 154-177) added validation guards for REVIEW_ROUND, CHANGED_FILES, and TASK_IDS by commit 14f13d7. However the bead references additional gaps in what is validated (e.g., commit range format, whether files exist on disk). No commit targets ant-farm-jegj specifically. The bead has no description so the exact gaps are inferred from the title.",
+    "priority_check": "P3 appropriate",
+    "duplicate_of": null,
+    "notes": "Medium confidence due to lack of bead description. The basic input validation was added (14f13d7) but this bead may be about additional gaps not covered by that fix. NEEDS_CONTEXT would also be appropriate but STILL_VALID is safer absent description."
+  },
+  {
+    "bead_id": "ant-farm-kzz6",
+    "title": "Documentation polish: terminology, wording, and examples across review files",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "This bead groups 9 documentation items. Sub-item (2) 'RULES.md:158-180 Step numbering collision' refers to the awkward 3b-i / 3b-i.5 / 3b-ii sub-step numbering still present in RULES.md lines 141-188. Sub-items covering checkpoints.md, pantry.md, reviews.md, and parse-progress-log.sh were not individually fixed by any commit referencing ant-farm-kzz6. No fixing commit found.",
+    "priority_check": "P3 appropriate",
+    "duplicate_of": null,
+    "notes": "Several sub-items reference files outside RULES.md (checkpoints.md, pantry.md, reviews.md, parse-progress-log.sh). Only sub-item (2) directly concerns RULES.md. The grouping means all 9 items remain open together."
+  },
+  {
+    "bead_id": "ant-farm-m5lg",
+    "title": "fix: review-skeletons/ and review-reports/ missing from Step 0 session directory setup",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "RULES.md line 351 still reads: mkdir -p \"${SESSION_DIR}\"/{task-metadata,previews,prompts,pc,summaries}. review-skeletons/ and review-reports/ are absent. No explanatory note follows explaining lazy creation. RULES.md Step 3b-iii (line 190) does show 'mkdir -p \"${SESSION_DIR}\"/review-reports' at spawn time, but the Session Directory section gives no hint these directories exist.",
+    "priority_check": "suggest P2",
+    "duplicate_of": null,
+    "notes": "review-skeletons/ was created by compose-review-skeletons.sh; that script was merged into build-review-prompts.sh by commit 1b0037e. The review-skeletons/ directory may no longer be created. This is an adjacent observation — the main issue of undocumented lazy-created directories remains."
+  },
+  {
+    "bead_id": "ant-farm-mk03",
+    "title": "RULES.md Model Assignments note misleading about Nitpicker model config location",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "RULES.md Model Assignments table line 316: '| Nitpickers (all 4) | TeamCreate member | sonnet | Set in big-head-skeleton.md |'. The bead argues this note is misleading — the model is configured via the TeamCreate spawn call, not inside big-head-skeleton.md. No commit targets ant-farm-mk03.",
+    "priority_check": "P3 appropriate",
+    "duplicate_of": null,
+    "notes": "The note 'Set in big-head-skeleton.md' directs the reader to the wrong place. The actual model assignment for Nitpicker team members is set by the Queen's TeamCreate call using the skeleton for structure, not model assignment."
+  },
+  {
+    "bead_id": "ant-farm-nnmm",
+    "title": "RULES.md Step 3 prose polish: milestone placement and variable naming",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "(a) RULES.md line 131: WAVE_WWD_PASS progress log milestone is embedded at the end of the mode selection paragraph, hard to spot visually. (b) RULES.md lines 148-149 now explain the TIMESTAMP vs REVIEW_TIMESTAMP dual naming with a comment, but the bash variable name was NOT changed to REVIEW_TIMESTAMP — the explanation was added instead of renaming. The bead asked for renaming; the documentation approach was chosen instead.",
+    "priority_check": "P3 appropriate",
+    "duplicate_of": null,
+    "notes": "commit d4aa294 added the explanatory comment (ant-farm-88zh) which partially addresses the mental overhead concern by documenting the intentional dual naming. The milestone placement issue (sub-item a) remains unfixed."
+  },
+  {
+    "bead_id": "ant-farm-r4qj",
+    "title": "RULES.md Step 3b-i timestamp format lacks explicit shell variable assignment example",
+    "verdict": "ALREADY_FIXED",
+    "confidence": "HIGH",
+    "evidence": "commit 5dba086 'fix: add explicit TIMESTAMP assignment to Step 3b-i (ant-farm-ovw8)' added the shell variable assignment. Current RULES.md line 151 shows: TIMESTAMP=$(date +%Y%m%d-%H%M%S) inside a bash code block under Step 3b-i. This is the exact fix the bead requested.",
+    "priority_check": "P3 appropriate",
+    "duplicate_of": null,
+    "notes": "The bead's commit reference is ant-farm-ovw8, not ant-farm-r4qj, suggesting it may have been fixed as a side effect of a closely related issue. The fix is confirmed present."
+  },
+  {
+    "bead_id": "ant-farm-t3k0",
+    "title": "Standalone documentation polish items (4 sub-issues)",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "(a) RULES.md line 88: 'Step 1b: SSV gate' — SSV is not expanded at first use; no parenthetical expansion like '(Scout Strategy Verification)' present. (b)-(d) address CONTRIBUTING.md and GLOSSARY.md items not in RULES.md. No commit targets ant-farm-t3k0.",
+    "priority_check": "P3 appropriate",
+    "duplicate_of": null,
+    "notes": "Sub-item (a) is directly verifiable in RULES.md:88. Sub-items (b)-(d) require reading CONTRIBUTING.md and GLOSSARY.md which were not in scope for this pass per task brief. Given (a) is confirmed open, the overall bead is STILL_VALID."
+  },
+  {
+    "bead_id": "ant-farm-t6f",
+    "title": "PLACEHOLDER_CONVENTIONS.md not cross-referenced from RULES.md or any template",
+    "verdict": "ALREADY_FIXED",
+    "confidence": "HIGH",
+    "evidence": "commit d4aa294 'fix: register {REVIEW_TIMESTAMP} in placeholder conventions and cross-reference in RULES.md (ant-farm-88zh)'. Current RULES.md lines 147-148: 'This shell variable corresponds to the canonical {REVIEW_TIMESTAMP} placeholder defined in orchestration/PLACEHOLDER_CONVENTIONS.md (Tier 1 uppercase).' RULES.md now cross-references PLACEHOLDER_CONVENTIONS.md.",
+    "priority_check": "P3 appropriate",
+    "duplicate_of": null,
+    "notes": "The original complaint was discoverability — readers could not find PLACEHOLDER_CONVENTIONS.md from RULES.md. That is now addressed. No template files cross-reference it yet, but the primary entry point (RULES.md) was the key missing link."
+  },
+  {
+    "bead_id": "ant-farm-trfb",
+    "title": "fix: one-TeamCreate-per-session constraint undocumented in operator-facing docs",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "RULES.md Step 3b-iv (lines 193-199) documents Nitpicker team spawn details but does not mention the one-TeamCreate-per-session constraint. RULES.md does not explain why Pest Control must be a team member (rather than spawned separately). The constraint is documented only in MEMORY.md:19-21. No commit targets ant-farm-trfb.",
+    "priority_check": "suggest P2",
+    "duplicate_of": null,
+    "notes": "An operator extending the workflow who attempts a second TeamCreate (e.g., for QA coordination) will encounter a runtime failure with no prior warning in RULES.md. The architectural rationale is invisible to anyone reading RULES.md alone."
+  },
+  {
+    "bead_id": "ant-farm-tvun",
+    "title": "PLACEHOLDER_CONVENTIONS.md example missing pc and summaries subdirs",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "PLACEHOLDER_CONVENTIONS.md line 94: mkdir -p \"${SESSION_DIR}\"/{task-metadata,previews,prompts} — omits pc and summaries subdirs. RULES.md line 351 is the authoritative source: mkdir -p \"${SESSION_DIR}\"/{task-metadata,previews,prompts,pc,summaries}. The two mkdir commands are inconsistent. No fixing commit found.",
+    "priority_check": "P3 appropriate",
+    "duplicate_of": null,
+    "notes": "The audit table tier classification issue (bead's second sub-item) was not verified in this pass as it requires reading PLACEHOLDER_CONVENTIONS.md in detail beyond line 94."
+  },
+  {
+    "bead_id": "ant-farm-x9eu",
+    "title": "fix: README shows 5-member Nitpicker team but RULES.md requires 6 (Pest Control inside team)",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "README.md line 59: 'the Nitpickers (4 reviewers + Big Head)' — 5 members. README.md line 201: 'After the Nitpicker team completes, the Queen spawns Pest Control for DMVDC'. README.md line 218: 'create Nitpicker team (4 reviewers + Big Head)'. RULES.md line 195: 'Round 1: 6 members — 4 reviewers + Big Head + Pest Control'. RULES.md line 183: 'Pest Control MUST be a team member so Big Head can SendMessage to it.' README contradicts RULES.md.",
+    "priority_check": "suggest P2",
+    "duplicate_of": null,
+    "notes": "An operator following the README Step 3b flow would spawn a 5-member team and then separately spawn Pest Control. Big Head would be unable to SendMessage to PC (different team scope), breaking the team-internal DMVDC/CCB flow. This is a functional breakage for new adopters."
+  },
+  {
+    "bead_id": "ant-farm-x9yx",
+    "title": "fix: SSV checkpoint missing from RULES.md Model Assignments table",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "RULES.md Model Assignments table (lines 307-319): rows present are Scout, Pantry (impl), Dirt Pushers, PC-CCO, PC-WWD, PC-DMVDC, PC-CCB, Nitpickers, Big Head, PC (team member), Fix Dirt Pushers. No 'PC — SSV' row. RULES.md Step 1b (line 89) specifies model:haiku inline but the table is missing the entry. This was noted in the bead as audited by three independent agents.",
+    "priority_check": "suggest P2",
+    "duplicate_of": null,
+    "notes": "The table header says 'Every Task tool call the Queen makes MUST include the model parameter from this table.' An SSV-unaware Queen omitting model on the SSV spawn would inherit opus, wasting tokens on a mechanical checkpoint that only needs haiku."
+  },
+  {
+    "bead_id": "ant-farm-xyas",
+    "title": "RULES.md round 2+ composition phrasing inconsistency with reviews.md",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "RULES.md line 195: 'Round 2+: 4 members — 2 reviewers (Correctness + Edge Cases) + Big Head + Pest Control'. This phrasing only names the 2 retained reviewers without explicitly stating that Clarity and Excellence are dropped. reviews.md explicitly notes which reviewers are dropped in round 2+. The inconsistency in how the change is framed remains.",
+    "priority_check": "P3 appropriate",
+    "duplicate_of": null,
+    "notes": "The bead asks to align RULES.md phrasing with reviews.md by adding 'Clarity and Excellence dropped' language. This is a minor wording fix."
+  }
+]

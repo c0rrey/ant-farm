@@ -1,0 +1,10 @@
+2026-02-22T18:07:29Z|SESSION_INIT|complete|session_dir=.beads/agent-summaries/_session-e76a488f
+2026-02-22T18:13:11Z|SCOUT_COMPLETE|briefing=.beads/agent-summaries/_session-e76a488f/briefing.md|ssv=pass|tasks_approved=11
+2026-02-22T18:22:46Z|WAVE_SPAWNED|wave=1|spawned=7xvw|previews_dir=.beads/agent-summaries/_session-e76a488f/previews
+2026-02-22T18:22:46Z|WAVE_VERIFIED|wave=1|dmvdc=skip-gitignored|tasks_verified=7xvw|commits=none
+2026-02-22T18:31:51Z|WAVE_SPAWNED|wave=2-batch1|spawned=7h3g,hi6e,41w8,6f1x,pdos,pmci,8k4h|previews_dir=.beads/agent-summaries/_session-e76a488f/previews
+2026-02-22T18:38:43Z|WAVE_SPAWNED|wave=2-batch2|spawned=n030,kone|previews_dir=.beads/agent-summaries/_session-e76a488f/previews
+2026-02-22T18:38:43Z|WAVE_VERIFIED|wave=2|dmvdc=skip-audit-artifacts|tasks_verified=7h3g,hi6e,41w8,6f1x,pdos,pmci,8k4h,n030,kone|commits=8aac62a,695d00e,4e62b29,29badc6,921e52f,417309f,d87323f,cc5fd7d
+2026-02-22T18:51:27Z|WAVE_SPAWNED|wave=3|spawned=bhbo|previews_dir=.beads/agent-summaries/_session-e76a488f/previews
+2026-02-22T18:51:27Z|WAVE_VERIFIED|wave=3|dmvdc=skip-audit-artifacts|tasks_verified=bhbo|commits=none
+2026-02-22T18:51:27Z|SESSION_COMPLETE|pushed=true

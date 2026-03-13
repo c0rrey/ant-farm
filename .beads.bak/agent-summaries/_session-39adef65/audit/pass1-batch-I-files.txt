@@ -1,0 +1,1 @@
+# No fixed file list - agent reads files as needed based on bead content

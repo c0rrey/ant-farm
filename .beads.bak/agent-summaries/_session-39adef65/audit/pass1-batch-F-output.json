@@ -1,0 +1,82 @@
+[
+  {
+    "bead_id": "ant-farm-a86",
+    "title": "Scout briefing format lacks optional Errors section placement",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "scout.md Step 6 briefing template (lines 204-249) does not include a '## Errors' section anywhere in the template structure. The Error Handling section (line 265) references writing to a '## Errors' section in the briefing, but the Step 6 template itself gives no placement guidance for where that section appears relative to the other named sections (Task Inventory, File Modification Matrix, Dependency Chains, Proposed Strategies, Coverage Verification, Metadata). A Scout following the Step 6 template verbatim would have no place to insert the Errors section.",
+    "priority_check": "P3 confirmed — documentation gap, no runtime failure unless a Scout rigidly follows only the template structure.",
+    "duplicate_of": null,
+    "notes": "Step number references: Step 6 numbering has not shifted. Still Step 6 at line 202."
+  },
+  {
+    "bead_id": "ant-farm-cev",
+    "title": "Scout ready mode gaps: Step 4 references bd blocked not run, assumption undocumented",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "scout.md Step 2 line 44 says '(skip for ready mode — tasks are already unblocked)' meaning bd blocked is never run in ready mode. Yet Step 4 line 138 says 'Identify dependency chains from `bd blocked` output' with no ready-mode caveat or N/A note. The assumption that bd blocked output is available in ready mode is undocumented and the cross-reference to a never-run command remains in Step 4.",
+    "priority_check": "P3 confirmed — documentation gap; a Scout in ready mode may be confused by Step 4's reference to unavailable bd blocked output.",
+    "duplicate_of": null,
+    "notes": "Step numbers have not shifted. Step 2 is still Step 2 and Step 4 is still Step 4."
+  },
+  {
+    "bead_id": "ant-farm-dz4",
+    "title": "dependency-analysis.md says parallel bd show but scout.md uses sequential write-each-immediately",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "dependency-analysis.md line 59 says 'Gather task metadata (parallel `bd show` calls)'. scout.md Step 3 line 128 says 'Write each file immediately after extraction — do not batch.' These are contradictory. The dependency-analysis.md reference document (read in Step 1) prescribes parallel bd show calls, while scout.md Step 3 prescribes sequential writes for partial-progress safety. No qualifying note reconciles the two. The bead's referenced line 58 is now line 59 in dependency-analysis.md (one-line offset) but the issue is unchanged.",
+    "priority_check": "P3 confirmed — inconsistent guidance between two documents a Scout reads in the same session.",
+    "duplicate_of": null,
+    "notes": "Step number reference: bead cites dependency-analysis.md:58; current file has the text at line 59 (one-line shift, not significant). scout.md Step 3 numbering unchanged."
+  },
+  {
+    "bead_id": "ant-farm-hrt",
+    "title": "Scout Step 2.5 silently skips agent files with invalid frontmatter",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "scout.md Step 2.5 line 57 says 'Skip files without valid frontmatter.' There is no instruction to log, note, or warn about skipped files. If a real agent .md file has malformed frontmatter it will be silently dropped from the internal catalog, potentially causing that agent to be unavailable for task matching with no indication. No audit trail or skip-count is produced.",
+    "priority_check": "P3 confirmed — silent skip could mask misconfigured agent files.",
+    "duplicate_of": null,
+    "notes": "Step number references: Step 2.5 numbering unchanged."
+  },
+  {
+    "bead_id": "ant-farm-jqw",
+    "title": "scout.md Step 3 does not explicitly say to continue iteration after bd show failure",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "scout.md Step 3 (lines 80-128) prose describes 'For each task: Run bd show, Write to {SESSION_DIR}/task-metadata/{task-suffix}.md' but contains no instruction to continue to the next task on failure. The 'Continue with remaining tasks' instruction exists only in the Error Handling section at line 267, which is separated from Step 3 by Steps 4 and 5. A fresh Scout reading Step 3 sequentially could interpret a bd show failure as fatal and stop. The bead's cited lines 77-80 now correspond to approximately lines 79-83 (minor shift due to earlier edits), but the step number (Step 3) has not changed.",
+    "priority_check": "P3 confirmed — Step 3 prose gap; error handling is document-end only.",
+    "duplicate_of": null,
+    "notes": "Step number reference: bead cites scout.md:77-80 Step 3. Current file has Step 3 header at line 79, loop prose at lines 80-83. Minor line shift but step numbering unchanged."
+  },
+  {
+    "bead_id": "ant-farm-laq",
+    "title": "Scout metadata write-each-immediately has no truncation/atomicity check downstream",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "scout.md Step 3 line 128 instructs 'Write each file immediately after extraction — do not batch.' No subsequent step (Step 4, Step 5, Step 5.5, or Step 6) includes an instruction to verify the completeness or integrity of the written metadata files before consuming them. Step 5.5 checks that all task IDs are assigned to waves but does not validate that each corresponding metadata file was written fully and is not truncated. Pantry (downstream consumer) reads these files without a guard.",
+    "priority_check": "P3 confirmed — absence of downstream integrity check; low probability in practice but the gap is real.",
+    "duplicate_of": null,
+    "notes": "No step number references in title or description to check."
+  },
+  {
+    "bead_id": "ant-farm-mbbp",
+    "title": "Scout Step 5.5 coverage verification missing wave capacity validation",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "scout.md Step 5.5 (lines 163-200) defines a mandatory gate that checks assigned_count == inventory_count and that unassigned is empty. It verifies every task is covered but does NOT include any check that any single wave exceeds the max 7 concurrent agents limit. The 7-agent cap is documented only in Step 5 line 147 as a strategy requirement ('respecting the max 7 concurrent limit') but has no verification step in Step 5.5's pass condition or format block.",
+    "priority_check": "P3 confirmed — Step 5.5 gate is incomplete; over-capacity waves could pass verification undetected.",
+    "duplicate_of": null,
+    "notes": "Step number references: Step 5.5 numbering unchanged."
+  },
+  {
+    "bead_id": "ant-farm-t8cg",
+    "title": "scout.md PICK ONE bracket syntax resembles regex/BNF notation",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "scout.md uses 'PICK ONE: [type-a | type-b]' bracket-pipe notation in two places: line 121 ('record the agent type as: `PICK ONE: [type-a | type-b]`') and line 154-155 (example: 'ant-farm-abc (PICK ONE: [debugger | performance-engineer])'). The bracket-pipe format has not been changed to plain English. The bead's cited lines 118-119 now correspond to approximately line 121 (minor shift) but the format itself is unchanged.",
+    "priority_check": "P3 confirmed — clarity issue; notation could be misread as regex or BNF alternative syntax.",
+    "duplicate_of": null,
+    "notes": "Step number reference: bead cites scout.md:118-119; current file has the PICK ONE format at line 121 (two-line shift due to earlier edits). Step numbering (Step 3) unchanged. The example in Step 5 at line 154 was not cited in the bead but is an additional instance of the same issue."
+  }
+]

@@ -1,0 +1,8 @@
+2026-02-23T02:47:31Z|SESSION_INIT|complete|session_dir=.beads/agent-summaries/_session-86c76859
+2026-02-23T02:54:24Z|SCOUT_COMPLETE|briefing=.beads/agent-summaries/_session-86c76859/briefing.md|ssv=pass|tasks_accepted=3
+2026-02-23T03:00:15Z|WAVE_SPAWNED|wave=1|spawned=q59z,vxcn,m4si|previews_dir=.beads/agent-summaries/_session-86c76859/previews
+2026-02-23T03:01:05Z|WAVE_WWD_PASS|wave=1|mode=batch|tasks_checked=q59z,vxcn,m4si
+2026-02-23T03:04:37Z|WAVE_VERIFIED|wave=1|dmvdc=pass|tasks_verified=q59z,vxcn,m4si|commits=a59d61e,1b8f898,55514c1
+2026-02-23T03:29:04Z|REVIEW_COMPLETE|round=1|team=complete|report=.beads/agent-summaries/_session-86c76859/review-reports/review-consolidated-20260222-220441.md
+2026-02-23T03:29:04Z|REVIEW_TRIAGED|round=1|p1=0|p2=4|decision=fix_now|root_causes=4
+2026-02-23T03:55:52Z|SESSION_COMPLETE|pushed=true

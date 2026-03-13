@@ -1,0 +1,10 @@
+2026-02-22T22:47:45Z|SESSION_INIT|complete|session_dir=.beads/agent-summaries/_session-5da05acb
+2026-02-22T22:55:57Z|SCOUT_COMPLETE|briefing=.beads/agent-summaries/_session-5da05acb/briefing.md|ssv=pass|tasks_approved=6
+2026-02-22T23:05:10Z|WAVE_SPAWNED|wave=1|agents=4|previews_dir=.beads/agent-summaries/_session-5da05acb/previews
+2026-02-22T23:06:23Z|WAVE_WWD_PASS|wave=1|mode=batch|tasks_checked=2yww,80l0,q84z,zg7t,tour,sje5|note=f95171e_attribution_mismatch_code_correct
+2026-02-22T23:11:17Z|WAVE_VERIFIED|wave=1|dmvdc=pass|tasks_verified=2yww,80l0,q84z,zg7t,tour,sje5|commits=aebd24d,f95171e,38ead0f
+2026-02-22T23:27:17Z|REVIEW_COMPLETE|round=1|team=complete|report=.beads/agent-summaries/_session-5da05acb/review-reports/review-consolidated-20260222-181124.md
+2026-02-22T23:27:17Z|REVIEW_TRIAGED|round=1|p1=0|p2=2|decision=fix_now|root_causes=5
+2026-02-22T23:27:58Z|DOCS_COMMITTED|complete|commit=6866164
+2026-02-22T23:27:58Z|XREF_VERIFIED|complete|tasks_with_changelog=2yww,80l0,q84z,zg7t,tour,sje5
+2026-02-22T23:28:23Z|SESSION_COMPLETE|pushed=true

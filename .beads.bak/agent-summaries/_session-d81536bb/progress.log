@@ -1,0 +1,16 @@
+2026-02-23T00:08:18Z|SESSION_INIT|complete|session_dir=.beads/agent-summaries/_session-d81536bb
+2026-02-23T00:11:59Z|SCOUT_COMPLETE|briefing=.beads/agent-summaries/_session-d81536bb/briefing.md|ssv=pass|tasks_approved=5
+2026-02-23T00:31:02Z|WAVE_SPAWNED|wave=1|spawned=68di.1,68di.2|previews_dir=.beads/agent-summaries/_session-d81536bb/previews
+2026-02-23T00:31:02Z|WAVE_WWD_PASS|wave=1|mode=batch|tasks_checked=68di.1,68di.2
+2026-02-23T00:31:02Z|WAVE_VERIFIED|wave=1|dmvdc=pass|tasks_verified=68di.1,68di.2|commits=f3c6d7b,2eac10a
+2026-02-23T00:40:18Z|WAVE_SPAWNED|wave=2|spawned=68di.3|previews_dir=.beads/agent-summaries/_session-d81536bb/previews
+2026-02-23T00:40:18Z|WAVE_WWD_PASS|wave=2|mode=serial|tasks_checked=68di.3
+2026-02-23T00:40:18Z|WAVE_VERIFIED|wave=2|dmvdc=pass|tasks_verified=68di.3|commits=59b6853
+2026-02-23T00:53:11Z|WAVE_SPAWNED|wave=3|spawned=68di.4,68di.5|previews_dir=.beads/agent-summaries/_session-d81536bb/previews
+2026-02-23T00:53:11Z|WAVE_WWD_PASS|wave=3|mode=batch|tasks_checked=68di.4,68di.5
+2026-02-23T00:53:11Z|WAVE_VERIFIED|wave=3|dmvdc=pass|tasks_verified=68di.4,68di.5|commits=e677d2d,9d0153d
+2026-02-23T01:16:18Z|REVIEW_COMPLETE|round=1|team=complete|report=.beads/agent-summaries/_session-d81536bb/review-reports/review-consolidated-20260222-195319.md
+2026-02-23T01:16:38Z|REVIEW_TRIAGED|round=1|p1=0|p2=7|decision=auto_fix|root_causes=7
+2026-02-23T01:33:44Z|DOCS_COMMITTED|complete|commit=a2e1e73
+2026-02-23T01:33:44Z|XREF_VERIFIED|complete|tasks_with_changelog=68di.1,68di.2,68di.3,68di.4,68di.5
+2026-02-23T01:34:29Z|SESSION_COMPLETE|pushed=true

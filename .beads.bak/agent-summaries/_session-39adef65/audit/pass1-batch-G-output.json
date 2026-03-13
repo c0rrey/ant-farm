@@ -1,0 +1,102 @@
+[
+  {
+    "bead_id": "ant-farm-0t31",
+    "title": "fill-review-slots.sh: fill_all_slots block comment describes wrong map format",
+    "verdict": "ALREADY_FIXED",
+    "confidence": "HIGH",
+    "evidence": "fill-review-slots.sh was eliminated by commit 1b0037e (merged into build-review-prompts.sh). The replacement script contains no fill_all_slots function and no block comment describing a map format — only a fill_slot function (lines 141-175) that uses awk with a temp file for safe substitution. The misleading NUL-terminated sentinel comment no longer exists in any script. Note: bead references fill-review-slots.sh, which was merged into build-review-prompts.sh.",
+    "priority_check": "P3 — cosmetic/doc issue in a now-deleted file; no action required.",
+    "duplicate_of": null,
+    "notes": "Script merger (commit 1b0037e) fully resolves this. The fill_slot implementation is clearly documented with inline comments explaining the awk approach and why it avoids sed special-character issues."
+  },
+  {
+    "bead_id": "ant-farm-2585",
+    "title": "fill-review-slots.sh: undocumented assumptions in fill_all_slots (tabs in paths, printf %b)",
+    "verdict": "ALREADY_FIXED",
+    "confidence": "HIGH",
+    "evidence": "fill-review-slots.sh was eliminated by commit 1b0037e. build-review-prompts.sh has no fill_all_slots function and no tab-delimited map format. The @file resolution mechanism (lines 74-89) uses printf '%s' (not printf '%b'), explicitly documented in lines 23-26 of the usage comment. The tab-in-path assumption is absent; path handling uses direct variable expansion. Note: bead references fill-review-slots.sh, which was merged into build-review-prompts.sh.",
+    "priority_check": "P3 — undocumented assumptions in a now-deleted file; no action required.",
+    "duplicate_of": null,
+    "notes": "Script merger (commit 1b0037e) fully resolves this. The @file convention is documented in the usage block (lines 23-26) and the resolve_arg function (lines 74-86) is self-documenting."
+  },
+  {
+    "bead_id": "ant-farm-456u",
+    "title": "parse-progress-log.sh trap ordering -- trap installed after map_init",
+    "verdict": "DUPLICATE_SUSPECT",
+    "confidence": "HIGH",
+    "evidence": "Identical title to ant-farm-w6lr. ant-farm-w6lr was created at 2026-02-21T18:29:57Z; ant-farm-456u was created later at 2026-02-22T00:03:08Z — 456u is the later duplicate of w6lr. Both describe the same issue: trap registered at parse-progress-log.sh line 166 after map_init at line 165. Underlying issue is still present: map_init (line 165) runs before the trap is set (line 166), creating a narrow window where a partial map_init failure would leave a temp directory unreclaimed.",
+    "priority_check": "P3 — duplicate of ant-farm-w6lr; underlying issue still valid but should be tracked under w6lr.",
+    "duplicate_of": "ant-farm-w6lr",
+    "notes": "One of the known duplicate pair 456u/w6lr identified in the task brief. w6lr is chronologically first and should be kept as the canonical. The underlying trap ordering issue at parse-progress-log.sh lines 165-166 is STILL_VALID and should remain tracked under w6lr after 456u is closed."
+  },
+  {
+    "bead_id": "ant-farm-5365",
+    "title": "fix: scrub-pii.sh and pre-commit hook not described in SETUP.md or README.md",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "This bead targets documentation files (SETUP.md, README.md), not scripts. The scripts themselves (scrub-pii.sh, install-hooks.sh) are present and functional. Nothing in the commit history for the scripts (1b0037e, 3f52803) updates SETUP.md or README.md. The documentation gap described in the bead's acceptance criteria remains open: SETUP.md must mention both pre-push (sync) and pre-commit (PII scrub) hooks.",
+    "priority_check": "P3 — documentation gap; no functional breakage but new developers may miss the pre-commit hook.",
+    "duplicate_of": null,
+    "notes": "Out of scope for this script-only batch review but correctly classified as open. install-hooks.sh line 9 describes both hooks in its header comment but SETUP.md/README.md exposure is the actual gap."
+  },
+  {
+    "bead_id": "ant-farm-71ye",
+    "title": "install-hooks.sh: pre-commit backup cp lacks error handling (asymmetric with pre-push)",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "Confirmed asymmetry in install-hooks.sh: pre-push backup (lines 27-37) uses explicit error handling — 'if ! cp \"$HOOK_TARGET\" \"$BACKUP\"; then echo ERROR; exit 1; fi' with a diagnostic message. Pre-commit backup (lines 68-72) uses bare 'cp \"$PRECOMMIT_TARGET\" \"$BACKUP\"' with no explicit error check. Under set -euo pipefail the script will still exit on cp failure, but without the actionable error message the pre-push path provides. The asymmetry is cosmetic but confirmed exactly as described.",
+    "priority_check": "P3 — cosmetic inconsistency; set -euo pipefail provides a safety net but error message quality differs.",
+    "duplicate_of": null,
+    "notes": "install-hooks.sh line 31-36 comment even documents why the pre-push path has explicit handling: 'set -e would terminate the script on cp failure (e.g. permission denied, disk full) with no diagnostic. An explicit check produces a clear, actionable error message instead.' This documented rationale makes the pre-commit omission more notable, not less."
+  },
+  {
+    "bead_id": "ant-farm-9p4i",
+    "title": "parse-progress-log.sh: dead branch comment could be more precise",
+    "verdict": "ALREADY_FIXED",
+    "confidence": "HIGH",
+    "evidence": "The UNREACHABLE comment at parse-progress-log.sh lines 210-212 now reads: 'UNREACHABLE: RESUME_STEP is always set by the loop above because SESSION_COMPLETE is in STEP_KEYS. If SESSION_COMPLETE were completed, the early-exit guard above (exit 2) would have already terminated the script. This branch can never be reached.' This is precise and complete: it explains (1) the loop invariant (SESSION_COMPLETE in STEP_KEYS guarantees a match), and (2) the guard condition (exit 2 fires before reaching this branch if SESSION_COMPLETE was logged). No improvement is needed.",
+    "priority_check": "P3 — comment quality issue; comment now satisfies the precision requirement.",
+    "duplicate_of": null,
+    "notes": "This bead is the older of three beads on the same topic (9p4i has a description; dsaa and o7ji do not). The current comment in parse-progress-log.sh satisfies this bead's stated concern."
+  },
+  {
+    "bead_id": "ant-farm-dsaa",
+    "title": "parse-progress-log.sh UNREACHABLE comment reasoning incomplete",
+    "verdict": "DUPLICATE_SUSPECT",
+    "confidence": "HIGH",
+    "evidence": "Identical title to ant-farm-o7ji. Both lack a description. Both were created within 1 second of each other (2026-02-21T18:29:56Z vs 2026-02-22T00:03:02Z — different timestamps but o7ji was created in a second batch on 2026-02-22). This bead covers the same topic as ant-farm-9p4i, which has an identical complaint with a description. Additionally the underlying issue is now ALREADY_FIXED: parse-progress-log.sh lines 210-212 contain a precise, complete UNREACHABLE comment explaining both the loop invariant and the exit 2 guard.",
+    "priority_check": "P3 — duplicate of ant-farm-o7ji; underlying issue resolved.",
+    "duplicate_of": "ant-farm-o7ji",
+    "notes": "One of the known duplicate pair dsaa/o7ji identified in the task brief. Also substantively covered by ant-farm-9p4i (which predates both). Recommend closing dsaa as duplicate of o7ji, and closing o7ji as ALREADY_FIXED citing the current parse-progress-log.sh lines 210-212."
+  },
+  {
+    "bead_id": "ant-farm-o7ji",
+    "title": "parse-progress-log.sh UNREACHABLE comment reasoning incomplete",
+    "verdict": "DUPLICATE_SUSPECT",
+    "confidence": "HIGH",
+    "evidence": "Identical title to ant-farm-dsaa. Both lack a description. Created in a separate batch (2026-02-22T00:03:02Z vs dsaa's 2026-02-21T18:29:56Z) suggesting re-generation of the same finding across sessions. The underlying issue is ALREADY_FIXED in current parse-progress-log.sh: lines 210-212 now provide complete reasoning for the UNREACHABLE branch, citing both the loop guarantee (SESSION_COMPLETE in STEP_KEYS) and the exit 2 guard.",
+    "priority_check": "P3 — duplicate of ant-farm-dsaa; underlying issue resolved.",
+    "duplicate_of": "ant-farm-dsaa",
+    "notes": "One of the known duplicate pair dsaa/o7ji identified in the task brief. Also covered by ant-farm-9p4i. The ALREADY_FIXED evidence is: parse-progress-log.sh lines 210-212 contain a two-part explanation that is complete and accurate."
+  },
+  {
+    "bead_id": "ant-farm-w2gj",
+    "title": "scrub-pii.sh: perl \\s* vs grep [[:space:]]* pattern divergence (cosmetic)",
+    "verdict": "STILL_VALID",
+    "confidence": "HIGH",
+    "evidence": "Confirmed in scrub-pii.sh: line 46 defines PII_FIELD_PATTERN using POSIX ERE syntax '[[:space:]]*' for use with grep -qE; line 63 uses perl regex '\\s*' in the perl -i -pe substitution. Both patterns are semantically equivalent (match zero or more whitespace characters) but use different regex dialect syntax. The divergence is cosmetic and poses no functional risk, but it remains present exactly as described.",
+    "priority_check": "P3 — cosmetic; no functional impact since both patterns match the same input.",
+    "duplicate_of": null,
+    "notes": "The divergence is inherent to using two different tools (grep vs perl) that have different native regex syntaxes. A cosmetic fix would either use a single tool or add a comment noting the intentional dialect difference. Neither commit 1b0037e nor 3f52803 touches scrub-pii.sh."
+  },
+  {
+    "bead_id": "ant-farm-w6lr",
+    "title": "parse-progress-log.sh trap ordering -- trap installed after map_init",
+    "verdict": "DUPLICATE_SUSPECT",
+    "confidence": "HIGH",
+    "evidence": "Identical title to ant-farm-456u. ant-farm-456u was created at 2026-02-22T00:03:08Z; ant-farm-w6lr at 2026-02-21T18:29:57Z — w6lr is the earlier occurrence, 456u is the later duplicate. Both describe the same issue: trap registered at parse-progress-log.sh line 166 after map_init at line 165. The underlying issue is STILL_VALID (trap ordering confirmed in current code).",
+    "priority_check": "P3 — duplicate of ant-farm-456u; underlying issue still valid.",
+    "duplicate_of": "ant-farm-456u",
+    "notes": "One of the known duplicate pair 456u/w6lr identified in the task brief. w6lr is chronologically first. Recommend closing 456u as duplicate of w6lr (keeping w6lr as the canonical), and keeping w6lr open as STILL_VALID."
+  }
+]

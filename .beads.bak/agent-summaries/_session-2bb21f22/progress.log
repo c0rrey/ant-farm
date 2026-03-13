@@ -1,0 +1,15 @@
+2026-02-23T02:01:02Z|SESSION_INIT|complete|session_dir=.beads/agent-summaries/_session-2bb21f22
+2026-02-23T02:04:37Z|SCOUT_COMPLETE|briefing=.beads/agent-summaries/_session-2bb21f22/briefing.md|ssv=pass|tasks_approved=1
+2026-02-23T02:12:55Z|WAVE_SPAWNED|wave=1|spawned=ant-farm-fomy|previews_dir=.beads/agent-summaries/_session-2bb21f22/previews
+2026-02-23T02:12:55Z|WAVE_WWD_PASS|wave=1|mode=batch|tasks_checked=ant-farm-fomy
+2026-02-23T02:14:45Z|WAVE_VERIFIED|wave=1|dmvdc=pass|tasks_verified=ant-farm-fomy|commits=8af72c3
+2026-02-23T02:24:51Z|REVIEW_COMPLETE|round=1|team=complete|report=.beads/agent-summaries/_session-2bb21f22/review-reports/review-consolidated-20260222-211519.md
+2026-02-23T02:35:31Z|WAVE_SPAWNED|wave=2|spawned=i7wl-sfe0,or8q|previews_dir=.beads/agent-summaries/_session-2bb21f22/previews
+2026-02-23T02:36:30Z|WAVE_WWD_PASS|wave=2|mode=batch|tasks_checked=ant-farm-i7wl,ant-farm-sfe0,ant-farm-or8q
+2026-02-23T02:39:25Z|WAVE_VERIFIED|wave=2|dmvdc=pass|tasks_verified=ant-farm-i7wl,ant-farm-sfe0,ant-farm-or8q|commits=29d1c0b,934ce51
+2026-02-23T02:39:25Z|REVIEW_TRIAGED|round=1|p1=1|p2=2|decision=auto_fix|root_causes=3
+2026-02-23T02:45:51Z|REVIEW_COMPLETE|round=2|team=complete|report=.beads/agent-summaries/_session-2bb21f22/review-reports/review-consolidated-20260222-213938.md
+2026-02-23T02:45:51Z|REVIEW_TRIAGED|round=2|p1=0|p2=0|decision=terminated|root_causes=3
+2026-02-23T02:47:29Z|DOCS_COMMITTED|complete|commit=fb17de2
+2026-02-23T02:47:46Z|XREF_VERIFIED|complete|tasks_with_changelog=ant-farm-fomy,ant-farm-i7wl,ant-farm-sfe0,ant-farm-or8q
+2026-02-23T02:49:17Z|SESSION_COMPLETE|pushed=true

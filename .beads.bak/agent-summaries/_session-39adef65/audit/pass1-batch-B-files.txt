@@ -1,0 +1,2 @@
+orchestration/templates/pantry.md
+orchestration/_archive/pantry-review.md

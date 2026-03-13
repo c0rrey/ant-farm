@@ -1,0 +1,155 @@
+Perform a clarity review of the completed work.
+
+Step 0: Read your full review brief from .beads/agent-summaries/_session-8b93f5/prompts/review-clarity.md
+(Contains: commit range, files to review, focus areas, detailed instructions.)
+
+Your workflow:
+1. Read ALL files listed in the brief
+2. Catalog findings with file:line references and severity (P1/P2/P3)
+3. Group findings into preliminary root causes
+4. Write your report to .beads/agent-summaries/_session-8b93f5/review-reports/clarity-review-20260220-120000.md
+5. Message relevant Nitpickers if you find cross-domain issues
+
+Your report MUST include these sections (see brief for full format):
+- **Findings Catalog**: each finding with file:line, severity, category, description, suggested fix
+- **Preliminary Groupings**: findings grouped by root cause
+- **Summary Statistics**: total findings, breakdown by severity
+- **Cross-Review Messages**: log of messages sent/received with other reviewers
+- **Coverage Log**: every scoped file listed, even those with no issues found
+- **Overall Assessment**: score out of 10 + verdict (PASS / PASS WITH ISSUES / NEEDS WORK)
+
+Do NOT file beads (`bd create`) -- Big Head handles all bead filing.
+
+---
+
+# Review Brief: Clarity
+
+**Review Type**: clarity
+**Priority**: P3 (polish, not blocking)
+**Report Output Path**: .beads/agent-summaries/_session-8b93f5/review-reports/clarity-review-20260220-120000.md
+
+## Commit Range
+
+`89c2ec0~1..HEAD`
+
+## Files to Review
+
+- README.md
+- orchestration/GLOSSARY.md
+- orchestration/PLACEHOLDER_CONVENTIONS.md
+- orchestration/RULES.md
+- orchestration/templates/SESSION_PLAN_TEMPLATE.md
+- orchestration/templates/big-head-skeleton.md
+- orchestration/templates/checkpoints.md
+- orchestration/templates/dirt-pusher-skeleton.md
+- orchestration/templates/implementation.md
+- orchestration/templates/nitpicker-skeleton.md
+- orchestration/templates/pantry.md
+- orchestration/templates/reviews.md
+- orchestration/templates/scout.md
+
+## Focus Areas
+
+1. **Code readability** - Are variable names clear? Is logic easy to follow?
+2. **Documentation** - Are docstrings complete? Are comments helpful?
+3. **Consistency** - Do changes follow project patterns and style?
+4. **Naming** - Are functions, variables, and fields well-named?
+5. **Structure** - Is code organized logically?
+
+## Catalog Phase
+
+Read all files in scope. For each issue, note the file, line, and what's wrong.
+Group findings into preliminary root causes where possible.
+
+## Report Instructions
+
+Write your report to `.beads/agent-summaries/_session-8b93f5/review-reports/clarity-review-20260220-120000.md` using the Nitpicker Report Format below.
+
+Do NOT file beads -- Big Head handles all bead filing.
+
+If you find something that looks like an edge case or correctness bug, message the relevant Nitpicker so they can investigate in depth.
+
+## Messaging Guidelines
+
+**DO message teammates when:**
+- You find something that crosses into another reviewer's domain (e.g., you spot a potential edge case or correctness bug)
+- You want to flag "I'm covering X, skip it" to avoid duplicate analysis
+- You discover context that would help another reviewer (e.g., "this function is only called from one place")
+
+**Do NOT message teammates for:**
+- Status updates ("I'm 50% done")
+- General observations that don't help other reviewers
+- Questions that should go to Big Head
+
+## Nitpicker Report Format
+
+```markdown
+# Report: Clarity Review
+
+**Scope**: <list of files reviewed>
+**Reviewer**: Clarity Review / code-reviewer
+
+## Findings Catalog
+
+### Finding 1: <short title>
+- **File(s)**: <file:line references>
+- **Severity**: P1 / P2 / P3
+- **Category**: clarity
+- **Description**: <what's wrong>
+- **Suggested fix**: <how to fix>
+- **Cross-reference**: <if related to another reviewer's domain, note it>
+
+### Finding 2: <short title>
+...
+
+## Preliminary Groupings
+
+Group findings that share a root cause:
+
+### Group A: <root cause title>
+- Finding 1, Finding 3 -- same underlying issue
+- **Suggested combined fix**: <one fix covering all>
+
+### Group B: <root cause title>
+- Finding 2 -- standalone
+
+## Summary Statistics
+- Total findings: <N>
+- By severity: P1: <N>, P2: <N>, P3: <N>
+- Preliminary groups: <N>
+
+## Cross-Review Messages
+
+Log all messages sent to and received from other reviewers:
+
+### Sent
+- To <reviewer>: "<summary of message>" -- Action: <what you asked them to do or look at>
+
+### Received
+- From <reviewer>: "<summary of message>" -- Action taken: <what you did in response>
+
+### Deferred Items
+- "<finding title>" -- Deferred to <reviewer> because <reason>
+
+## Coverage Log
+
+List every in-scope file with its review status. Files with no findings MUST still appear here -- omission is not acceptable.
+
+| File | Status | Evidence |
+|------|--------|----------|
+| <file1> | Findings: #1, #3 | N/A |
+| <file2> | Reviewed -- no issues | <N> functions, <M> lines examined |
+| <file3> | Reviewed -- no issues | <N> functions, <M> lines examined |
+
+## Overall Assessment
+**Score**: <X/10>
+**Verdict**: <PASS / PASS WITH ISSUES / NEEDS WORK>
+<!-- Verdict Rubric:
+  PASS           = 0 P1 findings AND 0 P2 findings
+  PASS WITH ISSUES = 0 P1 findings AND any P2 or P3 findings
+  NEEDS WORK     = any P1 finding present
+
+  Score formula: Start at 10, subtract 3 per P1, 1 per P2, 0.5 per P3 (floor at 0)
+-->
+<1-2 sentence summary>
+```

@@ -1,0 +1,130 @@
+[
+  {
+    "keep": "ant-farm-0jn7",
+    "close": "ant-farm-zv46",
+    "title": "README.md architecture diagram does not capture Pest Control dual role",
+    "keep_has_desc": false,
+    "close_has_desc": false,
+    "reason": "Identical title"
+  },
+  {
+    "keep": "ant-farm-32r8",
+    "close": "ant-farm-i9y5",
+    "title": "Bead metadata / traceability inconsistencies (commit msg, acceptance criteria, line numbers)",
+    "keep_has_desc": false,
+    "close_has_desc": false,
+    "reason": "Identical title"
+  },
+  {
+    "keep": "ant-farm-w6lr",
+    "close": "ant-farm-456u",
+    "title": "parse-progress-log.sh trap ordering -- trap installed after map_init",
+    "keep_has_desc": false,
+    "close_has_desc": false,
+    "reason": "Identical title"
+  },
+  {
+    "keep": "ant-farm-4lcv",
+    "close": "ant-farm-c1n2",
+    "title": "README.md deprecated agent row inconsistently formatted",
+    "keep_has_desc": false,
+    "close_has_desc": false,
+    "reason": "Identical title"
+  },
+  {
+    "keep": "ant-farm-n0dw",
+    "close": "ant-farm-4ome",
+    "title": "reviews.md polling loop angle-bracket placeholders lack explanatory comment",
+    "keep_has_desc": false,
+    "close_has_desc": false,
+    "reason": "Identical title"
+  },
+  {
+    "keep": "ant-farm-wlo4",
+    "close": "ant-farm-4u4s",
+    "title": "pantry-review.md (archived) tense inconsistency",
+    "keep_has_desc": false,
+    "close_has_desc": false,
+    "reason": "Identical title"
+  },
+  {
+    "keep": "ant-farm-58f1",
+    "close": "ant-farm-hpgz",
+    "title": "compose-review-skeletons.sh slot marker comment omits TASK_IDS",
+    "keep_has_desc": false,
+    "close_has_desc": false,
+    "reason": "Identical title"
+  },
+  {
+    "keep": "ant-farm-66gl",
+    "close": "ant-farm-bkco",
+    "title": "Future Work",
+    "keep_has_desc": false,
+    "close_has_desc": true,
+    "reason": "Identical title"
+  },
+  {
+    "keep": "ant-farm-9hxz",
+    "close": "ant-farm-h41z",
+    "title": "SETUP.md references wrong path for SESSION_PLAN_TEMPLATE.md",
+    "keep_has_desc": false,
+    "close_has_desc": false,
+    "reason": "Identical title"
+  },
+  {
+    "keep": "ant-farm-gl11",
+    "close": "ant-farm-bo7d",
+    "title": "pantry.md Section 2 deprecation notice insufficiently prominent",
+    "keep_has_desc": false,
+    "close_has_desc": false,
+    "reason": "Identical title"
+  },
+  {
+    "keep": "ant-farm-c606",
+    "close": "ant-farm-wqkm",
+    "title": "compose-review-skeletons.sh no SESSION_DIR existence check before mkdir -p",
+    "keep_has_desc": false,
+    "close_has_desc": false,
+    "reason": "Identical title"
+  },
+  {
+    "keep": "ant-farm-dsaa",
+    "close": "ant-farm-o7ji",
+    "title": "parse-progress-log.sh UNREACHABLE comment reasoning incomplete",
+    "keep_has_desc": false,
+    "close_has_desc": false,
+    "reason": "Identical title"
+  },
+  {
+    "keep": "ant-farm-e66h",
+    "close": "ant-farm-onmp",
+    "title": "pantry.md fail-fast conditions use inconsistent signal words",
+    "keep_has_desc": false,
+    "close_has_desc": false,
+    "reason": "Identical title"
+  },
+  {
+    "keep": "ant-farm-z1qp",
+    "close": "ant-farm-ees2",
+    "title": "compose-review-skeletons.sh exit 1 in || block redundant with set -euo pipefail",
+    "keep_has_desc": false,
+    "close_has_desc": false,
+    "reason": "Identical title"
+  },
+  {
+    "keep": "ant-farm-w1w8",
+    "close": "ant-farm-ek7x",
+    "title": "reviews.md section ordering -- Round-Aware Protocol placed after sections that reference it",
+    "keep_has_desc": false,
+    "close_has_desc": false,
+    "reason": "Identical title"
+  },
+  {
+    "keep": "ant-farm-q3o6",
+    "close": "ant-farm-y719",
+    "title": "SETUP.md duplicate/overlapping content between Quick Setup and Recipe Card",
+    "keep_has_desc": false,
+    "close_has_desc": false,
+    "reason": "Identical title"
+  }
+]

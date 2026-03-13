@@ -1,0 +1,7 @@
+2026-02-22T13:52:30Z|SESSION_INIT|complete|session_dir=.beads/agent-summaries/_session-db790c8d
+2026-02-22T13:58:19Z|SCOUT_COMPLETE|briefing=.beads/agent-summaries/_session-db790c8d/briefing.md|ssv=pass|tasks_approved=4
+2026-02-22T14:22:05Z|WAVE_SPAWNED|wave=1|spawned=x8iw,h94m,wg2i|previews_dir=.beads/agent-summaries/_session-db790c8d/previews
+2026-02-22T14:22:05Z|WAVE_VERIFIED|wave=1|dmvdc=pass|tasks_verified=ant-farm-x8iw,ant-farm-h94m,ant-farm-wg2i|commits=7569c5e,17a6e03,4a30d6a
+2026-02-22T14:28:42Z|WAVE_SPAWNED|wave=2|spawned=zuae|previews_dir=.beads/agent-summaries/_session-db790c8d/previews
+2026-02-22T14:28:42Z|WAVE_VERIFIED|wave=2|dmvdc=pass|tasks_verified=ant-farm-zuae|commits=c78875b
+2026-02-22T15:11:36Z|SESSION_COMPLETE|pushed=true

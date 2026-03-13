@@ -1,0 +1,2 @@
+scripts/build-review-prompts.sh
+scripts/parse-progress-log.sh

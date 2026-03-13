@@ -1,0 +1,13 @@
+2026-02-22T19:11:27Z|SESSION_INIT|complete|session_dir=.beads/agent-summaries/_session-0ffcdc51
+2026-02-22T19:14:29Z|SCOUT_COMPLETE|briefing=.beads/agent-summaries/_session-0ffcdc51/briefing.md|ssv=pass|tasks_approved=5
+2026-02-22T19:31:55Z|WAVE_SPAWNED|wave=1|spawned=asdl.1|previews_dir=.beads/agent-summaries/_session-0ffcdc51/previews
+2026-02-22T19:31:55Z|WAVE_VERIFIED|wave=1|dmvdc=pass|tasks_verified=asdl.1|commits=56c3795
+2026-02-22T19:31:55Z|WAVE_SPAWNED|wave=2|spawned=asdl.2,asdl.3,asdl.4|previews_dir=.beads/agent-summaries/_session-0ffcdc51/previews
+2026-02-22T19:31:55Z|WAVE_VERIFIED|wave=2|dmvdc=pass|tasks_verified=asdl.2,asdl.3,asdl.4|commits=0a5d729,ad364ca,4bb57ae
+2026-02-22T19:37:47Z|WAVE_SPAWNED|wave=3|spawned=asdl.5|previews_dir=.beads/agent-summaries/_session-0ffcdc51/previews
+2026-02-22T19:37:47Z|WAVE_VERIFIED|wave=3|dmvdc=pass|tasks_verified=asdl.5|commits=7359e9c
+2026-02-22T19:55:40Z|REVIEW_COMPLETE|round=1|team=complete|report=.beads/agent-summaries/_session-0ffcdc51/review-reports/review-consolidated-20260222-143758.md
+2026-02-22T19:55:40Z|REVIEW_TRIAGED|round=1|p1=0|p2=3|p3=3|decision=fix_now
+2026-02-22T20:36:55Z|REVIEW_COMPLETE|round=2|team=complete|report=.beads/agent-summaries/_session-0ffcdc51/review-reports/review-consolidated-20260222-151051.md
+2026-02-22T20:36:55Z|REVIEW_TRIAGED|round=2|p1=0|p2=2|p3=0|decision=fix_now
+2026-02-22T20:37:26Z|SESSION_COMPLETE|pushed=true

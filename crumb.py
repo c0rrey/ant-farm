@@ -37,6 +37,7 @@ import json
 import os
 import sys
 import tempfile
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional
@@ -206,7 +207,11 @@ def write_config(config: Dict[str, Any]) -> None:
         with open(tmp_path, "w", encoding="utf-8") as fh:
             json.dump(config, fh, indent=2)
             fh.write("\n")
-        os.rename(str(tmp_path), str(path))
+        try:
+            os.rename(str(tmp_path), str(path))
+        except OSError:
+            tmp_path.unlink(missing_ok=True)
+            raise
     except OSError as exc:
         die(f"cannot write config.json: {exc}")
 
@@ -265,7 +270,11 @@ def write_tasks(path: Path, records: List[Dict[str, Any]]) -> None:
         with open(tmp_path, "w", encoding="utf-8") as fh:
             for record in records:
                 fh.write(json.dumps(record, separators=(",", ":")) + "\n")
-        os.rename(str(tmp_path), str(path))
+        try:
+            os.rename(str(tmp_path), str(path))
+        except OSError:
+            tmp_path.unlink(missing_ok=True)
+            raise
     except OSError as exc:
         die(f"cannot write {path.name}: {exc}")
 

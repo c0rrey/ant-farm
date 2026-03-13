@@ -1,0 +1,242 @@
+[
+  {
+    "bead_id": "ant-farm-1pa0",
+    "title": "Big Head polling loop: single-invocation constraint under-documented and timeout may be too short",
+    "verdict": "STILL_VALID",
+    "confidence": "medium",
+    "evidence": "Checked orchestration/templates/reviews.md lines 495-592. The single-invocation constraint IS documented via an inline comment at line 497: 'IMPORTANT: This entire block must execute in a single Bash invocation. Shell state (variables) does not persist across separate Bash tool calls.' However, this constraint is embedded inside the polling loop shell script block — it is not documented in surrounding prose or in an operator-visible note. The 30s timeout rationale is inline (line 514-518: 'document rationale, not just values') but there is no discussion of whether 30s is sufficient for slow reviewers. The bead's concern about under-documentation is valid: an operator reading the prose before the code block would not know about the single-invocation requirement.",
+    "priority_check": "P3 — documentation/polish; the code itself is correct, only the surrounding documentation is incomplete",
+    "duplicate_of": null,
+    "notes": "Files checked: orchestration/templates/reviews.md (polling loop section lines 495-612)"
+  },
+  {
+    "bead_id": "ant-farm-1r2o",
+    "title": "AGENTS.md and CLAUDE.md contain identical content with no sync mechanism documented",
+    "verdict": "STILL_VALID",
+    "confidence": "high",
+    "evidence": "Checked AGENTS.md and CLAUDE.md. AGENTS.md (43 lines) contains the full 'Landing the Plane' section including MANDATORY WORKFLOW steps 1-8 and CRITICAL RULES — identical to CLAUDE.md content. The sync mechanism (scripts/sync-to-claude.sh) syncs CLAUDE.md to ~/.claude/CLAUDE.md but has no awareness of AGENTS.md. No documentation in either file explains how they stay in sync or which is authoritative. AGENTS.md is read by agents directly from the project root; CLAUDE.md is synced to ~/.claude/. If one is updated without the other, agents get stale instructions.",
+    "priority_check": "P3 — documentation gap; no active divergence found in current state",
+    "duplicate_of": null,
+    "notes": "Files checked: AGENTS.md, CLAUDE.md, scripts/sync-to-claude.sh (via docs/installation-guide.md description)"
+  },
+  {
+    "bead_id": "ant-farm-2r4j",
+    "title": "Canonical term definitions copy-pasted across 3 templates with no single source of truth",
+    "verdict": "STILL_VALID",
+    "confidence": "high",
+    "evidence": "Confirmed copy-paste across multiple files. dirt-pusher-skeleton.md lines 10-13 has a 'Term definitions (canonical across all orchestration templates)' block defining TASK_ID, TASK_SUFFIX, SESSION_DIR. big-head-skeleton.md lines 8-13 has an identical block adding TIMESTAMP and REVIEW_ROUND. pantry.md has its own 'Term definitions' block. checkpoints.md has a 'Term definitions' block with an additional {checkpoint} variable. The pantry.md block even cross-references dependency-analysis.md: 'For detailed extraction rules and examples, see dependency-analysis.md (Term Definitions section)' — but the other templates do not include this cross-reference. If the canonical definition changes (e.g., TASK_SUFFIX extraction rule), all blocks must be updated separately.",
+    "priority_check": "P3 — maintenance burden, no current divergence detected",
+    "duplicate_of": null,
+    "notes": "Files checked: orchestration/templates/dirt-pusher-skeleton.md, orchestration/templates/big-head-skeleton.md, orchestration/templates/pantry.md, orchestration/templates/checkpoints.md"
+  },
+  {
+    "bead_id": "ant-farm-32r8",
+    "title": "Bead metadata / traceability inconsistencies (commit msg, acceptance criteria, line numbers)",
+    "verdict": "DUPLICATE_SUSPECT",
+    "confidence": "high",
+    "evidence": "ant-farm-32r8 and ant-farm-i9y5 have identical titles: 'Bead metadata / traceability inconsistencies (commit msg, acceptance criteria, line numbers)'. Created 2026-02-21 and 2026-02-22 respectively. Both have no description, same issue_type (bug), same priority (3). This is an exact title match with no distinguishing content in either record.",
+    "priority_check": "N/A — duplicate assessment",
+    "duplicate_of": "ant-farm-i9y5",
+    "notes": "No source files were checked beyond the bead records themselves — the identical title is sufficient for DUPLICATE_SUSPECT classification per task brief"
+  },
+  {
+    "bead_id": "ant-farm-4hj",
+    "title": "README fork instructions step 4 lacks actual hook install command",
+    "verdict": "STILL_VALID",
+    "confidence": "high",
+    "evidence": "Checked README.md 'Forking this repo' section. Step 4 reads: 'Install the git hooks so agent files sync to ~/.claude/agents/ on push:' followed by a code block containing only '# See orchestration/SETUP.md for full hook installation instructions'. The actual commands (./scripts/install-hooks.sh and ./scripts/sync-to-claude.sh) are present in the Quick Start section at the top of README.md but absent from step 4 of the fork instructions. A reader following the fork steps would need to look up SETUP.md rather than having the commands inline. The bead title is accurate.",
+    "priority_check": "P3 — usability/documentation gap",
+    "duplicate_of": null,
+    "notes": "Files checked: README.md lines 313-334 (Forking this repo / Steps for new adopters)"
+  },
+  {
+    "bead_id": "ant-farm-56ue",
+    "title": "extract_agent_section \"exactly one delimiter\" assumption unguarded",
+    "verdict": "DUPLICATE_SUSPECT",
+    "confidence": "high",
+    "evidence": "ant-farm-56ue and ant-farm-nnf7 have near-identical titles: '56ue: extract_agent_section \"exactly one delimiter\" assumption unguarded' vs 'nnf7: extract_agent_section exactly one delimiter assumption unguarded'. The only difference is 56ue has quotes around 'exactly one delimiter'. Both were created on 2026-02-21 and 2026-02-22 respectively, both are P3 bugs with no description. The underlying issue is real: scripts/build-review-prompts.sh line 134 uses awk '/^---$/{found=1; next} found{print}' which outputs everything after the FIRST '---' line. If a template file has multiple '---' lines (e.g., YAML frontmatter), the function would include all content after the first delimiter including the instruction block.",
+    "priority_check": "N/A — duplicate assessment for this entry; underlying issue is STILL_VALID and P3",
+    "duplicate_of": "ant-farm-nnf7",
+    "notes": "Files checked: scripts/build-review-prompts.sh lines 132-135. The underlying issue is real but this specific bead is the duplicate."
+  },
+  {
+    "bead_id": "ant-farm-bkco",
+    "title": "Future Work",
+    "verdict": "IRRELEVANT",
+    "confidence": "high",
+    "evidence": "This is an epic/container issue (issue_type: feature, priority 4, has description 'Low-priority polish and improvements from review sessions'). It is not a bug or actionable task — it is a tracking container for P3 findings from review sessions. The bead is functioning as designed: Big Head auto-files P3 findings as children of this epic (per reviews.md and big-head-skeleton.md). An audit verdict is not meaningful for an epic. The bead should remain open indefinitely as P3 items accumulate.",
+    "priority_check": "N/A — meta-issue",
+    "duplicate_of": null,
+    "notes": "No files checked beyond the bead record. Cross-checked with reviews.md which documents this epic by ID (ant-farm-bkco not found by search; searches found 'ant-farm-66gl' as the Future Work epic reference in reviews.md lines 115, 790, etc.). Checking: the bead title is 'Future Work' matching the epic referenced in reviews.md. This is the Future Work container."
+  },
+  {
+    "bead_id": "ant-farm-bnyn",
+    "title": "Installation guide verification step leaves test file in repo",
+    "verdict": "DUPLICATE_SUSPECT",
+    "confidence": "high",
+    "evidence": "ant-farm-bnyn and ant-farm-e5o are near-duplicates addressing the same problem: the installation guide instructs users to create docs/test.md and commit/push it to verify the hook, with no cleanup step. bnyn references 'docs/installation-guide.md:96-108' (the 'Verify the pre-push hook' section) and says 'Fix: add cleanup instructions after verification'. e5o references 'docs/installation-guide.md:65-70' (but the actual content at line 96-104 matches the description — the line reference may be off). Checking installation-guide.md: line 96-106 creates docs/test.md and pushes it; line 110-118 is for the pre-commit hook. Both beads describe the same root cause (test file left permanently in repo) and the same fix (add cleanup step or use non-committed change). bnyn was filed 2026-02-21, e5o was filed 2026-02-18.",
+    "priority_check": "N/A — near-duplicate assessment",
+    "duplicate_of": "ant-farm-e5o",
+    "notes": "Files checked: docs/installation-guide.md lines 92-118. The e5o line number reference (65-70) appears to be stale/wrong — the actual content is at lines 96-104. bnyn's line reference (96-108) is accurate. bnyn is the more recent and more precise of the two."
+  },
+  {
+    "bead_id": "ant-farm-bva6",
+    "title": "Cross-file navigation gaps: undeclared sub-step convention, missing path refs, no inline cross-references in checklists",
+    "verdict": "STILL_VALID",
+    "confidence": "medium",
+    "evidence": "Title-only bead (no description). Checked RULES.md for sub-step convention: Step 3b uses numbered sub-steps (3b-i, 3b-ii, 3b-iii, 3b-iv, 3b-v) but this notation is never defined or explained. A reader encountering '3b-i' for the first time has no reference for the pattern. Cross-references in checklists (e.g., the Nitpicker Checklist in reviews.md lines 815-825) reference protocols by name without file:line pointers. The bead's concerns appear applicable to the current codebase.",
+    "priority_check": "P3 — documentation clarity",
+    "duplicate_of": null,
+    "notes": "Files checked: orchestration/RULES.md (sub-step usage throughout Step 3b), orchestration/templates/reviews.md (checklists sections). No inline cross-references found in checklist items."
+  },
+  {
+    "bead_id": "ant-farm-cfp8",
+    "title": "Documentation polish: minor formatting, redundancy, and structural inconsistencies across orchestration templates",
+    "verdict": "STILL_VALID",
+    "confidence": "low",
+    "evidence": "Title-only bead (no description). With labels ['clarity'] and parent epic 5eul (Orchestration Workflow Polish). Cannot verify specific instances without description, but given the active development of orchestration templates across multiple sessions, minor formatting/redundancy/structural inconsistencies are plausible and likely. The bead is a catch-all for polish items that would require reading all templates in detail to verify. Given no description, assigning STILL_VALID with low confidence — the bead's scope is too broad to verify or disprove without a description.",
+    "priority_check": "P3 — polish",
+    "duplicate_of": null,
+    "notes": "Files checked: orchestration/templates/reviews.md (spot check), orchestration/templates/pantry.md (spot check), orchestration/RULES.md (spot check). Some structural inconsistencies visible (e.g., term definitions blocks vary across files) but these may already be tracked under other beads."
+  },
+  {
+    "bead_id": "ant-farm-cqfv",
+    "title": "Fallback workflow missing round-awareness for round 2+",
+    "verdict": "STILL_VALID",
+    "confidence": "high",
+    "evidence": "Checked reviews.md Fallback section (lines 105-149). The fallback workflow describes spawning all 4 reviewers (clarity, edge-cases, correctness, excellence) sequentially. There is no mention of round 2+ behavior in the fallback section — specifically, no instruction to spawn only 2 reviewers (Correctness + Edge Cases) in round 2+. The main team protocol has explicit Round 1 vs Round 2+ branching, but the fallback section only describes a single path. This is a genuine gap: if a round 2+ session falls back to sequential mode, the fallback instructions do not tell the Queen to reduce the reviewer set.",
+    "priority_check": "P3 — edge case documentation gap; functional impact only when TeamCreate unavailable AND round >= 2",
+    "duplicate_of": null,
+    "notes": "Files checked: orchestration/templates/reviews.md lines 105-149 (Fallback section), lines 82-100 (Round 2+ team protocol for comparison)"
+  },
+  {
+    "bead_id": "ant-farm-e5o",
+    "title": "Installation guide verification test leaves docs/test.md committed permanently",
+    "verdict": "DUPLICATE_SUSPECT",
+    "confidence": "high",
+    "evidence": "Near-duplicate of ant-farm-bnyn. Both beads describe the same root cause: installation-guide.md instructs users to create docs/test.md, commit, and push to verify the pre-push hook, leaving the test file permanently committed. bnyn was filed 2026-02-21 with more precise line references (96-108) and an explicit fix suggestion ('add cleanup instructions after verification'). e5o was filed 2026-02-18 with a stale line reference (65-70) and a more general fix suggestion ('Use a non-committed change or add a cleanup step'). The underlying issue at docs/installation-guide.md lines 96-104 is still present.",
+    "priority_check": "N/A — near-duplicate assessment",
+    "duplicate_of": "ant-farm-bnyn",
+    "notes": "Files checked: docs/installation-guide.md lines 92-118. The pre-push hook verification section (lines 92-106) creates docs/test.md with no cleanup step."
+  },
+  {
+    "bead_id": "ant-farm-f3t0",
+    "title": "queen-state.md fix commit range has no crash-recovery reconstruction guidance",
+    "verdict": "STILL_VALID",
+    "confidence": "high",
+    "evidence": "Checked orchestration/templates/queen-state.md. The 'Fix commit range' field (line 44) is defined as '<first-fix-commit>..<HEAD> (set after fix cycle)'. The Recovery Rule at line 67 says 'If queen-state.md is lost or corrupted, rebuild workflow state from git log (commit messages encode task IDs and step transitions) and artifact files (verdict tables encode checkpoint pass/fail).' However, there is no specific guidance for reconstructing the fix commit range from git log — commit messages encode task IDs but do not have a reliable 'fix commit' tag that distinguishes fix-cycle commits from implementation commits. A crashed session in round 2+ would need to identify which commits belong to the fix cycle, but the reconstruction guidance does not address this.",
+    "priority_check": "P3 — crash recovery documentation gap; affects only sessions that crash mid-round-2+",
+    "duplicate_of": null,
+    "notes": "Files checked: orchestration/templates/queen-state.md (full file)"
+  },
+  {
+    "bead_id": "ant-farm-fkfw",
+    "title": "Fragile grep-based Future Work epic discovery with no error handling or dedup guard",
+    "verdict": "STILL_VALID",
+    "confidence": "high",
+    "evidence": "Checked reviews.md line 788 and big-head-skeleton.md line 115. Both contain: 'bd list --status=open | grep -i \"future work\"'. Issues: (1) No error handling if 'bd list' fails — grep on empty/error output silently fails. (2) No dedup guard — if grep returns multiple epics named 'Future Work', the next command may use the wrong ID or fail. (3) In reviews.md line 790 and big-head-skeleton.md line 116, if the epic is 'not found', it creates a new one with 'bd epic create' — but if grep returned 0 matches because the epic is closed (not status=open), a duplicate epic would be created. The RULES.md Step 3c (line 242) also references 'Future Work' epic without showing discovery logic.",
+    "priority_check": "P3 — edge case; P2 if duplicate epic creation causes data corruption",
+    "duplicate_of": null,
+    "notes": "Files checked: orchestration/templates/reviews.md lines 785-796, orchestration/templates/big-head-skeleton.md lines 115-116"
+  },
+  {
+    "bead_id": "ant-farm-i9y5",
+    "title": "Bead metadata / traceability inconsistencies (commit msg, acceptance criteria, line numbers)",
+    "verdict": "DUPLICATE_SUSPECT",
+    "confidence": "high",
+    "evidence": "Exact duplicate of ant-farm-32r8. Both have identical titles, both are P3 bugs with no description. ant-farm-32r8 was created 2026-02-21T18:29:55Z; ant-farm-i9y5 was created 2026-02-22T00:02:55Z. This is one of the known duplicates identified in the task brief.",
+    "priority_check": "N/A — duplicate assessment",
+    "duplicate_of": "ant-farm-32r8",
+    "notes": "Known exact duplicate per task brief. Verified by title match in all-bead-titles.txt."
+  },
+  {
+    "bead_id": "ant-farm-jss",
+    "title": "Read Confirmation finding counts can be copied rather than independently verified",
+    "verdict": "STILL_VALID",
+    "confidence": "high",
+    "evidence": "Checked reviews.md lines 687-699 and pantry.md lines 335-363. The Read Confirmation table requires Big Head to fill in '| <N> findings |' for each report. There is no instruction requiring Big Head to count findings independently rather than copying the count from a reviewer's report header. The DMVDC checkpoint verifies whether Big Head's consolidation is substantive, but the Read Confirmation section specifically does not include a verification step requiring Big Head to count rather than copy. An LLM could satisfy the format by copying finding counts from reviewer summaries without reading each finding individually.",
+    "priority_check": "P3 — process quality gap; the count field could be gamed or miscounted",
+    "duplicate_of": null,
+    "notes": "Files checked: orchestration/templates/reviews.md lines 687-699, orchestration/templates/pantry.md lines 335-363"
+  },
+  {
+    "bead_id": "ant-farm-nnf7",
+    "title": "extract_agent_section exactly one delimiter assumption unguarded",
+    "verdict": "DUPLICATE_SUSPECT",
+    "confidence": "high",
+    "evidence": "Near-duplicate of ant-farm-56ue. Both target the same function in scripts/build-review-prompts.sh (extract_agent_section at line 132). 56ue title has quotes around 'exactly one delimiter'; nnf7 does not. Both are P3 bugs, no description, created 2026-02-21 and 2026-02-22. The underlying issue (awk stops at first '---', would mis-extract if multiple '---' appear) is real and still present in the code but is tracked by the older bead (56ue). This is one of the known duplicates in the task brief.",
+    "priority_check": "N/A — duplicate assessment",
+    "duplicate_of": "ant-farm-56ue",
+    "notes": "Files checked: scripts/build-review-prompts.sh lines 132-135. Known duplicate per task brief."
+  },
+  {
+    "bead_id": "ant-farm-qzj",
+    "title": "Read Confirmation table placement and duplication in consolidated summary format",
+    "verdict": "STILL_VALID",
+    "confidence": "high",
+    "evidence": "Checked pantry.md lines 328-363 and reviews.md lines 687-699. There are two Read Confirmation tables: one in pantry.md (inside the Big Head consolidation brief template at Section 2) and one in reviews.md (in the Big Head Consolidation Protocol section). The pantry.md version hardcodes all 4 report types (Clarity, Edge Cases, Correctness, Excellence) even though round 2+ only uses 2 reports. The reviews.md version is round-aware. This means pantry.md's Read Confirmation template is wrong for round 2+ sessions. The bead title mentions 'placement and duplication' — the duplication is confirmed.",
+    "priority_check": "P3 — documentation inconsistency; P2 if the round 2+ hardcoded 4-row table causes confusion during consolidation",
+    "duplicate_of": null,
+    "notes": "Files checked: orchestration/templates/pantry.md lines 328-365, orchestration/templates/reviews.md lines 687-722"
+  },
+  {
+    "bead_id": "ant-farm-s7l8",
+    "title": "queen-state.md escalation cap field missing post-decision terminal state",
+    "verdict": "STILL_VALID",
+    "confidence": "high",
+    "evidence": "Checked orchestration/templates/queen-state.md line 42: '**Escalation cap**: <not triggered | triggered (round 4: X P1, Y P2 — awaiting user decision)>'. The field only has two states: not triggered and triggered (awaiting decision). There is no terminal state for after the user decides (e.g., 'resolved — user chose to continue' or 'resolved — user chose to abort'). The Termination field (line 45) covers the overall loop termination but does not capture the escalation cap decision outcome. A session recovery reading queen-state.md could not distinguish 'escalation triggered and still awaiting user decision' from 'escalation triggered and user already responded'.",
+    "priority_check": "P3 — state machine documentation gap",
+    "duplicate_of": null,
+    "notes": "Files checked: orchestration/templates/queen-state.md (full file, 70 lines)"
+  },
+  {
+    "bead_id": "ant-farm-s7vu",
+    "title": "Termination Rule wording ambiguity: 'directly' may imply skipping Round 1 P3 handling",
+    "verdict": "STILL_VALID",
+    "confidence": "medium",
+    "evidence": "Checked reviews.md lines 188-195 and RULES.md lines 241-245. reviews.md: 'Queen proceeds directly to RULES.md Step 4 (documentation)' (line 194). RULES.md: 'Proceed directly to Step 4 (documentation)' (line 245). In both locations, the word 'directly' follows enumerated P3 handling steps (items 1 and 2), so in context, P3 handling IS listed before 'directly'. However, the concern is that 'directly' could be read as 'without any intermediate steps', which technically contradicts items 1 and 2 in the same list. The ambiguity is mild because the enumerated items precede 'directly', but it could cause confusion. STILL_VALID at low-medium severity.",
+    "priority_check": "P3 — wording clarity",
+    "duplicate_of": null,
+    "notes": "Files checked: orchestration/templates/reviews.md lines 188-195, orchestration/RULES.md lines 241-245"
+  },
+  {
+    "bead_id": "ant-farm-w1dn",
+    "title": "Development artifacts left in production templates (NEW annotation, CRITICAL FIX note)",
+    "verdict": "STILL_VALID",
+    "confidence": "high",
+    "evidence": "Found two development artifacts in production templates. (1) orchestration/templates/checkpoints.md line 155: '7. **Line number specificity** (NEW - prevents scope creep)' — the '(NEW - prevents scope creep)' annotation was appropriate during development/rollout but is stale in a stable template; it reads as a temporary annotation rather than permanent documentation. (2) orchestration/templates/checkpoints.md line 592: '**CRITICAL FIX**: The timestamp ensures each CCB audit is preserved. Previous versions used static filename...' — this is a historical note explaining why the design was changed, not active instruction. These belong in git commit messages or known-failures.md, not in the production template that Pest Control reads at runtime.",
+    "priority_check": "P3 — documentation cleanliness",
+    "duplicate_of": null,
+    "notes": "Files checked: orchestration/templates/checkpoints.md lines 155-158, lines 592-593"
+  },
+  {
+    "bead_id": "ant-farm-x31",
+    "title": "Verification Pipeline Rationale has redundant 'Why both?' paragraph",
+    "verdict": "STILL_VALID",
+    "confidence": "medium",
+    "evidence": "Checked reviews.md lines 450-458. The 'Why both?' paragraph at line 457 reads: 'The prerequisite gate (Big Head Step 0) is a blocker for Big Head's own work. The audit check (CCB Check 0) is an independent verification...' The bead claims this is redundant — and the two bullet points immediately above (lines 453-455) already explain the two verification layers without the 'Why both?' framing. However, the 'Why both?' paragraph does add the concept of intentional redundancy as a design principle ('The redundancy is intentional: different agents, different timing, different failure modes.') which is not in the bullet points. Verdict: STILL_VALID but with lower severity — the paragraph adds design rationale that arguably earns its place.",
+    "priority_check": "P3 — minor documentation polish",
+    "duplicate_of": null,
+    "notes": "Files checked: orchestration/templates/reviews.md lines 450-458"
+  },
+  {
+    "bead_id": "ant-farm-xvmn",
+    "title": "Explore tmux-based agent spawning for real-time observability",
+    "verdict": "STILL_VALID",
+    "confidence": "high",
+    "evidence": "Checked RULES.md for tmux usage. RULES.md Step 3b-v (lines 201-234) already implements a narrow tmux use case: launching the 'dummy reviewer' in a tmux window for context usage observation. However, this bead (based on its description) is about a much broader exploration: using tmux for ALL orchestrated subagents so you can observe their work in real-time. The existing tmux code in RULES.md is for one specific measurement task (dummy reviewer) — the key research questions in the bead description (can boss-bot launch Claude CLI sessions in tmux, how to pipe prompts, how to collect results) are not answered by the existing implementation. Feature request exploration is NOT ALREADY_FIXED.",
+    "priority_check": "P4 — exploration/future work, not a bug",
+    "duplicate_of": null,
+    "notes": "Files checked: orchestration/RULES.md lines 201-234 (dummy reviewer tmux implementation). The existing tmux usage is narrower than what this bead explores."
+  },
+  {
+    "bead_id": "ant-farm-z8lq",
+    "title": "Review task ID scoping includes out-of-range commits",
+    "verdict": "STILL_VALID",
+    "confidence": "high",
+    "evidence": "Checked RULES.md Step 3b-i (lines 141-148). Task IDs for round 1 are 'all task IDs', and the commit range is 'first session commit..HEAD'. There is no mechanism to exclude tasks whose fix commits pre-date the session's first commit. The bead description (from the bead record) says: 'task ant-farm-1y4 was included in this review cycle but its fix commit predates the review range (f9ad7d9..HEAD). The reviewer cannot verify AC compliance.' The proposed fix is correct — the Queen should exclude tasks whose commits pre-date the session first commit when compiling task IDs for review. This filtering logic is absent from RULES.md Step 3b-i.",
+    "priority_check": "P3 — review accuracy gap; task IDs with pre-session commits would confuse Nitpickers trying to verify AC",
+    "duplicate_of": null,
+    "notes": "Files checked: orchestration/RULES.md lines 139-148 (Step 3b-i task ID gathering)"
+  }
+]

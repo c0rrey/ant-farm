@@ -1,0 +1,48 @@
+<!-- Review skeleton: excellence | Assembled by compose-review-skeletons.sh -->
+<!-- Slot markers: .beads/agent-summaries/_session-3a20de/prompts/review-excellence.md .beads/agent-summaries/_session-3a20de/review-reports/excellence-review-20260220-165138.md 1 dc5082c..HEAD docs/plans/2026-02-19-meta-orchestration-plan.md orchestration/RULES.md orchestration/templates/checkpoints.md orchestration/templates/pantry.md orchestration/templates/reviews.md scripts/parse-progress-log.sh 20260220-165138 -->
+<!-- Fill with: scripts/fill-review-slots.sh -->
+
+
+Perform a excellence review of the completed work.
+
+**Review round**: 1
+If round 2+: Your scope is limited to fix commits only. You may read full files for context, but your mandate is: did these fixes land correctly and not break anything? Out-of-scope findings are only reportable if they would cause a runtime failure or silently wrong results. Do NOT report naming, style, docs, or improvement opportunities outside fix scope.
+
+Step 0: Read your full review brief from .beads/agent-summaries/_session-3a20de/prompts/review-excellence.md
+(Format: markdown. Sections: Scope, Files, Focus, Detailed Instructions.)
+
+Your workflow:
+1. Read ALL files listed in the brief
+2. Catalog findings with file:line references and severity (P1/P2/P3)
+3. Group findings into preliminary root causes
+4. Write your report to .beads/agent-summaries/_session-3a20de/review-reports/excellence-review-20260220-165138.md
+5. Message relevant Nitpickers if you find cross-domain issues
+
+Your report MUST include these sections (see brief for full format):
+- **Findings Catalog**: each finding with file:line, severity, category, description, suggested fix
+- **Preliminary Groupings**: findings grouped by root cause
+- **Summary Statistics**: total findings, breakdown by severity
+- **Cross-Review Messages**: log of messages sent/received with other reviewers
+- **Coverage Log**: every scoped file listed, even those with no issues found
+- **Overall Assessment**: score out of 10 + verdict (PASS / PASS WITH ISSUES / NEEDS WORK)
+
+Do NOT file beads (`bd create`) — Big Head handles all bead filing.
+
+---
+## Review Brief
+
+**Commit range**: dc5082c..HEAD
+
+**Review round**: 1
+
+**Files to review**:
+docs/plans/2026-02-19-meta-orchestration-plan.md orchestration/RULES.md orchestration/templates/checkpoints.md orchestration/templates/pantry.md orchestration/templates/reviews.md scripts/parse-progress-log.sh
+
+**Task IDs** (for correctness review — run `bd show <id>` to retrieve acceptance criteria):
+ant-farm-3fm ant-farm-3n2 ant-farm-957 ant-farm-c05 ant-farm-r8m ant-farm-wiq ant-farm-0b4k ant-farm-98c ant-farm-pid ant-farm-lajv ant-farm-s0ak ant-farm-5q3 ant-farm-hz4t ant-farm-b219
+
+**Report output path**: .beads/agent-summaries/_session-3a20de/review-reports/excellence-review-20260220-165138.md
+
+**Timestamp**: 20260220-165138
+
+Do NOT file beads — Big Head handles all bead filing.

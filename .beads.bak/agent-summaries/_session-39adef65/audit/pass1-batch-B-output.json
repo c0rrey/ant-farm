@@ -1,0 +1,222 @@
+[
+  {
+    "bead_id": "ant-farm-0xqf",
+    "title": "Skeleton format spec hints do not match Pantry actual output sections",
+    "verdict": "STILL_VALID",
+    "confidence": "high",
+    "evidence": "pantry.md Section 1 Step 2.4 (lines 108-135) specifies the task brief format including a 'Summary Doc Sections' section. The bead claims dirt-pusher-skeleton.md:30 format hint omits this section. The fix lives in the skeleton files (dirt-pusher-skeleton.md, nitpicker-skeleton.md, big-head-skeleton.md), not pantry.md. No evidence any skeleton hint update has occurred in pantry.md history. Bead is about skeleton files primarily; pantry.md itself is only tangentially affected (it is the authority on what sections it writes). The mismatch still exists between pantry output and skeleton hints.",
+    "priority_check": "P3 confirmed — documentation clarity issue, no runtime behavior impact",
+    "duplicate_of": null,
+    "notes": "Bead scope spans skeleton files and pantry.md. Primary fix target is dirt-pusher-skeleton.md and nitpicker-skeleton.md, not pantry.md itself. Assigned to epic ant-farm-qp1j."
+  },
+  {
+    "bead_id": "ant-farm-164n",
+    "title": "Dual placeholder conventions for round-conditional blocks",
+    "verdict": "ALREADY_FIXED",
+    "confidence": "high",
+    "evidence": "Bead references pantry.md:382-416 using {PANTRY_ROUND_1_CHECK_START/END} braces. Current pantry.md uses plain prose conditionals ('Round 1: Compose 4 review briefs' at line 252, 'Round 2+: Compose 2 review briefs' at line 253) with no structural placeholder markers of either convention. Commit 1b0037e (refactor: merge review skeleton scripts into single-pass build-review-prompts.sh) is the most recent change to pantry.md and eliminated the two-script approach that had these round-conditional blocks. Neither {PANTRY_ROUND_1_CHECK_START/END} nor <IF ROUND 1> markers appear anywhere in current pantry.md (grep confirmed zero matches). The dual-marker issue no longer exists in pantry.md.",
+    "priority_check": "P3 confirmed — was documentation/template wording inconsistency",
+    "duplicate_of": null,
+    "notes": "Fix may be partial if reviews.md still uses <IF ROUND 1> markers — that file is outside this batch's scope. The pantry.md half of the issue is resolved."
+  },
+  {
+    "bead_id": "ant-farm-3ysr",
+    "title": "Pantry guard edge cases: whitespace handling and contamination detection carve-out",
+    "verdict": "STILL_VALID",
+    "confidence": "medium",
+    "evidence": "Condition 2 (pantry.md:60) says 'absent, empty, or contains only whitespace' — covers basic whitespace but does not distinguish tabs vs spaces vs mixed whitespace-only strings. Condition 3 (pantry.md:72) has the {UPPERCASE} carve-out note, but does not address the edge case where a section has both legitimate content AND an unfilled placeholder (contamination detection would correctly fire, but the carve-out's boundary is only prose-described, not mechanically enforceable). No description provided in bead; inferring from title. No commits since bead creation (2026-02-20) address these specific edge cases in pantry.md.",
+    "priority_check": "P3 confirmed — edge cases with very low operational impact",
+    "duplicate_of": null,
+    "notes": "Low confidence on exact scope due to no bead description. The named edge cases (whitespace handling, contamination detection carve-out) are both present concerns but low severity. Assigned to epic ant-farm-apws."
+  },
+  {
+    "bead_id": "ant-farm-4ki0",
+    "title": "TOCTOU race: Pantry fail-fast metadata check may read partially-written Scout file",
+    "verdict": "STILL_VALID",
+    "confidence": "medium",
+    "evidence": "pantry.md Step 2.1 (line 44) reads '{session-dir}/task-metadata/{TASK_SUFFIX}.md' with no mention of file locking, wait/retry, or atomicity verification. The Scout writes metadata files using Write tool calls, which are not atomic across LLM turns. If the Pantry starts before Scout finishes writing all metadata files, it could read a partial file. No bead description; inferring from title. No commits since bead creation (2026-02-20) add TOCTOU mitigation to pantry.md.",
+    "priority_check": "P3 confirmed — theoretical race condition, extremely low operational probability given sequential Queen orchestration",
+    "duplicate_of": null,
+    "notes": "Assigned to epic ant-farm-apws. Practical risk is near-zero since Queen waits for Scout subagent to complete before spawning Pantry, but the documentation contains no explicit statement of this invariant."
+  },
+  {
+    "bead_id": "ant-farm-4u4s",
+    "title": "pantry-review.md (archived) tense inconsistency",
+    "verdict": "DUPLICATE_SUSPECT",
+    "confidence": "high",
+    "evidence": "Identical title to ant-farm-wlo4 ('pantry-review.md (archived) tense inconsistency'). Both beads were created on the same date (2026-02-22) within seconds of each other (ant-farm-4u4s at 00:03:02Z, ant-farm-wlo4 at 18:29:56Z). Neither has a description. The tense inconsistency in pantry-review.md (present-tense body 'You are the Pantry (review mode). You compose...' vs archived/deprecated status) is a STILL_VALID issue for the surviving bead.",
+    "priority_check": "P3 confirmed",
+    "duplicate_of": "ant-farm-wlo4",
+    "notes": "ant-farm-4u4s was created first; ant-farm-wlo4 is the later duplicate. The underlying issue is STILL_VALID in pantry-review.md — the body uses present tense throughout despite the file being archived. Since pantry-review.md is archived/frozen by convention, fixing tense may be considered low value. Recommend closing ant-farm-4u4s as the duplicate and keeping ant-farm-wlo4 for resolution decision."
+  },
+  {
+    "bead_id": "ant-farm-6e1",
+    "title": "Pantry 'report to Queen immediately' misleading for Task subagent model",
+    "verdict": "STILL_VALID",
+    "confidence": "high",
+    "evidence": "pantry.md line 45: 'FAIL-FAST CHECK: Halt and report for any of these conditions.' The word 'report' implies reporting to a conversation partner (the Queen), but the Pantry runs as a Task subagent that can only return output at task completion — it cannot send mid-task messages to the Queen. The 'report' instruction is misleading because: (1) there is no mechanism for mid-task Queen notification, (2) the actual behavior described is writing a failure artifact to disk (lines 48-58) and continuing with remaining tasks, not halting and reporting to Queen. The phrase 'Halt and report' has existed unchanged since at least commit 9c5a252 (2026-02-17).",
+    "priority_check": "P3 confirmed — wording confusion, not a behavioral bug",
+    "duplicate_of": null,
+    "notes": "Assigned to epic ant-farm-apws. Related to ant-farm-xdw3 (Halt wording misleads about per-task vs all-task stopping). Together these two beads address both the 'Halt' and 'report' words in the same phrase."
+  },
+  {
+    "bead_id": "ant-farm-bo7d",
+    "title": "pantry.md Section 2 deprecation notice insufficiently prominent",
+    "verdict": "DUPLICATE_SUSPECT",
+    "confidence": "high",
+    "evidence": "Identical title to ant-farm-gl11 ('pantry.md Section 2 deprecation notice insufficiently prominent'). ant-farm-gl11 was created at 2026-02-21T18:29:55Z; ant-farm-bo7d at 2026-02-22T00:02:50Z. Neither has a description. The underlying issue is STILL_VALID: pantry.md Section 2 (lines 214-410) starts with a blockquote deprecation notice (lines 216-221) but then presents the full deprecated workflow with all its steps. A user could miss the notice and follow the deprecated steps. The current header '[DEPRECATED — replaced by build-review-prompts.sh]' is in the section title but the blockquote notice competes with 190 lines of deprecated content below it.",
+    "priority_check": "P3 confirmed",
+    "duplicate_of": "ant-farm-gl11",
+    "notes": "ant-farm-gl11 was created first; ant-farm-bo7d is the later duplicate. Recommend closing ant-farm-bo7d. The underlying issue (Section 2 deprecation prominence) is a legitimate concern since the deprecated section content remains fully present and could mislead agents."
+  },
+  {
+    "bead_id": "ant-farm-e66h",
+    "title": "pantry.md fail-fast conditions use inconsistent signal words",
+    "verdict": "DUPLICATE_SUSPECT",
+    "confidence": "high",
+    "evidence": "Identical title to ant-farm-onmp ('pantry.md fail-fast conditions use inconsistent signal words'). ant-farm-e66h was created at 2026-02-21T18:29:56Z; ant-farm-onmp at 2026-02-22T00:02:56Z. Neither has a description. The underlying issue is STILL_VALID: pantry.md line 45 uses 'Halt and report'; Condition 1 (line 58) says 'Do not proceed with task brief composition for this task'; Condition 2 (line 70) says 'skip to the next task'; Condition 3 (line 81) also says 'skip to the next task'. The signal words across conditions are: 'Halt' (header), 'Do not proceed' (Condition 1), 'skip' (Conditions 2 and 3) — three different phrases for the same per-task-skip behavior.",
+    "priority_check": "P3 confirmed",
+    "duplicate_of": "ant-farm-onmp",
+    "notes": "ant-farm-e66h was created first; ant-farm-onmp is the later duplicate. Recommend closing ant-farm-onmp. Closely related to ant-farm-xdw3 (which explicitly covers the 'Halt' vs skip contradiction) and ant-farm-6e1 (which covers 'report'). These three beads form a cluster around the same fail-fast header wording."
+  },
+  {
+    "bead_id": "ant-farm-gf80",
+    "title": "Pantry empty file list guard does not validate that listed files exist on disk",
+    "verdict": "STILL_VALID",
+    "confidence": "high",
+    "evidence": "pantry.md GUARD block (lines 238-250) checks only for empty or whitespace-only file lists ('verify that the \"list of ALL changed files across all epics\" provided by the Queen is non-empty'). It does not check file existence. The bead description's suggested fix ('add a note: \"The Pantry trusts the Queen file list as authoritative\"') has not been added to the current file. No commits since bead creation (2026-02-20) address this gap. The bead's own description rates this as 'extremely low likelihood' but notes the improvement is still desirable.",
+    "priority_check": "P3 confirmed — informational gap, not a blocking issue",
+    "duplicate_of": null,
+    "notes": "Assigned to epic ant-farm-apws. Bead description explicitly acknowledges low risk. Fix is a one-line clarifying note, not a behavioral change."
+  },
+  {
+    "bead_id": "ant-farm-gl11",
+    "title": "pantry.md Section 2 deprecation notice insufficiently prominent",
+    "verdict": "STILL_VALID",
+    "confidence": "high",
+    "evidence": "pantry.md Section 2 (lines 214-410) begins with a blockquote deprecation notice (lines 216-221): 'DEPRECATED: Section 2 (Review Mode) is superseded by scripts/build-review-prompts.sh. The Pantry is no longer involved in review prompt composition.' However, 189 lines of the deprecated workflow follow below the notice with no additional deprecation callouts. A user reading Section 2 could start following the steps after the notice block, particularly since the notice is a blockquote (visually lower emphasis than bold text or a warning box). The section header includes '[DEPRECATED]' but that alone is insufficient given the volume of content that follows.",
+    "priority_check": "P3 confirmed",
+    "duplicate_of": null,
+    "notes": "ant-farm-bo7d is the duplicate of this bead. This bead (gl11) was created first and should be kept. Possible fix: add a repeated deprecation reminder at the start of each deprecated step, or collapse all deprecated steps into a collapsed section."
+  },
+  {
+    "bead_id": "ant-farm-k476",
+    "title": "Failure taxonomy (INFRASTRUCTURE vs SUBSTANCE) not defined in a shared location",
+    "verdict": "STILL_VALID",
+    "confidence": "high",
+    "evidence": "pantry.md uses INFRASTRUCTURE FAILURE (line 47) and SUBSTANCE FAILURE (lines 60, 72, 238) without defining these terms. The term definitions section at pantry.md lines 5-12 defines TASK_ID, TASK_SUFFIX, and SESSION_DIR, but not the failure taxonomy. Searching the codebase for a shared failure taxonomy definition file finds none. The bead description identifies affected surfaces: pantry.md:33/45, big-head-skeleton.md:58, checkpoints.md:333, reviews.md. No commits since bead creation (2026-02-20) added a taxonomy definition.",
+    "priority_check": "P3 confirmed — documentation gap, not a behavioral bug",
+    "duplicate_of": null,
+    "notes": "Assigned to epic ant-farm-qp1j. Fix requires creating or updating a shared reference document. Low urgency since the terms are self-explanatory from context."
+  },
+  {
+    "bead_id": "ant-farm-oluh",
+    "title": "Pantry partial verdict table placement ambiguous -- per-failure or end-of-loop",
+    "verdict": "STILL_VALID",
+    "confidence": "high",
+    "evidence": "pantry.md lines 83-89: 'On any failure above: Return a partial verdict table to the Queen showing completed and failed tasks.' This block appears immediately after Condition 3 (line 81) at the same indentation level and no explicit loop-end marker separates it from the conditions. A reader could interpret 'On any failure above' as 'when Condition 3 fails specifically' rather than 'after processing all tasks if any failures occurred.' The bead description correctly identifies the ambiguity. No commits since bead creation (2026-02-20) have restructured this block.",
+    "priority_check": "P3 confirmed — correctness/clarity issue in instructions",
+    "duplicate_of": null,
+    "notes": "Assigned to epic ant-farm-apws. Fix is clear from bead description: move the partial verdict table instruction to after the per-task loop and add explicit 'After processing all tasks' framing."
+  },
+  {
+    "bead_id": "ant-farm-onmp",
+    "title": "pantry.md fail-fast conditions use inconsistent signal words",
+    "verdict": "DUPLICATE_SUSPECT",
+    "confidence": "high",
+    "evidence": "Identical title to ant-farm-e66h. Created at 2026-02-22T00:02:56Z, after ant-farm-e66h (2026-02-21T18:29:56Z). No description. The underlying issue is STILL_VALID as documented in ant-farm-e66h's verdict: pantry.md uses 'Halt', 'Do not proceed', and 'skip' across the fail-fast conditions for the same per-task behavior.",
+    "priority_check": "P3 confirmed",
+    "duplicate_of": "ant-farm-e66h",
+    "notes": "ant-farm-e66h was created first and should be kept. ant-farm-onmp should be closed as the duplicate."
+  },
+  {
+    "bead_id": "ant-farm-ppey",
+    "title": "Incomplete failure paths in agent protocols: Big Head escalation, Nitpicker missing brief, Pantry error handling",
+    "verdict": "STILL_VALID",
+    "confidence": "medium",
+    "evidence": "pantry.md Section 3 (Error Handling, lines 413-417) has two bullets: (1) write each brief immediately, (2) on any unrecoverable error, return a partial file path table. This is a general catch-all but does not define: what constitutes 'unrecoverable' vs recoverable errors, how many retries to attempt, or what the Queen should do upon receiving a partial table. No description provided in bead; the title mentions Big Head escalation and Nitpicker missing brief as co-concerns alongside Pantry error handling. No commits since bead creation (2026-02-20) address the Pantry portion of this multi-surface issue.",
+    "priority_check": "P3 confirmed",
+    "duplicate_of": null,
+    "notes": "Assigned to epic ant-farm-qp1j. Multi-agent bead; Pantry is one of three affected surfaces. The lack of definition for 'unrecoverable error' in pantry.md:416 is the pantry-specific gap."
+  },
+  {
+    "bead_id": "ant-farm-qql",
+    "title": "Pantry fail-fast check uses redundant 'missing, does not exist' phrasing",
+    "verdict": "STILL_VALID",
+    "confidence": "medium",
+    "evidence": "pantry.md Condition 1 header (line 47): 'File missing or Scout error (INFRASTRUCTURE FAILURE): File is absent, unreadable...' — 'File missing' in the condition label and 'absent' in the body description are synonymous, creating redundancy. The exact phrase 'missing, does not exist' from the bead title does not appear verbatim in any version of pantry.md (confirmed by git history search). The bead likely refers to the 'missing' (condition label) + 'absent' (body) synonym pair. No bead description to clarify. The redundancy is minor but present.",
+    "priority_check": "P3 confirmed",
+    "duplicate_of": null,
+    "notes": "Assigned to epic ant-farm-apws. Low confidence on exact scope because the verbatim phrase 'missing, does not exist' never appeared in pantry.md — bead may be paraphrasing the 'missing'/'absent' redundancy. The underlying issue is still valid as a minor phrasing cleanup."
+  },
+  {
+    "bead_id": "ant-farm-sd12",
+    "title": "fix: remove archived pantry-review from scout.md exclusion list",
+    "verdict": "STILL_VALID",
+    "confidence": "high",
+    "evidence": "Bead description identifies scout.md:63 as referencing pantry-review in the agent exclusion list. This bead is about scout.md, not pantry.md or pantry-review.md. pantry-review.md is confirmed archived (orchestration/_archive/pantry-review.md). The fix (remove pantry-review from scout.md:63 exclusion list) is a scout.md change. No evidence the scout.md exclusion list has been updated since bead creation (2026-02-22). Audit reference DRIFT-021 from docs/audits/2026-02-21-orchestration-drift-audit.md. Full description and acceptance criteria present.",
+    "priority_check": "P3 confirmed — stale reference, no operational impact since pantry-review has no agent file",
+    "duplicate_of": null,
+    "notes": "Assigned to epic ant-farm-908t. Primary file is scout.md (not in this batch's primary files). Bead was included in this batch because it references the pantry-review archive status."
+  },
+  {
+    "bead_id": "ant-farm-sycy",
+    "title": "Pantry failure artifact path collision across conditions for same task",
+    "verdict": "STILL_VALID",
+    "confidence": "high",
+    "evidence": "pantry.md Condition 1 (line 48), Condition 2 (line 62), and Condition 3 (line 73) all write failure artifacts to the same path: '{session-dir}/prompts/task-{TASK_SUFFIX}-FAILED.md'. The bead description notes that only one condition fires per task in the current sequential waterfall, but the shared path makes the failure type distinguishable only by reading artifact content, not the filename. No commits since bead creation (2026-02-20) have added condition-type to the filename or added the documented sequential-check invariant comment.",
+    "priority_check": "P3 confirmed — low-probability collision, no current operational impact",
+    "duplicate_of": null,
+    "notes": "Assigned to epic ant-farm-apws. Bead description explicitly rates as 'Low priority' with two suggested options. Sequential-check invariant is real and undocumented."
+  },
+  {
+    "bead_id": "ant-farm-t1ex",
+    "title": "pantry-review.md self-validation checklist lacks remediation guidance per item",
+    "verdict": "IRRELEVANT",
+    "confidence": "high",
+    "evidence": "pantry-review.md is confirmed archived (frontmatter: 'status: archived', header: 'DEPRECATED: This agent is superseded by the fill-review-slots.sh bash script approach'). The self-validation checklist (lines 58-70) does lack per-item remediation guidance, but: (1) the file is archived and frozen — no agent should be following these instructions, (2) fill-review-slots.sh has replaced this workflow, (3) fixing remediation guidance in an archived file provides no operational benefit. The bead was created 2026-02-20, after pantry-review was already archived.",
+    "priority_check": "P3 would be confirmed if relevant — but IRRELEVANT overrides",
+    "duplicate_of": null,
+    "notes": "Assigned to epic ant-farm-apws. Recommend closing as IRRELEVANT. If the team ever un-archives pantry-review.md for fallback use, the checklist gap would become relevant again — but the file header explicitly says 'Do NOT use for Step 3b review cycles.'"
+  },
+  {
+    "bead_id": "ant-farm-t7sd",
+    "title": "pantry.md references undefined 'two-script approach'",
+    "verdict": "ALREADY_FIXED",
+    "confidence": "high",
+    "evidence": "Commit 1b0037e ('refactor: merge review skeleton scripts into single-pass build-review-prompts.sh') changed the Section 2 deprecation notice from 'superseded by the two-script approach introduced in Section 1 Step 2.5' to 'superseded by scripts/build-review-prompts.sh' (verified via git show 1b0037e). Current pantry.md line 216: 'superseded by `scripts/build-review-prompts.sh`'. Grep confirms 'two-script' does not appear anywhere in current pantry.md (zero matches). The named scripts are now explicitly referenced.",
+    "priority_check": "P3 confirmed — was a clarity/reference issue",
+    "duplicate_of": null,
+    "notes": "Fixed in commit 1b0037e. Bead can be closed. The bead's acceptance criteria ('Deprecation notice names both scripts explicitly') is partially met — it now names one script (build-review-prompts.sh) since the two-script pipeline was consolidated into one script."
+  },
+  {
+    "bead_id": "ant-farm-wlo4",
+    "title": "pantry-review.md (archived) tense inconsistency",
+    "verdict": "DUPLICATE_SUSPECT",
+    "confidence": "high",
+    "evidence": "Identical title to ant-farm-4u4s ('pantry-review.md (archived) tense inconsistency'). ant-farm-4u4s was created at 2026-02-22T00:03:02Z; ant-farm-wlo4 was created later at 2026-02-21T18:29:56Z. Wait — checking timestamps: wlo4 is 18:29:56Z and 4u4s is 00:03:02Z. If these are same-day UTC timestamps, wlo4 (18:29) was created AFTER 4u4s (00:03). The underlying issue is STILL_VALID for the surviving bead: pantry-review.md uses present tense throughout its body ('You are the Pantry (review mode). You compose review data files...') despite being marked archived and deprecated.",
+    "priority_check": "P3 confirmed",
+    "duplicate_of": "ant-farm-4u4s",
+    "notes": "ant-farm-4u4s was created first (00:03:02Z vs 18:29:56Z on the same date 2026-02-22). ant-farm-wlo4 is the later duplicate. However, the underlying issue in pantry-review.md is arguably IRRELEVANT since the file is archived/frozen — fixing tense in an archived file has no operational impact. Recommend resolving both with IRRELEVANT decision after team review."
+  },
+  {
+    "bead_id": "ant-farm-xdw3",
+    "title": "Pantry fail-fast says Halt but behavior is skip-to-next-task",
+    "verdict": "STILL_VALID",
+    "confidence": "high",
+    "evidence": "pantry.md line 45: 'FAIL-FAST CHECK: Halt and report for any of these conditions.' Conditions 1-3 all describe per-task skip behavior: Condition 1 (line 58): 'Do not proceed with task brief composition for this task'; Condition 2 (line 70): 'Do NOT write a task brief for this task; skip to the next task'; Condition 3 (line 81): 'Do NOT write a task brief for this task; skip to the next task'. 'Halt' means stop all processing; 'skip to next task' means continue with remaining tasks. These contradict. Commit 6b26beb added the detailed per-condition behavior but left 'Halt and report' unchanged in the header (verified via git show 6b26beb).",
+    "priority_check": "P3 confirmed — wording correctness issue",
+    "duplicate_of": null,
+    "notes": "Assigned to epic ant-farm-apws. Closely related to ant-farm-6e1 (misleading 'report') and ant-farm-e66h/onmp (inconsistent signal words). These three beads collectively address the full fail-fast header wording problem. Fix per bead description: change 'Halt and report' to 'Check and skip on failure' or 'Validate before proceeding.'"
+  },
+  {
+    "bead_id": "ant-farm-zvl",
+    "title": "Pantry review mode has no fail-fast for empty changed-file list",
+    "verdict": "ALREADY_FIXED",
+    "confidence": "high",
+    "evidence": "Commit 6b26beb ('fix: add missing-input guards to pantry, big-head, and checkpoints') added the GUARD block at pantry.md lines 238-250: 'GUARD: Empty File List Check (SUBSTANCE FAILURE) — Before composing review briefs, verify that the \"list of ALL changed files across all epics\" provided by the Queen is non-empty.' This guard was not present before the commit (bead created 2026-02-18, commit dated 2026-02-19). The guard includes failure artifact path, failure message, and 'Do NOT proceed' instruction — matching the requested behavior.",
+    "priority_check": "P3 confirmed — was a missing guard",
+    "duplicate_of": null,
+    "notes": "Fixed in commit 6b26beb. Bead can be closed. Note: ant-farm-gf80 (file existence check) is a separate, still-valid follow-on gap."
+  }
+]
