@@ -13,12 +13,12 @@ accessible at `~/.claude/orchestration/templates/scout.md`. To translate repo pa
 
 ## Queen Prohibitions (read FIRST)
 
-- **NEVER** run `bd show`, `bd ready`, `bd list`, `bd blocked`, or any `bd` query command — the Scout does this
+- **NEVER** run `crumb show`, `crumb ready`, `crumb list`, `crumb blocked`, or any `crumb` query command — the Scout does this
 - **NEVER** read source code, tests, project data files, or config files — agents do this
 - **NEVER** read agent **instruction files** (scout.md, pantry.md, implementation.md, checkpoints.md, reviews.md, etc.) — pass the path to the agent, let it read its own instructions
 - **NEVER** send `shutdown_request` to any Nitpicker team member before Step 4. The **only** authorized shutdown trigger is the termination check in Step 3c (zero P1/P2 findings). Do NOT send shutdown_request at the Step 3c decision fork or anywhere else before convergence.
 
-Your first instinct will be to "gather context" by running `bd show` on the task list.
+Your first instinct will be to "gather context" by running `crumb show` on the task list.
 **Do not do this.** Spawn the Scout and let it gather context for you.
 
 ## Queen Read Permissions
@@ -52,7 +52,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 - `orchestration/reference/known-failures.md` — Reference material; for post-mortem only
 - `orchestration/_archive/*` — Deprecated documents; stale instructions that contradict current workflows. **No agent should read these.**
 - Source code files, tests, project configs, application data files
-- Raw `bd show`, `bd ready`, `bd blocked`, `bd list` output (let the Scout digest this)
+- Raw `crumb show`, `crumb ready`, `crumb blocked`, `crumb list` output (let the Scout digest this)
 
 ## Workflow: "Let's Get to Work"
 
@@ -64,7 +64,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 
             **Crash recovery detection (run BEFORE generating a new SESSION_ID):**
             Check whether the user's message contains a session directory path
-            (e.g. `.beads/agent-summaries/_session-<id>`). If a prior SESSION_DIR is
+            (e.g. `.crumbs/sessions/_session-<id>`). If a prior SESSION_DIR is
             supplied or you can identify an incomplete session from context:
             1. Verify the session directory exists:
                ```bash
@@ -90,8 +90,8 @@ The Queen's window is restricted to prevent context bloat, but certain files are
                 - User describes a filter → `filter <description>`
                 - User gives no specific scope (e.g., just "let's get to work") → `ready`
             (3) the path `orchestration/templates/scout.md` as its instruction file.
-            Do NOT read the scout template yourself. Do NOT run `bd show`, `bd ready`, `bd blocked`,
-            or any other `bd` commands — the Scout handles all task discovery and metadata gathering.
+            Do NOT read the scout template yourself. Do NOT run `crumb show`, `crumb ready`, `crumb blocked`,
+            or any other `crumb` commands — the Scout handles all task discovery and metadata gathering.
             WAIT for the Scout to return its briefing verdict (written to `{SESSION_DIR}/briefing.md`).
 
 **Step 1b:** SSV gate — After Scout writes `{SESSION_DIR}/briefing.md`, spawn Pest Control
@@ -171,7 +171,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             **3b-i. Gather inputs** from the Queen's state file:
             - Review round: read from session state (default: 1)
             - Commit range: round 1 = first session commit..HEAD; round 2+ = first fix commit..HEAD
-            - File list: `git diff --name-only <commit-range>` (deduplicated; exclude `.beads/issues.jsonl` and other auto-generated beads files)
+            - File list: `git diff --name-only <commit-range>` (deduplicated; exclude `.crumbs/tasks.jsonl` and other auto-generated crumbs files)
             - Task IDs: round 1 = all task IDs; round 2+ = fix task IDs only
             - Timestamp: The Queen generates ONE timestamp at the start of Step 3b using `date +%Y%m%d-%H%M%S` format (YYYYMMDD-HHmmss). Store as `{TIMESTAMP}` (shell: `${TIMESTAMP}`):
               ```bash
@@ -303,10 +303,10 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             ```
             You are fix-dp-N, a fix Dirt Pusher in the Nitpicker team.
             Your task bead: <bead-id>
-            Run: bd show <bead-id>
+            Run: crumb show <bead-id>
             Implement the fix. Follow the acceptance criteria exactly.
             After committing:
-            1. Record commit hash: bd update <bead-id> --note="commit: <hash>"
+            1. Record commit hash: crumb update <bead-id> --note="commit: <hash>"
             2. SendMessage to fix-pc-wwd: "Fix committed. Bead: <bead-id>. Commit: <hash>. Files changed: <list>."
             Then go idle and wait.
             ```
@@ -401,7 +401,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
               prompt="ESV checkpoint. Session dir: {SESSION_DIR}.
                       Session start commit: {SESSION_START_COMMIT} (first commit of this session).
                       Session end commit: {SESSION_END_COMMIT} (final commit before push, typically HEAD).
-                      Session start date: {SESSION_START_DATE} (ISO 8601, e.g. 2026-02-22 — used to scope bd list).
+                      Session start date: {SESSION_START_DATE} (ISO 8601, e.g. 2026-02-22 — used to scope crumb list).
                       Verify exec-summary.md and CHANGELOG.md.
                       Read orchestration/templates/checkpoints.md for full instructions."
             )
@@ -414,11 +414,13 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             **On second ESV FAIL**: Escalate to user — present failed checks, await decision.
             **Progress log (after ESV PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|ESV_PASS|artifact=${SESSION_DIR}/pc/pc-session-esv-$(date +%Y%m%d-%H%M%S).md" >> ${SESSION_DIR}/progress.log`
 
-**Step 6:** Land the plane — Queen commits the Scribe's CHANGELOG.md, then pulls, syncs, and pushes.
+**Step 6:** Land the plane — Queen commits the Scribe's CHANGELOG.md, copies the exec summary to history, then pulls and pushes.
             ```bash
             git add CHANGELOG.md && git commit -m "docs: add session {SESSION_ID} changelog entry"
+            cp "${SESSION_DIR}/exec-summary.md" ".crumbs/history/exec-summary-${SESSION_ID}.md"
+            git add ".crumbs/history/exec-summary-${SESSION_ID}.md"
+            git commit -m "chore: archive session {SESSION_ID} exec summary"
             git pull --rebase
-            bd sync
             git push
             ```
             Run `git status` after push — output MUST show "up to date with origin".
@@ -434,7 +436,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 | CCO PASS (impl) | Agent spawn | ${SESSION_DIR}/pc/*-cco-*.md |
 | CCO PASS (review) | Nitpicker team spawn | ${SESSION_DIR}/pc/pc-session-cco-review-{timestamp}.md |
 | WWD PASS | Serial mode: next agent spawn; Batch mode: DMVDC spawn (all wave agents checked before DMVDC) | ${SESSION_DIR}/pc/*-wwd-*.md |
-| DMVDC PASS | Task closure (bd close) | ${SESSION_DIR}/pc/*-dmvdc-*.md |
+| DMVDC PASS | Task closure (crumb close) | ${SESSION_DIR}/pc/*-dmvdc-*.md |
 | CCB PASS | Presenting results | ${SESSION_DIR}/pc/pc-session-ccb-{timestamp}.md |
 | Reviews | Presenting findings to user (Step 3c) | ${SESSION_DIR}/review-reports/review-consolidated-{timestamp}.md |
 | ESV PASS | Git push (Step 6) | ${SESSION_DIR}/pc/pc-session-esv-{timestamp}.md |
@@ -445,7 +447,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 
 | Agent | subagent_type | Rationale |
 |-------|---------------|-----------|
-| Scout | `scout-organizer` | Custom agent: agent-organizer + Bash for bd CLI |
+| Scout | `scout-organizer` | Custom agent: agent-organizer + Bash for crumb CLI |
 | Pantry (impl) | `pantry-impl` | Custom agent: CCO-aligned implementation prompt composer |
 | Pest Control | `pest-control` | Custom agent: verification auditor, catches fabrication + scope creep |
 | Dirt Pushers | from Pantry verdict table | Specialist per task — Scout recommends via dynamic agent discovery, Pantry passes through |
@@ -504,7 +506,7 @@ Every `Task` tool call the Queen makes MUST include the `model` parameter from t
 At session start (Step 0), generate a session ID and create the session artifact directory:
 
     SESSION_ID=$(date +%Y%m%d-%H%M%S)
-    SESSION_DIR=".beads/agent-summaries/_session-${SESSION_ID}"
+    SESSION_DIR=".crumbs/sessions/_session-${SESSION_ID}"
     mkdir -p "${SESSION_DIR}"/{task-metadata,previews,prompts,pc,summaries}
 
 Note: `review-reports/` is created lazily at Step 3b-iii — it does not exist until reviews run.
@@ -535,7 +537,7 @@ Root-level artifacts in `${SESSION_DIR}`:
 - Exit 1: error (missing log, unreadable); surface to user and await instruction
 - Exit 2: session already completed (SESSION_COMPLETE logged); no resume-plan written; proceed with fresh start
 
-The `_session-` prefix distinguishes session directories from other entries in `agent-summaries/`.
+The `_session-` prefix distinguishes session directories from other entries in `.crumbs/sessions/`.
 This prevents collisions when multiple Queens run in the same repo.
 
 ## Anti-Patterns
@@ -591,7 +593,7 @@ Track retry count in the Queen's state file (→ templates/queen-state.md).
 When an agent has not produced a commit within 15 turns, follow these steps before escalating:
 
 1. Read the agent's task brief to confirm the scope and acceptance criteria were unambiguous.
-2. Check `.beads/agent-summaries/_session-*/` for any partial summary the agent may have written, which can reveal how far it progressed before stalling.
+2. Check `.crumbs/sessions/_session-*/` for any partial summary the agent may have written, which can reveal how far it progressed before stalling.
 3. Check `git log --oneline -10` to determine whether a commit was made but not reported back correctly.
 4. If the agent is still running, check its most recent output for a blocking question, permission error, or tool failure message.
 5. If the agent exited without a commit and no diagnostic information is available, escalate to the user with: the task ID, the agent type, the turn count, and any last-known output.
