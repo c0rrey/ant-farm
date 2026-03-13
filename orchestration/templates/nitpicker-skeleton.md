@@ -36,7 +36,7 @@ Your workflow:
 When you find something that clearly belongs to another reviewer's domain, message them:
 - To Clarity: "Found misleading comment in file.py:L42 — may want to review."
 - To Edge Cases: "Found unvalidated external input at script.sh:L88 — could be boundary issue."
-- To Correctness: "Logic at rules.md:L120 may not satisfy acceptance criterion 3 — check bd show <task-id>."
+- To Correctness: "Logic at rules.md:L120 may not satisfy acceptance criterion 3 — check crumb show <task-id>."
 - To Drift: "Function signature at api.py:L42 changed arity — check if callers in routes.py still match."
 Do NOT message for status updates. Do NOT report the finding yourself AND message — pick one owner.
 Log all sent/received messages in your report's Cross-Review Messages section.
@@ -49,4 +49,4 @@ Your report MUST include these sections (see brief for full format):
 - **Coverage Log**: every scoped file listed, even those with no issues found
 - **Overall Assessment**: score out of 10 + verdict (PASS / PASS WITH ISSUES / NEEDS WORK)
 
-Do NOT file beads (`bd create`) — Big Head handles all bead filing.
+Do NOT file crumbs (`crumb create`) — Big Head handles all crumb filing.

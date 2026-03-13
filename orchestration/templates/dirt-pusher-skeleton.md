@@ -8,13 +8,13 @@ The agent-facing text starts below the `---` separator. Do NOT include this inst
 **Model**: The Task tool call MUST include `model: "sonnet"`. This applies to ALL Dirt Pushers regardless of their `subagent_type` (python-pro, typescript-pro, general-purpose, etc.).
 
 **Term definitions (canonical across all orchestration templates):**
-- `{TASK_ID}` — full bead ID including project prefix (e.g., `ant-farm-9oa`)
+- `{TASK_ID}` — full crumb ID including project prefix (e.g., `ant-farm-9oa`)
 - `{TASK_SUFFIX}` — suffix portion only; extracted by splitting on the LAST hyphen (e.g., `9oa` from `ant-farm-9oa`, or `74g1` from `my-project-74g.1`)
-- `{SESSION_DIR}` — session artifact directory path (e.g., `.beads/agent-summaries/_session-abc123`)
+- `{SESSION_DIR}` — session artifact directory path (e.g., `.crumbs/agent-summaries/_session-abc123`)
 
 Placeholders:
-- {TASK_TYPE}: bead type (bug/feature/task) — from the Scout's briefing
-- {TASK_ID}: full bead ID including project prefix (e.g., ant-farm-9oa)
+- {TASK_TYPE}: crumb type (bug/feature/task) — from the Scout's briefing
+- {TASK_ID}: full crumb ID including project prefix (e.g., ant-farm-9oa)
 - {TASK_SUFFIX}: suffix only, no prefix (e.g., 9oa)
 - {AGENT_TYPE}: subagent_type for Task tool — from the Pantry verdict table (Agent Type column).
   **Authority chain**: Scout recommends → Pantry passes through unchanged → Queen may override.
@@ -33,7 +33,7 @@ Step 0: Read your task context from {DATA_FILE_PATH}
 
 Execute these 6 steps in order:
 
-1. **Claim**: `bd show {TASK_ID}` + `bd update {TASK_ID} --status=in_progress`
+1. **Claim**: `crumb show {TASK_ID}` + `crumb update {TASK_ID} --status=in_progress`
 2. **Design** (MANDATORY) — 4+ genuinely distinct approaches with tradeoffs. Document choice before coding.
 3. **Implement**: Write clean, minimal code satisfying acceptance criteria.
 4. **Review** (MANDATORY) — Re-read EVERY changed file. Verify acceptance criteria. Assumptions audit.
@@ -41,7 +41,7 @@ Execute these 6 steps in order:
    Use conventional commit type (fix/feat/refactor/etc). Record commit hash in summary doc.
 6. **Summary doc** (MANDATORY) — Write to {SUMMARY_OUTPUT_PATH} with all required sections
    (see task brief for section list). Only after the summary doc is successfully written:
-   `bd close {TASK_ID}`
+   `crumb close {TASK_ID}`
 
 SCOPE: Only edit files listed in the task context. Document adjacent issues, don't fix them.
 Do NOT push to remote. Do NOT modify CHANGELOG/README/CLAUDE.md.
