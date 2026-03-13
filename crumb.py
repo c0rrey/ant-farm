@@ -1075,8 +1075,33 @@ def cmd_link(args: argparse.Namespace) -> None:
 
 
 def cmd_search(args: argparse.Namespace) -> None:
-    """Full-text search crumbs. Implemented downstream."""
-    die("crumb search not yet implemented")
+    """Case-insensitive full-text search across crumb and trail titles and descriptions.
+
+    Matches the query string against each record's title and description fields
+    using str.lower() comparison. Prints one line per matching record using
+    the same format as cmd_list. Empty results produce no output and exit 0.
+
+    Args:
+        args: Parsed arguments; args.query is the search string.
+    """
+    path = require_tasks_jsonl()
+    tasks = read_tasks(path)
+
+    query_lower = args.query.lower()
+
+    results = [
+        t
+        for t in tasks
+        if query_lower in (t.get("title") or "").lower()
+        or query_lower in (t.get("description") or "").lower()
+    ]
+
+    for t in results:
+        tid = t.get("id", "?")
+        title = t.get("title", "")
+        status = t.get("status", "")
+        priority = t.get("priority", "")
+        print(f"{tid:<12} {priority:<4} {status:<12} {title}")
 
 
 def cmd_trail(args: argparse.Namespace) -> None:
@@ -1280,8 +1305,84 @@ def _cmd_trail_close(args: argparse.Namespace) -> None:
 
 
 def cmd_tree(args: argparse.Namespace) -> None:
-    """Show crumb hierarchy. Implemented downstream."""
-    die("crumb tree not yet implemented")
+    """Display trail/crumb hierarchy as an indented tree.
+
+    Without an ID argument: shows all trails followed by their child crumbs
+    (indented by 2 spaces), then orphan crumbs (no parent trail) at the end.
+    With an ID argument: shows only the specified trail and its children;
+    exits 1 if the ID is not found or is not a trail.
+
+    Args:
+        args: Parsed arguments; args.id is the optional trail ID to scope to.
+    """
+    path = require_tasks_jsonl()
+    tasks = read_tasks(path)
+
+    trail_id_filter: Optional[str] = getattr(args, "id", None)
+
+    if trail_id_filter is not None:
+        # Scoped to a single trail
+        trail = _find_crumb(tasks, trail_id_filter)
+        if trail is None:
+            die(f"trail '{trail_id_filter}' not found")
+        if trail.get("type") != "trail":
+            die(f"'{trail_id_filter}' is not a trail")
+
+        tid = trail.get("id", "?")
+        title = trail.get("title", "")
+        status = trail.get("status", "")
+        priority = trail.get("priority", "")
+        print(f"{tid:<12} {priority:<4} {status:<12} {title}")
+
+        children = _get_trail_children(tasks, trail_id_filter)
+        for child in children:
+            cid = child.get("id", "?")
+            ctitle = child.get("title", "")
+            cstatus = child.get("status", "")
+            cpriority = child.get("priority", "")
+            print(f"  {cid:<10} {cpriority:<4} {cstatus:<12} {ctitle}")
+        return
+
+    # Full tree: all trails with children, then orphans
+    trails = [t for t in tasks if t.get("type") == "trail"]
+    # Build set of IDs claimed by trails (children are those with links.parent)
+    all_trail_ids = {t.get("id") for t in trails if t.get("id")}
+
+    # Collect all non-trail records and find orphans
+    non_trails = [t for t in tasks if t.get("type") != "trail"]
+
+    # Build a set of non-trail IDs that have a valid parent link
+    child_ids: set = set()
+
+    for trail in trails:
+        tid = trail.get("id", "?")
+        title = trail.get("title", "")
+        status = trail.get("status", "")
+        priority = trail.get("priority", "")
+        print(f"{tid:<12} {priority:<4} {status:<12} {title}")
+
+        children = _get_trail_children(tasks, tid)
+        for child in children:
+            cid = child.get("id", "?")
+            ctitle = child.get("title", "")
+            cstatus = child.get("status", "")
+            cpriority = child.get("priority", "")
+            print(f"  {cid:<10} {cpriority:<4} {cstatus:<12} {ctitle}")
+            child_ids.add(cid)
+
+    # Print orphan crumbs (non-trail, no valid parent link)
+    orphans = [
+        t for t in non_trails
+        if t.get("id") not in child_ids
+    ]
+    if orphans:
+        print("(orphans)")
+        for t in orphans:
+            tid = t.get("id", "?")
+            title = t.get("title", "")
+            status = t.get("status", "")
+            priority = t.get("priority", "")
+            print(f"  {tid:<10} {priority:<4} {status:<12} {title}")
 
 
 _BEADS_PRIORITY_MAP: Dict[int, str] = {
