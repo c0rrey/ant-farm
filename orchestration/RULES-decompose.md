@@ -126,7 +126,8 @@ Store DECOMPOSE_DIR in your context. Pass it explicitly to every agent.
 > **Before running**: substitute `{CODEBASE_ROOT}` with the absolute repo root path (e.g., `/Users/user/projects/myapp`). Do NOT run this block with the literal string `{CODEBASE_ROOT}`.
 
 ```bash
-find "{CODEBASE_ROOT}" -maxdepth 2 \
+[ -d "${CODEBASE_ROOT}" ] || { echo "ERROR: CODEBASE_ROOT is not set or does not exist"; exit 1; }
+find "${CODEBASE_ROOT}" -maxdepth 2 \
   -not -path "*/.git/*" \
   -not -name "*.md" \
   -not -name "*.yaml" \
@@ -253,7 +254,22 @@ After ALL four Foragers return, verify ALL of the following exist and are non-em
 100 lines, **truncate at line 100 and proceed** — do NOT re-spawn the Forager. Record the
 truncation in the progress log.
 
-**On gate PASS**: Proceed to Step 4.
+**On gate PASS**: Enforce the line cap before proceeding. Run `wc -l` on each research file and
+truncate any file exceeding 100 lines:
+
+```bash
+for focus in stack architecture pitfall pattern; do
+  f="${DECOMPOSE_DIR}/research/${focus}.md"
+  lines=$(wc -l < "${f}")
+  if [ "${lines}" -gt 100 ]; then
+    echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FORAGER_TRUNCATED|${focus}|lines=${lines}" \
+      >> "${DECOMPOSE_DIR}/progress.log"
+    head -100 "${f}" > "${f}.tmp" && mv "${f}.tmp" "${f}"
+  fi
+done
+```
+
+Then proceed to Step 4.
 
 **On gate FAIL** (one or more files missing or empty): Re-spawn only the missing/failed Forager(s).
 Maximum **1 retry per Forager**. If a Forager still fails after one retry, surface the error to
