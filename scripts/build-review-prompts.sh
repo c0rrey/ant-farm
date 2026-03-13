@@ -85,8 +85,8 @@ resolve_arg() {
     fi
 }
 
-CHANGED_FILES="$(resolve_arg "$CHANGED_FILES_RAW")"
-TASK_IDS="$(resolve_arg "$TASK_IDS_RAW")"
+CHANGED_FILES="$(resolve_arg "$CHANGED_FILES_RAW")" || { echo "ERROR: resolve_arg failed for CHANGED_FILES_RAW='${CHANGED_FILES_RAW}'" >&2; exit 1; }
+TASK_IDS="$(resolve_arg "$TASK_IDS_RAW")" || { echo "ERROR: resolve_arg failed for TASK_IDS_RAW='${TASK_IDS_RAW}'" >&2; exit 1; }
 
 # ---------------------------------------------------------------------------
 # Input validation (after @file resolution)
