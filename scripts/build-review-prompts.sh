@@ -175,6 +175,8 @@ fill_slot() {
     # Use a temp file for the replacement value to avoid sed special-char issues
     local tmpval
     tmpval="$(mktemp)"
+    # shellcheck disable=SC2064
+    trap "rm -f '$tmpval'" RETURN
     printf '%s' "$value" > "$tmpval"
 
     # Use awk for safe multiline substitution

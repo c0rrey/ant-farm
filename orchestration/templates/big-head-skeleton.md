@@ -130,6 +130,10 @@ Your workflow:
    - **Similar title** (same root cause, different wording): Run `crumb search "<key phrases>"` to confirm. If the existing crumb covers the same root cause, do NOT file. Log the match.
    - **No match found**: Mark for filing.
    When uncertain whether a match is truly the same root cause, err on the side of filing (a human can merge later; a missed filing is harder to recover).
+   After completing the dedup comparison, clean up the temp file:
+   ```bash
+   rm -f /tmp/open-crumbs-$$.txt
+   ```
 8. Write consolidated summary to {CONSOLIDATED_OUTPUT_PATH}
 9. Send consolidated report path to Pest Control (SendMessage): "Consolidated report ready at {CONSOLIDATED_OUTPUT_PATH}. Please run DMVDC and CCB checkpoints and reply with verdict."
    - Do NOT file any beads before receiving Pest Control's reply
