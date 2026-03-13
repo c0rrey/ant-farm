@@ -107,10 +107,8 @@ If `MISSING`, write `.crumbs/config.json` with this structure:
 {
   "prefix": "<PREFIX>",
   "default_priority": "P2",
-  "counters": {
-    "task": 1,
-    "trail": 1
-  },
+  "next_crumb_id": 1,
+  "next_trail_id": 1,
   "language": "<DETECTED_LANGUAGE>",
   "created_at": "<ISO8601_TIMESTAMP>"
 }
