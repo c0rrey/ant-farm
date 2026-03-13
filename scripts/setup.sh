@@ -65,7 +65,7 @@ backup_and_copy() {
     if [ -f "$dst" ]; then
         if ! cmp -s "$src" "$dst"; then
             local bak="${dst}.bak.${TS}"
-            cp "$dst" "$bak" || { echo "[ant-farm] ERROR: backup failed for $dst" >&2; exit 1; }
+            cp "$dst" "$bak" || { echo "[ant-farm] ERROR: backup failed for $dst" >&2; return 1; }
             log "Backed up: $dst -> $bak"
         else
             log "Unchanged: $dst"
@@ -98,8 +98,8 @@ if [ -d "$REPO_ROOT/agents" ]; then
     if [ "$DRY_RUN" = false ]; then
         mkdir -p "${HOME}/.claude/agents/"
     fi
+    shopt -s nullglob
     for agent_file in "$REPO_ROOT/agents/"*.md; do
-        [ -f "$agent_file" ] || continue
         name="$(basename "$agent_file")"
         dst="${HOME}/.claude/agents/${name}"
 
@@ -110,9 +110,10 @@ if [ -d "$REPO_ROOT/agents" ]; then
             AGENTS_CHANGED=true
         fi
 
-        backup_and_copy "$agent_file" "$dst"
+        backup_and_copy "$agent_file" "$dst" || { warn "Failed to install agent: $agent_file"; continue; }
         agents_installed=$((agents_installed + 1))
     done
+    shopt -u nullglob
 
     if [ "$agents_installed" -eq 0 ]; then
         warn "agents/ directory exists but contains no .md files — no agents installed."
@@ -135,21 +136,32 @@ if [ -d "$REPO_ROOT/orchestration" ]; then
     fi
 
     # Walk the orchestration tree, skip _archive/
-    while IFS= read -r -d '' src_file; do
-        # Compute path relative to orchestration/
-        rel="${src_file#"$REPO_ROOT/orchestration/"}"
+    find_output=$(mktemp)
+    if ! find "$REPO_ROOT/orchestration" -type f -print0 > "$find_output" 2>&1; then
+        warn "find failed while walking orchestration/: $(cat "$find_output")"
+        rm -f "$find_output"
+    else
+        while IFS= read -r -d '' src_file; do
+            # Compute path relative to orchestration/
+            rel="${src_file#"$REPO_ROOT/orchestration/"}"
 
-        # Skip anything under _archive/
-        case "$rel" in
-            _archive/*) continue ;;
-        esac
+            # Skip anything under _archive/
+            case "$rel" in
+                _archive/*) continue ;;
+            esac
 
-        dst="${HOME}/.claude/orchestration/${rel}"
-        backup_and_copy "$src_file" "$dst"
-        orchestration_installed=$((orchestration_installed + 1))
-    done < <(find "$REPO_ROOT/orchestration" -type f -print0)
+            dst="${HOME}/.claude/orchestration/${rel}"
+            backup_and_copy "$src_file" "$dst" || { warn "Failed to install orchestration file: $src_file"; continue; }
+            orchestration_installed=$((orchestration_installed + 1))
+        done < "$find_output"
+        rm -f "$find_output"
 
-    log "Orchestration files installed: $orchestration_installed"
+        if [ "$orchestration_installed" -eq 0 ]; then
+            warn "orchestration/ directory exists but no files were installed — directory may be empty."
+        else
+            log "Orchestration files installed: $orchestration_installed"
+        fi
+    fi
 fi
 
 # ---------------------------------------------------------------------------
