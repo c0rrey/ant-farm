@@ -143,6 +143,11 @@ def read_config() -> Dict[str, Any]:
         die(f"cannot read config.json: {exc}")
     config = dict(DEFAULT_CONFIG)
     config.update(stored)
+    for field in ("next_crumb_id", "next_trail_id"):
+        try:
+            config[field] = int(config[field])
+        except (ValueError, TypeError):
+            die(f"config field '{field}' must be an integer, got: {config[field]!r}")
     return config
 
 
@@ -665,6 +670,8 @@ def cmd_create(args: argparse.Namespace) -> None:
                 payload: Dict[str, Any] = json.loads(args.from_json)
             except json.JSONDecodeError as exc:
                 die(f"invalid JSON in --from-json: {exc}")
+            if not isinstance(payload, dict):
+                die("--from-json must be a JSON object, not a list or scalar")
 
             # Merge explicit --title / --priority / --type / --description
             # CLI flags override JSON payload fields
