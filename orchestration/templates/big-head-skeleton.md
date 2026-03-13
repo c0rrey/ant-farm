@@ -89,7 +89,7 @@ Your workflow:
 1. Verify all expected report files exist (4 for round 1; 2 for round 2+) — follow the missing-report handling protocol in your consolidation brief (Step 0a)
    - The brief is authoritative for this step: it specifies the polling timeout, error return format, and failure conditions
    - **Single-invocation constraint**: The polling bash block in the brief (the `while` loop with `sleep`) MUST be executed in a single Bash tool call. Do NOT attempt to poll by calling Bash repeatedly across multiple turns — the shell state does not persist between turns and you cannot `sleep` across turns. Submit the entire polling block as one Bash tool invocation and wait for its result.
-   - **Timeout note**: The polling timeout is 60 seconds (30 iterations × 2 seconds). This allows up to 60 seconds for all reviewers to finish writing their reports. If your reviewers are consistently timing out, the Queen should re-spawn Big Head rather than increasing the timeout — a longer timeout blocks the Queen's context with an idle agent.
+   - **Timeout note**: The polling timeout is determined by the consolidation brief (the `while` loop parameters in Step 0a are authoritative — the value here is approximate). This allows reviewers to finish writing their reports before Big Head proceeds. If your reviewers are consistently timing out, the Queen should re-spawn Big Head rather than increasing the timeout — a longer timeout blocks the Queen's context with an idle agent.
    - **On timeout (REPORTS_FOUND=0)**: Before returning the error to the Queen, write a failure artifact using this bash block:
      ```bash
      # NOTE: {CONSOLIDATED_OUTPUT_PATH} below is a shell variable — it is substituted at
@@ -99,7 +99,7 @@ Your workflow:
      # Big Head Consolidation — BLOCKED: Missing Nitpicker Reports
      **Status**: FAILED — prerequisite gate timeout
      **Timestamp**: <current ISO 8601 timestamp>
-     **Reason**: Not all expected Nitpicker reports arrived within 60 seconds. <list missing reports>
+     **Reason**: Not all expected Nitpicker reports arrived within the timeout specified in the consolidation brief. <list missing reports>
      **Recovery**: Check reviewer logs. Once all expected reports are present, re-spawn Big Head consolidation.
      EOF
      ```
