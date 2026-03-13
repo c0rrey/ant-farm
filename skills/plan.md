@@ -128,7 +128,7 @@ jq -n \
   --arg decompose_id "${DECOMPOSE_ID}" \
   --arg input_source "<INPUT_SOURCE>" \
   --arg input_class "<INPUT_CLASS>" \
-  --argjson class_score <CLASS_SCORE> \
+  --arg class_score "<CLASS_SCORE>" \
   --arg created_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   '{decompose_id: $decompose_id, input_source: $input_source, input_class: $input_class, class_score: $class_score, created_at: $created_at}' \
   > "${DECOMPOSE_DIR}/manifest.json"
@@ -137,7 +137,7 @@ jq -n \
 Write `INPUT_TEXT` to `${DECOMPOSE_DIR}/input.txt` for use by the decomposition workflow:
 
 ```bash
-printf '%s\n' '<INPUT_TEXT>' > "${DECOMPOSE_DIR}/input.txt"
+printf '%s\n' "${INPUT_TEXT}" > "${DECOMPOSE_DIR}/input.txt"
 ```
 
 Store `DECOMPOSE_DIR` in context. Pass it explicitly to the decomposition workflow.
