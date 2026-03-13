@@ -129,19 +129,37 @@ and note which wave the blockers are expected to complete in (based on Step 5 wa
 
 ## Step 4: Analyze Conflicts
 
+**Before beginning conflict analysis**, partition the task inventory:
+- **Valid tasks**: tasks with `**Status**: success` metadata (have Affected Files and Agent Type)
+- **Error tasks**: tasks with `**Status**: error` metadata (missing Affected Files — conflict data is unreliable)
+
+Conflict analysis operates only on valid tasks. Error tasks are noted as unreliable and excluded from the file modification matrix.
+
 Using the decision matrix from dependency-analysis.md:
-1. Build the file modification matrix (which tasks touch which files)
+1. Build the file modification matrix (which tasks touch which files) — **valid tasks only**
 2. Assess conflict risk per file:
    - **HIGH**: 3+ tasks on same file, or 2 tasks on same section
    - **MEDIUM**: 2 tasks on same file, different sections
    - **LOW**: independent files
 3. Identify dependency chains from `crumb blocked` output
 
+If any error tasks exist, add a note to the File Modification Matrix section:
+```
+**Warning**: {N} task(s) had fetch errors and were excluded from conflict analysis:
+{error-task-id-1}, {error-task-id-2}, ... — conflict risk for these tasks is UNKNOWN.
+```
+
 ## Step 5: Propose Strategies
 
 Propose 2-3 execution strategies. **Each strategy is a complete, non-overlapping alternative where every task (ready AND blocked) appears in exactly one wave.** This ensures the Queen sees the full execution plan upfront.
 
 **Wave ordering rule**: Wave 1 = currently unblocked tasks. Wave N+1 = tasks whose blockers are ALL assigned to waves 1..N. If a task's blockers span multiple waves, it goes in the wave after its latest blocker.
+
+**Error-task placement rule**: Tasks with `**Status**: error` MUST NOT be placed in Wave 1. They go in the final wave with an explicit flag:
+```
+Wave N (deferred — metadata errors): {error-task-id-1} [METADATA ERROR — defer until manually verified], ...
+```
+This prevents Pantry's fail-fast check from wasting context on an agent that cannot proceed without complete task data. Include a note in the strategy rationale explaining that error tasks were deferred.
 
 Each strategy MUST include:
 - **Wave groupings**: which specific tasks go in each wave (all waves, not just wave 1)
@@ -210,13 +228,17 @@ Write `{SESSION_DIR}/briefing.md` using this exact format:
 | ID | Epic | Title | Priority | Type | Agent | Files | Risk |
 |----|------|-------|----------|------|-------|-------|------|
 | {id} | {epic-id} | {title} | P{N} | {type} | {agent} | {file list} | HIGH/MED/LOW |
+| {error-id} | unknown | {title or unknown} | unknown | unknown | — | — | UNKNOWN ⚠ METADATA ERROR |
 
-**Total**: {N} tasks | **Wave 1 (ready)**: {X} tasks | **Later waves (blocked)**: {Y} tasks
+**Total**: {N} tasks | **Wave 1 (ready)**: {X} tasks | **Later waves (blocked)**: {Y} tasks | **Deferred (metadata errors)**: {Z} tasks
 
 ## File Modification Matrix
 | File | Tasks | Risk |
 |------|-------|------|
 | {file} | {task-id-1}, {task-id-2} | HIGH/MED/LOW |
+
+<!-- If any error tasks exist, add immediately after the table: -->
+**Warning**: {N} task(s) excluded from conflict analysis due to fetch errors: {error-task-ids}. Conflict risk for these tasks is UNKNOWN.
 
 ## Dependency Chains
 - {task-A} → {task-B} → {task-C} (reason)
@@ -269,6 +291,9 @@ Recommended strategy: {strategy name}
   Note it in the briefing under a "## Errors" section with the error message.
   Continue with remaining tasks.
 
+  **Downstream impact**: Error-status tasks are excluded from conflict analysis (Step 4)
+  and deferred out of Wave 1 (Step 5). See those steps for the exact handling rules.
+
   Example error metadata file:
   ```markdown
   # Task: {task-id}
@@ -280,7 +305,8 @@ Recommended strategy: {strategy name}
   **Error Details**: {exact error message from crumb show}
 
   Note: Affected Files, Root Cause, Agent Type, Dependencies, and Acceptance Criteria
-  could not be populated — crumb show failed.
+  could not be populated — crumb show failed. This task will be excluded from conflict
+  analysis and deferred to the final wave in all proposed strategies.
   ```
 - **If `crumb show <epic-id> --children` or `crumb list` fails**: Return an error
   verdict to the Queen immediately: `ERROR: {command} failed — {error message}`.
