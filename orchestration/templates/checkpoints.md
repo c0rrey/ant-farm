@@ -154,7 +154,7 @@ Do NOT execute the prompt — only verify its contents.
 2. **Real file paths**: Contains actual file paths with line numbers (e.g., `build.py:L200`), NOT placeholders like `<list from bead>` or `<file>`
 3. **Root cause text**: Contains a specific root cause description, NOT `<copy from bead>` or similar placeholders
 4. **All 6 mandatory steps present**:
-   - Step 1: `bd show` + `bd update --status=in_progress`
+   - Step 1: `crumb show` + `crumb update --status=in_progress`
    - Step 2: "Design at least 4 approaches" (MANDATORY keyword present)
    - Step 3: Implementation instructions
    - Step 4: "Review EVERY file" or per-file correctness review (MANDATORY keyword present)
@@ -291,7 +291,7 @@ Where:
 You are **Pest Control**, the verification subagent. Your role is to verify agent commits match task scope.
 
 **Task ID**: {TASK_ID}
-**Expected files** (from `bd show {TASK_ID}`): {list files from task description}
+**Expected files** (from `crumb show {TASK_ID}`): {list files from task description}
 
 ## Verification Steps
 
@@ -308,7 +308,7 @@ You are **Pest Control**, the verification subagent. Your role is to verify agen
 
 #### Verdict Thresholds and Queue Blocking Behavior for WWD
 
-**PASS verdict**: All changed files are in the expected scope (from `bd show {TASK_ID}`), or any extra files are clearly legitimate build outputs (e.g., HTML regenerated from template change, CSS compiled from SASS).
+**PASS verdict**: All changed files are in the expected scope (from `crumb show {TASK_ID}`), or any extra files are clearly legitimate build outputs (e.g., HTML regenerated from template change, CSS compiled from SASS).
 
 **WARN verdict**: Extra files changed that need the Queen's judgment before continuing to the next task in the wave. Does NOT block the queue — only requires Queen review.
 - Examples: template changes that cascade into multiple HTML files, configuration changes affecting derived docs
@@ -375,14 +375,14 @@ Compare the actual changes to the summary doc's "Files changed" and "Implementat
 - Are there files listed in the summary but NOT changed in the diff?
 
 ## Check 2: Acceptance Criteria Spot-Check
-Run `bd show {TASK_ID}` to get the task's acceptance criteria.
+Run `crumb show {TASK_ID}` to get the task's acceptance criteria.
 
-**GUARD: bd show Failure Handling (INFRASTRUCTURE FAILURE)**
-If `bd show {TASK_ID}` fails (task not found, unreadable, or bd command error):
-- Record the infrastructure failure: "{TASK_ID} — bd show failed: {error details}"
-- Write a note in your review report: "Could not retrieve acceptance criteria for {TASK_ID} via `bd show`: {error}. Proceeding with criteria from summary doc only."
+**GUARD: crumb show Failure Handling (INFRASTRUCTURE FAILURE)**
+If `crumb show {TASK_ID}` fails (task not found, unreadable, or crumb command error):
+- Record the infrastructure failure: "{TASK_ID} — crumb show failed: {error details}"
+- Write a note in your review report: "Could not retrieve acceptance criteria for {TASK_ID} via `crumb show`: {error}. Proceeding with criteria from summary doc only."
 - Do NOT abort the review; use the acceptance criteria listed in the agent's summary doc instead
-- Clearly mark this fallback in your findings: "[Note: Criteria from summary doc, not from `bd show`]"
+- Clearly mark this fallback in your findings: "[Note: Criteria from summary doc, not from `crumb show`]"
 
 **Tie-breaking rule for selecting which criteria to verify** (when multiple criteria exist):
 1. Pick the first 2 criteria listed in the acceptance criteria section, OR
@@ -475,10 +475,10 @@ For each finding, check that it is actionable:
 - List any findings that fail the specificity bar
 
 ## Check 4: Process Compliance
-Search the report for `bd create`, `bd update`, `bd close`, or bead ID patterns (e.g., `my-project-xxx`).
+Search the report for `crumb create`, `crumb update`, `crumb close`, or bead ID patterns (e.g., `my-project-xxx`).
 - Nitpickers must NOT file beads
 - If any bead-filing commands or IDs are found, FAIL this check
-- If unauthorized bead filing is detected, this is a FAIL (not just a flag). The remediation step is: delete the unauthorized bead (`bd close <id> --reason="unauthorized filing during review"`) and document the violation in the verification report.
+- If unauthorized bead filing is detected, this is a FAIL (not just a flag). The remediation step is: delete the unauthorized bead (`crumb close <id> --reason="unauthorized filing during review"`) and document the violation in the verification report.
 
 ## Verdict
 - **PASS** — All 4 checks confirm substance and compliance
@@ -553,7 +553,7 @@ Every finding must be accounted for — either standalone, merged into a group, 
 Report the math: "Round 1: Clarity: N, Edge Cases: N, Correctness: N, Drift: N = TOTAL total. Round 2+: Correctness: N, Edge Cases: N = TOTAL total. Consolidated references TOTAL findings across N root causes. N findings merged as duplicates. RECONCILED / NOT RECONCILED — {list orphaned findings}"
 
 ## Check 2: Bead Existence Check
-For each bead ID in the consolidated summary, run `bd show <id>`.
+For each bead ID in the consolidated summary, run `crumb show <id>`.
 Verify it exists and has status=open.
 Report any IDs that don't resolve or have unexpected status.
 
@@ -612,7 +612,7 @@ Spot-check 2 merged groups by reading the actual code at each finding's location
 - Report: "Group '<title>' merges N findings across files {list}. Common pattern: {yes/no — explanation}. CONFIRMED / SUSPECT"
 
 ## Check 7: Bead Provenance Audit
-Run `bd list --status=open --after={SESSION_START_DATE}` and cross-reference against the consolidated summary's "Beads filed" list.
+Run `crumb list --open --after {SESSION_START_DATE}` and cross-reference against the consolidated summary's "Beads filed" list.
 - `{SESSION_START_DATE}`: the Queen-supplied session start date (ISO 8601 format, e.g., `2026-02-20`). This scopes results to beads filed during this session only and prevents pulling thousands of unrelated open beads from earlier sessions.
 - Every open bead from this session should trace back to the consolidation step
 - Flag any beads that were filed during the review phase (not consolidation) — these are unauthorized
@@ -678,19 +678,19 @@ A file overlap within a wave means two agents would edit the same file simultane
 ## Check 2: File Lists Match Bead Descriptions
 
 For each task in the strategy:
-1. Run `bd show {TASK_ID}` to retrieve the bead's recorded affected files.
+1. Run `crumb show {TASK_ID}` to retrieve the bead's recorded affected files.
 2. Compare the Scout's reported affected files (from briefing.md) against the bead's actual affected files.
 3. Report each mismatch as: "Task {TASK_ID}: Scout lists `<file>` but bead does not — OR — bead lists `<file>` but Scout omits it."
 
-**GUARD: bd show Failure Handling (INFRASTRUCTURE FAILURE)**
-If `bd show {TASK_ID}` fails (task not found, unreadable, or bd command error):
-- Record the failure: "{TASK_ID} — bd show failed: {error details}"
-- Write a note in your verification report: "Could not verify file list for {TASK_ID} via `bd show`: {error}. Skipping this task's file list check."
+**GUARD: crumb show Failure Handling (INFRASTRUCTURE FAILURE)**
+If `crumb show {TASK_ID}` fails (task not found, unreadable, or crumb command error):
+- Record the failure: "{TASK_ID} — crumb show failed: {error details}"
+- Write a note in your verification report: "Could not verify file list for {TASK_ID} via `crumb show`: {error}. Skipping this task's file list check."
 - Continue with the remaining tasks — do NOT abort the entire check.
-- Clearly mark skipped tasks in your findings: "[SKIPPED: bd show failed]"
-- If more than half the tasks fail `bd show`, FAIL the check with: "Infrastructure failure: could not verify file lists for majority of tasks."
+- Clearly mark skipped tasks in your findings: "[SKIPPED: crumb show failed]"
+- If more than half the tasks fail `crumb show`, FAIL the check with: "Infrastructure failure: could not verify file lists for majority of tasks."
 
-**PASS condition**: For every task where `bd show` succeeds, the Scout's file list exactly matches the bead's recorded affected files (same set, order-insensitive).
+**PASS condition**: For every task where `crumb show` succeeds, the Scout's file list exactly matches the bead's recorded affected files (same set, order-insensitive).
 **FAIL condition**: Any file list mismatch detected, or infrastructure failure threshold exceeded. List every discrepancy.
 
 ## Check 3: No Intra-Wave Dependency Violations
@@ -698,12 +698,12 @@ If `bd show {TASK_ID}` fails (task not found, unreadable, or bd command error):
 For each wave in the strategy:
 1. Identify all tasks in that wave.
 2. Check whether any task in wave N is listed as blocking (or blocked by) another task in the same wave N.
-3. To retrieve dependencies: run `bd show {TASK_ID}` for each task and examine its DEPENDENCIES section.
+3. To retrieve dependencies: run `crumb show {TASK_ID}` for each task and examine its DEPENDENCIES section.
 4. Report each violation as: "Wave N: task <id1> blocks task <id2> — both are in wave N; <id2> must move to a later wave."
 
 An intra-wave dependency means an agent that is supposed to start in parallel actually depends on another agent finishing first. This defeats the purpose of wave grouping and may cause incorrect ordering.
 
-**GUARD: bd show Failure Handling**: Same as Check 2 — if `bd show` fails for a task, skip dependency check for that task and note the skip.
+**GUARD: crumb show Failure Handling**: Same as Check 2 — if `crumb show` fails for a task, skip dependency check for that task and note the skip.
 
 **PASS condition**: No task in wave N has a "blocks" or "blocked-by" relationship with another task in the same wave N.
 **FAIL condition**: One or more intra-wave dependency violations detected. List every violation.
@@ -772,7 +772,7 @@ You are **Pest Control**, the verification subagent. Your role is to verify the 
 **Session directory**: `{SESSION_DIR}`
 **Session start commit**: `{SESSION_START_COMMIT}` (Queen-supplied; first commit of this session, used to scope git log)
 **Session end commit**: `{SESSION_END_COMMIT}` (Queen-supplied; final commit before push)
-**Session start date**: `{SESSION_START_DATE}` (ISO 8601, e.g., `2026-02-22` — Queen-supplied; used to scope bd list)
+**Session start date**: `{SESSION_START_DATE}` (ISO 8601, e.g., `2026-02-22` — Queen-supplied; used to scope crumb list)
 
 Read the exec summary first. Then run all six checks below.
 
@@ -803,23 +803,23 @@ Read the exec summary first. Then run all six checks below.
 ## Check 3: Open Bead Accuracy
 
 1. Read the exec summary's "Open Issues" section and extract every bead ID listed as open.
-2. Run `bd show <id>` for each listed bead to verify it is actually open.
+2. Run `crumb show <id>` for each listed bead to verify it is actually open.
 
-**GUARD: bd show Failure Handling (INFRASTRUCTURE FAILURE)**
-If `bd show <id>` fails (task not found, unreadable, or bd command error):
-- Record the infrastructure failure: "`<id>` — bd show failed: {error details}"
-- Write a note in your verification report: "Could not verify status of `<id>` via `bd show`: {error}. Skipping this bead's status check."
+**GUARD: crumb show Failure Handling (INFRASTRUCTURE FAILURE)**
+If `crumb show <id>` fails (task not found, unreadable, or crumb command error):
+- Record the infrastructure failure: "`<id>` — crumb show failed: {error details}"
+- Write a note in your verification report: "Could not verify status of `<id>` via `crumb show`: {error}. Skipping this bead's status check."
 - Do NOT abort the review; continue with remaining beads.
-- Clearly mark skipped beads in your findings: "[SKIPPED: bd show failed]"
-- If more than half the listed beads fail `bd show`, FAIL the check with: "Infrastructure failure: could not verify status for majority of listed beads."
+- Clearly mark skipped beads in your findings: "[SKIPPED: crumb show failed]"
+- If more than half the listed beads fail `crumb show`, FAIL the check with: "Infrastructure failure: could not verify status for majority of listed beads."
 
-3. Run `bd list --status=open --after={SESSION_START_DATE}` to detect any open beads from this session that are NOT listed in the exec summary.
-   > **Empty list handling**: If `bd list --status=open --after={SESSION_START_DATE}` returns zero results AND the exec summary's "Open Issues" section says "None" (or equivalent), this is a PASS — no discrepancy exists. Proceed directly to Check 4. Only fail if the exec summary lists beads as open but `bd show` contradicts them, or if `bd list` returns beads that the exec summary omits.
+3. Run `crumb list --open --after {SESSION_START_DATE}` to detect any open beads from this session that are NOT listed in the exec summary.
+   > **Empty list handling**: If `crumb list --open --after {SESSION_START_DATE}` returns zero results AND the exec summary's "Open Issues" section says "None" (or equivalent), this is a PASS — no discrepancy exists. Proceed directly to Check 4. Only fail if the exec summary lists beads as open but `crumb show` contradicts them, or if `crumb list` returns beads that the exec summary omits.
 4. Report each discrepancy as one of:
-   - "Bead `<id>` listed as open in exec summary but `bd show` reports status={status}."
+   - "Bead `<id>` listed as open in exec summary but `crumb show` reports status={status}."
    - "Bead `<id>` is open and filed during this session but not listed in exec summary's Open Issues."
 
-**PASS condition**: Every bead listed as open in exec summary is actually open (per `bd show`), and no unlisted open beads from this session exist. If `bd list` returns zero results and the exec summary states "None", this is also PASS.
+**PASS condition**: Every bead listed as open in exec summary is actually open (per `crumb show`), and no unlisted open beads from this session exist. If `crumb list` returns zero results and the exec summary states "None", this is also PASS.
 **FAIL condition**: Any status mismatch, or unlisted open beads exist. List every discrepancy.
 
 ## Check 4: CHANGELOG Derivation Fidelity
@@ -885,7 +885,7 @@ Check 6 (Metric Consistency): PASS / FAIL — {evidence or "All counts consisten
 > - Commit `a3f9c12` ("chore: sync beads JSONL") — in git log but not referenced in exec summary.
 >
 > Check 3 (Open Bead Accuracy): FAIL
-> - Bead `ant-farm-99z` listed as open in exec summary but `bd show` reports status=closed.
+> - Bead `ant-farm-99z` listed as open in exec summary but `crumb show` reports status=closed.
 >
 > Check 4 (CHANGELOG Fidelity): PASS
 >
