@@ -68,7 +68,15 @@ VALID_TYPES = ("task", "bug", "feature", "trail")
 
 
 def die(message: str, code: int = 1) -> None:
-    """Print error to stderr and exit with given code."""
+    """Print error to stderr and exit with given code.
+
+    Args:
+        message: Human-readable error description (printed with "error: " prefix).
+        code: Process exit code; defaults to 1.
+
+    Raises:
+        SystemExit: Always — this function never returns normally.
+    """
     print(f"error: {message}", file=sys.stderr)
     sys.exit(code)
 
@@ -103,22 +111,50 @@ def find_crumbs_dir() -> Path:
 
 
 def crumbs_dir() -> Path:
-    """Return the .crumbs/ directory, exiting if not found."""
+    """Return the .crumbs/ directory, exiting if not found.
+
+    Returns:
+        Absolute path to the .crumbs/ directory.
+
+    Raises:
+        SystemExit: If no .crumbs/ directory is found in any ancestor.
+    """
     return find_crumbs_dir()
 
 
 def tasks_path() -> Path:
-    """Return path to tasks.jsonl, exiting if .crumbs/ not found."""
+    """Return path to tasks.jsonl, exiting if .crumbs/ not found.
+
+    Returns:
+        Absolute path to .crumbs/tasks.jsonl.
+
+    Raises:
+        SystemExit: If no .crumbs/ directory is found in any ancestor.
+    """
     return crumbs_dir() / TASKS_FILE
 
 
 def config_path() -> Path:
-    """Return path to config.json, exiting if .crumbs/ not found."""
+    """Return path to config.json, exiting if .crumbs/ not found.
+
+    Returns:
+        Absolute path to .crumbs/config.json.
+
+    Raises:
+        SystemExit: If no .crumbs/ directory is found in any ancestor.
+    """
     return crumbs_dir() / CONFIG_FILE
 
 
 def lock_path() -> Path:
-    """Return path to tasks.lock, exiting if .crumbs/ not found."""
+    """Return path to tasks.lock, exiting if .crumbs/ not found.
+
+    Returns:
+        Absolute path to .crumbs/tasks.lock.
+
+    Raises:
+        SystemExit: If no .crumbs/ directory is found in any ancestor.
+    """
     return crumbs_dir() / LOCK_FILE
 
 
@@ -132,6 +168,10 @@ def read_config() -> Dict[str, Any]:
 
     Returns:
         Dict with keys: prefix, default_priority, next_crumb_id, next_trail_id.
+
+    Raises:
+        SystemExit: If config.json exists but cannot be read or contains
+            invalid JSON, or if a counter field is not an integer.
     """
     path = config_path()
     if not path.exists():
@@ -156,6 +196,9 @@ def write_config(config: Dict[str, Any]) -> None:
 
     Args:
         config: Dict to serialise.
+
+    Raises:
+        SystemExit: If the config file cannot be written (OS error).
     """
     path = config_path()
     tmp_path = path.with_suffix(".json.tmp")
@@ -181,6 +224,10 @@ def read_tasks(path: Path) -> List[Dict[str, Any]]:
 
     Returns:
         List of parsed dicts, one per non-empty line.
+
+    Raises:
+        SystemExit: If the file cannot be opened (OS error). Malformed
+            JSON lines emit a warning to stderr and are skipped, not raised.
     """
     records: List[Dict[str, Any]] = []
     try:
@@ -208,6 +255,10 @@ def write_tasks(path: Path, records: List[Dict[str, Any]]) -> None:
     Args:
         path: Destination JSONL path.
         records: List of dicts to serialise, one per line.
+
+    Raises:
+        SystemExit: If the temporary file cannot be written or renamed
+            (OS error).
     """
     tmp_path = path.with_suffix(".jsonl.tmp")
     try:
@@ -227,6 +278,10 @@ def iter_jsonl(path: Path) -> Iterator[Dict[str, Any]]:
 
     Yields:
         Parsed dict records.
+
+    Raises:
+        SystemExit: If the file cannot be opened (OS error). Malformed
+            JSON lines emit a warning to stderr and are skipped, not raised.
     """
     try:
         fh_ctx = open(path, "r", encoding="utf-8")
@@ -263,9 +318,18 @@ class FileLock:
     """
 
     def __init__(self) -> None:
+        """Initialise with no open lock file handle."""
         self._lock_file: Optional[Any] = None
 
     def __enter__(self) -> "FileLock":
+        """Acquire the exclusive flock on tasks.lock.
+
+        Returns:
+            self, allowing use as a context manager.
+
+        Raises:
+            SystemExit: If the lock file cannot be created or opened.
+        """
         path = lock_path()
         # Ensure the lock file exists
         try:
@@ -277,6 +341,11 @@ class FileLock:
         return self
 
     def __exit__(self, *_: Any) -> None:
+        """Release the flock by closing the lock file handle.
+
+        Closing the file descriptor releases the flock held on it.
+        Safe to call even if __enter__ was never reached (guard on None).
+        """
         if self._lock_file is not None:
             # flock is released automatically on close
             self._lock_file.close()
@@ -324,7 +393,11 @@ def cleanup_stale_tmp_files() -> None:
 
 
 def now_iso() -> str:
-    """Return current UTC time as an ISO 8601 string with Z suffix."""
+    """Return current UTC time as an ISO 8601 string with Z suffix.
+
+    Returns:
+        UTC timestamp formatted as 'YYYY-MM-DDTHH:MM:SSZ'.
+    """
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
@@ -1480,6 +1553,8 @@ def _convert_beads_record(
     is_epic = issue_type == "epic"
 
     # --- type mapping ---
+    # Beads epics become crumb trails; task/bug/feature map directly;
+    # any unrecognised Beads type falls back to "task".
     if is_epic:
         crumb_type = "trail"
     elif issue_type in ("task", "bug", "feature"):
@@ -1488,26 +1563,36 @@ def _convert_beads_record(
         crumb_type = "task"
 
     # --- ID assignment ---
+    # Epics get new T-prefixed trail IDs (AF-T1, AF-T2, …) from the running
+    # counter in config.  The mapping from old Beads epic ID → new trail ID
+    # is stored in epic_id_map so that child records can resolve their parent
+    # link in the post-pass (_resolve_beads_epic_refs).
+    # Non-epic records keep their existing Beads IDs unchanged.
     if is_epic:
         prefix = config["prefix"]
         next_tid = int(config.get("next_trail_id", 1))
         trail_id = f"{prefix}-T{next_tid}"
-        config["next_trail_id"] = next_tid + 1
-        epic_id_map[beads_id] = trail_id
+        config["next_trail_id"] = next_tid + 1  # advance counter (mutates config in-place)
+        epic_id_map[beads_id] = trail_id  # register mapping for post-pass
         crumb_id = trail_id
     else:
         crumb_id = beads_id
 
     # --- priority mapping ---
+    # Beads stores priority as an integer (0 = highest) or as a P-string.
+    # Convert integer to P-string via lookup table; pass through valid P-strings
+    # unchanged; default to config's default_priority if neither applies.
     raw_priority = beads_rec.get("priority")
     if isinstance(raw_priority, int) and raw_priority in _BEADS_PRIORITY_MAP:
         priority = _BEADS_PRIORITY_MAP[raw_priority]
     elif isinstance(raw_priority, str) and raw_priority in VALID_PRIORITIES:
-        priority = raw_priority
+        priority = raw_priority  # already in crumb format
     else:
-        priority = config.get("default_priority", "P2")
+        priority = config.get("default_priority", "P2")  # unknown — use project default
 
     # --- status mapping ---
+    # Beads and crumb share the same status vocabulary, so this is a passthrough
+    # with a safe default of "open" for any unrecognised value.
     raw_status = beads_rec.get("status", "open")
     status = _BEADS_STATUS_MAP.get(raw_status, "open")
 
@@ -1518,16 +1603,21 @@ def _convert_beads_record(
         "title": beads_rec.get("title", ""),
         "status": status,
         "priority": priority,
+        # Preserve original timestamps; fall back to current time if absent
         "created_at": beads_rec.get("created_at", now),
         "updated_at": beads_rec.get("updated_at", now),
     }
 
+    # Optional fields: only include in output record if present in source
     if beads_rec.get("description"):
         record["description"] = beads_rec["description"]
     if beads_rec.get("closed_at"):
         record["closed_at"] = beads_rec["closed_at"]
 
-    # --- dependency mapping ---
+    # --- dependency mapping (first pass: parent-child only) ---
+    # Scan each Beads dependency entry.  "parent-child" deps set links.parent.
+    # "blocks" deps are intentionally deferred to _apply_blocks_deps because
+    # target records may not have been converted yet at this point in the loop.
     deps: List[Dict[str, Any]] = beads_rec.get("dependencies") or []
     if isinstance(deps, list) and deps:
         parent_id: Optional[str] = None
@@ -1543,6 +1633,8 @@ def _convert_beads_record(
 
         links: Dict[str, Any] = {}
         if parent_id:
+            # Store raw Beads parent ID here; _resolve_beads_epic_refs will
+            # rewrite it to the generated trail ID if parent was an epic.
             links["parent"] = parent_id
         if links:
             record["links"] = links
@@ -1565,10 +1657,19 @@ def _resolve_beads_epic_refs(
     for record in records:
         links = record.get("links")
         if not isinstance(links, dict):
-            continue
+            continue  # no links to rewrite on this record
+
+        # Rewrite links.parent: if the stored value is a Beads epic ID,
+        # replace it with the generated trail ID (e.g. "BD-42" → "AF-T3").
+        # IDs that are already crumb IDs (non-epics) are not in epic_id_map
+        # and pass through unchanged.
         parent = links.get("parent")
         if parent and parent in epic_id_map:
             links["parent"] = epic_id_map[parent]
+
+        # Rewrite each entry in links.blocked_by the same way.
+        # epic_id_map.get(bid, bid) returns the mapped trail ID if the
+        # blocker was an epic, or the original ID otherwise.
         blocked_by: List[str] = links.get("blocked_by") or []
         if isinstance(blocked_by, list) and blocked_by:
             links["blocked_by"] = [
@@ -1592,20 +1693,29 @@ def _apply_blocks_deps(
         records: List of converted crumb records to mutate.
         epic_id_map: Maps Beads epic ID → generated trail ID.
     """
+    # Build a fast O(1) lookup from crumb ID → converted record so we can
+    # mutate target records directly when we find a "blocks" relationship.
     record_index: Dict[str, Dict[str, Any]] = {
         r["id"]: r for r in records if r.get("id")
     }
-    # Also index by original Beads ID for records that weren't epics
+
+    # Build a translation table from every Beads ID to its crumb ID.
+    # For epics this uses the generated trail ID from epic_id_map;
+    # for all other records the Beads ID and crumb ID are identical.
     beads_id_to_crumb_id: Dict[str, str] = {}
     for beads_rec in raw_beads:
         beads_id = beads_rec.get("id", "")
         if beads_id in epic_id_map:
-            beads_id_to_crumb_id[beads_id] = epic_id_map[beads_id]
+            beads_id_to_crumb_id[beads_id] = epic_id_map[beads_id]  # epic → trail ID
         else:
-            beads_id_to_crumb_id[beads_id] = beads_id
+            beads_id_to_crumb_id[beads_id] = beads_id  # non-epic: ID unchanged
 
+    # Walk every raw Beads record and look for "blocks" dependencies.
+    # Beads semantics: dep {issue_id: A, depends_on_id: B, type: "blocks"}
+    # means "A blocks B", so we append A's crumb ID to B's blocked_by list.
     for beads_rec in raw_beads:
         source_beads_id = beads_rec.get("id", "")
+        # Translate the blocking issue's Beads ID to its crumb ID
         source_crumb_id = beads_id_to_crumb_id.get(source_beads_id, source_beads_id)
         deps: List[Dict[str, Any]] = beads_rec.get("dependencies") or []
         if not isinstance(deps, list):
@@ -1614,14 +1724,16 @@ def _apply_blocks_deps(
             if not isinstance(dep, dict):
                 continue
             if dep.get("type") != "blocks":
-                continue
+                continue  # skip parent-child and any other dep types
             target_beads_id = dep.get("depends_on_id", "")
             if not target_beads_id:
-                continue
+                continue  # malformed dep entry; skip
+            # Translate the blocked issue's Beads ID to its crumb ID
             target_crumb_id = beads_id_to_crumb_id.get(target_beads_id, target_beads_id)
             target_record = record_index.get(target_crumb_id)
             if target_record is None:
-                continue
+                continue  # target not in converted set (e.g. skipped as duplicate)
+            # Append source to target's blocked_by list (no duplicates)
             links = target_record.setdefault("links", {})
             blocked_by: List[str] = links.setdefault("blocked_by", [])
             if source_crumb_id not in blocked_by:
@@ -2126,7 +2238,16 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
-    """Parse arguments and dispatch to the appropriate subcommand handler."""
+    """Parse arguments and dispatch to the appropriate subcommand handler.
+
+    Entry point for the ``crumb`` CLI. Cleans up stale .tmp files at startup,
+    builds the argument parser, and calls the subcommand function stored in
+    ``args.func``. If no subcommand is given, prints help and exits 0.
+
+    Raises:
+        SystemExit: On invalid arguments (argparse), missing .crumbs/, or
+            any subcommand that calls die().
+    """
     cleanup_stale_tmp_files()
 
     parser = build_parser()
