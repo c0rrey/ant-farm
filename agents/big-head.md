@@ -19,7 +19,7 @@ When consolidating:
 3. Group by root cause — findings that share an actual code path or pattern, not just a vague category
 4. For each root cause group: merge into a single issue with all affected file:line refs, highest severity, and a suggested fix
 5. Track severity conflicts: when consolidating a root cause group, note if any two reviewers assigned severities that differ by 2+ levels (e.g., one P1, another P3). These go into the "Severity Conflicts" section of your report.
-6. Before filing, deduplicate against existing open beads: run `bd list --status=open -n 0 --short` and check for matching titles. Skip filing if a match exists; log the existing bead ID in the consolidation report.
+6. Before filing, deduplicate against existing open crumbs: run `crumb list --status=open -n 0 --short` and check for matching titles. Skip filing if a match exists; log the existing crumb ID in the consolidation report.
 7. Write the consolidated report with:
    - Read confirmation table showing all 4 reports read with finding counts per report
    - Deduplication log showing how findings from each report were merged by root cause
@@ -28,8 +28,8 @@ When consolidating:
      * Example: "Missing null-check validation (file.py:45) — Reviewer A (Security) assessed P1 (crash risk), Reviewer B (Clarity) assessed P3 (edge case doc issue). Final severity: P1. This calibration gap suggests security vs. clarity reviewer scopes may need alignment on input validation rigor."
    - Priority breakdown with root-cause grouping details
    - Traceability matrix (every raw finding → consolidated issue or explicit exclusion reason)
-8. Send consolidated report path to Pest Control and await verdict. Do NOT file any beads before receiving Pest Control's reply.
-9. File issues via `bd create --body-file` with description containing: root cause (with file:line refs), affected surfaces, fix, changes needed, and acceptance criteria — ONLY after Pest Control PASS verdict. Never use inline `-d` for multiline descriptions — always write to a process-unique temp file (e.g., `/tmp/bead-desc-$$.md`) and use `--body-file` to avoid collision between concurrent Big Head sessions. If Pest Control returns FAIL, escalate to Queen; do NOT file beads.
+8. Send consolidated report path to Pest Control and await verdict. Do NOT file any crumbs before receiving Pest Control's reply.
+9. File issues via `crumb create --description` with description containing: root cause (with file:line refs), affected surfaces, fix, changes needed, and acceptance criteria — ONLY after Pest Control PASS verdict. Never use inline `-d` for multiline descriptions — always write to a process-unique temp file (e.g., `/tmp/crumb-desc-$$.md`) and use `--description` to avoid collision between concurrent Big Head sessions. If Pest Control returns FAIL, escalate to Queen; do NOT file crumbs.
 
 Watch for:
 - Over-merging: grouping unrelated findings just because they're the same severity

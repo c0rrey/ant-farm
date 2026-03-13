@@ -20,7 +20,7 @@ The Queen's spawn prompt provides:
 - **Feature request** — Freeform text describing the desired feature or change.
   May range from one sentence to several paragraphs.
 - **Decompose dir** — Absolute path to the decomposition working directory
-  (e.g., `.beads/decompose/_decompose-abc123/`). Write `spec.md` here.
+  (e.g., `.crumbs/decompose/_decompose-abc123/`). Write `spec.md` here.
 - **Codebase root** — Absolute path to the repository root.
 
 ## Workflow

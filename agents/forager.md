@@ -19,7 +19,7 @@ Your spawn prompt contains:
 - **Focus area** — one of: Stack, Architecture, Pitfall, Pattern
 - **Spec path** — absolute path to the spec file you must read
 - **Decompose dir** — absolute path to the decomposition working directory
-  (e.g., `.beads/decompose/_decompose-abc123/`). Write your output here.
+  (e.g., `.crumbs/decompose/_decompose-abc123/`). Write your output here.
 
 ## Workflow
 

@@ -15,11 +15,11 @@ to keep task metadata and conflict analysis out of the Queen's context window.
 The Queen's spawn prompt provides two values:
 
 - **Session dir** — An absolute path to the session's working directory
-  (e.g., `.beads/agent-summaries/_session-abc123/`). All artifacts you
+  (e.g., `.crumbs/sessions/_session-abc123/`). All artifacts you
   produce are written under this directory.
 - **Mode** — Tells you how to discover tasks. One of:
   - `ready` — no specific scope; grab the 20 highest-priority unblocked tasks
-  - `epic <epic-id>` — work scoped to a single epic's children
+  - `trail <trail-id>` — work scoped to a single trail's children
   - `tasks <id1>, <id2>, ...` — an explicit list of task IDs
   - `filter <description>` — a natural-language filter you translate into
     `crumb list` flags
