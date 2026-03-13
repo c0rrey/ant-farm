@@ -1,7 +1,6 @@
 .DS_Store
 *.swp
 *~
-.crumbs/sessions/
-.crumbs/tasks.lock
+.crumbs/
 reviews/
 docs/project-internals/
