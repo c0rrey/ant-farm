@@ -337,19 +337,286 @@ def require_tasks_jsonl() -> Path:
 # ---------------------------------------------------------------------------
 
 
+def _find_crumb(tasks: List[Dict[str, Any]], crumb_id: str) -> Optional[Dict[str, Any]]:
+    """Return the first record matching crumb_id, or None.
+
+    Args:
+        tasks: List of task dicts from tasks.jsonl.
+        crumb_id: The ID string to look up (case-sensitive).
+
+    Returns:
+        Matching dict or None if not found.
+    """
+    for task in tasks:
+        if task.get("id") == crumb_id:
+            return task
+    return None
+
+
+def _priority_sort_key(priority: str) -> int:
+    """Return an integer sort key for a priority string (P0 sorts first).
+
+    Args:
+        priority: Priority string such as 'P0', 'P1', ..., 'P4'.
+
+    Returns:
+        Integer in range 0-4; unknown values sort last (5).
+    """
+    try:
+        return int(priority[1]) if len(priority) == 2 and priority[0] == "P" else 5
+    except (ValueError, IndexError):
+        return 5
+
+
+def _status_sort_key(status: str) -> int:
+    """Return an integer sort key for a status string.
+
+    Args:
+        status: Status string such as 'open', 'in_progress', 'closed'.
+
+    Returns:
+        Integer sort key; unknown values sort last.
+    """
+    order = {"open": 0, "in_progress": 1, "closed": 2}
+    return order.get(status, 3)
+
+
 def cmd_list(args: argparse.Namespace) -> None:
-    """List crumbs. Implemented by ant-farm-l7pk."""
-    die("crumb list not yet implemented")
+    """List crumbs with optional filters, sort, and limit.
+
+    Reads tasks.jsonl, applies composable filter flags, sorts, limits,
+    and prints one line per crumb (short mode) or a summary table.
+
+    Args:
+        args: Parsed arguments from the list subparser.
+    """
+    path = require_tasks_jsonl()
+    tasks = read_tasks(path)
+
+    # Exclude trails from list output (type == 'trail' is the trail sentinel)
+    results = [t for t in tasks if t.get("type") != "trail"]
+
+    # --- status filters (compose: OR within status group) ---
+    status_filters: List[str] = []
+    if args.filter_open:
+        status_filters.append("open")
+    if args.filter_closed:
+        status_filters.append("closed")
+    if args.filter_in_progress:
+        status_filters.append("in_progress")
+    if status_filters:
+        results = [t for t in results if t.get("status") in status_filters]
+
+    # --- other filters ---
+    if args.priority:
+        results = [t for t in results if t.get("priority") == args.priority]
+
+    if args.filter_type:
+        results = [t for t in results if t.get("type") == args.filter_type]
+
+    if args.agent_type:
+        results = [t for t in results if t.get("agent_type") == args.agent_type]
+
+    if args.parent:
+        results = [t for t in results if t.get("parent") == args.parent]
+
+    if args.discovered:
+        results = [t for t in results if t.get("discovered_from")]
+
+    if args.after:
+        # Compare ISO 8601 strings lexicographically; prepend date if needed
+        after_str = args.after
+        results = [
+            t
+            for t in results
+            if (t.get("created_at") or "") > after_str
+        ]
+
+    # --- sort ---
+    sort_field = args.sort  # 'priority' | 'created_at' | 'status'
+    if sort_field == "priority":
+        results.sort(key=lambda t: _priority_sort_key(t.get("priority", "P4")))
+    elif sort_field == "status":
+        results.sort(key=lambda t: _status_sort_key(t.get("status", "")))
+    else:
+        # Default: created_at ascending
+        results.sort(key=lambda t: t.get("created_at") or "")
+
+    # --- limit ---
+    if args.limit is not None and args.limit > 0:
+        results = results[: args.limit]
+
+    if not results:
+        print("no crumbs found")
+        return
+
+    # --- output ---
+    if args.short:
+        for t in results:
+            tid = t.get("id", "?")
+            title = t.get("title", "")
+            status = t.get("status", "")
+            priority = t.get("priority", "")
+            print(f"{tid:<12} {priority:<4} {status:<12} {title}")
+    else:
+        for t in results:
+            tid = t.get("id", "?")
+            title = t.get("title", "")
+            status = t.get("status", "")
+            priority = t.get("priority", "")
+            crumb_type = t.get("type", "")
+            created_at = t.get("created_at", "")
+            print(f"{tid:<12} {priority:<4} {status:<12} {crumb_type:<10} {created_at[:10]}  {title}")
 
 
 def cmd_show(args: argparse.Namespace) -> None:
-    """Show a crumb or trail. Implemented by ant-farm-l7pk."""
-    die("crumb show not yet implemented")
+    """Show all fields for a crumb or trail.
+
+    Args:
+        args: Parsed arguments; args.id is the crumb ID to display.
+    """
+    path = require_tasks_jsonl()
+    tasks = read_tasks(path)
+
+    crumb = _find_crumb(tasks, args.id)
+    if crumb is None:
+        die(f"crumb '{args.id}' not found")
+
+    # Print all known fields with labels
+    fields = [
+        ("id", "ID"),
+        ("type", "Type"),
+        ("title", "Title"),
+        ("status", "Status"),
+        ("priority", "Priority"),
+        ("agent_type", "Agent Type"),
+        ("description", "Description"),
+        ("acceptance_criteria", "Acceptance Criteria"),
+        ("scope", "Scope"),
+        ("parent", "Parent"),
+        ("discovered_from", "Discovered From"),
+        ("blocked_by", "Blocked By"),
+        ("links", "Links"),
+        ("notes", "Notes"),
+        ("created_at", "Created At"),
+        ("updated_at", "Updated At"),
+    ]
+
+    for key, label in fields:
+        value = crumb.get(key)
+        if value is None or value == "" or value == [] or value == {}:
+            continue
+        if isinstance(value, list):
+            print(f"{label}:")
+            for item in value:
+                print(f"  - {item}")
+        else:
+            print(f"{label}: {value}")
+
+    # Print any extra keys not in the known list
+    known_keys = {k for k, _ in fields}
+    for key, value in crumb.items():
+        if key not in known_keys and value not in (None, "", [], {}):
+            label = key.replace("_", " ").title()
+            print(f"{label}: {value}")
 
 
 def cmd_create(args: argparse.Namespace) -> None:
-    """Create a crumb. Implemented by ant-farm-l7pk."""
-    die("crumb create not yet implemented")
+    """Create a new crumb and append it to tasks.jsonl.
+
+    Accepts either --title with optional flags, or --from-json with a
+    JSON object containing explicit fields. Auto-assigns an ID from
+    config if not provided in the JSON payload.
+
+    Args:
+        args: Parsed arguments from the create subparser.
+    """
+    with FileLock():
+        path = tasks_path()
+        # tasks.jsonl may not exist yet; create it on first write
+        if path.exists():
+            tasks = read_tasks(path)
+        else:
+            tasks = []
+
+        # --- build the new record ---
+        config = read_config()
+        prefix = config["prefix"]
+
+        if args.from_json:
+            try:
+                payload: Dict[str, Any] = json.loads(args.from_json)
+            except json.JSONDecodeError as exc:
+                die(f"invalid JSON in --from-json: {exc}")
+
+            # Merge explicit --title / --priority / --type / --description
+            # CLI flags override JSON payload fields
+            if args.title:
+                payload["title"] = args.title
+            if args.priority:
+                payload["priority"] = args.priority
+            if args.crumb_type:
+                payload["type"] = args.crumb_type
+            if args.description:
+                payload["description"] = args.description
+        else:
+            if not args.title:
+                die("--title is required unless --from-json is provided")
+            payload = {"title": args.title}
+            if args.priority:
+                payload["priority"] = args.priority
+            if args.crumb_type:
+                payload["type"] = args.crumb_type
+            if args.description:
+                payload["description"] = args.description
+
+        # --- assign ID ---
+        if "id" in payload and payload["id"]:
+            crumb_id = str(payload["id"])
+            # Duplicate detection
+            if _find_crumb(tasks, crumb_id) is not None:
+                die(f"crumb '{crumb_id}' already exists")
+        else:
+            next_id = int(config.get("next_crumb_id", 1))
+            crumb_id = f"{prefix}-{next_id}"
+            # Advance counter even if this ID somehow already exists
+            while _find_crumb(tasks, crumb_id) is not None:
+                next_id += 1
+                crumb_id = f"{prefix}-{next_id}"
+            config["next_crumb_id"] = next_id + 1
+            write_config(config)
+
+        # --- apply defaults ---
+        now = now_iso()
+        record: Dict[str, Any] = {
+            "id": crumb_id,
+            "type": payload.get("type", "task"),
+            "title": payload.get("title", ""),
+            "status": payload.get("status", "open"),
+            "priority": payload.get("priority", config.get("default_priority", "P2")),
+            "created_at": payload.get("created_at", now),
+            "updated_at": payload.get("updated_at", now),
+        }
+        # Carry over any additional fields from payload
+        for key, value in payload.items():
+            if key not in record:
+                record[key] = value
+
+        # --- validate ---
+        if record["status"] not in VALID_STATUSES:
+            die(f"invalid status '{record['status']}'; must be one of {VALID_STATUSES}")
+        if record["priority"] not in VALID_PRIORITIES:
+            die(f"invalid priority '{record['priority']}'; must be one of {VALID_PRIORITIES}")
+        if record["type"] not in VALID_TYPES:
+            die(f"invalid type '{record['type']}'; must be one of {VALID_TYPES}")
+
+        tasks.append(record)
+
+        # Ensure the parent directory exists (handles first-time init)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        write_tasks(path, tasks)
+
+    print(f"created {crumb_id}")
 
 
 def cmd_update(args: argparse.Namespace) -> None:
