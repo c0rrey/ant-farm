@@ -1,5 +1,57 @@
 # Changelog
 
+## 2026-03-13 — Session 20260313-021748 (Decomposition Workflow Infrastructure + Fix Loop)
+
+### Summary
+
+11 original tasks built out the decomposition workflow infrastructure: the Surveyor, Forager, and Architect agent triplets (each a 3-file layered design), all four user-facing slash skills (`/ant-farm:init`, `/ant-farm:work`, `/ant-farm:plan`, `/ant-farm:status`), the `setup.sh` installer, `RULES-decompose.md` (457-line self-contained Planner orchestration rules), and the Planner Orchestrator Profile. Review round 1 covered the 11 original task commits, finding 4 P1 and 8 P2 root causes from 51 raw findings (17 consolidated); the primary P1s were an incomplete bd-to-crumb CLI migration in the Architect's executable templates and a DECOMPOSE_DIR path mismatch in RULES-decompose.md. All 12 root causes were filed as fix beads; 7 were fixed in a parallel fix wave. Round 2 found 1 P2 regression in the ant-farm-3iye fix (single-quote injection via `printf` literal substitution) and 2 P3s; the P2 was fixed in 1 commit. Round 3 returned 0 findings — PASS. 18 commits total.
+
+### Implementation (Wave 1 — 7 tasks, parallel)
+
+- **ant-farm-399a** (`0ec9ed2`): feat: add Surveyor agent definition, workflow template, and skeleton — `agents/surveyor.md`, `orchestration/templates/surveyor.md` (6-step workflow with brownfield handling, question prohibitions, good/bad examples), `orchestration/templates/surveyor-skeleton.md`
+- **ant-farm-y4hl** (`8312b12`): feat: add Forager agent definition, workflow template, and skeleton — `agents/forager.md`, `orchestration/templates/forager.md` (4 focus areas with scope boundaries, source hierarchy, 100-line cap), `orchestration/templates/forager-skeleton.md`
+- **ant-farm-2hx8** (`7fdcc1e`): feat: add /ant-farm:work skill definition — `skills/work.md` (pre-flight checks, coherence check via crumb doctor, SESSION_DIR creation, RULES.md delegation with crumbs-specific overrides)
+- **ant-farm-3bz5** (`7dde9ce`): feat: add setup.sh install script replacing sync-to-claude.sh — `scripts/setup.sh` (agents, orchestration, build-review-prompts.sh, crumb.py to `~/.local/bin/crumb`; timestamped backups; `--dry-run`; idempotent; PATH validation)
+- **ant-farm-3imu** (`4429953`): feat: add /ant-farm:init skill definition — `skills/init.md` (language detection, .crumbs/ creation, interactive prefix, config.json, .gitignore, crumb.py install, idempotent repair mode)
+- **ant-farm-a5lq** (`467aa6e`): feat: add /ant-farm:plan skill definition — `skills/plan.md` (pre-flight, input type detection, 6-signal structured/freeform classifier, DECOMPOSE_DIR creation, RULES-decompose.md delegation)
+- **ant-farm-n3qr** (`f54578b`): feat: add /ant-farm:status skill definition — `skills/status.md` (trail completion counts, per-status crumb counts, last session summary, fixed-width dashboard with graceful degradation)
+
+### Implementation (Wave 2 — 1 task, serial)
+
+- **ant-farm-xtu9** (`eb1fae4`): feat: add Architect agent definition, decomposition workflow, and skeleton — `agents/architect.md`, `orchestration/templates/decomposition.md` (9-step workflow: brownfield scan, trail identification, crumb decomposition with 5-8 file scope budget, 100% coverage gate, CLI commands, decomposition-brief.md output), `orchestration/templates/architect-skeleton.md`
+
+### Implementation (Wave 3 — 2 tasks, parallel)
+
+- **ant-farm-hlv6** (`ebcffeb`): feat: add full JSON payload example to decomposition orchestration template — realistic Python auth service crumb example with 5 acceptance criteria and file paths added to Step 7 of `orchestration/templates/decomposition.md`
+- **ant-farm-rwsk** (`8ab12f5`): feat: add RULES-decompose.md with 7-step decomposition workflow — `orchestration/RULES-decompose.md` (457 lines: Planner workflow Steps 0–6, hard gates, retry limits, concurrency rules, read permissions, brownfield heuristic, 15-20% context budget)
+
+### Implementation (Wave 4 — 1 task, serial)
+
+- **ant-farm-3mdg** (`6f3485e`): docs: define Planner orchestrator profile in RULES-decompose.md — added 8-row Queen comparison table, State Tracking subsection, Context Budget subsection with multi-agent round-trip reasoning
+
+### Review Fixes (Round 1 — 7 P2 fix beads)
+
+- **ant-farm-v45n** (`57d7a66`): fix: resolve config schema mismatch in init skill — replaced nested `"counters"` with flat `"next_crumb_id"/"next_trail_id"` in `skills/init.md` to match crumb.py reads
+- **ant-farm-prjj** + **ant-farm-jc98** (`8ebb3ba`): fix: resolve work.md review bugs — restructured "follow exactly / except" prose; added `config.json` to initialization guard (`skills/work.md`)
+- **ant-farm-li6e** (`344a18d`): fix: resolve shell robustness gaps in setup.sh — added `shopt -s nullglob`, replaced process substitution with tmpfile, changed `exit 1` to `return 1`, added loop call-site guards (`scripts/setup.sh`)
+- **ant-farm-3iye** (`a5ce388`): fix: resolve heredoc/JSON injection in plan skill — replaced manifest.json heredoc with `jq -n --arg/--argjson`; replaced input.txt heredoc with `printf '%s\n'` (`skills/plan.md`)
+- **ant-farm-bcv4** (`6766723`): fix: add placeholder guard and line cap enforcement in RULES-decompose — added `[ -d "${CODEBASE_ROOT}" ]` guard; added post-research truncation loop (`orchestration/RULES-decompose.md`)
+- **ant-farm-k1z2** (`588b82c`): fix: add empty feature request validation in surveyor — explicit whitespace-stripped emptiness check added to Surveyor error handling (`orchestration/templates/surveyor.md`)
+
+### Review Fixes (Round 2 — 1 P2 fix bead)
+
+- **ant-farm-qiqh** (`b782dc4`): fix: use shell variable for printf in plan skill input write — replaced `printf '%s\n' '<INPUT_TEXT>'` (single-quote injection risk) with `printf '%s\n' "${INPUT_TEXT}"`; changed `--argjson class_score` to `--arg class_score` (`skills/plan.md`)
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 38 files, 11 tasks | 4 | 8 | 5 groups | NEEDS WORK |
+| 2 | 7 fix commits | 0 | 1 | 2 | PASS WITH ISSUES |
+| 3 | 1 fix commit | 0 | 0 | 0 | PASS |
+
+51 raw findings (round 1) → 17 root causes consolidated; 1 cross-session dedup skip; 12 P1/P2 root causes filed as beads; 7 of 12 were in-session fix scope (ant-farm-v45n, ant-farm-prjj, ant-farm-jc98, ant-farm-li6e, ant-farm-3iye, ant-farm-bcv4, ant-farm-k1z2). Round 2: 4 raw findings → 3 root causes; 1 P2 fixed (ant-farm-qiqh); 2 P3s auto-filed to Future Work (ant-farm-6zr5, ant-farm-k65u).
+
 ## 2026-03-13 — Session 20260313-021827 (Beads Migration + New Agent Infrastructure + Fix Loop)
 
 ### Summary
