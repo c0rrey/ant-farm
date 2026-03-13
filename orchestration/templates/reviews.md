@@ -64,7 +64,7 @@ Create a team with these 6 members. The 4 reviewers work in parallel.
 Big Head waits for all 4 reports, then consolidates.
 Pest Control is a team member so Big Head can SendMessage to it directly for checkpoint validation.
 
-Nitpickers produce REPORTS ONLY — do NOT file beads (`bd create`).
+Nitpickers produce REPORTS ONLY — do NOT file beads (`crumb create`).
 Big Head consolidates all reports, groups findings by root cause, and files beads.
 
 Review scope: commits <first-commit> through <last-commit> (<N> commits total, across epics: <epic-list>)
@@ -306,14 +306,14 @@ Do NOT file beads — Big Head handles all bead filing.
 Review these files and their acceptance criteria:
 <list of files and their original task requirements>
 
-**IMPORTANT**: Run `bd show <task-id>` for each task in the commit range to retrieve
+**IMPORTANT**: Run `crumb show <task-id>` for each task in the commit range to retrieve
 the original acceptance criteria. Do not rely solely on the orchestrator's prompt —
 verify against the source of truth. For each finding, cite the specific acceptance
 criterion that is violated or unmet.
 
 For each completed task, verify:
 - All acceptance criteria met
-- Acceptance criteria source documented (which `bd show` output, which requirement)
+- Acceptance criteria source documented (which `crumb show` output, which requirement)
 - No unintended side effects
 - Related files updated consistently
 - Tests would pass (if tests exist)
@@ -728,25 +728,25 @@ For each group of related findings across all reviews:
 Before writing the consolidated summary or filing any beads, check for open beads that already cover your root causes. This prevents duplicate tracking of issues found in previous sessions.
 
 ```bash
-if ! bd list --status=open -n 0 --short > /tmp/open-beads-$$.txt 2>&1; then
-  echo "ERROR: bd list failed (lock contention or bd error). Aborting bead filing to prevent duplicates."
+if ! crumb list --open --short > /tmp/open-crumbs-$$.txt 2>&1; then
+  echo "ERROR: crumb list failed (file error or crumb error). Aborting crumb filing to prevent duplicates."
   cat > "{CONSOLIDATED_OUTPUT_PATH}" << 'EOF'
   # Big Head Consolidation — BLOCKED: Cross-Session Dedup Infrastructure Error
-  **Status**: FAILED — bd list infrastructure error
+  **Status**: FAILED — crumb list infrastructure error
   **Timestamp**: <current ISO 8601 timestamp>
-  **Reason**: `bd list --status=open` failed. Bead filing aborted to prevent duplicate filing. This is likely a lock contention or bd connectivity issue.
-  **Recovery**: Retry after the lock clears. If the issue persists, run `bd doctor` and re-spawn Big Head.
+  **Reason**: `crumb list --open` failed. Crumb filing aborted to prevent duplicate filing. This is likely a file access or crumb CLI issue.
+  **Recovery**: Retry after the issue clears. If the issue persists, run `crumb doctor` and re-spawn Big Head.
   EOF
   exit 1
 fi
 ```
 
-If the bash block above exits with code 1, stop immediately. Do NOT proceed to consolidation or bead filing. Use the SendMessage tool to notify the Queen: "Big Head FAILED: bd list infrastructure error during cross-session dedup. Bead filing aborted to prevent duplicates. Consolidated output written to {CONSOLIDATED_OUTPUT_PATH}. Please check bd status and re-spawn Big Head when ready." Then end your turn.
+If the bash block above exits with code 1, stop immediately. Do NOT proceed to consolidation or crumb filing. Use the SendMessage tool to notify the Queen: "Big Head FAILED: crumb list infrastructure error during cross-session dedup. Crumb filing aborted to prevent duplicates. Consolidated output written to {CONSOLIDATED_OUTPUT_PATH}. Please check crumb status and re-spawn Big Head when ready." Then end your turn.
 
-For each root cause group, compare against existing bead titles (from `/tmp/open-beads-$$.txt`):
+For each root cause group, compare against existing crumb titles (from `/tmp/open-crumbs-$$.txt`):
 
-- **Exact title match** (case-insensitive): Do NOT file. Log in the summary: "Dedup: RC-N matches existing bead ant-farm-XXXX — skipped."
-- **Similar title** (same root cause, different wording): Run `bd search "<key phrases>" --status open` to confirm. If the existing bead covers the same root cause, do NOT file. Log the match and the existing bead ID.
+- **Exact title match** (case-insensitive): Do NOT file. Log in the summary: "Dedup: RC-N matches existing crumb <ID> — skipped."
+- **Similar title** (same root cause, different wording): Run `crumb search "<key phrases>"` to confirm. If the existing crumb covers the same root cause, do NOT file. Log the match and the existing crumb ID.
 - **No match found**: Mark the root cause for filing.
 
 When uncertain whether a match is truly the same root cause, err on the side of filing — a human can merge later; a missed filing is harder to recover.
@@ -804,7 +804,7 @@ Findings merged:
 
 ### Step 4: Checkpoint Gate — Await Pest Control Validation Before Filing Beads
 
-**Do NOT file any beads yet.** After writing the consolidated summary (Step 3), notify Pest Control and wait for its verdict before calling `bd create`.
+**Do NOT file any beads yet.** After writing the consolidated summary (Step 3), notify Pest Control and wait for its verdict before calling `crumb create`.
 
 **Notification to Pest Control (SendMessage):**
 ```
@@ -864,7 +864,7 @@ Big Head checkpoint escalation to Queen:
 
 File ONE bead per root cause (not per finding, not per review).
 
-**Important**: Beads filed during session review are standalone. Do NOT assign them to a specific epic via `bd dep add --type parent-child`. They represent session-wide findings, not epic-specific work.
+**Important**: Beads filed during session review are standalone. Do NOT assign them to a specific epic via `crumb link --parent`. They represent session-wide findings, not epic-specific work.
 
 ```bash
 cat > /tmp/bead-desc-$$.md << 'BEAD_DESC'
@@ -890,8 +890,7 @@ substantive analysis, NOT a restatement of the title.>
 - [ ] <Third independently testable criterion>
 BEAD_DESC
 
-bd create --type=bug --priority=<combined-priority> --title="<root cause title>" --body-file /tmp/bead-desc-$$.md
-bd label add <new-bead-id> <primary-review-type>
+crumb create --from-json "{\"type\":\"bug\",\"priority\":\"P<combined-priority>\",\"title\":\"<root cause title>\",\"description\":\"$(cat /tmp/bead-desc-$$.md)\",\"review_source\":\"<primary-review-type>\",\"acceptance_criteria\":[],\"scope\":{},\"links\":{}}"
 rm -f /tmp/bead-desc-$$.md
 ```
 
@@ -899,12 +898,12 @@ rm -f /tmp/bead-desc-$$.md
 
 In round 2+, Big Head auto-files P3 findings to the "Future Work" epic without user involvement:
 
-1. Find or create the "Future Work" epic:
+1. Find or create the "Future Work" trail:
    ```bash
-   # Check if future-work epic exists
-   bd list --status=open | grep -i "future work"
+   # Check if future-work trail exists
+   crumb trail list | grep -i "future work"
    # If not found:
-   bd epic create --title="Future Work" --description="Low-priority polish and improvements from review sessions"
+   crumb trail create --title "Future Work" --description "Low-priority polish and improvements from review sessions"
    ```
 
 2. For each P3 root cause:
@@ -920,8 +919,8 @@ In round 2+, Big Head auto-files P3 findings to the "Future Work" epic without u
    - [ ] <testable criterion>
    BEAD_DESC
 
-   bd create --type=bug --priority=3 --title="<root cause title>" --body-file /tmp/bead-desc-$$.md
-   bd dep add <new-bead-id> <future-work-epic-id> --type parent-child
+   crumb create --from-json "{\"type\":\"bug\",\"priority\":\"P3\",\"title\":\"<root cause title>\",\"description\":\"$(cat /tmp/bead-desc-$$.md)\",\"acceptance_criteria\":[],\"scope\":{},\"links\":{}}"
+   crumb link <new-crumb-id> --parent <future-work-trail-id>
    rm -f /tmp/bead-desc-$$.md
    ```
 
@@ -1043,13 +1042,13 @@ Fix Dirt Pushers receive a lean prompt. The bead is the source of truth — the 
 You are fix-dp-N, a fix Dirt Pusher in the Nitpicker team.
 
 Your task bead: <bead-id>
-Run: bd show <bead-id>
+Run: crumb show <bead-id>
 
 The bead contains root cause, affected surfaces, fix approach, and acceptance criteria.
 Implement the fix. Follow the acceptance criteria exactly.
 
 After committing:
-1. Record your commit hash in your task bead: bd update <bead-id> --note="commit: <hash>"
+1. Record your commit hash in your task bead: crumb update <bead-id> --note="commit: <hash>"
 2. SendMessage to fix-pc-wwd: "Fix committed. Bead: <bead-id>. Commit: <hash>. Files changed: <list>."
 Then go idle and wait.
 ```
@@ -1139,16 +1138,16 @@ After all fix agents complete and SendMessage round-transition messages are sent
 
 > **Round 1 only.** In round 2+, P3s are auto-filed by Big Head during consolidation (see "P3 Auto-Filing" above). This section applies only when round 1 terminates with P3 findings.
 
-**Create "Future Work" epic if needed**:
+**Create "Future Work" trail if needed**:
 ```bash
-# Check if future-work epic exists
-bd list --status=open | grep -i "future work" || \
-bd epic create --title="Future Work" --description="Low-priority polish and improvements from review sessions"
+# Check if future-work trail exists
+crumb trail list | grep -i "future work" || \
+crumb trail create --title "Future Work" --description "Low-priority polish and improvements from review sessions"
 ```
 
-**File P3 beads under the epic**:
-- All P3 beads from consolidation should be children of the future-work epic
-- Use `bd dep add <p3-bead-id> <future-work-epic-id> --type parent-child` for each P3 issue
+**File P3 beads under the trail**:
+- All P3 beads from consolidation should be children of the future-work trail
+- Use `crumb link <p3-crumb-id> --parent <future-work-trail-id>` for each P3 issue
 - These can be addressed in future sessions
 - No immediate action required — they're queued for later
 
