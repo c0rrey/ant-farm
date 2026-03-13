@@ -291,12 +291,30 @@ The BLOCKER is the first argument; the BLOCKED crumb is the second.
 
 **Dolt mode warning**: If the environment uses `bd dolt` in server mode
 (`--no-auto-commit`), `bd dep add` may silently fail to persist. Switch to
-embedded mode before running dep commands:
+embedded mode before running dep commands, with rollback on failure:
 
 ```bash
-bd dolt set mode embedded
-# run all bd dep add commands
-bd dolt set mode server && bd dolt start
+# Switch to embedded mode; abort if this fails
+if ! bd dolt set mode embedded; then
+  echo "ERROR: Failed to switch to embedded mode. dep add commands not run." >&2
+  exit 1
+fi
+
+# Run all bd dep add commands here
+# e.g.: bd dep add {blocker-crumb-id} {blocked-crumb-id} --type blocks
+dep_add_failed=0
+# ... (repeat the pattern below for each dep add)
+# bd dep add ... || dep_add_failed=1
+
+# Restore server mode unconditionally, even if dep adds failed
+if ! bd dolt set mode server || ! bd dolt start; then
+  echo "WARNING: Failed to restore server mode. Manual intervention may be required: run 'bd dolt set mode server && bd dolt start'." >&2
+fi
+
+if [ "$dep_add_failed" -eq 1 ]; then
+  echo "ERROR: One or more 'bd dep add' commands failed. Review output above." >&2
+  exit 1
+fi
 ```
 
 ---
