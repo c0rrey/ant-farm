@@ -1,6 +1,11 @@
 # Agent Instructions
 
-This project uses **crumb** for issue tracking. Run `crumb doctor` to get started.
+This project uses two CLI tools for task management:
+
+- **crumb** (`crumb.py`) — lightweight JSONL task tracker for day-to-day issue operations (list, show, update, close). Run `crumb doctor` to get started.
+- **bd** — beads database CLI (Go binary) used in orchestration and decomposition workflows (e.g., `bd show`, `bd ready`, `bd dep`, `bd epic`). It operates on the Dolt-backed beads database and supports richer dependency/epic tracking.
+
+Both tools manage issues, but `crumb` is the simpler default interface and `bd` is used by Queen/orchestration agents for structured multi-issue workflows. When in doubt, use `crumb` for individual task operations.
 
 ## Quick Reference
 
