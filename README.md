@@ -246,7 +246,6 @@ Pest Control runs the ESV checkpoint — a hard gate that must PASS before Step 
 
 ```bash
 git pull --rebase
-crumb sync
 git push
 git status  # must show "up to date with origin"
 ```
