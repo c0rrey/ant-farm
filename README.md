@@ -1,10 +1,8 @@
 # ant-farm
 
-`ant-farm` is a bounded orchestration kit for Claude Code.
+`ant-farm` is a bounded multi-agent orchestration framework for Claude Code. It packages custom agent definitions, decomposition and execution workflows, verification checkpoints, a local JSONL task tracker (`crumb`), and helper scripts for installation, prompt generation, and session recovery.
 
-It packages custom agent definitions, workflow rules for decomposition and execution, verification checkpoints, a local JSONL task tracker (`crumb`), and helper scripts for prompt generation, installation, and session recovery.
-
-This repo does not provide a standalone agent runtime. It gives Claude Code a governed way to decompose work into tasks, execute those tasks through specialized subagents, review and verify the results through hard gates, recover interrupted sessions from disk artifacts, and only push once the session passes its landing checks.
+Rather than implementing its own standalone runtime, it layers a governed software-delivery workflow on top of Claude Code: decompose work into tasks, execute those tasks through specialized subagents, review and verify the results through hard gates, recover interrupted sessions from disk artifacts, and only push once the session passes its landing checks.
 
 ## Quick Start
 
@@ -58,8 +56,8 @@ Triggered by saying **"let's get to work"** in any project wired up per `orchest
 
 This repo actually defines **two** workflows:
 
-- **Decomposition** (`/ant-farm:plan`) turns a freeform request or structured spec into trails, crumbs, and dependencies.
-- **Execution** (`/ant-farm:work` or "let's get to work") runs an implementation session over existing crumbs.
+- **Decomposition** (`/ant-farm-plan`) turns a freeform request or structured spec into trails, crumbs, and dependencies.
+- **Execution** (`/ant-farm-work` or "let's get to work") runs an implementation session over existing crumbs.
 
 The rest of this section focuses on execution. The decomposition workflow is separate and uses a different orchestrator, agents, and gates.
 
@@ -332,7 +330,7 @@ Custom Claude Code agent types live in `agents/` and are installed to `~/.claude
 
 The `.crumbs/tasks.jsonl` file in this repo is the issue database for **this** project's development history.
 
-If you adopt `ant-farm` for another project, treat that file as example data, not as a required starting point. Initialize your target project with the `/ant-farm:init` workflow, which creates a project-local `.crumbs/` directory and configures the `crumb` task system for that repository.
+If you adopt `ant-farm` for another project, treat that file as example data, not as a required starting point. Initialize your target project with the `/ant-farm-init` workflow, which creates a project-local `.crumbs/` directory and configures the `crumb` task system for that repository.
 
 ## Path reference convention
 
