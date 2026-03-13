@@ -123,6 +123,8 @@ Store DECOMPOSE_DIR in your context. Pass it explicitly to every agent.
 
 **Brownfield vs. greenfield detection**: Before spawning any agent, run:
 
+> **Before running**: substitute `{CODEBASE_ROOT}` with the absolute repo root path (e.g., `/Users/user/projects/myapp`). Do NOT run this block with the literal string `{CODEBASE_ROOT}`.
+
 ```bash
 find "{CODEBASE_ROOT}" -maxdepth 2 \
   -not -path "*/.git/*" \
