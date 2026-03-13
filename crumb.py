@@ -315,10 +315,19 @@ def iter_jsonl(path: Path) -> Iterator[Dict[str, Any]]:
 # ---------------------------------------------------------------------------
 
 
+_LOCK_TIMEOUT_SECS: int = 10
+_LOCK_RETRY_INTERVAL: float = 0.05
+
+
 class FileLock:
     """Context manager that holds an exclusive flock on tasks.lock.
 
-    Blocks until the lock is acquired. The lock is released on __exit__.
+    Platform restriction: uses ``fcntl.flock``, which is Unix-only (Linux,
+    macOS). Windows is not supported; attempting to use this on Windows will
+    raise ``AttributeError`` at import time (``fcntl`` is not available).
+
+    Acquires the lock with ``LOCK_NB`` (non-blocking) and retries for up to
+    ``_LOCK_TIMEOUT_SECS`` seconds so the process never blocks indefinitely.
 
     Usage::
 
@@ -333,20 +342,37 @@ class FileLock:
     def __enter__(self) -> "FileLock":
         """Acquire the exclusive flock on tasks.lock.
 
+        Retries with ``LOCK_NB`` until the lock is acquired or the timeout
+        expires (default: ``_LOCK_TIMEOUT_SECS`` seconds).
+
         Returns:
             self, allowing use as a context manager.
 
         Raises:
-            SystemExit: If the lock file cannot be created or opened.
+            SystemExit: If the lock file cannot be created/opened, or if the
+                lock cannot be acquired within ``_LOCK_TIMEOUT_SECS`` seconds.
         """
         path = lock_path()
-        # Ensure the lock file exists
         try:
             path.touch()
             self._lock_file = open(path, "w", encoding="utf-8")
         except OSError as exc:
             die(f"cannot acquire lock: {exc}")
-        fcntl.flock(self._lock_file, fcntl.LOCK_EX)
+        deadline = time.monotonic() + _LOCK_TIMEOUT_SECS
+        while True:
+            try:
+                fcntl.flock(self._lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except BlockingIOError:
+                if time.monotonic() >= deadline:
+                    self._lock_file.close()
+                    self._lock_file = None
+                    die(
+                        f"cannot acquire lock: timed out after "
+                        f"{_LOCK_TIMEOUT_SECS}s — another crumb process may "
+                        f"be running"
+                    )
+                time.sleep(_LOCK_RETRY_INTERVAL)
         return self
 
     def __exit__(self, *_: Any) -> None:
@@ -523,7 +549,7 @@ def _auto_close_trail_if_complete(
     links = crumb.get("links") or {}
     if not isinstance(links, dict):
         links = {}
-    parent_id = crumb.get("parent") or links.get("parent")
+    parent_id = links.get("parent")
     if not parent_id:
         return
 
@@ -619,19 +645,15 @@ def cmd_list(args: argparse.Namespace) -> None:
         ]
 
     if args.parent:
-        # Check both top-level "parent" and "links.parent" for forward
-        # compatibility — some records may use the flat layout while the
-        # spec-canonical location is links.parent.
         results = [
             t for t in results
-            if t.get("parent") == args.parent
-            or (t.get("links") or {}).get("parent") == args.parent
+            if (t.get("links") or {}).get("parent") == args.parent
         ]
 
     if args.discovered:
         results = [
             t for t in results
-            if t.get("discovered_from") or (t.get("links") or {}).get("discovered_from")
+            if (t.get("links") or {}).get("discovered_from")
         ]
 
     if args.after:
