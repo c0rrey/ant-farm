@@ -5,7 +5,7 @@
 
 **Updated**: <YYYY-MM-DDTHH:MM:SSZ>
 **Session ID**: <session-id>
-**Session dir**: .beads/agent-summaries/_session-<session-id>
+**Session dir**: .crumbs/sessions/_session-<session-id>
 **Session start**: <YYYY-MM-DDTHH:MM:SSZ>
 **Strategy**: <chosen execution strategy>
 
@@ -71,7 +71,7 @@ When queen-state.md conflicts with other state sources, precedence is:
 | Commits (hashes, ranges, authorship) | `git log` / `git diff` | Cache — refresh from git if stale |
 | Artifact content (previews, reports, verdicts) | Artifact files on disk (`${SESSION_DIR}/...`) | Pointer — references paths, does not duplicate content |
 | Session workflow state (current step, wave, review round, retry budget, queue position) | **queen-state.md** | Authoritative — this file is the single source of truth |
-| Task status (open, closed, blocked) | `bd` database (via Scout) | Cache — may lag behind bd; Scout re-syncs on next run |
+| Task status (open, closed, blocked) | `crumb` database (via Scout) | Cache — may lag behind crumb; Scout re-syncs on next run |
 
 **Recovery rule**: If queen-state.md is lost or corrupted, rebuild workflow state from git log
 (commit messages encode task IDs and step transitions) and artifact files (verdict tables encode

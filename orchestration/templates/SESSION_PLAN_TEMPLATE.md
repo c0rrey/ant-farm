@@ -196,7 +196,7 @@ After all implementation agents complete:
 
 ### Review Wave (Parallel TeamCreate)
 
-Reviews run as a single parallel Nitpicker team spawned via TeamCreate (per RULES.md Step 3b).
+Reviews run as a single parallel Nitpicker team spawned via TeamCreate (per RULES-review.md Step 3b).
 
 **Round 1 team composition (6 members):**
 - 4 Nitpicker reviewers (Clarity, Edge Cases, Correctness, Drift) — run concurrently
@@ -214,7 +214,7 @@ Reviews run as a single parallel Nitpicker team spawned via TeamCreate (per RULE
 
 ### Review Follow-Up Decision
 
-Per RULES.md Step 3c — triage is root-cause-based, not raw-issue-count-based:
+Per RULES-review.md Step 3c — triage is root-cause-based, not raw-issue-count-based:
 
 **If zero P1 and zero P2 findings:** Proceed directly to Step 4 (documentation — README and CLAUDE.md only).
 The Scribe authors the session CHANGELOG at Step 5b.
@@ -227,7 +227,7 @@ The Scribe authors the session CHANGELOG at Step 5b.
 
 **Round cap:** If current round >= 4 and P1/P2 findings are still present, do NOT start another round — present full round history and await explicit user decision.
 
-See RULES.md Step 3c for the complete triage decision tree including session-state update requirements and progress log entries.
+See RULES-review.md Step 3c for the complete triage decision tree including session-state update requirements and progress log entries.
 
 ---
 
@@ -268,7 +268,7 @@ Before declaring session complete:
 
 - [ ] All spawned agents completed (none stuck/errored)
 - [ ] All TaskCreate entries marked completed
-- [ ] All beads tasks closed (bd close <ids>)
+- [ ] All crumbs tasks closed (crumb close <ids>)
 - [ ] Git working tree clean (git status)
 - [ ] Build/test quality gates passed
   - [ ] `python build.py --dry-run` succeeds
@@ -285,16 +285,14 @@ Before declaring session complete:
 ### Git Operations
 
 - [ ] `git pull --rebase` (check for remote changes)
-- [ ] `bd sync` (sync beads with remote)
 - [ ] `git push` (MANDATORY - not done until pushed!)
 - [ ] `git status` shows "up to date with origin/main"
-- [ ] Beads sync status clean (bd sync --status)
 
 ### Handoff
 
 - [ ] Session summary created
 - [ ] Commit list documented
-- [ ] New beads filed (if any remain open)
+- [ ] New crumbs filed (if any remain open)
 - [ ] Context for next session provided
 
 ---
