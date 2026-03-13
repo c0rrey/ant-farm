@@ -212,7 +212,7 @@ Record the returned trail ID. You will use it when creating crumbs.
 
 ### Create Crumbs
 
-For each crumb, construct a JSON object:
+For each crumb, construct a JSON object with these fields:
 
 ```json
 {
@@ -225,10 +225,44 @@ For each crumb, construct a JSON object:
 }
 ```
 
+**Full example** — a realistic, fully-populated payload:
+
+```json
+{
+  "title": "Add session store with TTL expiry",
+  "description": "Implement the Redis-backed session store used by the login flow. Sessions must expire after 24 hours. The store must be injected as a dependency so it can be replaced with an in-memory stub in tests.",
+  "agent_type": "python-pro",
+  "acceptance_criteria": [
+    "Running `pytest tests/test_session_store.py` passes with zero failures.",
+    "`SessionStore.create(user_id)` returns a token string of exactly 64 hex characters.",
+    "`SessionStore.get(token)` returns None for an expired token (TTL = 24 h).",
+    "`SessionStore.get(token)` returns the user_id dict for a valid, non-expired token.",
+    "If the Redis connection is unavailable at import time, the module raises `ConfigurationError` with message 'Redis host not reachable'."
+  ],
+  "files": [
+    "auth/session_store.py",
+    "auth/errors.py",
+    "tests/test_session_store.py",
+    "tests/conftest.py",
+    "config/settings.py"
+  ],
+  "blocked_by": []
+}
+```
+
 Write the JSON to a temporary file and create the crumb:
 
 ```bash
-bd create --from-json /tmp/crumb-{slug}.json
+# Write payload to temp file
+cat > /tmp/crumb-session-store.json << 'EOF'
+{
+  "title": "Add session store with TTL expiry",
+  ...
+}
+EOF
+
+# Create the crumb
+bd create --from-json /tmp/crumb-session-store.json
 ```
 
 Record the returned crumb ID.
