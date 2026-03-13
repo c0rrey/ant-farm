@@ -69,7 +69,25 @@ For each task ID in the input list:
    - Report: `TASK FAILED: {TASK_ID} — Incomplete metadata: missing or empty section(s): {section names}`
    - Do NOT write a task brief for this task; skip to the next task
 
-   **Condition 3 — Placeholder-contaminated metadata (SUBSTANCE FAILURE)**: The metadata contains unfilled placeholder text from the Scout template. Placeholders appear as `<angle-bracket text>` (e.g., `<copy from bead>`, `<list from bead>`) or as `[square-bracket text]` (e.g., `[root cause here]`). Note: `{UPPERCASE}` tokens in this Pantry template are Pantry instruction text, not Scout placeholders — do NOT treat them as contamination.
+   **Condition 3 — Placeholder-contaminated metadata (SUBSTANCE FAILURE)**: The metadata contains unfilled placeholder text from the Scout template.
+
+   **Precise contamination patterns** (flag ONLY these):
+   - `<angle-bracket text>` — starts with `<`, ends with `>`, contains only word characters and spaces inside. Regex: `<[A-Za-z][A-Za-z0-9 _-]*>`. Examples: `<copy from bead>`, `<list from bead>`, `<describe here>`.
+   - `[square-bracket text]` — starts with `[`, ends with `]`, contains only word characters and spaces inside. Regex: `\[[A-Za-z][A-Za-z0-9 _-]*\]`. Examples: `[root cause here]`, `[list files]`.
+
+   **Patterns that are NOT contamination** (never flag these):
+   - `{UPPERCASE}` patterns — curly-brace tokens with ALL-CAPS content (e.g., `{SESSION_DIR}`, `{TASK_ID}`, `{AFFECTED_FILES}`) are NOT Scout placeholders. They are legitimate references to named values that may appear verbatim in task metadata when a task's root cause, description, or fix references a configuration variable by name.
+     - **Why excluded**: Scout metadata files describe real bugs and fixes. A task fixing improper `{SESSION_DIR}` usage will naturally contain `{SESSION_DIR}` in its root cause or description field. These are not unfilled template slots — they are content.
+   - Lowercase `{curly-brace}` labels from this Pantry template (e.g., `{from bead description}`) — these are Pantry composition instructions, not metadata content.
+
+   **Illustrative example** — the following metadata is VALID (not contaminated):
+   ```
+   **Root Cause**: The Scout writes artifact paths using `{SESSION_DIR}` but never
+   validates that the directory exists before writing. When `{SESSION_DIR}` is missing,
+   all downstream writes silently fail.
+   ```
+   The `{SESSION_DIR}` tokens above are content describing the bug. They are not unfilled template slots — flag NOTHING here.
+
    - **Failure artifact**: Write to `{session-dir}/prompts/task-{TASK_SUFFIX}-FAILED.md`:
      ```
      # Task Brief: {TASK_ID} [SUBSTANCE FAILURE]
