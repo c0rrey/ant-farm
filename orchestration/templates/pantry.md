@@ -88,7 +88,7 @@ For each task ID in the input list:
    | {id}    | —          | —          | —            | FAILED: {reason} |
    ```
 
-   (Pre-extracted by the Scout. Do NOT run `bd show` — the metadata is already there.)
+   (Pre-extracted by the Scout. Do NOT run `crumb show` — the metadata is already there.)
 
 2. For successful tasks (Status: success), read and extract:
    - Title
@@ -162,7 +162,7 @@ These preview files are what Pest Control will audit against the Colony Cartogra
 
 ### Step 4: Write Session Summary
 
-Write `{session-dir}/session-summary.md` capturing the planned execution state. All data comes from artifacts already read or computed in Steps 2-3 — do NOT run `bd show` or any `bd` commands.
+Write `{session-dir}/session-summary.md` capturing the planned execution state. All data comes from artifacts already read or computed in Steps 2-3 — do NOT run `crumb show` or any `crumb` commands.
 
 Use this exact format:
 
@@ -273,7 +273,7 @@ Each brief contains:
 - "Do NOT file beads — Big Head handles all bead filing"
 - Messaging guidelines (when to message teammates, when not to)
 - Full report format (from reviews.md Nitpicker Report Format section)
-- For the **correctness** review brief: include the full list of ALL task IDs so the correctness reviewer can run `bd show <task-id>` for acceptance criteria verification across all epics
+- For the **correctness** review brief: include the full list of ALL task IDs so the correctness reviewer can run `crumb show <task-id>` for acceptance criteria verification across all epics
 
 Files to write:
 - **Round 1**:
@@ -326,12 +326,11 @@ For each group of related findings across reports in the current round:
 **Big Head bead filing instructions** (inline specification for this file):
 - File ONE bead per root cause (not per finding, not per review)
 - Beads filed during session review are standalone
-- Do NOT assign them to a specific epic via `bd dep add --type parent-child`
+- Do NOT assign them to a specific epic via `crumb link --parent`
 - They represent session-wide findings, not epic-specific work
-- Command: use `bd create --body-file` pattern (see big-head-skeleton.md step 10 for canonical example)
+- Command: use `crumb create --from-json` pattern (see big-head-skeleton.md step 10 for canonical example)
 - Descriptions must include: root cause with file:line refs, affected surfaces, fix, changes needed, acceptance criteria
-- Before filing: run `bd list --status=open -n 0 --short` to check for existing duplicates
-- Add labels: `bd label add <id> <primary-review-type>`
+- Before filing: run `crumb list --open --short` to check for existing duplicates
 - For round 2+: P3 findings may be auto-filed if Pest Control confirms via checkpoint validation
 
 **Big Head consolidated summary output format**:
