@@ -620,18 +620,139 @@ def cmd_create(args: argparse.Namespace) -> None:
 
 
 def cmd_update(args: argparse.Namespace) -> None:
-    """Update a crumb. Implemented downstream."""
-    die("crumb update not yet implemented")
+    """Update crumb fields or append a note.
+
+    Handles --status, --title, --priority, --description, and --note.
+    Attempting to set status to a value that requires a special transition
+    (e.g. closed -> in_progress) exits 1 with guidance.
+
+    Args:
+        args: Parsed arguments; args.id is the target crumb ID.
+    """
+    with FileLock():
+        path = require_tasks_jsonl()
+        tasks = read_tasks(path)
+
+        crumb = _find_crumb(tasks, args.id)
+        if crumb is None:
+            die(f"crumb '{args.id}' not found")
+
+        changed = False
+
+        # --- status transition guard ---
+        if args.status is not None:
+            current_status = crumb.get("status", "open")
+            if current_status == "closed" and args.status != "open":
+                die(
+                    f"cannot transition from 'closed' to '{args.status}'. "
+                    f"Use 'crumb reopen {args.id}' to reopen first."
+                )
+            if crumb.get("status") != args.status:
+                crumb["status"] = args.status
+                changed = True
+
+        # --- scalar field updates ---
+        if args.title is not None:
+            if crumb.get("title") != args.title:
+                crumb["title"] = args.title
+                changed = True
+
+        if args.priority is not None:
+            if crumb.get("priority") != args.priority:
+                crumb["priority"] = args.priority
+                changed = True
+
+        if args.description is not None:
+            if crumb.get("description") != args.description:
+                crumb["description"] = args.description
+                changed = True
+
+        # --- note append ---
+        if args.note is not None:
+            timestamp = now_iso()
+            note_entry = f"{timestamp}: {args.note}"
+            notes: List[Any] = crumb.get("notes") or []
+            if not isinstance(notes, list):
+                notes = [notes]
+            notes.append(note_entry)
+            crumb["notes"] = notes
+            changed = True
+
+        if not changed:
+            print(f"no changes to {args.id}")
+            return
+
+        crumb["updated_at"] = now_iso()
+        write_tasks(path, tasks)
+
+    print(f"updated {args.id}")
 
 
 def cmd_close(args: argparse.Namespace) -> None:
-    """Close one or more crumbs. Implemented downstream."""
-    die("crumb close not yet implemented")
+    """Close one or more crumbs, stamping closed_at on each.
+
+    Already-closed crumbs are silently skipped (idempotent). Each ID
+    is resolved independently; an unknown ID exits 1 immediately.
+
+    Args:
+        args: Parsed arguments; args.ids is the list of crumb IDs to close.
+    """
+    with FileLock():
+        path = require_tasks_jsonl()
+        tasks = read_tasks(path)
+
+        closed: List[str] = []
+        skipped: List[str] = []
+
+        for crumb_id in args.ids:
+            crumb = _find_crumb(tasks, crumb_id)
+            if crumb is None:
+                die(f"crumb '{crumb_id}' not found")
+
+            if crumb.get("status") == "closed":
+                skipped.append(crumb_id)
+                continue
+
+            now = now_iso()
+            crumb["status"] = "closed"
+            crumb["closed_at"] = now
+            crumb["updated_at"] = now
+            closed.append(crumb_id)
+
+        if closed:
+            write_tasks(path, tasks)
+
+    for crumb_id in closed:
+        print(f"closed {crumb_id}")
+    for crumb_id in skipped:
+        print(f"{crumb_id} already closed")
 
 
 def cmd_reopen(args: argparse.Namespace) -> None:
-    """Reopen a closed crumb. Implemented downstream."""
-    die("crumb reopen not yet implemented")
+    """Reopen a closed crumb, restoring status to open and clearing closed_at.
+
+    Args:
+        args: Parsed arguments; args.id is the target crumb ID.
+    """
+    with FileLock():
+        path = require_tasks_jsonl()
+        tasks = read_tasks(path)
+
+        crumb = _find_crumb(tasks, args.id)
+        if crumb is None:
+            die(f"crumb '{args.id}' not found")
+
+        if crumb.get("status") != "closed":
+            current = crumb.get("status", "open")
+            die(f"crumb '{args.id}' is not closed (current status: '{current}')")
+
+        now = now_iso()
+        crumb["status"] = "open"
+        crumb.pop("closed_at", None)
+        crumb["updated_at"] = now
+        write_tasks(path, tasks)
+
+    print(f"reopened {args.id}")
 
 
 def cmd_ready(args: argparse.Namespace) -> None:

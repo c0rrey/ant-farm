@@ -1,38 +1,19 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 # bd-shim v1
-# bd-hooks-version: 0.50.3
+# bd-hooks-version: 0.56.1
 #
-# bd (beads) pre-push hook - thin shim + ant-farm sync
+# bd (beads) pre-push hook - thin shim
 #
 # This shim delegates to 'bd hooks run pre-push' which contains
 # the actual hook logic. This pattern ensures hook behavior is always
 # in sync with the installed bd version - no manual updates needed.
-#
-# ant-farm addition: also runs sync-to-claude.sh to keep ~/.claude/
-# in sync with the repo. If bd regenerates this file, the sync call
-# will be lost — re-add it or run scripts/sync-to-claude.sh manually.
 
-set -euo pipefail
-
-REPO_ROOT="$(git rev-parse --show-toplevel)"
-
-# --- beads hook ---
-if command -v bd >/dev/null 2>&1; then
-    bd hooks run pre-push "$@" || true
-else
+# Check if bd is available
+if ! command -v bd >/dev/null 2>&1; then
     echo "Warning: bd command not found in PATH, skipping pre-push hook" >&2
+    echo "  Install bd: brew install beads" >&2
+    echo "  Or add bd to your PATH" >&2
+    exit 0
 fi
 
-# --- ant-farm sync ---
-SYNC_SCRIPT="${REPO_ROOT}/scripts/sync-to-claude.sh"
-
-if [[ ! -x "$SYNC_SCRIPT" ]]; then
-    echo "[ant-farm] ERROR: sync script not found or not executable: $SYNC_SCRIPT" >&2
-    exit 1
-fi
-
-if ! "$SYNC_SCRIPT"; then
-    echo "[ant-farm] WARNING: sync-to-claude.sh failed — push continuing without sync." >&2
-    echo "[ant-farm]   Cause: the sync script exited non-zero (check its output above for details)." >&2
-    echo "[ant-farm]   Fix:   run 'scripts/sync-to-claude.sh' manually to diagnose, then re-push." >&2
-fi
+exec bd hooks run pre-push "$@"
