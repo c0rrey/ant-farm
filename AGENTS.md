@@ -9,7 +9,6 @@ crumb ready              # Find available work
 crumb show <id>          # View issue details
 crumb update <id> --status in_progress  # Claim work
 crumb close <id>         # Complete work
-crumb sync               # Sync with git
 ```
 
 ## Landing the Plane (Session Completion)
@@ -25,7 +24,6 @@ crumb sync               # Sync with git
 5. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
    git pull --rebase
-   crumb sync
    git push
    git status  # MUST show "up to date with origin"
    ```
