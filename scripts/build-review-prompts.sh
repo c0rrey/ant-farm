@@ -146,9 +146,11 @@ extract_agent_section() {
 # Helper: extract focus block for a given review type from review-focus-areas.md.
 # Extracts content between <!-- FOCUS: {type} --> and <!-- /FOCUS: {type} --> markers.
 # ---------------------------------------------------------------------------
+# review-focus-areas.md must be a sibling of nitpicker-skeleton.md in the templates directory.
+# Both files are expected to live in the same directory (orchestration/templates/ by convention).
 FOCUS_AREAS_FILE="$(dirname "$NITPICKER_SKELETON")/review-focus-areas.md"
-if [ ! -f "$FOCUS_AREAS_FILE" ]; then
-    echo "ERROR: Focus areas file not found: $FOCUS_AREAS_FILE" >&2
+if [ ! -f "$FOCUS_AREAS_FILE" ] || [ ! -r "$FOCUS_AREAS_FILE" ]; then
+    echo "ERROR: Focus areas file not found or not readable: $FOCUS_AREAS_FILE" >&2
     exit 1
 fi
 
