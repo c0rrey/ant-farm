@@ -381,6 +381,105 @@ def _status_sort_key(status: str) -> int:
     return order.get(status, 3)
 
 
+def _get_trail_children(
+    tasks: List[Dict[str, Any]], trail_id: str
+) -> List[Dict[str, Any]]:
+    """Return all non-trail records whose links.parent equals trail_id.
+
+    Args:
+        tasks: Full task list from tasks.jsonl.
+        trail_id: The trail ID to match against.
+
+    Returns:
+        List of child crumb dicts (excludes the trail record itself).
+    """
+    children = []
+    for t in tasks:
+        if t.get("type") == "trail":
+            continue
+        links = t.get("links") or {}
+        if isinstance(links, dict) and links.get("parent") == trail_id:
+            children.append(t)
+    return children
+
+
+def _auto_close_trail_if_complete(
+    tasks: List[Dict[str, Any]], path: Path, closed_crumb_id: str
+) -> None:
+    """Auto-close a trail when the last open child is closed.
+
+    Called from cmd_close (inside FileLock) after write_tasks. Looks up
+    the closed crumb's parent trail (via links.parent). If all children
+    of that trail are now closed, closes the trail and calls write_tasks
+    again.
+
+    Args:
+        tasks: Already-modified task list (crumb already marked closed).
+        path: Path to tasks.jsonl for the second write_tasks call.
+        closed_crumb_id: The ID of the crumb that was just closed.
+    """
+    crumb = _find_crumb(tasks, closed_crumb_id)
+    if crumb is None:
+        return
+
+    links = crumb.get("links") or {}
+    if not isinstance(links, dict):
+        return
+    parent_id = links.get("parent")
+    if not parent_id:
+        return
+
+    trail = _find_crumb(tasks, parent_id)
+    if trail is None or trail.get("type") != "trail":
+        return
+    if trail.get("status") == "closed":
+        return  # Already closed; nothing to do
+
+    children = _get_trail_children(tasks, parent_id)
+    if not children:
+        return  # No children tracked yet; don't auto-close empty trail
+
+    all_closed = all(c.get("status") == "closed" for c in children)
+    if all_closed:
+        now = now_iso()
+        trail["status"] = "closed"
+        trail["closed_at"] = now
+        trail["updated_at"] = now
+        write_tasks(path, tasks)
+        print(f"auto-closed trail {parent_id} (all children closed)")
+
+
+def _auto_reopen_trail_if_needed(
+    tasks: List[Dict[str, Any]], path: Path, trail_id: str, crumb_status: str
+) -> None:
+    """Auto-reopen a trail when a new open crumb is linked to it as parent.
+
+    Called from cmd_link (inside FileLock) after write_tasks. If the trail
+    is closed and the newly-linked crumb is not closed, reopens the trail.
+
+    Args:
+        tasks: Already-modified task list.
+        path: Path to tasks.jsonl for the second write_tasks call.
+        trail_id: The trail to potentially reopen.
+        crumb_status: Current status of the crumb that was just linked.
+    """
+    if crumb_status == "closed":
+        return  # Linking a closed crumb; trail stays closed
+
+    trail = _find_crumb(tasks, trail_id)
+    if trail is None or trail.get("type") != "trail":
+        return
+    if trail.get("status") != "closed":
+        return  # Trail is not closed; nothing to do
+
+    now = now_iso()
+    trail["status"] = "open"
+    trail.pop("closed_at", None)
+    trail["updated_at"] = now
+    write_tasks(path, tasks)
+    print(f"auto-reopened trail {trail_id} (new open child linked)")
+
+
 def cmd_list(args: argparse.Namespace) -> None:
     """List crumbs with optional filters, sort, and limit.
 
@@ -721,6 +820,9 @@ def cmd_close(args: argparse.Namespace) -> None:
 
         if closed:
             write_tasks(path, tasks)
+            # Auto-close any parent trail whose last open child just closed
+            for crumb_id in closed:
+                _auto_close_trail_if_complete(tasks, path, crumb_id)
 
     for crumb_id in closed:
         print(f"closed {crumb_id}")
@@ -835,6 +937,11 @@ def cmd_link(args: argparse.Namespace) -> None:
         crumb["links"] = links
         crumb["updated_at"] = now_iso()
         write_tasks(path, tasks)
+        # Auto-reopen any closed parent trail when a new open crumb links to it
+        if args.link_parent is not None:
+            _auto_reopen_trail_if_needed(
+                tasks, path, args.link_parent, crumb.get("status", "open")
+            )
 
     print(f"updated links for {args.id}")
 
@@ -845,8 +952,203 @@ def cmd_search(args: argparse.Namespace) -> None:
 
 
 def cmd_trail(args: argparse.Namespace) -> None:
-    """Trail subcommands. Implemented downstream."""
-    die("crumb trail not yet implemented")
+    """Trail subcommands: list, show, create, close.
+
+    Dispatches on args.trail_command. Trails are tasks.jsonl records
+    with type='trail' and T-prefixed IDs (e.g., AF-T1).
+
+    Args:
+        args: Parsed arguments; args.trail_command is the sub-subcommand.
+    """
+    trail_cmd = getattr(args, "trail_command", None)
+
+    if trail_cmd == "create":
+        _cmd_trail_create(args)
+    elif trail_cmd == "show":
+        _cmd_trail_show(args)
+    elif trail_cmd == "list":
+        _cmd_trail_list(args)
+    elif trail_cmd == "close":
+        _cmd_trail_close(args)
+    else:
+        die("usage: crumb trail <list|show|create|close>")
+
+
+def _cmd_trail_create(args: argparse.Namespace) -> None:
+    """Create a new trail record with an AF-T{n} auto-ID.
+
+    Reads next_trail_id from config.json, builds the trail record,
+    appends it to tasks.jsonl, and increments the counter.
+
+    Args:
+        args: Parsed arguments; args.title is required.
+    """
+    with FileLock():
+        path = tasks_path()
+        if path.exists():
+            tasks = read_tasks(path)
+        else:
+            tasks = []
+
+        config = read_config()
+        prefix = config["prefix"]
+        next_trail_id = int(config.get("next_trail_id", 1))
+        trail_id = f"{prefix}-T{next_trail_id}"
+        # Ensure no collision (defensive)
+        while _find_crumb(tasks, trail_id) is not None:
+            next_trail_id += 1
+            trail_id = f"{prefix}-T{next_trail_id}"
+        config["next_trail_id"] = next_trail_id + 1
+        write_config(config)
+
+        now = now_iso()
+        record: Dict[str, Any] = {
+            "id": trail_id,
+            "type": "trail",
+            "title": args.title,
+            "status": "open",
+            "priority": args.priority or config.get("default_priority", "P2"),
+            "created_at": now,
+            "updated_at": now,
+        }
+        if args.description:
+            record["description"] = args.description
+        if args.acceptance_criteria:
+            record["acceptance_criteria"] = args.acceptance_criteria
+
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tasks.append(record)
+        write_tasks(path, tasks)
+
+    print(f"created {trail_id}")
+
+
+def _cmd_trail_show(args: argparse.Namespace) -> None:
+    """Show trail fields and its child crumbs.
+
+    Args:
+        args: Parsed arguments; args.id is the trail ID.
+    """
+    path = require_tasks_jsonl()
+    tasks = read_tasks(path)
+
+    trail = _find_crumb(tasks, args.id)
+    if trail is None:
+        die(f"trail '{args.id}' not found")
+    if trail.get("type") != "trail":
+        die(f"'{args.id}' is not a trail")
+
+    # Print trail fields
+    fields = [
+        ("id", "ID"),
+        ("type", "Type"),
+        ("title", "Title"),
+        ("status", "Status"),
+        ("priority", "Priority"),
+        ("description", "Description"),
+        ("acceptance_criteria", "Acceptance Criteria"),
+        ("created_at", "Created At"),
+        ("updated_at", "Updated At"),
+        ("closed_at", "Closed At"),
+    ]
+    for key, label in fields:
+        value = trail.get(key)
+        if value is None or value == "" or value == [] or value == {}:
+            continue
+        if isinstance(value, list):
+            print(f"{label}:")
+            for item in value:
+                print(f"  - {item}")
+        else:
+            print(f"{label}: {value}")
+
+    # Print child crumbs
+    children = _get_trail_children(tasks, args.id)
+    total = len(children)
+    closed_count = sum(1 for c in children if c.get("status") == "closed")
+    print(f"\nChildren ({closed_count}/{total} closed):")
+    if not children:
+        print("  (none)")
+    else:
+        for child in children:
+            cid = child.get("id", "?")
+            title = child.get("title", "")
+            status = child.get("status", "")
+            priority = child.get("priority", "")
+            print(f"  {cid:<12} {priority:<4} {status:<12} {title}")
+
+
+def _cmd_trail_list(args: argparse.Namespace) -> None:
+    """List all trails with completion counts (X/Y closed).
+
+    Args:
+        args: Parsed arguments (no additional flags for trail list).
+    """
+    path = require_tasks_jsonl()
+    tasks = read_tasks(path)
+
+    trails = [t for t in tasks if t.get("type") == "trail"]
+    if not trails:
+        print("no trails found")
+        return
+
+    for trail in trails:
+        trail_id = trail.get("id", "?")
+        title = trail.get("title", "")
+        status = trail.get("status", "")
+        priority = trail.get("priority", "")
+        children = _get_trail_children(tasks, trail_id)
+        total = len(children)
+        closed_count = sum(1 for c in children if c.get("status") == "closed")
+        completion = f"{closed_count}/{total} closed"
+        print(f"{trail_id:<12} {priority:<4} {status:<12} {completion:<16} {title}")
+
+
+def _cmd_trail_close(args: argparse.Namespace) -> None:
+    """Close a trail, rejecting if any children are still open.
+
+    Exits 1 with stderr listing open children if any exist.
+
+    Args:
+        args: Parsed arguments; args.id is the trail ID.
+    """
+    with FileLock():
+        path = require_tasks_jsonl()
+        tasks = read_tasks(path)
+
+        trail = _find_crumb(tasks, args.id)
+        if trail is None:
+            die(f"trail '{args.id}' not found")
+        if trail.get("type") != "trail":
+            die(f"'{args.id}' is not a trail")
+
+        if trail.get("status") == "closed":
+            print(f"{args.id} already closed")
+            return
+
+        children = _get_trail_children(tasks, args.id)
+        open_children = [
+            c for c in children if c.get("status") != "closed"
+        ]
+        if open_children:
+            print(
+                f"error: cannot close trail '{args.id}': {len(open_children)} open child(ren):",
+                file=sys.stderr,
+            )
+            for child in open_children:
+                cid = child.get("id", "?")
+                title = child.get("title", "")
+                status = child.get("status", "")
+                print(f"  {cid}  {status}  {title}", file=sys.stderr)
+            sys.exit(1)
+
+        now = now_iso()
+        trail["status"] = "closed"
+        trail["closed_at"] = now
+        trail["updated_at"] = now
+        write_tasks(path, tasks)
+
+    print(f"closed {args.id}")
 
 
 def cmd_tree(args: argparse.Namespace) -> None:
