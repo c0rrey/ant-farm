@@ -1,15 +1,15 @@
 # Agent Instructions
 
-This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get started.
+This project uses **crumb** for issue tracking. Run `crumb doctor` to get started.
 
 ## Quick Reference
 
 ```bash
-bd ready              # Find available work
-bd show <id>          # View issue details
-bd update <id> --status in_progress  # Claim work
-bd close <id>         # Complete work
-bd sync               # Sync with git
+crumb ready              # Find available work
+crumb show <id>          # View issue details
+crumb update <id> --status in_progress  # Claim work
+crumb close <id>         # Complete work
+crumb sync               # Sync with git
 ```
 
 ## Landing the Plane (Session Completion)
@@ -25,12 +25,12 @@ bd sync               # Sync with git
 5. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
    git pull --rebase
-   bd sync
+   crumb sync
    git push
    git status  # MUST show "up to date with origin"
    ```
 6. **Clean up** - Clear stashes, prune remote branches
-   (Session artifacts in .beads/agent-summaries/_session-*/ are retained for posterity. Prune old sessions manually when needed.)
+   (Session artifacts in .crumbs/agent-summaries/_session-*/ are retained for posterity. Prune old sessions manually when needed.)
 7. **Verify** - All changes committed AND pushed
 8. **Hand off** - Provide context for next session
 

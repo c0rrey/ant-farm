@@ -129,7 +129,7 @@ Common placeholders:
 
 3. **Run a test orchestration** with a single low-priority task:
    ```bash
-   bd create --title="Test orchestration change" --type=task --priority=3
+   crumb create --title="Test orchestration change" --type=task --priority=3
    # Then in Claude Code: "Let's get to work on: <task-id>"
    ```
 
@@ -179,7 +179,7 @@ The orchestration framework runs from `~/.claude/`, not from the repo. Changes i
 
 This installs two hooks:
 - **pre-push** -- runs `sync-to-claude.sh` on every push
-- **pre-commit** -- runs `scrub-pii.sh` to strip email addresses from `.beads/issues.jsonl` before commits
+- **pre-commit** -- runs `scrub-pii.sh` to strip email addresses from `.crumbs/tasks.jsonl` before commits
 
 **Re-run after pulling changes.** If `scripts/install-hooks.sh` is updated upstream (e.g. after a `git pull`), re-run it to get the new hook behavior. The installed hook in `.git/hooks/` is not updated automatically — it only changes when you run `install-hooks.sh` again.
 

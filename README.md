@@ -26,7 +26,7 @@ A multi-agent orchestration and quality review system for Claude Code. Coordinat
 
 4. **Create a task and run your first session**
    ```bash
-   bd create --title="My first task" --type=task --priority=3
+   crumb create --title="My first task" --type=task --priority=3
    ```
    Then tell Claude Code:
    ```
@@ -75,8 +75,8 @@ Generate a session ID, create the session directory and `task-metadata/` subdire
 The Queen spawns **the Scout** (`orchestration/templates/scout.md`), an opus subagent that performs all pre-flight reconnaissance:
 
 1. Discovers tasks (from epic, explicit list, or natural-language filter)
-2. Runs `bd ready` and `bd blocked` to separate ready vs. blocked tasks
-3. Runs `bd show` per task and writes per-task metadata files to `{session-dir}/task-metadata/`
+2. Runs `crumb ready` and `crumb blocked` to separate ready vs. blocked tasks
+3. Runs `crumb show` per task and writes per-task metadata files to `{session-dir}/task-metadata/`
 4. Builds a file modification matrix and assesses conflict risk using `orchestration/reference/dependency-analysis.md`
 5. Scans `~/.claude/agents/` and `.claude/agents/` to discover available agent types, then recommends the best specialist per task
 6. Proposes 2-3 execution strategies with wave groupings, agent counts, and risk assessments
@@ -125,7 +125,7 @@ Queen                          Pantry                    Pest Control
 
 The Queen then spawns agents using `orchestration/templates/dirt-pusher-skeleton.md`, a minimal template that points the agent to its task brief. Each agent is spawned with the specialist `subagent_type` recommended by the Pantry (e.g., `python-pro` for `.py` files, `debugger` for investigation bugs). Each agent executes 6 mandatory steps:
 
-1. **Claim** — `bd show` + `bd update --status=in_progress`
+1. **Claim** — `crumb show` + `crumb update --status=in_progress`
 2. **Design** — 4+ genuinely distinct approaches with tradeoffs (not cosmetic variations)
 3. **Implement** — clean, minimal code satisfying acceptance criteria
 4. **Correctness review** — re-read every changed file, verify acceptance criteria, assumptions audit
@@ -246,7 +246,7 @@ Pest Control runs the ESV checkpoint — a hard gate that must PASS before Step 
 
 ```bash
 git pull --rebase
-bd sync
+crumb sync
 git push
 git status  # must show "up to date with origin"
 ```
@@ -314,26 +314,26 @@ Custom Claude Code agent types live in `agents/` and are synced to `~/.claude/ag
 
 ## Forking this repo
 
-The `.beads/issues.jsonl` file is the issue database for **this** project's development. When you fork ant-farm to use as a template for your own orchestration setup, you should reset the issue database so you start with a clean slate under your own identity.
+The `.crumbs/tasks.jsonl` file is the issue database for **this** project's development. When you fork ant-farm to use as a template for your own orchestration setup, you should reset the issue database so you start with a clean slate under your own identity.
 
 ### Steps for new adopters
 
 1. Fork or clone the repo and navigate into it.
-2. Run `bd init` to initialize a fresh issue database:
+2. Run `crumb init` to initialize a fresh issue database:
    ```bash
-   bd init --prefix <your-project-name>
+   crumb init --prefix <your-project-name>
    ```
-   This creates a new `.beads/issues.jsonl` with no inherited issues and sets your project prefix.
+   This creates a new `.crumbs/tasks.jsonl` with no inherited issues and sets your project prefix.
 3. If you want to import from the existing JSONL (e.g., you performed manual cleanup first), use the `--from-jsonl` flag:
    ```bash
-   bd init --from-jsonl --prefix <your-project-name>
+   crumb init --from-jsonl --prefix <your-project-name>
    ```
 4. Install the git hooks so agent files sync to `~/.claude/agents/` on push:
    ```bash
    # See orchestration/SETUP.md for full hook installation instructions
    ```
 
-The `.beads/issues.jsonl` in this repo contains sample issues from ant-farm's own development history. They are included as reference material showing how the system has been used but are not required for operation. Running `bd init` replaces them with a fresh database.
+The `.crumbs/tasks.jsonl` in this repo contains sample issues from ant-farm's own development history. They are included as reference material showing how the system has been used but are not required for operation. Running `crumb init` replaces them with a fresh database.
 
 ## Path reference convention
 

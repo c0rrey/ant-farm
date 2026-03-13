@@ -36,15 +36,15 @@ This script:
 
 #### Pre-Commit Hook (`pre-commit`)
 
-**Purpose**: Scrubs PII (personally identifiable information) from `.beads/issues.jsonl` before each commit.
+**Purpose**: Scrubs PII (personally identifiable information) from `.crumbs/tasks.jsonl` before each commit.
 
-`bd sync` exports raw email addresses from the database into `.beads/issues.jsonl`. The pre-commit hook runs `scripts/scrub-pii.sh` automatically to strip those addresses before the file enters git history.
+`crumb sync` exports raw email addresses from the database into `.crumbs/tasks.jsonl`. The pre-commit hook runs `scripts/scrub-pii.sh` automatically to strip those addresses before the file enters git history.
 
 **Behavior**:
-- Runs only when `.beads/issues.jsonl` is staged for a commit
+- Runs only when `.crumbs/tasks.jsonl` is staged for a commit
 - Calls `scripts/scrub-pii.sh` to redact email addresses in place
 - Re-stages the scrubbed file so the clean version is what gets committed
-- Blocks the commit with an error if `scrub-pii.sh` is not found or not executable (only when `issues.jsonl` is staged)
+- Blocks the commit with an error if `scrub-pii.sh` is not found or not executable (only when `tasks.jsonl` is staged)
 
 This script:
 - Creates `.git/hooks/pre-commit` with the hook code
@@ -111,11 +111,11 @@ You should see the current date/time in the file modification times.
 
 ```bash
 # Stage issues.jsonl and commit — the hook should run automatically
-git add .beads/issues.jsonl
+git add .crumbs/tasks.jsonl
 git commit -m "test: verify pre-commit scrub hook"
 ```
 
-You should see the message: `[ant-farm] PII scrub applied and re-staged: .beads/issues.jsonl`
+You should see the message: `[ant-farm] PII scrub applied and re-staged: .crumbs/tasks.jsonl`
 
 ## Understanding Sync Behavior
 
@@ -219,7 +219,7 @@ cp -r ~/.claude.backup.20260217_214523/* ~/.claude/
 
 - **orchestration/** directory — The source is in version control (.git), so restoring from there is safer than relying on backups
 - **agents/** directory — Same rationale as orchestration/
-- **Individual session artifacts** — `.beads/agent-summaries/` and other session state are working files, not meant for backup
+- **Individual session artifacts** — `.crumbs/agent-summaries/` and other session state are working files, not meant for backup
 
 If you need to recover orchestration files, use git:
 
