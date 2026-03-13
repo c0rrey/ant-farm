@@ -22,10 +22,10 @@ Before doing anything else, check for these fatal conditions. Surface clear erro
 ### Error: .crumbs/ not initialized
 
 ```bash
-[ -f .crumbs/tasks.jsonl ] || echo "NOT_INITIALIZED"
+[ -f .crumbs/tasks.jsonl ] && [ -f .crumbs/config.json ] || echo "NOT_INITIALIZED"
 ```
 
-If `.crumbs/tasks.jsonl` does not exist:
+If `.crumbs/tasks.jsonl` or `.crumbs/config.json` does not exist:
 
 > **Error**: `.crumbs/tasks.jsonl` not found. Run `/ant-farm:init` to initialize the project, then `/ant-farm:plan` to create tasks before running `/ant-farm:work`.
 
@@ -114,18 +114,20 @@ Store `SESSION_ID` and `SESSION_DIR` in context. Pass `SESSION_DIR` explicitly t
 
 ## Step 3 — Launch Queen Orchestration
 
-Read `orchestration/RULES.md` and follow its workflow from **Step 1** (Recon / Scout spawn) onward.
+Read `orchestration/RULES.md`. Follow its workflow from **Step 1** (Recon / Scout spawn) onward, **EXCEPT** substitute the following crumbs-specific commands wherever RULES.md references `bd` equivalents:
 
-Key points for the crumbs-backed execution context:
-- The Scout reads `.crumbs/tasks.jsonl` via the `crumb` CLI (not `bd` commands)
-- `crumb ready` returns tasks eligible for execution (open, all blockers resolved)
-- `crumb list --in-progress` returns tasks currently in flight
-- `crumb blocked` returns tasks with unresolved blockers
-- SESSION_DIR is `.crumbs/sessions/_session-${SESSION_ID}` (not `.beads/agent-summaries/`)
-- Task closure uses `crumb close <id>` (not `bd close`)
-- Issue filing uses `crumb create --title "..."` (not `bd create`)
+| RULES.md `bd` command | crumbs substitute |
+|---|---|
+| `bd ready` | `crumb ready` |
+| `bd list --in-progress` | `crumb list --in-progress` |
+| `bd blocked` | `crumb blocked` |
+| `bd close <id>` | `crumb close <id>` |
+| `bd create --title "..."` | `crumb create --title "..."` |
+| `.beads/agent-summaries/` (SESSION_DIR) | `.crumbs/sessions/_session-${SESSION_ID}` |
 
-All orchestration rules from `orchestration/RULES.md` apply: wave management, concurrency limits, hard gates (SSV, CCO, WWD, DMVDC, ESV), model assignments, and landing-the-plane protocol.
+The Scout reads `.crumbs/tasks.jsonl` via the `crumb` CLI, not `bd` commands.
+
+All other orchestration rules from `orchestration/RULES.md` apply without exception: wave management, concurrency limits, hard gates (SSV, CCO, WWD, DMVDC, ESV), model assignments, and landing-the-plane protocol.
 
 ## Error Reference
 
