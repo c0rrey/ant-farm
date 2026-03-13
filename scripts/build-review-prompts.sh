@@ -244,7 +244,7 @@ build_nitpicker_prompt() {
         echo ""
         extract_focus_block "$review_type"
         echo ""
-        echo "**Task IDs** (for correctness review — run \`bd show <id>\` to retrieve acceptance criteria):"
+        echo "**Task IDs** (for correctness review — run \`crumb show <id>\` to retrieve acceptance criteria):"
         echo "${TASK_IDS}"
         echo ""
         echo "**Report output path**: ${report_output_path}"
