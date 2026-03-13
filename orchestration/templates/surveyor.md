@@ -364,8 +364,11 @@ Questions asked: {N} of 12 max
 
 ## Error Handling
 
-- **Feature request is empty**: Return error to Queen: `ERROR: Feature request
-  is empty. Cannot proceed. Provide a feature description and re-spawn.`
+- **Feature request is empty**: Strip all whitespace from the text following
+  the `**Feature request**:` header in the prompt. If the result is an empty
+  string, return error to Queen: `ERROR: Feature request is empty. Cannot
+  proceed. Provide a feature description and re-spawn.` Do NOT proceed to
+  Step 1 with an empty or whitespace-only feature request.
 - **User skips all questions** (cancels Q&A): Proceed with available information.
   Document unanswered questions in the `## Open Questions` section of spec.md.
   Note in the return summary: `Questions answered: 0/{N} — proceeding with
