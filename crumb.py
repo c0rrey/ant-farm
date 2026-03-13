@@ -1782,116 +1782,116 @@ def cmd_doctor(args: argparse.Namespace) -> None:
     warnings: List[str] = []
     fixes_applied: List[str] = []
 
-    # --- Pass 1: raw line-by-line read for malformed JSON detection ---
-    valid_records: List[Dict[str, Any]] = []
-    malformed_lines: List[int] = []
-    try:
-        with open(path, "r", encoding="utf-8") as fh:
-            for lineno, raw_line in enumerate(fh, start=1):
-                line = raw_line.rstrip("\n")
-                if not line:
-                    continue
-                try:
-                    record = json.loads(line)
-                    valid_records.append(record)
-                except json.JSONDecodeError as exc:
-                    malformed_lines.append(lineno)
-                    errors.append(f"line {lineno}: malformed JSON — {exc}")
-    except OSError as exc:
-        die(f"cannot read tasks.jsonl: {exc}")
+    with FileLock():
+        # --- Pass 1: raw line-by-line read for malformed JSON detection ---
+        valid_records: List[Dict[str, Any]] = []
+        malformed_lines: List[int] = []
+        try:
+            with open(path, "r", encoding="utf-8") as fh:
+                for lineno, raw_line in enumerate(fh, start=1):
+                    line = raw_line.rstrip("\n")
+                    if not line:
+                        continue
+                    try:
+                        record = json.loads(line)
+                        valid_records.append(record)
+                    except json.JSONDecodeError as exc:
+                        malformed_lines.append(lineno)
+                        errors.append(f"line {lineno}: malformed JSON — {exc}")
+        except OSError as exc:
+            die(f"cannot read tasks.jsonl: {exc}")
 
-    # --- Build lookup structures from valid records ---
-    seen_ids: Dict[str, int] = {}  # id -> first occurrence index
-    id_to_record: Dict[str, Dict[str, Any]] = {}
+        # --- Build lookup structures from valid records ---
+        seen_ids: Dict[str, int] = {}  # id -> first occurrence index
+        id_to_record: Dict[str, Dict[str, Any]] = {}
 
-    for idx, record in enumerate(valid_records):
-        rec_id = record.get("id")
-        if not rec_id:
-            continue
-        if rec_id in seen_ids:
-            errors.append(
-                f"duplicate ID '{rec_id}' (first at record {seen_ids[rec_id] + 1}, "
-                f"again at record {idx + 1})"
-            )
-        else:
-            seen_ids[rec_id] = idx
-            id_to_record[rec_id] = record
-
-    # Build set of all trail IDs for parent validation
-    trail_ids: set = {
-        rid for rid, rec in id_to_record.items() if rec.get("type") == "trail"
-    }
-
-    # --- Pass 2: semantic checks on valid records ---
-    for record in valid_records:
-        rec_id = record.get("id", "<unknown>")
-        rec_type = record.get("type", "")
-
-        # Skip trails for orphan and parent checks (trails have no parent)
-        if rec_type != "trail":
-            # Resolve parent from top-level field or links.parent
-            top_parent = record.get("parent") or ""
-            links_raw = record.get("links") or {}
-            links_parent = (
-                links_raw.get("parent") or ""
-                if isinstance(links_raw, dict)
-                else ""
-            )
-            parent_id = top_parent or links_parent
-
-            if parent_id:
-                # Dangling parent: parent ID doesn't exist or isn't a trail
-                if parent_id not in id_to_record:
-                    errors.append(
-                        f"'{rec_id}': dangling parent link — '{parent_id}' does not exist"
-                    )
-                elif parent_id not in trail_ids:
-                    errors.append(
-                        f"'{rec_id}': dangling parent link — '{parent_id}' is not a trail"
-                    )
-            else:
-                # No parent: orphan crumb
-                warnings.append(f"'{rec_id}': orphan crumb — no parent trail")
-
-            # Dangling blocked_by references
-            blocked_by_ids = _get_blocked_by(record)
-            dangling_blockers = [
-                bid for bid in blocked_by_ids if bid not in id_to_record
-            ]
-            for bid in dangling_blockers:
-                warnings.append(
-                    f"'{rec_id}': dangling blocked_by reference — '{bid}' does not exist"
+        for idx, record in enumerate(valid_records):
+            rec_id = record.get("id")
+            if not rec_id:
+                continue
+            if rec_id in seen_ids:
+                errors.append(
+                    f"duplicate ID '{rec_id}' (first at record {seen_ids[rec_id] + 1}, "
+                    f"again at record {idx + 1})"
                 )
+            else:
+                seen_ids[rec_id] = idx
+                id_to_record[rec_id] = record
 
-            # --- --fix: remove dangling blocked_by from this record ---
-            if getattr(args, "fix", False) and dangling_blockers:
-                dangling_set = set(dangling_blockers)
-                # Remove from top-level blocked_by
-                top_blocked: List[str] = record.get("blocked_by") or []
-                if isinstance(top_blocked, list):
-                    cleaned_top = [b for b in top_blocked if b not in dangling_set]
-                    if len(cleaned_top) != len(top_blocked):
-                        record["blocked_by"] = cleaned_top
-                        fixes_applied.append(
-                            f"'{rec_id}': removed dangling blocked_by {dangling_set} from top-level"
+        # Build set of all trail IDs for parent validation
+        trail_ids: set = {
+            rid for rid, rec in id_to_record.items() if rec.get("type") == "trail"
+        }
+
+        # --- Pass 2: semantic checks on valid records ---
+        for record in valid_records:
+            rec_id = record.get("id", "<unknown>")
+            rec_type = record.get("type", "")
+
+            # Skip trails for orphan and parent checks (trails have no parent)
+            if rec_type != "trail":
+                # Resolve parent from top-level field or links.parent
+                top_parent = record.get("parent") or ""
+                links_raw = record.get("links") or {}
+                links_parent = (
+                    links_raw.get("parent") or ""
+                    if isinstance(links_raw, dict)
+                    else ""
+                )
+                parent_id = top_parent or links_parent
+
+                if parent_id:
+                    # Dangling parent: parent ID doesn't exist or isn't a trail
+                    if parent_id not in id_to_record:
+                        errors.append(
+                            f"'{rec_id}': dangling parent link — '{parent_id}' does not exist"
                         )
-                # Remove from links.blocked_by
-                if isinstance(record.get("links"), dict):
-                    links_blocked: List[str] = record["links"].get("blocked_by") or []
-                    if isinstance(links_blocked, list):
-                        cleaned_links = [b for b in links_blocked if b not in dangling_set]
-                        if len(cleaned_links) != len(links_blocked):
-                            record["links"]["blocked_by"] = cleaned_links
-                            fixes_applied.append(
-                                f"'{rec_id}': removed dangling blocked_by {dangling_set} from links"
-                            )
+                    elif parent_id not in trail_ids:
+                        errors.append(
+                            f"'{rec_id}': dangling parent link — '{parent_id}' is not a trail"
+                        )
+                else:
+                    # No parent: orphan crumb
+                    warnings.append(f"'{rec_id}': orphan crumb — no parent trail")
 
-    # --- Apply --fix writes ---
-    if getattr(args, "fix", False) and fixes_applied:
-        with FileLock():
+                # Dangling blocked_by references
+                blocked_by_ids = _get_blocked_by(record)
+                dangling_blockers = [
+                    bid for bid in blocked_by_ids if bid not in id_to_record
+                ]
+                for bid in dangling_blockers:
+                    warnings.append(
+                        f"'{rec_id}': dangling blocked_by reference — '{bid}' does not exist"
+                    )
+
+                # --- --fix: remove dangling blocked_by from this record ---
+                if getattr(args, "fix", False) and dangling_blockers:
+                    dangling_set = set(dangling_blockers)
+                    # Remove from top-level blocked_by
+                    top_blocked: List[str] = record.get("blocked_by") or []
+                    if isinstance(top_blocked, list):
+                        cleaned_top = [b for b in top_blocked if b not in dangling_set]
+                        if len(cleaned_top) != len(top_blocked):
+                            record["blocked_by"] = cleaned_top
+                            fixes_applied.append(
+                                f"'{rec_id}': removed dangling blocked_by {dangling_set} from top-level"
+                            )
+                    # Remove from links.blocked_by
+                    if isinstance(record.get("links"), dict):
+                        links_blocked: List[str] = record["links"].get("blocked_by") or []
+                        if isinstance(links_blocked, list):
+                            cleaned_links = [b for b in links_blocked if b not in dangling_set]
+                            if len(cleaned_links) != len(links_blocked):
+                                record["links"]["blocked_by"] = cleaned_links
+                                fixes_applied.append(
+                                    f"'{rec_id}': removed dangling blocked_by {dangling_set} from links"
+                                )
+
+        # --- Apply --fix writes ---
+        if getattr(args, "fix", False) and fixes_applied:
             write_tasks(path, valid_records)
-        for msg in fixes_applied:
-            print(f"fixed: {msg}")
+            for msg in fixes_applied:
+                print(f"fixed: {msg}")
 
     # --- Report ---
     for msg in errors:
