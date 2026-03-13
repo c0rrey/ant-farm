@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-03-13 — Session 20260313-001327 (Crumb CLI Build + Review Fix Loop)
+
+### Summary
+
+Epic ant-farm-e7em (Crumb CLI) completed in full: 9 feature tasks built crumb.py from scaffold to a production-ready single-file Python CLI across 4 waves (~47 minutes). Review round 1 found 0 P1 and 5 P2 root causes across 17 consolidated root causes (26 raw findings); all 5 P2s were auto-fixed in a serial fix cycle (5 commits, 1 agent, same file). Round 2 reviewed the 5 fix commits, found 1 new P2 regression (ant-farm-k040), deferred by user. 14 commits total.
+
+### Implementation (Waves 1–4: 9 feature tasks)
+
+- **ant-farm-mg0r** (`03708ef`): feat: scaffold crumb.py with CLI framework and core infrastructure — argparse subparser dispatch, FileLock, atomic write via temp-then-rename, walk-up directory discovery, JSONL utilities (crumb.py, 599 lines)
+- **ant-farm-l7pk** (`41004c4`): feat: implement crumb create, show, list commands — `_find_crumb`, sort key helpers; dual-mode create (--title / --from-json); filtering, sorting, limit, --short output (crumb.py)
+- **ant-farm-cmcd** (`86770aa`): feat: implement crumb update, close, reopen commands — status transition guard, note appending, multi-ID close (idempotent), reopen clears closed_at (crumb.py)
+- **ant-farm-h7af** (`a67cf4a`): feat: implement crumb link command — nested links dict; --parent, --blocked-by (dedup), --remove-blocked-by, --discovered-from flags (crumb.py)
+- **ant-farm-jmvi** (`58c61b3`): feat: implement trail commands — trail create/show/list/close; auto-close and auto-reopen hooks in cmd_close and cmd_link (crumb.py)
+- **ant-farm-vxpr** (`1ff6edc`): feat: implement crumb ready and blocked commands — `_get_blocked_by` + `_is_crumb_blocked` helpers; partition of open crumbs by readiness (crumb.py)
+- **ant-farm-izng** (`bdcf2ed`): feat: implement crumb doctor command — two-pass syntax + semantic validation; malformed JSON, duplicate IDs, dangling parents (errors), orphan/dangling blocked_by (warnings); --fix flag (crumb.py)
+- **ant-farm-fdz2** (`36dffe2`): feat: implement crumb import and --from-beads migration — plain JSONL import with line-level error recovery; beads-to-crumb format conversion; counter advancement (crumb.py)
+- **ant-farm-dhh8** (`0627e70`): feat: implement crumb search and tree commands — case-insensitive keyword search; hierarchical tree view with orphan section (crumb.py)
+
+### Review Fixes (Round 1, 5 P2 root causes)
+
+- **ant-farm-35a5** (`500d88e`): fix: wrap open/touch calls in try/except OSError in read_tasks(), iter_jsonl(), FileLock.__enter__ (crumb.py)
+- **ant-farm-ru51** (`d33fde5`): fix: dual-lookup parent/discovered_from in cmd_list filters and _auto_close_trail_if_complete (crumb.py)
+- **ant-farm-l1en** (`87cdd8f`): fix: validate --from-json type (isinstance dict) and config counter fields in read_config() (crumb.py)
+- **ant-farm-bzhs** (`74c5cf6`): fix: fix inverted blocks dependency direction in _convert_beads_record; add _apply_blocks_deps post-processing pass (crumb.py)
+- **ant-farm-ch0z** (`96347af`): fix: expand FileLock scope in cmd_doctor to cover full read-validate-write sequence (crumb.py)
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 1 file, 9 tasks | 0 | 5 | 12 | PASS WITH ISSUES |
+| 2 | 1 file, 5 fix tasks | 0 | 1 | 0 | PASS WITH ISSUES |
+
+26 raw findings (round 1) → 17 root causes consolidated; 1 raw finding (round 2) → 1 root cause. 5 P2 root causes fixed in round 1. 12 P3 findings not filed as beads. Round 2 P2 (ant-farm-k040) deferred by user.
+
 ## 2026-02-23 — Session 20260222-225628 (Persistent-Team Fix Loop + CCB Spot-Check)
 
 ### Summary
