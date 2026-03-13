@@ -857,14 +857,142 @@ def cmd_reopen(args: argparse.Namespace) -> None:
     print(f"reopened {args.id}")
 
 
+def _get_blocked_by(crumb: Dict[str, Any]) -> List[str]:
+    """Return the blocked_by list for a crumb, checking both top-level and links.
+
+    The blocked_by list may live at crumb["blocked_by"] (direct field) or
+    crumb["links"]["blocked_by"] (set by cmd_link). Both locations are
+    checked and merged to handle records created via --from-json or link.
+
+    Args:
+        crumb: A crumb record dict.
+
+    Returns:
+        List of blocker ID strings (may be empty).
+    """
+    top_level: List[str] = crumb.get("blocked_by") or []
+    if not isinstance(top_level, list):
+        top_level = [top_level] if top_level else []
+
+    links_raw = crumb.get("links") or {}
+    links_dict: Dict[str, Any] = links_raw if isinstance(links_raw, dict) else {}
+    links_level: List[str] = links_dict.get("blocked_by") or []
+    if not isinstance(links_level, list):
+        links_level = [links_level] if links_level else []
+
+    # Merge both locations, deduplicated, preserving order
+    seen: List[str] = []
+    for bid in top_level + links_level:
+        if bid not in seen:
+            seen.append(bid)
+    return seen
+
+
+def _is_crumb_blocked(
+    crumb: Dict[str, Any], id_to_record: Dict[str, Dict[str, Any]]
+) -> bool:
+    """Return True if crumb has at least one unresolved blocker.
+
+    A blocker is unresolved when its ID exists in id_to_record AND its
+    status is not 'closed'. Blockers that reference non-existent IDs are
+    treated as resolved (returns False contribution).
+
+    Args:
+        crumb: The crumb to evaluate.
+        id_to_record: Mapping of ID string to record dict for all tasks.
+
+    Returns:
+        True if at least one blocker is unresolved; False otherwise.
+    """
+    for bid in _get_blocked_by(crumb):
+        blocker = id_to_record.get(bid)
+        if blocker is not None and blocker.get("status") != "closed":
+            return True
+    return False
+
+
 def cmd_ready(args: argparse.Namespace) -> None:
-    """List ready crumbs (no unresolved blockers). Implemented downstream."""
-    die("crumb ready not yet implemented")
+    """List open crumbs with no unresolved blockers.
+
+    A crumb is ready when its status is 'open' AND every entry in its
+    blocked_by list either does not exist or refers to a closed crumb.
+    Supports --limit and --sort flags matching cmd_list behaviour.
+
+    Args:
+        args: Parsed arguments; args.limit and args.sort are optional.
+    """
+    path = require_tasks_jsonl()
+    tasks = read_tasks(path)
+
+    # Build fast lookup dict for blocker resolution
+    id_to_record: Dict[str, Dict[str, Any]] = {
+        t["id"]: t for t in tasks if "id" in t
+    }
+
+    results = [
+        t
+        for t in tasks
+        if t.get("status") == "open"
+        and t.get("type") != "trail"
+        and not _is_crumb_blocked(t, id_to_record)
+    ]
+
+    # --- sort ---
+    sort_field = getattr(args, "sort", "created_at")
+    if sort_field == "priority":
+        results.sort(key=lambda t: _priority_sort_key(t.get("priority", "P4")))
+    elif sort_field == "status":
+        results.sort(key=lambda t: _status_sort_key(t.get("status", "")))
+    else:
+        results.sort(key=lambda t: t.get("created_at") or "")
+
+    # --- limit ---
+    limit = getattr(args, "limit", None)
+    if limit is not None and limit > 0:
+        results = results[:limit]
+
+    for t in results:
+        tid = t.get("id", "?")
+        title = t.get("title", "")
+        status = t.get("status", "")
+        priority = t.get("priority", "")
+        print(f"{tid:<12} {priority:<4} {status:<12} {title}")
 
 
 def cmd_blocked(args: argparse.Namespace) -> None:
-    """List blocked crumbs. Implemented downstream."""
-    die("crumb blocked not yet implemented")
+    """List open crumbs with at least one unresolved blocker.
+
+    A crumb is blocked when its status is 'open' AND at least one entry in
+    its blocked_by list refers to an existing crumb whose status is not
+    'closed'. Blockers referencing non-existent IDs are ignored.
+
+    Args:
+        args: Parsed arguments (no flags for blocked currently).
+    """
+    path = require_tasks_jsonl()
+    tasks = read_tasks(path)
+
+    # Build fast lookup dict for blocker resolution
+    id_to_record: Dict[str, Dict[str, Any]] = {
+        t["id"]: t for t in tasks if "id" in t
+    }
+
+    results = [
+        t
+        for t in tasks
+        if t.get("status") == "open"
+        and t.get("type") != "trail"
+        and _is_crumb_blocked(t, id_to_record)
+    ]
+
+    results.sort(key=lambda t: t.get("created_at") or "")
+
+    for t in results:
+        tid = t.get("id", "?")
+        title = t.get("title", "")
+        status = t.get("status", "")
+        priority = t.get("priority", "")
+        print(f"{tid:<12} {priority:<4} {status:<12} {title}")
 
 
 def cmd_link(args: argparse.Namespace) -> None:
