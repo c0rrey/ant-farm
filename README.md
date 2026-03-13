@@ -1,6 +1,10 @@
 # ant-farm
 
-A multi-agent orchestration and quality review system for Claude Code. Coordinates parallel agent work across projects with structured verification gates that prevent the failure modes inherent to AI-generated code: skipped design steps, scope creep, fabricated review claims, and unverified acceptance criteria.
+`ant-farm` is a bounded orchestration kit for Claude Code.
+
+It packages custom agent definitions, workflow rules for decomposition and execution, verification checkpoints, a local JSONL task tracker (`crumb`), and helper scripts for prompt generation, installation, and session recovery.
+
+This repo does not provide a standalone agent runtime. It gives Claude Code a governed way to decompose work into tasks, execute those tasks through specialized subagents, review and verify the results through hard gates, recover interrupted sessions from disk artifacts, and only push once the session passes its landing checks.
 
 ## Quick Start
 
@@ -37,27 +41,14 @@ A multi-agent orchestration and quality review system for Claude Code. Coordinat
 
 ## Architecture
 
-The system has three layers: **the Queen** (the orchestrator that never touches source code), **Dirt Pushers** (implementation and review subagents), and **Pest Control** (an independent verification agent that audits both).
+The system has four parts:
 
-```
-┌─────────────────────────────────────────────────────────┐
-│  the Queen (orchestrator)                               │
-│  - Reads briefing + verdict tables only                 │
-│  - Spawns Scout, Pantry, Pest Control directly          │
-│  - Only agent that pushes to remote                     │
-├───────────┬─────────────┬───────────────────────────────┤
-│  Scout    │  Pantry     │  Pest Control                 │
-│  - Recon  │  - Composes │  - CCO (prompt audit)         │
-│  - Writes │  task briefs│  - WWD (scope)                │
-│   briefing│  - Writes   │  - DMVDC (substance)          │
-│  - Writes │    previews │  - CCB (consolidation         │
-│   metadata│             │    audit)                     │
-├───────────┴─────────────┴───────────────────────────────┤
-│  Dirt Pushers (up to 7 concurrent)                      │
-├─────────────────────────────────────────────────────────┤
-│  the Nitpickers (4 reviewers + Big Head + Pest Control) │
-└─────────────────────────────────────────────────────────┘
-```
+1. **Task and artifact layer** — `crumb.py` stores tasks and trails in `.crumbs/tasks.jsonl`. Planning and execution sessions write durable artifacts under `.crumbs/sessions/`.
+2. **Two orchestrators** — the **Planner** handles decomposition; the **Queen** handles execution. They have different permissions, state models, and agent teams.
+3. **Specialist agents** — Claude Code agent definitions in `agents/` cover recon, prompt composition, implementation, review, consolidation, and verification.
+4. **Verification layer** — Pest Control runs hard checkpoints that gate progression: SSV, CCO, WWD, DMVDC, CCB, and ESV.
+
+The core design is constrained delegation. Work is split across agents, but progression is controlled by artifacts, checkpoints, retry limits, and explicit escalation points.
 
 **CCO** = Colony Cartography Office | **WWD** = Wandering Worker Detection | **DMVDC** = Dirt Moved vs Dirt Claimed | **CCB** = Colony Census Bureau
 
@@ -65,9 +56,23 @@ The system has three layers: **the Queen** (the orchestrator that never touches 
 
 Triggered by saying **"let's get to work"** in any project wired up per `orchestration/SETUP.md`.
 
+This repo actually defines **two** workflows:
+
+- **Decomposition** (`/ant-farm:plan`) turns a freeform request or structured spec into trails, crumbs, and dependencies.
+- **Execution** (`/ant-farm:work` or "let's get to work") runs an implementation session over existing crumbs.
+
+The rest of this section focuses on execution. The decomposition workflow is separate and uses a different orchestrator, agents, and gates.
+
 ### Step 0: Session setup
 
-Generate a session ID, create the session directory and `task-metadata/` subdirectory. No agents spawn yet.
+Generate a session ID, create the session directory, and initialize the artifact layout. No agents spawn yet.
+
+Execution state is persisted to disk, not just kept in model context. Session artifacts include:
+
+- `task-metadata/`, `previews/`, `prompts/`, `summaries/`, `review-reports/`, and `pc/`
+- `briefing.md`, `queen-state.md`, `progress.log`, `exec-summary.md`, and `resume-plan.md`
+
+If a prior session directory is supplied, the Queen can recover from `progress.log` via `scripts/parse-progress-log.sh` and resume from the first incomplete milestone.
 
 ### Step 1: Recon
 
@@ -82,6 +87,8 @@ The Queen spawns **the Scout** (`orchestration/templates/scout.md`), an opus sub
 7. Writes `{session-dir}/briefing.md` — a ~40-line summary the Queen presents to the user
 
 The Queen reads the briefing, and after SSV PASS, auto-proceeds to Step 2 without user approval.
+
+This is a bounded approval model: strategy approval is mechanical, not conversational. SSV is the gate; a passing strategy proceeds automatically unless the task set is empty or another escalation condition is hit.
 
 ### Step 2: Spawn implementation agents
 
@@ -229,6 +236,8 @@ Before presenting results to the user, CCB audits the consolidation:
 - Deduplication correctness (merged findings actually share a code path, not just vague similarity)
 - Provenance audit (no unauthorized issues filed during review phase)
 
+If review finds P1 or P2 issues, the system enters a review/fix/re-review loop. Small round-1 finding sets are auto-fixed; larger or later-round finding sets are escalated to the user. Fix agents spawn into the same persistent Nitpicker team, and the loop continues until convergence, deferral, or the round cap.
+
 ### Step 4: Document
 
 Update README and CLAUDE.md in a single commit if needed. CHANGELOG is not updated here.
@@ -258,6 +267,15 @@ A core design principle: the Queen **never reads source code, tests, configs, or
 Task metadata is read by the Scout, which writes per-task files and a briefing. `implementation.md` is read by the Pantry. `reviews.md` is read by `build-review-prompts.sh`. `checkpoints.md` is read by Pest Control. The Pantry reads the Scout's pre-extracted metadata files and writes combined prompt previews to disk. Pest Control reads these previews and checkpoint criteria directly. All agents absorb the context cost so the Queen's window stays clean.
 
 Target: finish a 40+ task session with >75% context window remaining (1M window), <10 file reads in the Queen, <20 commits.
+
+The same boundedness shows up throughout the system:
+
+- the Planner and Queen are separate orchestrators with different rules
+- agent roles are specialized and phase-specific
+- checkpoints block progression
+- retries are capped
+- certain failures auto-escalate to the user rather than being retried indefinitely
+- only the Queen is allowed to land and push the session
 
 ## Hard gates
 
@@ -312,26 +330,9 @@ Custom Claude Code agent types live in `agents/` and are installed to `~/.claude
 
 ## Forking this repo
 
-The `.crumbs/tasks.jsonl` file is the issue database for **this** project's development. When you fork ant-farm to use as a template for your own orchestration setup, you should reset the issue database so you start with a clean slate under your own identity.
+The `.crumbs/tasks.jsonl` file in this repo is the issue database for **this** project's development history.
 
-### Steps for new adopters
-
-1. Fork or clone the repo and navigate into it.
-2. Run `crumb init` to initialize a fresh issue database:
-   ```bash
-   crumb init --prefix <your-project-name>
-   ```
-   This creates a new `.crumbs/tasks.jsonl` with no inherited issues and sets your project prefix.
-3. If you want to import from the existing JSONL (e.g., you performed manual cleanup first), use the `--from-jsonl` flag:
-   ```bash
-   crumb init --from-jsonl --prefix <your-project-name>
-   ```
-4. Run the setup script to install agent files, orchestration, and the crumb CLI:
-   ```bash
-   ./scripts/setup.sh
-   ```
-
-The `.crumbs/tasks.jsonl` in this repo contains sample issues from ant-farm's own development history. They are included as reference material showing how the system has been used but are not required for operation. Running `crumb init` replaces them with a fresh database.
+If you adopt `ant-farm` for another project, treat that file as example data, not as a required starting point. Initialize your target project with the `/ant-farm:init` workflow, which creates a project-local `.crumbs/` directory and configures the `crumb` task system for that repository.
 
 ## Path reference convention
 
