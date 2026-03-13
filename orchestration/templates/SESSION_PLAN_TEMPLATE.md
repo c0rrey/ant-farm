@@ -304,7 +304,7 @@ Before declaring session complete:
 - Agents spawned: ___
 - Commits created: ___
 - Time elapsed: ___ minutes
-- Token budget used: ___K / 200K (___%)
+- Token budget used: ___K / 1M (___%)
 
 **Quality Metrics:**
 - P1 bugs filed: ___

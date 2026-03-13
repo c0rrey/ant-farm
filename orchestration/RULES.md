@@ -164,9 +164,10 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 
             **Team roster progression**:
             - **Round 1 (initial)**: 6 members — 4 Nitpickers (Clarity, Edge Cases, Correctness, Drift) + Big Head + Pest Control
-            - **After fix wave**: + N fix DPs + fix-pc-wwd + fix-pc-dmvdc (names: fix-dp-1..N, fix-pc-wwd, fix-pc-dmvdc; round suffixes for round 2+: fix-dp-r2-1, fix-pc-wwd-r2, fix-pc-dmvdc-r2)
+            - **During fix wave**: + N fix DPs + fix-pc-wwd + fix-pc-dmvdc (names: fix-dp-1..N, fix-pc-wwd, fix-pc-dmvdc; round suffixes for round 2+: fix-dp-r2-1, fix-pc-wwd-r2, fix-pc-dmvdc-r2)
             - **Peak**: up to 15 members (6 + 7 fix DPs + 2 fix PCs), but only N+2 fix agents are active during the fix phase; the original 6 are idle
-            - **Round 2+**: Clarity and Drift reviewers remain idle; Correctness and Edge Cases are re-tasked via SendMessage
+            - **After fix wave verified**: fix DPs + fix-pc-wwd + fix-pc-dmvdc are shut down (Step 3c-iv). Roster returns to 6 persistent members before round transition.
+            - **Round 2+**: Clarity and Drift reviewers remain idle; Correctness and Edge Cases are re-tasked via SendMessage. If round 2+ needs fixes, fresh fix agents are spawned (not re-used from prior round).
 
             **3b-i. Gather inputs** from the Queen's state file:
             - Review round: read from session state (default: 1)
@@ -341,8 +342,14 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             **Progress log (after all fix DPs verified by fix-pc-dmvdc):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_DMVDC_COMPLETE|round=<N>|verified_dps=<names>|commits=<hashes>" >> ${SESSION_DIR}/progress.log`
 
             **Step 3c-iv. Round transition via SendMessage** — after all fix DPs complete and
-            fix-pc-dmvdc has issued PASS for each, the Queen sends messages to re-task the persistent
-            team members for round N+1:
+            fix-pc-dmvdc has issued PASS for each:
+
+            **First, shut down fix agents from this round.** Send `shutdown_request` to each
+            fix DP, fix-pc-wwd, and fix-pc-dmvdc from round N. These agents have served their
+            purpose — round N+1 fixes (if needed) will be fresh spawns with no stale context
+            from the prior round's approach. Do NOT re-use fix DPs across rounds.
+
+            **Then, re-task the persistent review members for round N+1:**
             1. **Re-task Correctness reviewer**: SendMessage to `correctness` with review round N+1,
                fix commit range, changed files, and task IDs; provide new report output path
                `{SESSION_DIR}/review-reports/correctness-r<N+1>-<timestamp>.md`
@@ -625,7 +632,7 @@ Project-specific overrides belong in the project's CLAUDE.md or QUALITY_PROCESS.
 
 ## Context Preservation Targets
 
-- Token budget: finish with >50% remaining
+- Token budget: finish with >75% remaining (1M context window)
 - File reads in the Queen: <10 for 40+ task sessions
 - Concurrent agents: typical 5-6 Dirt Pushers, max 12 total
 - Commits per session: <20 (batch related work)
