@@ -257,7 +257,7 @@ A core design principle: the Queen **never reads source code, tests, configs, or
 
 Task metadata is read by the Scout, which writes per-task files and a briefing. `implementation.md` is read by the Pantry. `reviews.md` is read by `build-review-prompts.sh`. `checkpoints.md` is read by Pest Control. The Pantry reads the Scout's pre-extracted metadata files and writes combined prompt previews to disk. Pest Control reads these previews and checkpoint criteria directly. All agents absorb the context cost so the Queen's window stays clean.
 
-Target: finish a 40+ task session with >50% context window remaining, <10 file reads in the Queen, <20 commits.
+Target: finish a 40+ task session with >75% context window remaining (1M window), <10 file reads in the Queen, <20 commits.
 
 ## Hard gates
 
