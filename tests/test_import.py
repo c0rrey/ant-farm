@@ -123,7 +123,7 @@ class TestImportPlain:
         cmd_import(_make_import_args(str(import_file)))
 
         config = read_config()
-        assert config["next_crumb_id"] >= 11
+        assert config["next_crumb_id"] == 11
 
     def test_import_raises_system_exit_for_missing_file(
         self, crumbs_env: Path
