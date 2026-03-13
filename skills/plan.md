@@ -124,23 +124,20 @@ mkdir -p "${DECOMPOSE_DIR}"
 Write a manifest file to capture input metadata:
 
 ```bash
-cat > "${DECOMPOSE_DIR}/manifest.json" <<EOF
-{
-  "decompose_id": "${DECOMPOSE_ID}",
-  "input_source": "<INPUT_SOURCE>",
-  "input_class": "<INPUT_CLASS>",
-  "class_score": <CLASS_SCORE>,
-  "created_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-}
-EOF
+jq -n \
+  --arg decompose_id "${DECOMPOSE_ID}" \
+  --arg input_source "<INPUT_SOURCE>" \
+  --arg input_class "<INPUT_CLASS>" \
+  --argjson class_score <CLASS_SCORE> \
+  --arg created_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  '{decompose_id: $decompose_id, input_source: $input_source, input_class: $input_class, class_score: $class_score, created_at: $created_at}' \
+  > "${DECOMPOSE_DIR}/manifest.json"
 ```
 
 Write `INPUT_TEXT` to `${DECOMPOSE_DIR}/input.txt` for use by the decomposition workflow:
 
 ```bash
-cat > "${DECOMPOSE_DIR}/input.txt" <<'SPEC_EOF'
-<INPUT_TEXT>
-SPEC_EOF
+printf '%s\n' '<INPUT_TEXT>' > "${DECOMPOSE_DIR}/input.txt"
 ```
 
 Store `DECOMPOSE_DIR` in context. Pass it explicitly to the decomposition workflow.
