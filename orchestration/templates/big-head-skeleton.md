@@ -112,22 +112,22 @@ Your workflow:
 6. For each merge, document WHY findings share a root cause
 7. **Cross-session dedup**: Before writing the summary or filing beads, check for existing open beads that already cover your root causes:
    ```bash
-   if ! bd list --status=open -n 0 --short > /tmp/open-beads-$$.txt 2>&1; then
-     echo "ERROR: bd list failed (lock contention or bd error). Aborting bead filing to prevent duplicates."
+   if ! crumb list --open --short > /tmp/open-crumbs-$$.txt 2>&1; then
+     echo "ERROR: crumb list failed (file error or crumb error). Aborting crumb filing to prevent duplicates."
      cat > "{CONSOLIDATED_OUTPUT_PATH}" << 'EOF'
      # Big Head Consolidation — BLOCKED: Cross-Session Dedup Infrastructure Error
-     **Status**: FAILED — bd list infrastructure error
+     **Status**: FAILED — crumb list infrastructure error
      **Timestamp**: <current ISO 8601 timestamp>
-     **Reason**: `bd list --status=open` failed. Bead filing aborted to prevent duplicate filing. This is likely a lock contention or bd connectivity issue.
-     **Recovery**: Retry after the lock clears. If the issue persists, run `bd doctor` and re-spawn Big Head.
+     **Reason**: `crumb list --open` failed. Crumb filing aborted to prevent duplicate filing. This is likely a file access or crumb CLI issue.
+     **Recovery**: Retry after the issue clears. If the issue persists, run `crumb doctor` and re-spawn Big Head.
      EOF
      exit 1
    fi
    ```
-   If the bash block above exits with code 1, stop immediately. Do NOT proceed to consolidation or bead filing. Use the SendMessage tool to notify the Queen: "Big Head FAILED: bd list infrastructure error during cross-session dedup. Bead filing aborted to prevent duplicates. Consolidated output written to {CONSOLIDATED_OUTPUT_PATH}. Please check bd status and re-spawn Big Head when ready." Then end your turn.
-   For each root cause group, compare against existing bead titles (from `/tmp/open-beads-$$.txt`):
-   - **Exact title match** (case-insensitive): Do NOT file. Log in the summary: "Dedup: RC-N matches existing bead ant-farm-XXXX — skipped."
-   - **Similar title** (same root cause, different wording): Run `bd search "<key phrases>" --status open` to confirm. If the existing bead covers the same root cause, do NOT file. Log the match.
+   If the bash block above exits with code 1, stop immediately. Do NOT proceed to consolidation or crumb filing. Use the SendMessage tool to notify the Queen: "Big Head FAILED: crumb list infrastructure error during cross-session dedup. Crumb filing aborted to prevent duplicates. Consolidated output written to {CONSOLIDATED_OUTPUT_PATH}. Please check crumb status and re-spawn Big Head when ready." Then end your turn.
+   For each root cause group, compare against existing crumb titles (from `/tmp/open-crumbs-$$.txt`):
+   - **Exact title match** (case-insensitive): Do NOT file. Log in the summary: "Dedup: RC-N matches existing crumb <ID> — skipped."
+   - **Similar title** (same root cause, different wording): Run `crumb search "<key phrases>"` to confirm. If the existing crumb covers the same root cause, do NOT file. Log the match.
    - **No match found**: Mark for filing.
    When uncertain whether a match is truly the same root cause, err on the side of filing (a human can merge later; a missed filing is harder to recover).
 8. Write consolidated summary to {CONSOLIDATED_OUTPUT_PATH}
@@ -160,14 +160,13 @@ Your workflow:
       - [ ] <Third independently testable criterion>
       BEAD_DESC
 
-      bd create --type=bug --priority=<P> --title="<title>" --body-file /tmp/bead-desc-$$.md
-      bd label add <new-bead-id> <primary-review-type>
+      crumb create --from-json "{\"type\":\"bug\",\"priority\":\"P<P>\",\"title\":\"<title>\",\"description\":\"$(cat /tmp/bead-desc-$$.md)\",\"acceptance_criteria\":[],\"scope\":{},\"links\":{}}"
       rm -f /tmp/bead-desc-$$.md
       ```
     - **FAIL**: Escalate to Queen with specifics (which findings failed, why); file beads ONLY for validated findings
     - **TIMEOUT/UNAVAILABLE**: Escalate to Queen with consolidated report path; do NOT file beads
 11. **Round 2+ only — P3 auto-filing**: After filing P1/P2 beads, auto-file P3 findings to "Future Work" epic:
-    - Find or create the epic: `bd list --status=open | grep -i "future work"` or `bd epic create --title="Future Work" --description="Low-priority polish and improvements from review sessions"`
+    - Find or create the trail: `crumb trail list | grep -i "future work"` or `crumb trail create --title "Future Work" --description "Low-priority polish and improvements from review sessions"`
     - For each P3 (skip any marked as duplicates in step 7):
       ```bash
       cat > /tmp/bead-desc-$$.md << 'BEAD_DESC'
@@ -181,8 +180,8 @@ Your workflow:
       - [ ] <testable criterion>
       BEAD_DESC
 
-      bd create --type=bug --priority=3 --title="<title>" --body-file /tmp/bead-desc-$$.md
-      bd dep add <new-bead-id> <epic-id> --type parent-child
+      crumb create --from-json "{\"type\":\"bug\",\"priority\":\"P3\",\"title\":\"<title>\",\"description\":\"$(cat /tmp/bead-desc-$$.md)\",\"acceptance_criteria\":[],\"scope\":{},\"links\":{}}"
+      crumb link <new-crumb-id> --parent <trail-id>
       rm -f /tmp/bead-desc-$$.md
       ```
     - Mark P3s as "auto-filed, no action required" in the consolidated summary
