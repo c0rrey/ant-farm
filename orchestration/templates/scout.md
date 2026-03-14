@@ -57,10 +57,10 @@ For each `.md` file, read the YAML frontmatter (`---` delimiters).
 Extract `name` and first sentence of `description`. Skip files without
 valid frontmatter. **Also track the file path for each agent** — you will use these paths only on tie-breaking (Step 3, below).
 
-All agents appear in your internal catalog for reference, but implementation candidates are separate from orchestration agents. Orchestration agents (scout, pantry, pest-control, etc.) coordinate the work; they do not implement tasks. Therefore, they are excluded from Dirt Pusher recommendations. Implementation candidates are agents who will execute tasks (python-pro, debugger, etc.).
+All agents appear in your internal catalog for reference, but implementation candidates are separate from orchestration agents. Orchestration agents (ant-farm-scout-organizer, ant-farm-pantry-impl, ant-farm-pest-control, etc.) coordinate the work; they do not implement tasks. Therefore, they are excluded from Dirt Pusher recommendations. Implementation candidates are agents who will execute tasks (python-pro, debugger, etc.).
 
 **Exclusions from Dirt Pusher recommendations** (orchestration agents):
-scout-organizer, pantry-impl, pest-control, nitpicker, big-head
+ant-farm-scout-organizer, ant-farm-pantry-impl, ant-farm-pest-control, ant-farm-nitpicker, ant-farm-big-head
 
 Build an internal two-tier catalog (keep in context, do NOT write to disk):
 

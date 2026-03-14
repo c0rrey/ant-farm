@@ -825,7 +825,7 @@ Findings merged:
 **Notification to Pest Control (SendMessage):**
 ```
 SendMessage(
-  to="pest-control",
+  to="ant-farm-pest-control",
   message="Consolidated report ready. Path: {session-dir}/review-reports/review-consolidated-{timestamp}.md. Please run DMVDC and CCB checkpoints and reply with PASS or FAIL + specifics."
 )
 ```
@@ -838,7 +838,7 @@ SendMessage(
 - If Pest Control has not replied after 2 subsequent turns of processing other work, send one retry message:
   ```
   SendMessage(
-    to="pest-control",
+    to="ant-farm-pest-control",
     message="Retry request: Consolidated report ready at {CONSOLIDATED_OUTPUT_PATH}. Please run DMVDC and CCB checkpoints and reply with PASS or FAIL + specifics. (First message sent — no reply received after 2 turns.)"
   )
   ```
@@ -1132,7 +1132,7 @@ After all fix DPs complete and fix-pc-dmvdc has issued PASS for each:
    - Task IDs reviewed: `{crumb-ids fixed this round}`
    - Report output path: `{session-dir}/review-reports/edge-cases-r{N+1}-{timestamp}.md`
 
-3. **Re-task Big Head**: SendMessage to `big-head` with:
+3. **Re-task Big Head**: SendMessage to `ant-farm-big-head` with:
    - Review round: N+1
    - Expected report count: 2 (correctness + edge cases only)
    - Report paths: paths from step 1 and 2 above

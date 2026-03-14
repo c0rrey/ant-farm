@@ -43,8 +43,8 @@ TeamCreate(
     { "name": "edge-cases-reviewer",   "prompt": "<filled nitpicker template with REVIEW_TYPE=edge-cases>", "model": "sonnet" },
     { "name": "correctness-reviewer",  "prompt": "<filled nitpicker template with REVIEW_TYPE=correctness>", "model": "sonnet" },
     { "name": "drift-reviewer",        "prompt": "<filled nitpicker template with REVIEW_TYPE=drift>", "model": "sonnet" },
-    { "name": "big-head",              "prompt": "<filled big-head template with all 4 expected report paths embedded>", "model": "{MODEL}" },
-    { "name": "pest-control",          "prompt": "<pest-control prompt>", "model": "sonnet" }
+    { "name": "ant-farm-big-head",              "prompt": "<filled big-head template with all 4 expected report paths embedded>", "model": "{MODEL}" },
+    { "name": "ant-farm-pest-control",          "prompt": "<pest-control prompt>", "model": "sonnet" }
   ]
 )
 ```
@@ -57,8 +57,8 @@ TeamCreate(
   members=[
     { "name": "correctness-reviewer",  "prompt": "<filled nitpicker template with REVIEW_TYPE=correctness>", "model": "sonnet" },
     { "name": "edge-cases-reviewer",   "prompt": "<filled nitpicker template with REVIEW_TYPE=edge-cases>", "model": "sonnet" },
-    { "name": "big-head",              "prompt": "<filled big-head template with 2 expected report paths embedded>", "model": "{MODEL}" },
-    { "name": "pest-control",          "prompt": "<pest-control prompt>", "model": "sonnet" }
+    { "name": "ant-farm-big-head",              "prompt": "<filled big-head template with 2 expected report paths embedded>", "model": "{MODEL}" },
+    { "name": "ant-farm-pest-control",          "prompt": "<pest-control prompt>", "model": "sonnet" }
   ]
 )
 ```
