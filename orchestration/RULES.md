@@ -218,8 +218,11 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             On exit 0: prompts/previews written to `${SESSION_DIR}/prompts/` and `${SESSION_DIR}/previews/`.
             On non-zero: surface stderr to user — do NOT proceed.
 
-            **3b-iii. CCO gate**: `mkdir -p "${SESSION_DIR}"/review-reports`, then spawn
-            Pest Control (`model: "haiku"`) for CCO on review previews. Must PASS before spawning team.
+            **3b-iii. Create review-reports directory, then run CCO gate**:
+            Run `mkdir -p "${SESSION_DIR}"/review-reports` **before** spawning any review agents — the
+            directory must exist so every Nitpicker can write its report without racing to create it.
+            After the directory is created, spawn Pest Control (`model: "haiku"`) for CCO on review
+            previews. The CCO gate must PASS before spawning the Nitpicker team.
 
             **3b-iv. Spawn Nitpicker team** (round 1 only — team persists for round 2+):
             - Round 1: 6 members — 4 reviewers + Big Head + Pest Control
