@@ -204,7 +204,68 @@ fi
 
 # ---------------------------------------------------------------------------
 # Step 1: Install agent definitions → ~/.claude/agents/
+#   Before installing, migrate old unprefixed agent files left over from
+#   before AF-47 renamed them to ant-farm-<name>.md.  A file is confirmed
+#   as an ant-farm agent if its YAML front matter contains a "name:" line
+#   whose value matches the expected old basename (without .md extension).
+#   Confirmed files are removed; unrecognised files are left with a warning.
 # ---------------------------------------------------------------------------
+
+# Old unprefixed basenames (pre-AF-47) mapped to their new prefixed names.
+# Format: "old-basename new-prefixed-basename" (space-separated pairs)
+AGENT_MIGRATIONS=(
+    "scout-organizer.md ant-farm-scout-organizer.md"
+    "pantry-impl.md ant-farm-pantry-impl.md"
+    "pest-control.md ant-farm-pest-control.md"
+    "nitpicker.md ant-farm-nitpicker.md"
+    "big-head.md ant-farm-big-head.md"
+    "architect.md ant-farm-architect.md"
+    "forager.md ant-farm-forager.md"
+    "surveyor.md ant-farm-surveyor.md"
+)
+
+# migrate_old_agents
+#   Check each known old unprefixed agent path. If found and confirmed as an
+#   ant-farm file (via "name:" sentinel in YAML front matter), remove it.
+#   Unrecognised files are left in place with a warning.
+migrate_old_agents() {
+    local agents_dir="${HOME}/.claude/agents"
+    local found_any=false
+
+    for pair in "${AGENT_MIGRATIONS[@]}"; do
+        local old_name new_name old_path expected_name_value
+        old_name="${pair%% *}"                       # e.g. scout-organizer.md
+        new_name="${pair##* }"                       # e.g. ant-farm-scout-organizer.md
+        old_path="${agents_dir}/${old_name}"
+        expected_name_value="${old_name%.md}"        # e.g. scout-organizer
+
+        if [ ! -f "$old_path" ]; then
+            continue
+        fi
+
+        found_any=true
+
+        # Identity check: YAML front matter must contain "name: <old-basename>"
+        if grep -qE "^name:[[:space:]]+${expected_name_value}[[:space:]]*$" "$old_path" 2>/dev/null; then
+            if [ "$DRY_RUN" = true ]; then
+                log "[dry-run] would remove stale ant-farm agent: $old_path (replacing with $new_name)"
+            else
+                rm "$old_path"
+                log "Removed stale ant-farm agent: $old_path (replaced by $new_name)"
+            fi
+        else
+            warn "Found $old_path but it does not look like an ant-farm agent — leaving in place."
+        fi
+    done
+
+    if [ "$found_any" = false ] && [ "$DRY_RUN" = true ]; then
+        log "[dry-run] no old unprefixed agent files found — nothing to migrate."
+    fi
+}
+
+log "Checking for old unprefixed agent files to migrate ..."
+migrate_old_agents
+
 log "Installing agent definitions → ~/.claude/agents/ ..."
 AGENTS_CHANGED=false
 agents_installed=0
