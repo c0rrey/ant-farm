@@ -1,5 +1,45 @@
 # Changelog
 
+## 2026-03-14 — Session 20260313-200323 (Documentation Maintenance + Agent Renames + crumb.py Features)
+
+### Summary
+
+20 planned tasks delivered across 4 waves — Wave 1 handled independent file fixes (7 agents), Wave 2 batched overlapping orchestration file fixes (5 agents), Wave 3 isolated the 8 agent file renames, and Wave 4 ran the cross-cutting placeholder standardization pass last to avoid conflicts. Task scope spanned documentation fixes, two crumb.py features (`crumb init` subcommand; marketplace plugin format for skills), and a large-scale orchestration consistency sweep. A review fix wave then resolved 4 P1/P2 findings surfaced by the Nitpicker team in Round 1. Round 2 verified all 4 fixes and returned 0 P1/P2, terminating the loop. 18 commits total.
+
+### Implementation (Waves 1–4: 20 planned tasks)
+
+- **AF-2** (`d613c96`): feat: add `crumb init` subcommand — `crumb.py` `cmd_init` creates `.crumbs/`, writes `config.json` with `--prefix` flag, touches `tasks.jsonl`, idempotently updates `.gitignore`; `build_parser` epilog updated; all 264 tests pass
+- **AF-1** (`5f18dc5`): feat: convert skills to marketplace plugin format — `skills/*.md` frontmatter stripped; `scripts/setup.sh` Step 4 rewired to install to `~/.claude/plugins/ant-farm/commands/<name>.md`
+- **ant-farm-0jn7** (`b247c71`): docs: expand README.md Architecture item 4 to capture Pest Control dual role — standalone checkpoint runner (CCO, WWD, DMVDC, ESV) and Nitpicker team member (DMVDC, CCB)
+- **ant-farm-0xr1** (`fcb2595`): fix: add ESV PASS (Step 5c) gate to SESSION_PLAN_TEMPLATE.md Pre-Push Verification checklist
+- **ant-farm-1r2o** (`1022301`): docs: replace 26-line duplicated "Landing the Plane" block in AGENTS.md with 3-line cross-reference to CLAUDE.md as single source of truth
+- **ant-farm-1yl** (`41dc76f`): fix: quote `SESSION_DIR` in PLACEHOLDER_CONVENTIONS.md shell example — `"${SESSION_DIR}/"{...}` is now idiomatic bash
+- **ant-farm-21q7** (`f943bb4`): docs: add P1–P3 severity scale explanation to GLOSSARY.md Nitpicker cell with cross-reference to `reviews.md`
+- **ant-farm-0di** (`506a651`): docs: clarify RULES.md Step 3b-iii — `mkdir -p` for `review-reports/` now has explicit **before** ordering language relative to Nitpicker spawn
+- **ant-farm-39w + ant-farm-0c28** (`4b294e8`): docs: rewrite checkpoints.md `{TASK_ID}`/`{TASK_SUFFIX}` term definitions with labeled categories and examples; add WWD mode selection rule paragraph with RULES.md Step 3 cross-reference
+- **ant-farm-07ai + ant-farm-164n + ant-farm-0xqf + ant-farm-10ff** (`55e83d2`): docs: add Step Numbering Cross-Reference table to `reviews.md`; add Pantry conditional marker validation (item 6); update all three skeleton format hints to match Pantry output; add Big Head re-spawn coexistence blockquote to `big-head-skeleton.md`
+- **ant-farm-0t31 + ant-farm-2585** (`df9cdbe`): docs: fix `build-review-prompts.sh` block comment format; document NUL-byte, tab-in-paths, and `printf %b` escape assumptions inline
+- **ant-farm-0kwo + ant-farm-1s5k** (`ec98bfc`): docs: shorten `agents/nitpicker.md` frontmatter to single sentence; establish canonical scope shorthand labels per reviewer and apply consistently across all 12 NOT YOUR RESPONSIBILITY entries
+- **AF-47** (`21ee6f5`): refactor: rename all 8 agent files with `ant-farm-` prefix via `git mv`; update `name:` frontmatter and functional `subagent_type` references in RULES.md and RULES-decompose.md
+- **ant-farm-gkk** (`5d3bd91`, `98a43b6`): docs: standardize placeholder syntax across 7 orchestration files — grep-first audit per file; template placeholders converted to `{lowercase-kebab}` Tier 2; CLI examples preserved; PLACEHOLDER_CONVENTIONS.md audit table updated
+
+### Review Fixes (Round 1 — 4 P1/P2 root causes)
+
+- **AF-54** (`3921895`): fix: correct invalid `crumb list` flags in `agents/ant-farm-big-head.md:L22` and `orchestration/templates/scout.md:L40` — `--status=open -n 0` replaced with `--open`
+- **AF-55** (`6b9325e`): fix: narrow `crumb init` gitignore entry from `.crumbs/` to `.crumbs/sessions/` at `crumb.py:L2149` — `tasks.jsonl` and `config.json` now remain trackable
+- **AF-56** (`e492d76`): fix: correct GLOSSARY.md Pest Control model column — CCB moved from haiku to sonnet (team member); standalone/team-member context labels added
+- **AF-57** (`6b9325e`): fix: add pre-validation loop to `cmd_close` before mutation loop — multi-ID close is now atomic; no partial mutations reach disk when a later ID is missing
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 33 files, 20 planned tasks | 1 | 5 | 22 | PASS WITH ISSUES |
+| 2 | 4 fix commits | 0 | 0 | 1 | PASS |
+
+28 root causes consolidated in Round 1. 4 auto-fixed (P1 + 3 new-P2); 2 P2 skipped (matched existing crumbs AF-48/AF-49 and ant-farm-dxia); 16 new P3 crumbs filed to Future Work; 5 P3 groups skipped (matched existing crumbs); 1 group informational. Round 2 verified all fixes and terminated with 0 P1/P2.
+
+
 ## 2026-03-13 — Session 20260313-155355 (crumb.py Test Suite + Docstring Audit + Review Fix Loop)
 
 ### Summary
