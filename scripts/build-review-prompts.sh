@@ -166,6 +166,15 @@ extract_focus_block() {
 # ---------------------------------------------------------------------------
 # Helper: safe substitution for multiline values.
 # Uses a temp file + awk to avoid issues with special characters.
+#
+# Data format: the replacement value is written to a temp file as raw text via
+# `printf '%s'` (no NUL terminator, no tab delimiter — plain newline-separated
+# text). awk reads the temp file line by line using getline and reassembles the
+# value with "\n" between lines, preserving multiline content exactly.
+#
+# Assumption: values must not contain literal NUL bytes (\x00). printf '%s'
+# and awk getline both treat NUL as a string terminator, so a value with an
+# embedded NUL would be silently truncated.
 # ---------------------------------------------------------------------------
 fill_slot() {
     local slot="$1"     # e.g. {{COMMIT_RANGE}}
@@ -183,7 +192,9 @@ fill_slot() {
     # awk reads the replacement from the temp file, avoids regex escaping issues
     awk -v slot="$slot" -v valfile="$tmpval" '
     BEGIN {
-        # Read the full replacement value from file
+        # Read the full replacement value from file (newline-delimited, one line
+        # per getline call). Lines are rejoined with "\n" to reconstruct the
+        # original multiline value inside awk's string variable.
         val = ""
         while ((getline line < valfile) > 0) {
             if (val != "") val = val "\n"
@@ -290,11 +301,20 @@ build_big_head_prompt() {
     local consolidated_output="${SESSION_DIR}/review-reports/review-consolidated-${TIMESTAMP}.md"
 
     # Build the expected report paths list (round-appropriate)
+    # Assumption: SESSION_DIR and TIMESTAMP must not contain tab characters.
+    # Each path is embedded in a markdown list line; a tab in the path would
+    # embed a literal tab in that line but would not corrupt awk substitution
+    # (fill_slot uses index()/substr(), not tab-delimited parsing). That said,
+    # tabs in paths are unconventional and could confuse downstream consumers.
     local expected_paths=""
     for rt in "${ACTIVE_REVIEW_TYPES[@]}"; do
         expected_paths="${expected_paths}- ${SESSION_DIR}/review-reports/${rt}-review-${TIMESTAMP}.md\n"
     done
-    # Remove trailing \n left by the loop
+    # The loop appends a literal two-character sequence "\n" (backslash + n) to
+    # $expected_paths — not a real newline. printf '%b' is used here deliberately
+    # to interpret those backslash-escape sequences and convert each "\n" into an
+    # actual newline character. sed '/^$/d' then strips the blank line that results
+    # from the trailing "\n" appended after the last loop iteration.
     expected_paths="$(printf '%b' "$expected_paths" | sed '/^$/d')"
 
     # 1. Extract agent-facing section from master template
