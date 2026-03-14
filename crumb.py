@@ -964,13 +964,16 @@ def cmd_close(args: argparse.Namespace) -> None:
         path = require_tasks_jsonl()
         tasks = read_tasks(path)
 
+        # Pre-validate all IDs exist before mutating any
+        for crumb_id in args.ids:
+            if _find_crumb(tasks, crumb_id) is None:
+                die(f"crumb '{crumb_id}' not found")
+
         closed: List[str] = []
         skipped: List[str] = []
 
         for crumb_id in args.ids:
             crumb = _find_crumb(tasks, crumb_id)
-            if crumb is None:
-                die(f"crumb '{crumb_id}' not found")
 
             if crumb.get("status") == "closed":
                 skipped.append(crumb_id)
@@ -2144,9 +2147,9 @@ def cmd_init(args: argparse.Namespace) -> None:
     except OSError as exc:
         die(f"cannot create {TASKS_FILE}: {exc}")
 
-    # Add .crumbs/ to .gitignore if not already present
+    # Add .crumbs/sessions/ to .gitignore if not already present
     gitignore = cwd / ".gitignore"
-    gitignore_entry = f"{CRUMBS_DIR_NAME}/"
+    gitignore_entry = f"{CRUMBS_DIR_NAME}/sessions/"
     try:
         existing_entries: List[str] = []
         if gitignore.exists():
