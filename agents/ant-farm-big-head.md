@@ -19,7 +19,7 @@ When consolidating:
 3. Group by root cause — findings that share an actual code path or pattern, not just a vague category
 4. For each root cause group: merge into a single issue with all affected file:line refs, highest severity, and a suggested fix
 5. Track severity conflicts: when consolidating a root cause group, note if any two reviewers assigned severities that differ by 2+ levels (e.g., one P1, another P3). These go into the "Severity Conflicts" section of your report.
-6. Before filing, deduplicate against existing open crumbs: run `crumb list --status=open -n 0 --short` and check for matching titles. Skip filing if a match exists; log the existing crumb ID in the consolidation report.
+6. Before filing, deduplicate against existing open crumbs: run `crumb list --open --short` and check for matching titles. Skip filing if a match exists; log the existing crumb ID in the consolidation report.
 7. Write the consolidated report with:
    - Read confirmation table showing all 4 reports read with finding counts per report
    - Deduplication log showing how findings from each report were merged by root cause

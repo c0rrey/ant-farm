@@ -37,7 +37,7 @@ Based on input mode:
 - **`epic <epic-id>`**: Run `crumb trail show <epic-id>`, extract child task IDs
 - **`tasks <id1>, <id2>, ...`**: Use the provided list directly
 - **`filter <description>`**: Translate the description into `crumb list` flags
-  (e.g., "all P2 bugs" → `crumb list --priority=2 --type=bug --status=open`).
+  (e.g., "all P2 bugs" → `crumb list --priority=2 --type=bug --open`).
   Use your judgment to construct the query. If the filter is ambiguous,
   note the ambiguity in the briefing so the Queen can clarify with the user.
 
