@@ -27,6 +27,7 @@ Usage:
     crumb tree [ID]
     crumb import <FILE> [--from-beads]
     crumb doctor
+    crumb init [--prefix PREFIX]
 """
 
 from __future__ import annotations
@@ -2089,6 +2090,90 @@ def cmd_doctor(args: argparse.Namespace) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Init subcommand — bootstrap .crumbs/ directory structure
+# ---------------------------------------------------------------------------
+
+
+def cmd_init(args: argparse.Namespace) -> None:
+    """Bootstrap the .crumbs/ directory structure in the current directory.
+
+    Creates the following files if they do not already exist:
+      - ``.crumbs/``            — the directory itself
+      - ``.crumbs/config.json`` — prefix and counter settings
+      - ``.crumbs/tasks.jsonl`` — empty task store
+    Also appends ``.crumbs/`` to the project ``.gitignore`` when the entry
+    is not already present.
+
+    If ``.crumbs/`` already exists this command is a no-op and exits 0 so
+    it is safe to run multiple times (idempotent).
+
+    Args:
+        args: Parsed arguments.  ``args.prefix`` is the ID prefix string
+            (e.g. ``"AF"``).  Defaults to ``"AF"`` when not supplied.
+    """
+    cwd = Path.cwd().resolve()
+    crumbs = cwd / CRUMBS_DIR_NAME
+
+    if crumbs.is_dir():
+        print(f"{CRUMBS_DIR_NAME}/ already exists at {crumbs} — nothing to do.")
+        return
+
+    prefix: str = args.prefix if args.prefix else DEFAULT_CONFIG["prefix"]
+
+    # Create .crumbs/ directory
+    try:
+        crumbs.mkdir(parents=False, exist_ok=False)
+    except OSError as exc:
+        die(f"cannot create {CRUMBS_DIR_NAME}/: {exc}")
+
+    # Write config.json
+    config: Dict[str, Any] = dict(DEFAULT_CONFIG)
+    config["prefix"] = prefix
+    config_file = crumbs / CONFIG_FILE
+    try:
+        with open(config_file, "w", encoding="utf-8") as fh:
+            json.dump(config, fh, indent=2)
+            fh.write("\n")
+    except OSError as exc:
+        die(f"cannot write {CONFIG_FILE}: {exc}")
+
+    # Create empty tasks.jsonl
+    tasks_file = crumbs / TASKS_FILE
+    try:
+        tasks_file.touch()
+    except OSError as exc:
+        die(f"cannot create {TASKS_FILE}: {exc}")
+
+    # Add .crumbs/ to .gitignore if not already present
+    gitignore = cwd / ".gitignore"
+    gitignore_entry = f"{CRUMBS_DIR_NAME}/"
+    try:
+        existing_entries: List[str] = []
+        if gitignore.exists():
+            with open(gitignore, "r", encoding="utf-8") as fh:
+                existing_entries = fh.read().splitlines()
+        if gitignore_entry not in existing_entries:
+            with open(gitignore, "a", encoding="utf-8") as fh:
+                # Ensure there is a newline before our entry when the file is
+                # non-empty and does not already end with one.
+                if existing_entries and existing_entries[-1] != "":
+                    fh.write("\n")
+                fh.write(f"{gitignore_entry}\n")
+            print(f"Added '{gitignore_entry}' to .gitignore")
+        else:
+            print(f"'.gitignore' already contains '{gitignore_entry}' — skipped")
+    except OSError as exc:
+        # .gitignore update is best-effort; warn but do not abort
+        print(f"warning: could not update .gitignore: {exc}", file=sys.stderr)
+
+    print(
+        f"Initialised {CRUMBS_DIR_NAME}/ in {cwd}\n"
+        f"  config.json  — prefix={prefix!r}\n"
+        f"  tasks.jsonl  — empty task store"
+    )
+
+
+# ---------------------------------------------------------------------------
 # Argument parser
 # ---------------------------------------------------------------------------
 
@@ -2119,6 +2204,7 @@ def build_parser() -> argparse.ArgumentParser:
             "  tree        Show trail/crumb hierarchy\n"
             "  import      Bulk import from JSONL or migrate from Beads\n"
             "  doctor      Validate tasks.jsonl integrity\n"
+            "  init        Bootstrap .crumbs/ directory structure\n"
         ),
     )
     parser.set_defaults(func=None)
@@ -2259,6 +2345,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="Remove dangling blocked_by references automatically",
     )
     p_doctor.set_defaults(func=cmd_doctor)
+
+    # --- init ---
+    p_init = sub.add_parser(
+        "init",
+        help="Bootstrap .crumbs/ directory structure in the current directory",
+    )
+    p_init.add_argument(
+        "--prefix",
+        metavar="PREFIX",
+        default=None,
+        help=(
+            "ID prefix for new crumbs (e.g. 'AF'). "
+            f"Defaults to '{DEFAULT_CONFIG['prefix']}' when omitted."
+        ),
+    )
+    p_init.set_defaults(func=cmd_init)
 
     return parser
 
