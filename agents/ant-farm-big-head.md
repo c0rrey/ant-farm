@@ -1,5 +1,5 @@
 ---
-name: big-head
+name: ant-farm-big-head
 description: Review consolidation specialist that deduplicates findings across multiple reviewer reports, groups by root cause, and files one issue per root cause with full traceability.
 tools: Read, Write, Bash, Glob, Grep
 ---

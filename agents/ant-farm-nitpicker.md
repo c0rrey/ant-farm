@@ -1,5 +1,5 @@
 ---
-name: nitpicker
+name: ant-farm-nitpicker
 description: Code review specialist that finds real, actionable issues with file:line specificity, calibrated severity, and complete coverage across clarity, edge cases, correctness, and drift review types.
 tools: Read, Write, Edit, Bash, Glob, Grep
 ---

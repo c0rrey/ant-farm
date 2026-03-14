@@ -82,7 +82,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             If no prior session is indicated, skip crash recovery and proceed normally.
 
 **Step 1:** Recon — Read `{SESSION_DIR}/briefing.md` written by the Scout's previous run, or spawn the Scout
-            (`scout-organizer` subagent, `model: "opus"`) if this is the first session. Include in Scout's prompt:
+            (`ant-farm-scout-organizer` subagent, `model: "opus"`) if this is the first session. Include in Scout's prompt:
             (1) `Session directory: <value of SESSION_DIR>`,
             (2) `Mode: <mode>` — derive from the user's message:
                 - User specifies an epic → `epic <epic-id>`
@@ -95,7 +95,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             WAIT for the Scout to return its briefing verdict (written to `{SESSION_DIR}/briefing.md`).
 
 **Step 1b:** SSV gate — After Scout writes `{SESSION_DIR}/briefing.md`, spawn Pest Control
-            (`pest-control`, `model: "haiku"`) for Scout Strategy Verification (SSV).
+            (`ant-farm-pest-control`, `model: "haiku"`) for Scout Strategy Verification (SSV).
             Pass `Session directory: <value of SESSION_DIR>` and the path `orchestration/templates/checkpoints.md`
             as its instruction file. Pest Control reads `{SESSION_DIR}/briefing.md` itself and runs all three
             mechanical checks (file overlap within waves, file list match against crumbs, intra-wave dependency
@@ -115,14 +115,14 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             **Progress log (after SSV PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SCOUT_COMPLETE|briefing=${SESSION_DIR}/briefing.md|ssv=pass|tasks_accepted=<N>" >> ${SESSION_DIR}/progress.log`
             where `<N>` is the count of tasks in the briefing task list after SSV PASS (N=0 is not logged — it is caught by the zero-task guard earlier in Step 1b).
 
-**Step 2:** Spawn — Spawn the Pantry (`pantry-impl`, `model: "opus"`) for task briefs + combined previews
+**Step 2:** Spawn — Spawn the Pantry (`ant-farm-pantry-impl`, `model: "opus"`) for task briefs + combined previews
             (→ orchestration/templates/pantry.md, Section 1). Include `Session directory: <value of SESSION_DIR>`
             in Pantry's prompt. Pass preview file paths and SESSION_DIR to Pest Control
-            (`pest-control`, `model: "haiku"`) for Colony Cartography Office (CCO); Pest Control reads orchestration/templates/checkpoints.md itself.
+            (`ant-farm-pest-control`, `model: "haiku"`) for Colony Cartography Office (CCO); Pest Control reads orchestration/templates/checkpoints.md itself.
             Only after all CCO PASS: spawn agents using skeleton
             (→ orchestration/templates/dirt-pusher-skeleton.md, using Agent Type from Pantry verdict table, `model: "sonnet"` for all Dirt Pushers regardless of subagent_type).
             **Wave pipelining**: When spawning wave N Dirt Pushers, include the wave N+1 Pantry
-            (`pantry-impl`, `model: "opus"`) in the SAME message so they launch concurrently.
+            (`ant-farm-pantry-impl`, `model: "opus"`) in the SAME message so they launch concurrently.
             The Pantry reads from task-metadata (written by Scout) and has no dependency on wave N's output.
             This eliminates the idle gap between waves. The flow per wave boundary:
             1. Wave N CCO PASS → spawn wave N Dirt Pushers + wave N+1 Pantry (in a single Task call to achieve concurrency)
@@ -280,7 +280,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             iterate within the team via SendMessage.
 
             **Step 3c-i. Fix-cycle Scout** — Before spawning fix agents, run a fix-cycle Scout
-            (`scout-organizer`, `model: "opus"`) to plan the fix strategy: which crumbs to fix, wave
+            (`ant-farm-scout-organizer`, `model: "opus"`) to plan the fix strategy: which crumbs to fix, wave
             grouping, and file conflict analysis. The fix-cycle Scout reads the crumb list from Big Head's
             SendMessage handoff (big-head-skeleton.md step 12).
 
@@ -406,7 +406,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 **Step 5c:** ESV — spawn Pest Control for Exec Summary Verification. **Hard gate: must PASS before Step 6.**
             ```
             Task(
-              subagent_type="pest-control",
+              subagent_type="ant-farm-pest-control",
               model="haiku",
               prompt="ESV checkpoint. Session dir: {SESSION_DIR}.
                       Session start commit: {SESSION_START_COMMIT} (first commit of this session).
@@ -457,14 +457,14 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 
 | Agent | subagent_type | Rationale |
 |-------|---------------|-----------|
-| Scout | `scout-organizer` | Custom agent: agent-organizer + Bash for crumb CLI |
-| Pantry (impl) | `pantry-impl` | Custom agent: CCO-aligned implementation prompt composer |
-| Pest Control | `pest-control` | Custom agent: verification auditor, catches fabrication + scope creep |
+| Scout | `ant-farm-scout-organizer` | Custom agent: agent-organizer + Bash for crumb CLI |
+| Pantry (impl) | `ant-farm-pantry-impl` | Custom agent: CCO-aligned implementation prompt composer |
+| Pest Control | `ant-farm-pest-control` | Custom agent: verification auditor, catches fabrication + scope creep |
 | Dirt Pushers | from Pantry verdict table | Specialist per task — Scout recommends via dynamic agent discovery, Pantry passes through |
-| Nitpickers | `nitpicker` | Custom agent: file:line specificity, calibrated severity, complete coverage |
-| Big Head | `big-head` | Custom agent: deduplication, root-cause grouping, issue filing |
+| Nitpickers | `ant-farm-nitpicker` | Custom agent: file:line specificity, calibrated severity, complete coverage |
+| Big Head | `ant-farm-big-head` | Custom agent: deduplication, root-cause grouping, issue filing |
 | Scribe | `technical-writer` | Reads session artifacts, writes exec summary + CHANGELOG |
-| PC — ESV | `pest-control` | Custom agent: mechanical exec-summary verification against session artifacts |
+| PC — ESV | `ant-farm-pest-control` | Custom agent: mechanical exec-summary verification against session artifacts |
 
 ## Model Assignments
 
@@ -472,14 +472,14 @@ Every `Task` tool call the Queen makes MUST include the `model` parameter from t
 
 | Agent | Spawn Method | Model | Notes |
 |-------|-------------|-------|-------|
-| Scout | Task (`scout-organizer`) | opus | Orchestration role |
-| Pantry (impl) | Task (`pantry-impl`) | opus | Prompt composition + review skeleton assembly (Script 1) |
+| Scout | Task (`ant-farm-scout-organizer`) | opus | Orchestration role |
+| Pantry (impl) | Task (`ant-farm-pantry-impl`) | opus | Prompt composition + review skeleton assembly (Script 1) |
 | Dirt Pushers | Task (dynamic type) | sonnet | All dirt pushers regardless of subagent_type |
-| PC — SSV | Task (`pest-control`) | haiku | Set comparisons only — no judgment required |
-| PC — CCO | Task (`pest-control`) | haiku | Mechanical checklist |
-| PC — WWD | Task (`pest-control`) | haiku | Mechanical file comparison |
-| PC — DMVDC | Task (`pest-control`) | sonnet | Judgment: claims vs actual code |
-| PC — CCB | Task (`pest-control`) | sonnet | Judgment: crumb quality and dedup correctness |
+| PC — SSV | Task (`ant-farm-pest-control`) | haiku | Set comparisons only — no judgment required |
+| PC — CCO | Task (`ant-farm-pest-control`) | haiku | Mechanical checklist |
+| PC — WWD | Task (`ant-farm-pest-control`) | haiku | Mechanical file comparison |
+| PC — DMVDC | Task (`ant-farm-pest-control`) | sonnet | Judgment: claims vs actual code |
+| PC — CCB | Task (`ant-farm-pest-control`) | sonnet | Judgment: crumb quality and dedup correctness |
 | Nitpickers (all 4) | TeamCreate member | sonnet | Set in big-head-skeleton.md |
 | Big Head | TeamCreate member | opus | Set in big-head-skeleton.md (`{MODEL}`) |
 | PC (team member) | TeamCreate member | sonnet | Runs DMVDC inside team; needs sonnet |
@@ -487,7 +487,7 @@ Every `Task` tool call the Queen makes MUST include the `model` parameter from t
 | fix-pc-wwd | Task into team | haiku | WWD for fix DPs: lightweight scope check; spawned with `team_name: "nitpicker-team"` |
 | fix-pc-dmvdc | Task into team | sonnet | DMVDC for fix DPs: substance check; spawned with `team_name: "nitpicker-team"` |
 | Scribe | Task (`technical-writer`) | sonnet | Reads session artifacts; writes exec-summary.md + CHANGELOG entry |
-| PC — ESV | Task (`pest-control`) | haiku | Mechanical verification — 6 checks, no judgment required |
+| PC — ESV | Task (`ant-farm-pest-control`) | haiku | Mechanical verification — 6 checks, no judgment required |
 
 ## Concurrency Rules
 

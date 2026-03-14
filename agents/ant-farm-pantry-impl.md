@@ -1,5 +1,5 @@
 ---
-name: pantry-impl
+name: ant-farm-pantry-impl
 description: Implementation prompt composer that builds CCO-compliant task briefs and combined previews from templates and Scout metadata. Use for Step 2 implementation waves.
 tools: Read, Write, Glob, Grep
 ---

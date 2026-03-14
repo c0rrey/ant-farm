@@ -341,7 +341,7 @@ decomposition, substitute `{DECOMPOSE_DIR}` for `{SESSION_DIR}` when filling the
 
 ```
 Task(
-  subagent_type="pest-control",
+  subagent_type="ant-farm-pest-control",
   model="haiku",
   prompt="<TDV checkpoint from checkpoints.md, with {SESSION_DIR} replaced by {DECOMPOSE_DIR}>"
 )
