@@ -1,5 +1,34 @@
 # Changelog
 
+## 2026-03-14 — Session 20260314-104356 (Agent Name Prefix Sweep + Setup Migration)
+
+### Summary
+
+7 tasks completed across 1 planned wave plus a review fix wave. The planned wave (AF-48, AF-49, AF-50) swept all agent name references across orchestration files, templates, config files, and setup.sh to use the `ant-farm-` prefix convention established by AF-47. Review Round 1 (4 reviewers, 13 root causes) surfaced 2 P1s and 2 P2s, all auto-fixed in a parallel fix wave (AF-77 through AF-80). Round 2 verified all fixes clean with 0 P1/P2 and terminated the loop; one minor P3 regression (AF-81) filed to Future Work. 6 commits total.
+
+### Implementation (Wave 1: 3 planned tasks)
+
+- **AF-48** (`ee991ae`): fix: update agent name references to ant-farm- prefix in RULES and config files — `orchestration/RULES.md`, `RULES-decompose.md`, `RULES-review.md`, `GLOSSARY.md`, `README.md`
+- **AF-49** (`d609da6`): feat: update agent name references to ant-farm- prefix in orchestration templates — `templates/scout.md`, `big-head-skeleton.md`, `reviews.md`, `pantry.md`, `review-focus-areas.md`
+- **AF-50** (`5714122`): feat: add agent migration logic to setup.sh before install — `scripts/setup.sh`; `migrate_old_agents()` uses YAML `name:` sentinel to identity-verify and remove old unprefixed agent files before installing prefixed copies
+
+### Review Fixes (Round 1 — 4 P1/P2 root causes)
+
+- **AF-77** (`10f8e47`): fix: create `agents/ant-farm-technical-writer.md` and update all three RULES.md references — satisfies AF-48 AC-1 blocked by missing agent file
+- **AF-78** (`83f39f7`): fix: add `mkdir -p` guard before failure artifact writes in `big-head-skeleton.md` — both timeout and crumb-list failure blocks now ensure parent directory exists before `cat >` redirect
+- **AF-79** (`4c50b5b`): fix: add `rm` error handling in `migrate_old_agents` — bare `rm` replaced with `rm ... || { warn ... ; continue; }` to match existing error-recovery pattern
+- **AF-80** (`4c50b5b`): fix: portability fixes in `setup.sh` and `RULES-review.md` — `grep -qE` regex interpolation replaced with `grep -qF`; bash parameter expansion replaced with POSIX `tr -d '[:space:]'`
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 13 files, 3 planned tasks | 2 | 2 | 9 | PASS WITH ISSUES |
+| 2 | 3 fix commits | 0 | 0 | 1 | PASS WITH ISSUES |
+
+13 root causes consolidated in Round 1. 4 auto-fixed (2 P1 + 2 P2); 6 P3 root causes deferred per protocol; 3 P3 root causes matched existing open crumbs (AF-63, ant-farm-mk03, AF-65). Round 2 verified all fixes and terminated with 0 P1/P2; 1 P3 regression (AF-81) auto-filed to Future Work.
+
+
 ## 2026-03-14 — Session 20260313-200323 (Documentation Maintenance + Agent Renames + crumb.py Features)
 
 ### Summary
