@@ -274,6 +274,7 @@ Before declaring session complete:
   - [ ] `python build.py --dry-run` succeeds
   - [ ] `pytest tests/` passes (if tests exist)
   - [ ] Linter passes (if configured)
+- [ ] ESV PASS (Step 5c) — Exec Summary Verification passed before git push
 
 ### Documentation Complete
 
