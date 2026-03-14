@@ -389,7 +389,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 **Step 5b:** Scribe — spawn the Scribe agent to write the session exec summary and CHANGELOG entry.
             ```
             Task(
-              subagent_type="technical-writer",
+              subagent_type="ant-farm-technical-writer",
               model="sonnet",
               prompt="Write session exec summary. Session dir: {SESSION_DIR}. Commit range: {RANGE}.
                       Open crumbs: {IDS}. CHANGELOG path: CHANGELOG.md.
@@ -463,7 +463,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 | Dirt Pushers | from Pantry verdict table | Specialist per task — Scout recommends via dynamic agent discovery, Pantry passes through |
 | Nitpickers | `ant-farm-nitpicker` | Custom agent: file:line specificity, calibrated severity, complete coverage |
 | Big Head | `ant-farm-big-head` | Custom agent: deduplication, root-cause grouping, issue filing |
-| Scribe | `technical-writer` | Reads session artifacts, writes exec summary + CHANGELOG |
+| Scribe | `ant-farm-technical-writer` | Reads session artifacts, writes exec summary + CHANGELOG |
 | PC — ESV | `ant-farm-pest-control` | Custom agent: mechanical exec-summary verification against session artifacts |
 
 ## Model Assignments
@@ -486,7 +486,7 @@ Every `Task` tool call the Queen makes MUST include the `model` parameter from t
 | Fix Dirt Pushers | Task (dynamic type) into team | sonnet | Same model as regular Dirt Pushers; spawned with `team_name: "nitpicker-team"` |
 | fix-pc-wwd | Task into team | haiku | WWD for fix DPs: lightweight scope check; spawned with `team_name: "nitpicker-team"` |
 | fix-pc-dmvdc | Task into team | sonnet | DMVDC for fix DPs: substance check; spawned with `team_name: "nitpicker-team"` |
-| Scribe | Task (`technical-writer`) | sonnet | Reads session artifacts; writes exec-summary.md + CHANGELOG entry |
+| Scribe | Task (`ant-farm-technical-writer`) | sonnet | Reads session artifacts; writes exec-summary.md + CHANGELOG entry |
 | PC — ESV | Task (`ant-farm-pest-control`) | haiku | Mechanical verification — 6 checks, no judgment required |
 
 ## Concurrency Rules
