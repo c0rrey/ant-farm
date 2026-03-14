@@ -319,12 +319,12 @@ Custom Claude Code agent types live in `agents/` and are installed to `~/.claude
 
 | Agent | Tools | Purpose |
 |-------|-------|---------|
-| `scout-organizer` | Bash, Read, Write, Glob, Grep | Pre-flight recon: task discovery, dependency analysis, execution strategy |
-| `pest-control` | Bash, Read, Write, Glob, Grep | Verification auditor: checkpoint audits (CCO, WWD, DMVDC, CCB) |
-| `pantry-impl` | Read, Write, Glob, Grep | Implementation prompt composer: builds task briefs and combined previews |
-| `pantry-review` | Read, Write, Glob, Grep | ~~Review prompt composer: builds review briefs and combined previews~~ **DEPRECATED** — replaced by `build-review-prompts.sh` bash script; see RULES.md Step 3b |
-| `nitpicker` | Read, Write, Edit, Bash, Glob, Grep | Code reviewer: finds issues with file:line specificity and calibrated severity |
-| `big-head` | Read, Write, Edit, Bash, Glob, Grep | Consolidation reviewer: merges and deduplicates findings across Nitpickers |
+| `ant-farm-scout-organizer` | Bash, Read, Write, Glob, Grep | Pre-flight recon: task discovery, dependency analysis, execution strategy |
+| `ant-farm-pest-control` | Bash, Read, Write, Glob, Grep | Verification auditor: checkpoint audits (CCO, WWD, DMVDC, CCB) |
+| `ant-farm-pantry-impl` | Read, Write, Glob, Grep | Implementation prompt composer: builds task briefs and combined previews |
+| `ant-farm-pantry-review` | Read, Write, Glob, Grep | ~~Review prompt composer: builds review briefs and combined previews~~ **DEPRECATED** — replaced by `build-review-prompts.sh` bash script; see RULES.md Step 3b |
+| `ant-farm-nitpicker` | Read, Write, Edit, Bash, Glob, Grep | Code reviewer: finds issues with file:line specificity and calibrated severity |
+| `ant-farm-big-head` | Read, Write, Edit, Bash, Glob, Grep | Consolidation reviewer: merges and deduplicates findings across Nitpickers |
 
 ## Forking this repo
 
@@ -335,7 +335,7 @@ If you adopt `ant-farm` for another project, treat that file as example data, no
 ## Path reference convention
 
 All file paths in this document and `orchestration/RULES.md` use **repo-root relative** format:
-`orchestration/templates/scout.md`, `agents/scout-organizer.md`, etc.
+`orchestration/templates/scout.md`, `agents/ant-farm-scout-organizer.md`, etc.
 
 When code runs at runtime, agent files are synced to `~/.claude/agents/` and orchestration files are
 accessible at `~/.claude/orchestration/templates/scout.md`. To translate repo paths to runtime paths:

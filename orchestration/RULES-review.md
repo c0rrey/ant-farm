@@ -125,7 +125,7 @@
             iterate within the team via SendMessage.
 
             **Step 3c-i. Fix-cycle Scout** — Before spawning fix agents, run a fix-cycle Scout
-            (`scout-organizer`, `model: "opus"`) to plan the fix strategy: which crumbs to fix, wave
+            (`ant-farm-scout-organizer`, `model: "opus"`) to plan the fix strategy: which crumbs to fix, wave
             grouping, and file conflict analysis. The fix-cycle Scout reads the crumb list from Big Head's
             SendMessage handoff (big-head-skeleton.md step 12).
 
@@ -198,7 +198,7 @@
             2. **Re-task Edge Cases reviewer**: SendMessage to `edge-cases` with review round N+1,
                fix commit range, changed files, and task IDs; provide new report output path
                `{SESSION_DIR}/review-reports/edge-cases-r{N+1}-{timestamp}.md`
-            3. **Re-task Big Head**: SendMessage to `big-head` with review round N+1, expected report
+            3. **Re-task Big Head**: SendMessage to `ant-farm-big-head` with review round N+1, expected report
                count 2, both report paths, and new consolidated output path
                `{SESSION_DIR}/review-reports/review-consolidated-r{N+1}-{timestamp}.md`
             4. **Clarity and Drift**: leave idle — not re-tasked in round 2+ (fix-scope reviews cover

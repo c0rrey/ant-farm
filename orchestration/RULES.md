@@ -359,7 +359,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             2. **Re-task Edge Cases reviewer**: SendMessage to `edge-cases` with review round N+1,
                fix commit range, changed files, and task IDs; provide new report output path
                `{SESSION_DIR}/review-reports/edge-cases-r<N+1>-<timestamp>.md`
-            3. **Re-task Big Head**: SendMessage to `big-head` with review round N+1, expected report
+            3. **Re-task Big Head**: SendMessage to `ant-farm-big-head` with review round N+1, expected report
                count 2, both report paths, and new consolidated output path
                `{SESSION_DIR}/review-reports/review-consolidated-r<N+1>-<timestamp>.md`
             4. **Clarity and Drift**: leave idle — not re-tasked in round 2+ (fix-scope reviews cover
