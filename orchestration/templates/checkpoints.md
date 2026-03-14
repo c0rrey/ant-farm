@@ -3,10 +3,15 @@
 
 **Term definitions (canonical across all orchestration templates):**
 
-For detailed extraction rules and examples, see `~/.claude/orchestration/reference/dependency-analysis.md` (Term Definitions section).
+For the full extraction algorithm, see `~/.claude/orchestration/reference/dependency-analysis.md` (Term Definitions section).
 
-- `{TASK_ID}` — full crumb ID including project prefix (e.g., `ant-farm-9oa` or `my-project-74g.1`)
-- `{TASK_SUFFIX}` — suffix portion only; extracted by splitting on the LAST hyphen (e.g., `9oa` from `ant-farm-9oa`, or `74g1` from `my-project-74g.1`)
+- `{TASK_ID}` — full crumb ID including project prefix. Two formats exist:
+  - **Standalone task** (no epic sub-ID): `ant-farm-596y`, `hs_website-9oa`
+  - **Epic sub-task** (dotted sub-ID): `ant-farm-74g.1`, `my-project-74g.1`
+- `{TASK_SUFFIX}` — the short identifier used in file paths and artifact names. Derived by taking everything after the LAST hyphen, then converting any dot to nothing (joining the alphanumeric parts):
+  - `ant-farm-596y` → `596y` (standalone task — no dot, suffix is the bare token after the last hyphen)
+  - `ant-farm-74g.1` → `74g1` (epic sub-task — dot-normalized)
+  - `my-project-74g.1` → `74g1` (project name contains a hyphen — split on LAST hyphen, then dot-normalize)
 - `{SESSION_DIR}` — session artifact directory path (e.g., `.crumbs/sessions/_session-abc123`)
 - `{checkpoint}` — lowercase checkpoint abbreviation used in artifact filenames (e.g., `cco`, `wwd`, `dmvdc`, `ccb`, `cco-review`, `dmvdc-review`)
 
@@ -279,6 +284,8 @@ Where:
 **When**: Two execution modes depending on how agents were spawned (a "wave" is a group of agents spawned for the same execution round):
 - **Serial mode**: After each individual agent commits, BEFORE spawning the next agent in the wave. Agents were spawned one at a time; true per-agent gating is possible.
 - **Batch mode**: After ALL agents in the wave have committed (agents were spawned in parallel in a single message, so per-agent serial gating is mechanically impossible). One WWD instance per committed task, run concurrently. All WWD reports must PASS before DMVDC runs.
+
+**Mode selection rule**: If the Queen spawned agents in a single message (parallel wave), use batch mode. If the Queen spawned agents individually in separate messages, use serial mode. (Authoritative source: RULES.md Step 3.)
 **Model**: `haiku` (mechanical file list comparison — cheap, fast)
 
 **Why**: Catches scope creep in real-time between agents, before DMVDC runs. Prevents cascading work attribution errors when multiple agents work on related files.
