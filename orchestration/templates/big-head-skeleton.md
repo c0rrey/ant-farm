@@ -12,6 +12,10 @@ Do NOT use the Task tool for Big Head — it runs inside the same TeamCreate cal
 - `{SESSION_DIR}` — session artifact directory (e.g., `.crumbs/sessions/_session-abc123`)
 - `{REVIEW_ROUND}`: review round number (1, 2, 3, ...). Determines report count and P3 handling.
 
+### Step Numbering Note
+
+The steps in this skeleton (Steps 1–12) correspond to the Big Head Consolidation Protocol in `orchestration/templates/reviews.md`, which uses a different numbering scheme (Step 0/0a/1/2/2.5/3/4). See the **Step Numbering Cross-Reference** table in that section for the authoritative mapping. Quick reference: skeleton Step 1 = reviews.md Step 0 (prerequisite gate); skeleton Steps 9–10 = reviews.md Step 4 (Pest Control checkpoint + crumb filing).
+
 ### Wiring: TeamCreate + direct spawn prompt
 
 **Step 1 — Fill placeholders before building the TeamCreate call.**
@@ -19,6 +23,12 @@ Replace `{PLACEHOLDER}` values (uppercase) in the agent-facing template below:
 - `{MODEL}`: Big Head model — see the **Big Head Consolidation Protocol** section of `orchestration/templates/reviews.md` for the authoritative model assignment. Do NOT hardcode a model name here; consult that section instead.
 - `{DATA_FILE_PATH}`: Big Head consolidation brief written by build-review-prompts.sh
 - `{CONSOLIDATED_OUTPUT_PATH}`: `{SESSION_DIR}/review-reports/review-consolidated-{TIMESTAMP}.md`
+
+> **Re-spawn and artifact coexistence**: If Big Head fails (timeout, missing reports, or Pest Control
+> unavailable), re-spawn it with a **fresh `{TIMESTAMP}` value** — do NOT reuse the original timestamp.
+> A fresh timestamp produces a new `{CONSOLIDATED_OUTPUT_PATH}`, so the old `-FAILED` artifact and the
+> new success artifact coexist in `review-reports/` by design. This is expected behavior, not an error.
+> The Queen should verify results against the artifact with the most recent timestamp.
 
 **Step 2 — Create the Nitpicker team.**
 Pass the filled-in template text as Big Head's `prompt`. Include all expected Nitpicker report paths directly in Big Head's spawn prompt so it can begin consolidation as soon as the reports are ready. Pest Control must be a team member so Big Head can SendMessage to it directly for checkpoint validation (see Step 4 in reviews.md).
@@ -72,7 +82,7 @@ Consolidate the Nitpicker reports into a unified summary.
 - Round 2+: expect 2 reports (correctness, edge-cases only)
 
 Step 0: Read your consolidation brief from {DATA_FILE_PATH}
-(Contains: round-appropriate report paths, dedup protocol, crumb filing instructions, output path.)
+(Format: markdown. Sections: Report Paths, Deduplication Protocol, Crumb Filing Instructions, Consolidated Output Path, Pest Control Coordination Note, Review Round, P3 Auto-Filing Instructions (round 2+ only).)
 
 **Failure Artifact Convention** (applies to ALL failure conditions in this workflow):
 When any step reaches a FAIL condition, write a brief failure artifact to the expected output path before returning an error. Standard format:

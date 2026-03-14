@@ -23,7 +23,7 @@ Perform a {REVIEW_TYPE} review of the completed work.
 If round 2+: Your scope is limited to fix commits only. You may read full files for context, but your mandate is: did these fixes land correctly and not break anything? Out-of-scope findings are only reportable if they would cause a runtime failure or silently wrong results. Do NOT report naming, style, docs, or improvement opportunities outside fix scope.
 
 Step 0: Read your full review brief from {DATA_FILE_PATH}
-(Format: markdown. Sections: Scope, Files, Focus, Detailed Instructions.)
+(Format: markdown. Sections: Commit Range, File List, Focus Areas, Report Output Path, Crumb Filing Prohibition, Messaging Guidelines.)
 
 Your workflow:
 1. Read ALL files listed in the brief

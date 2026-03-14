@@ -456,6 +456,22 @@ List every in-scope file with its review status. Files with no findings MUST sti
 
 After all Nitpicker reports are complete (4 in round 1; 2 in round 2+), Big Head (a member of the same team) consolidates:
 
+### Step Numbering Cross-Reference
+
+reviews.md and big-head-skeleton.md use different step numbering schemes. Use this table to cross-reference them without consulting both files simultaneously:
+
+| reviews.md step | big-head-skeleton.md step | Description |
+|----------------|--------------------------|-------------|
+| Step 0 | Step 1 | Verify all expected report files exist (prerequisite gate) |
+| Step 0a | Step 1 (continued) | Polling loop and timeout handling for missing reports |
+| Step 1 | Step 2 | Read all expected Nitpicker reports |
+| Step 2 | Steps 3–6 | Merge findings, deduplicate, group by root cause, document merge rationale |
+| Step 2.5 | Step 7 | Cross-session dedup against existing open crumbs |
+| Step 3 | Step 8 | Write consolidated summary to output path |
+| Step 4 | Steps 9–10 | SendMessage to Pest Control, await verdict, file crumbs on PASS |
+| (round 2+ only) | Step 11 | P3 auto-filing to Future Work trail |
+| (all rounds) | Step 12 | Send crumb list handoff message to Queen |
+
 ### Verification Pipeline Design Rationale
 
 The Big Head consolidation process includes two distinct verification layers that work together:

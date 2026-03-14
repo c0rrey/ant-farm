@@ -154,6 +154,12 @@ Do NOT fix adjacent issues you notice.
 
 5. Validate the task brief has no unfilled placeholder text remaining. Unfilled placeholders are `<angle-bracket text>` or `[square-bracket text]` patterns that survived from Scout metadata. Lowercase `{curly-brace}` literals from the format template (e.g., `{from crumb description}` used as field labels inside the template above) are NOT unfilled placeholders — they will have been replaced with real values during composition.
 
+6. **Conditional marker check** — Validate the composed brief contains no leftover round-conditional markers. The canonical marker convention for round-conditional blocks is `<IF ROUND 1>` / `</IF ROUND 1>` (angle-bracket tags). If any of the following patterns appear verbatim in the final composed brief, halt and report a SUBSTANCE FAILURE before writing the file:
+   - `<IF ROUND` (any angle-bracket round marker)
+   - `{PANTRY_ROUND_` (any curly-brace round marker — deprecated convention; should never appear in composed output)
+   - `{IF_ROUND` (any alternate curly-brace marker form)
+   These markers are template-composition directives. Their presence in a composed brief means the Pantry failed to evaluate and strip a conditional block before writing. Flag the task as SUBSTANCE FAILURE and do not write the brief.
+
 **Write each task brief immediately after composing it** — do not batch all files and write at the end.
 
 ### Step 3: Write Combined Prompt Previews
@@ -250,6 +256,12 @@ Session summary: {session-dir}/session-summary.md
 > This section is retained for reference only. Do NOT spawn `pantry-review` for a second invocation.
 >
 > See RULES.md Step 3b for the updated Queen workflow.
+
+> **Conditional marker convention**: The canonical convention for round-conditional blocks is
+> `<IF ROUND 1>` / `</IF ROUND 1>` (angle-bracket tags), as used in `reviews.md`. Any
+> `{PANTRY_ROUND_1_CHECK_START/END}` curly-brace markers visible in this deprecated section are the
+> **old convention** — they must not be used in new template content or in composed output. The Pantry
+> validation step (Section 1, Step 2, item 6) checks for both forms in composed briefs.
 
 **Input from the Queen**: list of trail IDs (for context in review prompts), commit range (first-commit..last-commit), list of ALL changed files across all trails (deduplicated), list of ALL task IDs (for correctness review acceptance criteria), session dir path, review timestamp (format defined in **Timestamp format** in `checkpoints.md` Pest Control Overview), review round number (1, 2, 3, ...)
 

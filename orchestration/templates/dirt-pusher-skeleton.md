@@ -29,7 +29,7 @@ Placeholders:
 Execute {TASK_TYPE} for {TASK_ID}.
 
 Step 0: Read your task context from {DATA_FILE_PATH}
-(Format: markdown. Sections: Context, Scope Boundaries, Focus.)
+(Format: markdown. Sections: Context, Scope Boundaries, Focus, Summary Doc Sections.)
 
 Execute these 6 steps in order:
 
