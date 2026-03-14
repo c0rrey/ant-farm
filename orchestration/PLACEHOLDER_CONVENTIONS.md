@@ -136,7 +136,7 @@ sed -i "s/{{CHANGED_FILES}}/$CHANGED_FILES/g" "$BRIEF_PATH"
 
 ## File-by-File Audit (Completed)
 
-All files audited. No violations found. All files use the Tiered convention correctly.
+All files audited. All files use the Tiered convention correctly.
 
 | File | Tier 1 Placeholders | Tier 2 Placeholders | Tier 3 Placeholders | Tier 4 Placeholders | Term Definition Block | Status |
 |------|---|---|---|---|---|---------|
@@ -147,11 +147,13 @@ All files audited. No violations found. All files use the Tiered convention corr
 | `dirt-pusher-skeleton.md` | `{TASK_TYPE}`, `{TASK_ID}`, `{TASK_SUFFIX}`, `{AGENT_TYPE}`, `{DATA_FILE_PATH}`, `{SUMMARY_OUTPUT_PATH}`, `{SESSION_DIR}` | None | None | None | Yes (L8-11) | PASS |
 | `nitpicker-skeleton.md` | `{REVIEW_TYPE}`, `{DATA_FILE_PATH}`, `{REPORT_OUTPUT_PATH}` | None | None | None | Partial (L8-11, missing EPOCH/timestamp defs) | PASS |
 | `big-head-skeleton.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{TIMESTAMP}`, `{DATA_FILE_PATH}`, `{CONSOLIDATED_OUTPUT_PATH}`, `{SESSION_DIR}` | None | None | None | Yes (L8-12) | PASS |
-| `reviews.md` | None (uses angle-bracket syntax `<session-dir>`, `<timestamp>` in text; `<epic>` only in impl DMVDC paths) | None | None | `{{REVIEW_ROUND}}` (L502, L506, L592) — substituted by `build-review-prompts.sh` before Big Head brief delivery | No | PASS |
-| `implementation.md` | None (uses angle-bracket syntax `<task-type>`, `<task-id>`, etc.) | None | None | None | No | PASS |
-| `queen-state.md` | `<placeholder>` syntax (Tier 1 variant for human editing) on L2-6,16,21,34-40; `{path}`, `{N}`, `{M}`, `{name}` (Tier 2 in table) on L11 | Tier 2 examples in table (L11) | None | None | No | PASS |
+| `reviews.md` | None | `{session-dir}`, `{timestamp}`, `{first-commit}`, `{last-commit}`, `{N}`, `{M}`, `{review-type}`, `{reviewer}`, `{list}`, `{path}`, `{id}`, `{title}`, `{crumb-id}`, `{hash}`, `{filename}`, `{combined-priority}`, `{root-cause-title}`, `{primary-review-type}`, `{instance}`, and others (throughout); CLI examples using `<angle-bracket>` preserved as-is | `${SESSION_DIR}` (code blocks only) | `{{REVIEW_ROUND}}` — substituted by `build-review-prompts.sh` before Big Head brief delivery | No | PASS |
+| `implementation.md` | None | `{task-type}`, `{file-or-component}`, `{task-id-1}`, `{task-id-2}`, `{list-from-crumb}`, `{copy-from-crumb}`, `{session-dir}`, `{task-id}`, `{list}`, `{filename}` (in template block); CLI examples using `<angle-bracket>` preserved as-is | None | None | No | PASS |
+| `queen-state.md` | None | `{YYYY-MM-DDTHH:MM:SSZ}`, `{session-id}`, `{chosen-execution-strategy}`, `{name}`, `{ids}`, `{files}`, `{hash}`, `{task-ids}`, `{details}`, `{first-session-commit}`, `{last-impl-commit}`, `{first-fix-commit}`, `{N}`, `{total}`, `{list}`, `{used}`, `{agent}`, `{error-summary}` | None | None | No | PASS |
 | `SESSION_PLAN_TEMPLATE.md` | None (no placeholders found) | None | None | None | No | PASS |
-| `SETUP.md` | None (no placeholders found) | None | None | None | No | PASS |
+| `SETUP.md` | None | `{name}` (in skills install path); kickoff statement examples using `<angle-bracket>` preserved as CLI examples | None | None | No | PASS |
+| `GLOSSARY.md` | None | `{id}` (session directory path pattern), `{task-suffix}` (summary doc path) | None | None | No | PASS |
+| `RULES-review.md` | `{SESSION_DIR}` (shell variable in bash blocks) | `{commit-range}`, `{changed-files}`, `{task-IDs}`, `{timestamp}`, `{round}`, `{N}`, `{crumb-ids}`, `{crumb-id}`, `{hash}`, `{names}`, `{hashes}`, `{list}`, `{range}`, `{count}`, `{N+1}`; CLI examples using `<angle-bracket>` preserved as-is | `${SESSION_DIR}` (bash code blocks) | None | No | PASS |
 | `reference/dependency-analysis.md` | None (no placeholders found) | None | None | None | No | PASS |
 | `reference/known-failures.md` | None (no placeholders found) | None | None | None | No | PASS |
 
@@ -200,7 +202,7 @@ Expected matches: `{{REVIEW_ROUND}}`, `{{COMMIT_RANGE}}`, `{{CHANGED_FILES}}`, `
 
 ## Compliance Status: All Files Pass
 
-The orchestration system **already complies** with the Tiered Placeholder Convention. No refactoring required.
+The orchestration system complies with the Tiered Placeholder Convention. All angle-bracket substitution placeholders have been converted to the appropriate tier syntax.
 
 ### Key Findings
 
@@ -213,37 +215,49 @@ The orchestration system **already complies** with the Tiered Placeholder Conven
    - Term definitions block present and correct (L5-8)
    - Tier 1 placeholders in term definitions and used for agent context
    - Tier 2 `{session-dir}` used in agent-facing instructions (shows how agent will use the session-dir value provided by Queen)
-   - No changes needed
 
 3. **RULES.md** — COMPLIANT
    - Tier 3 `${SESSION_ID}`, `${SESSION_DIR}` used correctly in bash code block
-   - No changes needed
 
 4. **Checkpoints.md** — COMPLIANT
    - Term definitions block present (L4-7)
    - Consistent Tier 1 uppercase usage
    - Tier 2 lowercase used for output examples
-   - No changes needed
 
 5. **Skeleton Templates (dirt-pusher, nitpicker, big-head)** — COMPLIANT
    - Term definitions blocks present
    - All Tier 1 placeholders used correctly
-   - No changes needed
 
-6. **Other Templates (reviews.md, implementation.md, queen-state.md, SESSION_PLAN_TEMPLATE.md, SETUP.md, reference/)** — COMPLIANT
-   - `reviews.md` uses Tier 4 `{{REVIEW_ROUND}}` double-brace placeholders (substituted by `build-review-prompts.sh`); all other files in this group use angle-bracket `<>` syntax or no placeholders
-   - All systems are coherent and follow the tiered convention
-   - No changes needed
+6. **reviews.md** — COMPLIANT (ant-farm-gkk)
+   - Converted all angle-bracket substitution placeholders (`<session-dir>`, `<timestamp>`, etc.) to Tier 2 `{lowercase-kebab}` syntax
+   - CLI examples (e.g., `crumb show <crumb-id>`, `crumb link <id> --parent <trail>`) preserved as-is — these are conventional command-line documentation, not template placeholders
+   - Tier 4 `{{REVIEW_ROUND}}` double-brace placeholder preserved (substituted by `build-review-prompts.sh`)
 
-### Why No Changes Needed
+7. **implementation.md** — COMPLIANT (ant-farm-gkk)
+   - Converted angle-bracket substitution placeholders (`<task-type>`, `<session-dir>`, `<task-id>`, etc.) to Tier 2 `{lowercase-kebab}` syntax
+   - CLI examples (e.g., `crumb show <id>`, `git commit -m "<type>: <description>"`) preserved as-is
 
-The development team unconsciously implemented the Tiered Placeholder Convention correctly:
-- Queen-provided context uses uppercase (`{SESSION_DIR}`, `{TASK_ID}`, `{TASK_SUFFIX}`)
-- Agent-derived or output examples use lowercase (`{session-dir}`, `{timestamp}`)
-- Shell variables use `${}` syntax (`${SESSION_ID}`)
-- Script-substituted review slots use double-brace uppercase (`{{REVIEW_ROUND}}`) — filled by `build-review-prompts.sh`
+8. **queen-state.md** — COMPLIANT (ant-farm-gkk)
+   - Converted all angle-bracket fill-in-the-blank markers to Tier 2 `{lowercase-kebab}` syntax
 
-The convention simply **documents** this existing best practice rather than imposing new restrictions.
+9. **GLOSSARY.md** — COMPLIANT (ant-farm-gkk)
+   - Converted angle-bracket path patterns (`_session-<id>/`, `summaries/<task-suffix>.md`) to Tier 2 syntax
+
+10. **SETUP.md** — COMPLIANT (ant-farm-gkk)
+    - Converted `<name>` in skills install path to Tier 2 `{name}`
+    - Kickoff statement examples (`Let's get to work on: <task-ids>`) preserved — these are user-facing conversational examples, not orchestration template placeholders
+
+11. **RULES-review.md** — COMPLIANT (ant-farm-gkk)
+    - Converted angle-bracket substitution placeholders in shell arguments, progress log strings, and path templates to Tier 2 `{lowercase-kebab}` syntax
+    - CLI examples (`crumb show <crumb-id>`, `crumb update <crumb-id>`) preserved as-is
+
+### Convention Summary
+
+All four placeholder tiers are now consistently used:
+- Queen-provided context: `{UPPERCASE}` (`{SESSION_DIR}`, `{TASK_ID}`, `{TASK_SUFFIX}`)
+- Agent-derived or output examples: `{lowercase-kebab}` (`{session-dir}`, `{timestamp}`)
+- Shell variables: `${VAR}` syntax (`${SESSION_ID}`) — in bash code blocks only
+- Script-substituted review slots: `{{UPPERCASE}}` (`{{REVIEW_ROUND}}`) — filled by `build-review-prompts.sh`
 
 ---
 

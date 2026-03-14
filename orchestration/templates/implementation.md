@@ -6,16 +6,16 @@
 ⚠️ (MANDATORY): Every spawned Dirt Pusher MUST receive ALL sections below. All 6 steps are required — skipping Step 2 (Design), Step 4 (Correctness Review), or Step 6 (Summary Doc) is a process failure. Copy this template verbatim and fill in the placeholders.
 
 ```markdown
-Execute <task-type> for <file-or-component>:
+Execute {task-type} for {file-or-component}:
 
-Tasks: <task-id-1>, <task-id-2>, ...
+Tasks: {task-id-1}, {task-id-2}, ...
 
 ## Context (from crumb - do not re-discover)
-- **Affected files**: <list from crumb with line numbers>
-- **Root cause**: <copy from crumb>
-- **Expected behavior**: <copy from crumb>
+- **Affected files**: {list-from-crumb}
+- **Root cause**: {copy-from-crumb}
+- **Expected behavior**: {copy-from-crumb}
 - **Scope boundaries**: Read ONLY the files/lines listed above
-- **Summary output path**: `<session-dir>/summaries/<task-id>.md`
+- **Summary output path**: `{session-dir}/summaries/{task-id}.md`
 
 ---
 
@@ -62,16 +62,16 @@ After implementation, review EVERY file you changed or created:
 - Record your commit hash in the summary doc (Step 6) so Dirt Moved vs Dirt Claimed (DMVDC) can identify your commits without scanning `git log`
 
 ## Step 6: Write Summary Doc (MANDATORY)
-Write a structured summary to `<session-dir>/summaries/<task-id>.md` using the Write tool.
+Write a structured summary to `{session-dir}/summaries/{task-id}.md` using the Write tool.
 (the Queen creates this directory at session start.)
 The summary MUST contain ALL of these sections — incomplete summaries will be rejected:
 
 ```markdown
-# Summary: <task-id>
-**Task**: <title from crumb show>
-**Agent**: <subagent type>
+# Summary: {task-id}
+**Task**: {title-from-crumb-show}
+**Agent**: {subagent-type}
 **Status**: completed | failed
-**Files changed**: <list>
+**Files changed**: {list}
 
 ## Approaches Considered
 ### 1. <approach name>
@@ -94,7 +94,7 @@ The summary MUST contain ALL of these sections — incomplete summaries will be 
 
 ## Correctness Review
 For each file changed:
-### <filename>
+### {filename}
 - **Re-read**: yes
 - **Acceptance criteria verified**: <list each criterion + PASS/FAIL>
 - **Issues found**: <none, or describe what was found and fixed>
@@ -170,7 +170,7 @@ Before sending any agent prompt, confirm it includes:
 - [ ] **Step 3**: Implementation instructions
 - [ ] **Step 4**: "Review EVERY file you changed" with explicit checks (MANDATORY)
 - [ ] **Step 5**: Commit instructions with `git pull --rebase`
-- [ ] **Step 6**: Write summary doc to `<session-dir>/summaries/<task-id>.md` (MANDATORY)
+- [ ] **Step 6**: Write summary doc to `{session-dir}/summaries/{task-id}.md` (MANDATORY)
 
 If any checkbox is missing, DO NOT spawn the agent — fix the prompt first.
 

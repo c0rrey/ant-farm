@@ -29,7 +29,7 @@ For complete details, see `docs/installation-guide.md`. Quick reference:
 - Agent definitions (`agents/*.md`) to `~/.claude/agents/`
 - Orchestration files to `~/.claude/orchestration/` (excluding `_archive/`)
 - `build-review-prompts.sh` to `~/.claude/orchestration/scripts/`
-- Skills (`skills/*.md`) to `~/.claude/skills/ant-farm-<name>/SKILL.md`
+- Skills (`skills/*.md`) to `~/.claude/skills/ant-farm-{name}/SKILL.md`
 - `crumb.py` to `~/.local/bin/crumb` (marked executable)
 - `CLAUDE.md` to `~/.claude/CLAUDE.md`
 

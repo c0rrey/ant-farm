@@ -3,11 +3,11 @@
 > **Timestamp format**: All timestamps in this file use ISO 8601 / RFC 3339: `YYYY-MM-DDTHH:MM:SSZ`
 > (e.g., `2026-02-20T14:35:07Z`). Generate via `date -u +%Y-%m-%dT%H:%M:%SZ`.
 
-**Updated**: <YYYY-MM-DDTHH:MM:SSZ>
-**Session ID**: <session-id>
-**Session dir**: .crumbs/sessions/_session-<session-id>
-**Session start**: <YYYY-MM-DDTHH:MM:SSZ>
-**Strategy**: <chosen execution strategy>
+**Updated**: {YYYY-MM-DDTHH:MM:SSZ}
+**Session ID**: {session-id}
+**Session dir**: .crumbs/sessions/_session-{session-id}
+**Session start**: {YYYY-MM-DDTHH:MM:SSZ}
+**Strategy**: {chosen-execution-strategy}
 
 ## The Scout
 | Status | Briefing Path | Tasks Found | Blocked | Recommended Strategy |
@@ -17,12 +17,12 @@
 ## Agent Registry
 | Agent Name | Task IDs | Files Assigned | Status | Commit Hash | DMVDC |
 |------------|----------|----------------|--------|-------------|--------------|
-| <name>     | <ids>    | <files>        | spawned/completed/errored | <hash> | PASS/PENDING/FAIL |
+| {name}     | {ids}    | {files}        | spawned/completed/errored | {hash} | PASS/PENDING/FAIL |
 
 ## The Pantry
 | Wave | Status | Tasks | Verdict |
 |------|--------|-------|---------|
-| 1    | pending/completed/failed | <task-ids> | All PASS / <details> |
+| 1    | pending/completed/failed | {task-ids} | All PASS / {details} |
 
 ## Pest Control
 
@@ -30,37 +30,37 @@
 
 | Step | Phase | Checkpoint | Status | Verdict |
 |------|-------|------------|--------|---------|
-| Step 2 | Wave N impl prompts | CCO | pending/completed/failed | All PASS / <details> |
-| Step 3 | Wave N per-agent | WWD | pending/completed/failed | All PASS / <details> |
-| Step 3 | Wave N post | DMVDC | pending/completed/failed | All PASS / <details> |
-| Step 3b | Round R review prompts | CCO | pending/completed/failed | All PASS / <details> |
-| Step 3b | Round R review post | DMVDC + CCB | pending/completed/failed | All PASS / <details> |
-| Step 5c | Exec summary | ESV | pending/completed/failed | PASS / FAIL / <details> |
+| Step 2 | Wave N impl prompts | CCO | pending/completed/failed | All PASS / {details} |
+| Step 3 | Wave N per-agent | WWD | pending/completed/failed | All PASS / {details} |
+| Step 3 | Wave N post | DMVDC | pending/completed/failed | All PASS / {details} |
+| Step 3b | Round R review prompts | CCO | pending/completed/failed | All PASS / {details} |
+| Step 3b | Round R review post | DMVDC + CCB | pending/completed/failed | All PASS / {details} |
+| Step 5c | Exec summary | ESV | pending/completed/failed | PASS / FAIL / {details} |
 
 ## Review Rounds
-- **Current round**: <1 | 2 | 3 | ...>
+- **Current round**: {1 | 2 | 3 | ...}
 - **Max rounds**: 4 (escalate to user if P1/P2 still present after round 4)
-- **Escalation cap**: <not triggered | triggered (round 4: X P1, Y P2 — awaiting user decision)>
-- **Round 1 commit range**: <first-session-commit>..<last-impl-commit>
-- **Fix commit range**: <first-fix-commit>..<HEAD> (set after fix cycle)
-- **Termination**: <pending | terminated (round N: 0 P1/P2)>
+- **Escalation cap**: {not triggered | triggered (round 4: X P1, Y P2 — awaiting user decision)}
+- **Round 1 commit range**: {first-session-commit}..{last-impl-commit}
+- **Fix commit range**: {first-fix-commit}..HEAD (set after fix cycle)
+- **Termination**: {pending | terminated (round N: 0 P1/P2)}
 
 ## Scribe and ESV (Step 5b / 5c)
-- **Scribe status**: <pending | spawned | completed | failed>
-- **Scribe retry**: <0 | 1> (max 1 retry before escalation)
-- **Exec summary path**: <{SESSION_DIR}/exec-summary.md | N/A>
-- **ESV status**: <pending | spawned | PASS | FAIL>
-- **ESV artifact**: <{SESSION_DIR}/pc/pc-session-esv-{timestamp}.md | N/A>
-- **ESV escalated**: <no | yes — awaiting user decision>
+- **Scribe status**: {pending | spawned | completed | failed}
+- **Scribe retry**: {0 | 1} (max 1 retry before escalation)
+- **Exec summary path**: {SESSION_DIR}/exec-summary.md (or N/A)
+- **ESV status**: {pending | spawned | PASS | FAIL}
+- **ESV artifact**: {SESSION_DIR}/pc/pc-session-esv-{timestamp}.md (or N/A)
+- **ESV escalated**: {no | yes — awaiting user decision}
 
 ## Queue Position
-- **Completed**: <N> of <total> tasks
-- **In progress**: <list>
-- **Remaining**: <list>
-- **Retry budget**: <used>/<max 5>
+- **Completed**: {N} of {total} tasks
+- **In progress**: {list}
+- **Remaining**: {list}
+- **Retry budget**: {used}/{max 5}
 
 ## Error Log
-- <YYYY-MM-DDTHH:MM:SSZ>: <agent> — <error summary>
+- {YYYY-MM-DDTHH:MM:SSZ}: {agent} — {error-summary}
 
 ## Source of Truth
 

@@ -20,7 +20,7 @@
             **3b-i. Gather inputs** from the Queen's state file:
             - Review round: read from session state (default: 1)
             - Commit range: round 1 = first session commit..HEAD; round 2+ = first fix commit..HEAD
-            - File list: `git diff --name-only <commit-range>` (deduplicated; exclude `.crumbs/tasks.jsonl` and other auto-generated crumbs files)
+            - File list: `git diff --name-only {commit-range}` (deduplicated; exclude `.crumbs/tasks.jsonl` and other auto-generated crumbs files)
             - Task IDs: round 1 = all task IDs; round 2+ = fix task IDs only
             - Timestamp: The Queen generates ONE timestamp at the start of Step 3b using `date +%Y%m%d-%H%M%S` format (YYYYMMDD-HHmmss). Store as `{TIMESTAMP}` (shell: `${TIMESTAMP}`):
               ```bash
@@ -55,12 +55,12 @@
             **3b-ii. Build review prompts** (single script — reads templates and fills all values):
             ```bash
             bash ~/.claude/orchestration/scripts/build-review-prompts.sh \
-              "${SESSION_DIR}" "<commit-range>" "<changed-files>" \
-              "<task-IDs>" "<timestamp>" "<round>" \
+              "${SESSION_DIR}" "{commit-range}" "{changed-files}" \
+              "{task-IDs}" "{timestamp}" "{round}" \
               "$HOME/.claude/orchestration/templates/nitpicker-skeleton.md" \
               "$HOME/.claude/orchestration/templates/big-head-skeleton.md"
             ```
-            Note: `<changed-files>` and `<task-IDs>` accept an `@filepath` prefix to read multiline
+            Note: `{changed-files}` and `{task-IDs}` accept an `@filepath` prefix to read multiline
             values from a file (e.g., `@/tmp/changed-files.txt`). Use this to avoid shell quoting
             issues when the list contains many entries or paths with spaces.
             On exit 0: prompts/previews written to `${SESSION_DIR}/prompts/` and `${SESSION_DIR}/previews/`.
@@ -136,7 +136,7 @@
             - SSV PASS → proceed to fix agent spawning (auto-approved)
             - SSV FAIL → re-run Scout with violations listed (max 1 retry); if still failing, escalate to user
 
-            **Progress log (after fix Scout SSV PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_SCOUT_COMPLETE|round=<N>|ssv=pass|fix_crumbs=<crumb-ids>" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after fix Scout SSV PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_SCOUT_COMPLETE|round={N}|ssv=pass|fix_crumbs={crumb-ids}" >> ${SESSION_DIR}/progress.log`
 
             **Step 3c-ii. Spawn fix agents into team** — Pantry and CCO are skipped for fix agents
             (the Big Head crumb IS the brief; crumb content passed CCB; SSV independently verified the
@@ -151,16 +151,16 @@
             **Fix DP prompt structure**: minimal — crumb is the source of truth:
             ```
             You are fix-dp-N, a fix Dirt Pusher in the Nitpicker team.
-            Your task crumb: <crumb-id>
+            Your task crumb: {crumb-id}
             Run: crumb show <crumb-id>
             Implement the fix. Follow the acceptance criteria exactly.
             After committing:
             1. Record commit hash: crumb update <crumb-id> --note="commit: <hash>"
-            2. SendMessage to fix-pc-wwd: "Fix committed. Crumb: <crumb-id>. Commit: <hash>. Files changed: <list>."
+            2. SendMessage to fix-pc-wwd: "Fix committed. Crumb: {crumb-id}. Commit: {hash}. Files changed: {list}."
             Then go idle and wait.
             ```
 
-            **Progress log (after fix agents spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_AGENTS_SPAWNED|round=<N>|fix_dps=<names>|fix_pcs=fix-pc-wwd,fix-pc-dmvdc" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after fix agents spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_AGENTS_SPAWNED|round={N}|fix_dps={names}|fix_pcs=fix-pc-wwd,fix-pc-dmvdc" >> ${SESSION_DIR}/progress.log`
 
             **Step 3c-iii. Fix inner loop** — fully asynchronous via SendMessage within the team:
             ```
@@ -187,28 +187,28 @@
             failures. On the third failure, the DP sends a message to the Queen and goes idle.
             The Queen escalates to the user.
 
-            **Progress log (after all fix DPs verified by fix-pc-dmvdc):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_DMVDC_COMPLETE|round=<N>|verified_dps=<names>|commits=<hashes>" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after all fix DPs verified by fix-pc-dmvdc):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_DMVDC_COMPLETE|round={N}|verified_dps={names}|commits={hashes}" >> ${SESSION_DIR}/progress.log`
 
             **Step 3c-iv. Round transition via SendMessage** — after all fix DPs complete and
             fix-pc-dmvdc has issued PASS for each, the Queen sends messages to re-task the persistent
             team members for round N+1:
             1. **Re-task Correctness reviewer**: SendMessage to `correctness` with review round N+1,
                fix commit range, changed files, and task IDs; provide new report output path
-               `{SESSION_DIR}/review-reports/correctness-r<N+1>-<timestamp>.md`
+               `{SESSION_DIR}/review-reports/correctness-r{N+1}-{timestamp}.md`
             2. **Re-task Edge Cases reviewer**: SendMessage to `edge-cases` with review round N+1,
                fix commit range, changed files, and task IDs; provide new report output path
-               `{SESSION_DIR}/review-reports/edge-cases-r<N+1>-<timestamp>.md`
+               `{SESSION_DIR}/review-reports/edge-cases-r{N+1}-{timestamp}.md`
             3. **Re-task Big Head**: SendMessage to `big-head` with review round N+1, expected report
                count 2, both report paths, and new consolidated output path
-               `{SESSION_DIR}/review-reports/review-consolidated-r<N+1>-<timestamp>.md`
+               `{SESSION_DIR}/review-reports/review-consolidated-r{N+1}-{timestamp}.md`
             4. **Clarity and Drift**: leave idle — not re-tasked in round 2+ (fix-scope reviews cover
                only fix commits; style/drift are out of scope)
 
-            **Progress log (after round transition messages sent):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|ROUND_TRANSITION|from_round=<N>|to_round=<N+1>|fix_commits=<range>" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after round transition messages sent):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|ROUND_TRANSITION|from_round={N}|to_round={N+1}|fix_commits={range}" >> ${SESSION_DIR}/progress.log`
 
             After the round transition, the loop returns to the top of Step 3c: Big Head consolidates
             round N+1 reports, CCB runs inside the team, and the Queen reads the new crumb list from
             Big Head's SendMessage. If zero P1/P2 → proceed to Step 4. If P1/P2 remain and round < 4
             → repeat fix workflow. If round >= 4 → escalate to user.
 
-            **Progress log (after triage decision):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_TRIAGED|round=<N>|p1=<count>|p2=<count>|decision=<auto_fix|fix_now|defer|terminated>|root_causes=<count>" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after triage decision):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_TRIAGED|round={N}|p1={count}|p2={count}|decision={auto_fix|fix_now|defer|terminated}|root_causes={count}" >> ${SESSION_DIR}/progress.log`

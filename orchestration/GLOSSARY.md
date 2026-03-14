@@ -41,7 +41,7 @@ In tables, diagrams, and other non-prose contexts where the article is omitted, 
 
 | Term | Definition |
 |------|------------|
-| **session** | A single invocation of the orchestration system, from "let's get to work" through `git push`. Identified by a unique session ID and backed by a session directory (`.crumbs/sessions/_session-<id>/`). |
+| **session** | A single invocation of the orchestration system, from "let's get to work" through `git push`. Identified by a unique session ID and backed by a session directory (`.crumbs/sessions/_session-{id}/`). |
 | **wave** | A batch of implementation agents that run concurrently within a session. Wave boundaries are chosen to avoid file conflicts: tasks that touch the same file are placed in different waves. Wave N+1 does not start until all agents in wave N have committed and passed WWD. |
 | **checkpoint** | A mandatory verification gate that blocks the next phase of work until it returns PASS (or an approved WARN). There are six checkpoints: SSV, CCO, WWD, DMVDC, CCB, and ESV. |
 | **scope boundary** | The explicit list of files and line ranges an agent is permitted to edit. Defined in the agent's data file. Changes outside the scope boundary are a WWD violation. |
@@ -52,7 +52,7 @@ In tables, diagrams, and other non-prose contexts where the article is omitted, 
 | **information diet** | The design constraint that the Queen never reads source code, tests, configs, or implementation templates. It reads only the Scout's briefing, agent notifications, commit messages, and verdict tables. |
 | **escalation** | When a failing agent or stuck checkpoint exceeds its retry limit and the Queen surfaces the problem to the user with full context rather than retrying again. |
 | **adjacent issue** | A defect or improvement opportunity noticed by an agent that falls outside its scope boundary. Agents document these in their summary docs but do not fix them. |
-| **summary doc** | A structured artifact written by each agent to `{session-dir}/summaries/<task-suffix>.md` at Step 6. Required sections: approaches considered, selected approach, implementation description, correctness review, build/test validation, and acceptance criteria checklist. Note: `{session-dir}` resolves to a path under `.crumbs/sessions/`. |
+| **summary doc** | A structured artifact written by each agent to `{session-dir}/summaries/{task-suffix}.md` at Step 6. Required sections: approaches considered, selected approach, implementation description, correctness review, build/test validation, and acceptance criteria checklist. Note: `{session-dir}` resolves to a path under `.crumbs/sessions/`. |
 | **hard gate** | A checkpoint that must return PASS before the system proceeds to the next phase. All six checkpoints (SSV, CCO, WWD, DMVDC, CCB, ESV) are hard gates. |
 | **context window** | The token budget available to a model in a single session. The Queen's information diet keeps its context window clean by offloading reads to subagents. |
 | **setup script** | `scripts/setup.sh` — the distribution mechanism for ant-farm. Installs agent definitions, orchestration files, skills, the `crumb` CLI, and `CLAUDE.md` to their runtime locations (`~/.claude/` and `~/.local/bin/`). `CLAUDE.md` is synced as a sentinel-delimited block (`<!-- ant-farm:start/end -->`) so user content outside the block is preserved. Backs up existing files with timestamped `.bak` suffixes before modifying. Idempotent: re-running updates changed files. Session artifacts are stored under `.crumbs/sessions/`. |

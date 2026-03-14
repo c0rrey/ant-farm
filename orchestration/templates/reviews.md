@@ -8,7 +8,7 @@
 Verify all 4 criteria before proceeding to team launch. These checks span ALL trails worked in this session:
 
 1. **All Dirt Pushers completed across ALL trails** — none stuck or errored (check the Queen's state file for every trail)
-2. **Dirt Moved vs Dirt Claimed (DMVDC) PASS for every agent** — verify at least one artifact exists at `<session-dir>/pc/pc-<task-id>-dmvdc-*.md`; if multiple files match (e.g., after retries), check the most recent by timestamp — it must contain an explicit `PASS` verdict, not merely exist
+2. **Dirt Moved vs Dirt Claimed (DMVDC) PASS for every agent** — verify at least one artifact exists at `{session-dir}/pc/pc-{task-id}-dmvdc-*.md`; if multiple files match (e.g., after retries), check the most recent by timestamp — it must contain an explicit `PASS` verdict, not merely exist
 3. **The Queen's state file updated** — all completions tracked, checkpoint results recorded for all trails
 4. **Git log shows expected commits** — run `git log --oneline -N` (where N = total number of agents across all trails) to confirm commits exist
 
@@ -46,10 +46,10 @@ Each review type has one canonical short name used in template placeholders, fil
 
 | Short Name | Display Title | Priority | File Output Pattern |
 |------------|---------------|----------|---------------------|
-| `clarity` | Clarity Review | P3 | `clarity-review-<timestamp>.md` |
-| `edge-cases` | Edge Cases Review | P2 | `edge-cases-review-<timestamp>.md` |
-| `correctness` | Correctness Review | P1-P2 | `correctness-review-<timestamp>.md` |
-| `drift` | Drift Review | P3 | `drift-review-<timestamp>.md` |
+| `clarity` | Clarity Review | P3 | `clarity-review-{timestamp}.md` |
+| `edge-cases` | Edge Cases Review | P2 | `edge-cases-review-{timestamp}.md` |
+| `correctness` | Correctness Review | P1-P2 | `correctness-review-{timestamp}.md` |
+| `drift` | Drift Review | P3 | `drift-review-{timestamp}.md` |
 
 The short name is the authoritative identifier. Any template using a review type name that differs from the short name in this table without explanation is incorrect.
 
@@ -67,9 +67,9 @@ Pest Control is a team member so Big Head can SendMessage to it directly for che
 Nitpickers produce REPORTS ONLY — do NOT file crumbs (`crumb create`).
 Big Head consolidates all reports, groups findings by root cause, and files crumbs.
 
-Review scope: commits <first-commit> through <last-commit> (<N> commits total, across trails: <trail-list>)
-Files to review: <deduplicated list of ALL files changed across all trails>
-Task IDs for acceptance criteria: <list of all task IDs worked this session>
+Review scope: commits {first-commit} through {last-commit} ({N} commits total, across trails: {trail-list})
+Files to review: {deduplicated list of ALL files changed across all trails}
+Task IDs for acceptance criteria: {list of all task IDs worked this session}
 
 1. Clarity Review (P3) — see prompt below
 2. Edge Cases Review (P2) — see prompt below
@@ -84,11 +84,11 @@ Task IDs for acceptance criteria: <list of all task IDs worked this session>
 Re-tasking message fields for each reviewer:
 
 ~~~markdown
-Review scope: fix commits only — <first-fix-commit> through <HEAD>
-Files to review: <files changed in fix commits only>
-Task IDs for acceptance criteria: <list of fix task IDs>
-Review round: <N+1>
-Report output path: <reviewer-specific path from Round Transition section>
+Review scope: fix commits only — {first-fix-commit} through HEAD
+Files to review: {files changed in fix commits only}
+Task IDs for acceptance criteria: {list of fix task IDs}
+Review round: {N+1}
+Report output path: {reviewer-specific path from Round Transition section}
 
 1. Correctness Review (P1-P2) — re-tasked via SendMessage
 2. Edge Cases Review (P2) — re-tasked via SendMessage
@@ -158,12 +158,12 @@ Report output path: <reviewer-specific path from Round Transition section>
 
 ## Round-Aware Review Protocol
 
-The review pipeline supports multiple rounds. The Queen passes `Review round: <N>` to the Pantry. Round number determines reviewer composition, scope, and P3 handling.
+The review pipeline supports multiple rounds. The Queen passes `Review round: {N}` to the Pantry. Round number determines reviewer composition, scope, and P3 handling.
 
 ### Round 1 (Full Review)
 
 - **Reviewers**: 4 (Clarity, Edge Cases, Correctness, Drift)
-- **Scope**: All session commits (`<first-session-commit>..<HEAD>`)
+- **Scope**: All session commits (`{first-session-commit}..HEAD`)
 - **Findings**: All severities reported and presented to user
 - **Team size**: 6 (4 reviewers + Big Head + Pest Control)
 
@@ -172,7 +172,7 @@ This is the existing protocol — no changes to round 1 behavior.
 ### Round 2+ (Fix Verification)
 
 - **Reviewers**: 2 (Correctness, Edge Cases only — Clarity and Drift are dropped)
-- **Scope**: Fix commits only (`<first-fix-commit>..<HEAD>`)
+- **Scope**: Fix commits only (`{first-fix-commit}..HEAD`)
 - **Team size**: 4 (2 reviewers + Big Head + Pest Control)
 - **In-scope findings**: All severities reported
 - **Out-of-scope findings**: Only reportable if they would cause:
@@ -197,7 +197,7 @@ The review loop terminates when a round produces **zero P1 or P2 findings**. At 
 
 Correctness and Edge Cases reviewers receive this additional scope constraint in round 2+. The Pantry includes this text in each reviewer's brief:
 
-> **Fix verification scope**: Review commits `<fix-start>..<HEAD>` only. You may read full files for context, but your mandate is: did these fixes land correctly and not break anything?
+> **Fix verification scope**: Review commits `{fix-start}..HEAD` only. You may read full files for context, but your mandate is: did these fixes land correctly and not break anything?
 >
 > **Out-of-scope findings**: If you notice something outside the fix commits that would cause a runtime failure, incorrect agent behavior, or silently wrong results (e.g., stale cross-references pointing to wrong sections), report it. Do NOT report naming conventions, style preferences, documentation gaps, or improvement opportunities outside the fix scope.
 
@@ -212,7 +212,7 @@ The `[OUT-OF-SCOPE]` tag is for labeling only — it helps Big Head and human re
 ```markdown
 Perform a CLARITY review of the completed work in this session.
 
-Review scope: commits <first-commit> through <last-commit> (<N> commits total)
+Review scope: commits {first-commit} through {last-commit} ({N} commits total)
 
 Focus areas:
 1. **Code readability** - Are variable names clear? Is logic easy to follow?
@@ -226,7 +226,7 @@ Read all files in scope. For each issue, note the file, line, and what's wrong.
 Group findings into preliminary root causes where possible.
 
 ## Report (MANDATORY)
-Write your report to `<session-dir>/review-reports/clarity-review-<timestamp>.md` using the format below. (the Queen provides the exact filename in your prompt.)
+Write your report to `{session-dir}/review-reports/clarity-review-{timestamp}.md` using the format below. (the Queen provides the exact filename in your prompt.)
 Do NOT file crumbs — Big Head handles all crumb filing.
 
 If you find something that looks like an edge case or correctness bug, message the
@@ -245,7 +245,7 @@ Review these files:
 ```markdown
 Perform an EDGE CASES review of the completed work in this session.
 
-Review scope: commits <first-commit> through <last-commit> (<N> commits total)
+Review scope: commits {first-commit} through {last-commit} ({N} commits total)
 
 Focus areas:
 1. **Input validation** - What happens with malformed input? Missing fields? Invalid values?
@@ -260,7 +260,7 @@ Read all files in scope. For each issue, note the file, line, trigger condition,
 Group findings into preliminary root causes where possible.
 
 ## Report (MANDATORY)
-Write your report to `<session-dir>/review-reports/edge-cases-review-<timestamp>.md` using the format below. (the Queen provides the exact filename in your prompt.)
+Write your report to `{session-dir}/review-reports/edge-cases-review-{timestamp}.md` using the format below. (the Queen provides the exact filename in your prompt.)
 Do NOT file crumbs — Big Head handles all crumb filing.
 
 Pay special attention to:
@@ -283,7 +283,7 @@ Review these files:
 ```markdown
 Perform a CORRECTNESS review of the completed work in this session.
 
-Review scope: commits <first-commit> through <last-commit> (<N> commits total)
+Review scope: commits {first-commit} through {last-commit} ({N} commits total)
 
 This is a second-pass correctness review focusing on logic and requirements.
 
@@ -300,11 +300,11 @@ Read all files in scope. For each issue, note the file, line, expected vs actual
 Group findings into preliminary root causes where possible.
 
 ## Report (MANDATORY)
-Write your report to `<session-dir>/review-reports/correctness-review-<timestamp>.md` using the format below. (the Queen provides the exact filename in your prompt.)
+Write your report to `{session-dir}/review-reports/correctness-review-{timestamp}.md` using the format below. (the Queen provides the exact filename in your prompt.)
 Do NOT file crumbs — Big Head handles all crumb filing.
 
 Review these files and their acceptance criteria:
-<list of files and their original task requirements>
+{list of files and their original task requirements}
 
 **IMPORTANT**: Run `crumb show <task-id>` for each task in the commit range to retrieve
 the original acceptance criteria. Do not rely solely on the orchestrator's prompt —
@@ -328,7 +328,7 @@ For each completed task, verify:
 ```markdown
 Perform a DRIFT review of the completed work in this session.
 
-Review scope: commits <first-commit> through <last-commit> (<N> commits total)
+Review scope: commits {first-commit} through {last-commit} ({N} commits total)
 
 This review checks whether all changes propagated consistently across the codebase.
 
@@ -346,7 +346,7 @@ Grep for old values. Trace callers. Check documentation references.
 Group findings into preliminary root causes where possible.
 
 ## Report (MANDATORY)
-Write your report to `<session-dir>/review-reports/drift-review-<timestamp>.md` using the format below. (the Queen provides the exact filename in your prompt.)
+Write your report to `{session-dir}/review-reports/drift-review-{timestamp}.md` using the format below. (the Queen provides the exact filename in your prompt.)
 Do NOT file crumbs — Big Head handles all crumb filing.
 
 For each change in scope, check:
@@ -377,13 +377,13 @@ If a review finds 0 issues:
 
 ## Nitpicker Report Format (All Reviewers)
 
-Every reviewer MUST write their report to `<session-dir>/review-reports/<review-type>-review-<timestamp>.md` using this format. The Queen generates the timestamp once per review cycle and provides the exact output path in each reviewer's prompt.
+Every reviewer MUST write their report to `{session-dir}/review-reports/{review-type}-review-{timestamp}.md` using this format. The Queen generates the timestamp once per review cycle and provides the exact output path in each reviewer's prompt.
 
 ```markdown
-# Report: <review-type> Review
+# Report: {review-type} Review
 
-**Scope**: <list of files reviewed>
-**Reviewer**: <review type + agent type>
+**Scope**: {list of files reviewed}
+**Reviewer**: {review type + agent type}
 
 ## Findings Catalog
 
@@ -410,22 +410,22 @@ Group findings that share a root cause:
 - Finding 2 — standalone
 
 ## Summary Statistics
-- Total findings: <N>
-- By severity: P1: <N>, P2: <N>, P3: <N>
-- Preliminary groups: <N>
+- Total findings: {N}
+- By severity: P1: {N}, P2: {N}, P3: {N}
+- Preliminary groups: {N}
 
 ## Cross-Review Messages
 
 Log all messages sent to and received from other reviewers:
 
 ### Sent
-- To <reviewer>: "<summary of message>" — Action: <what you asked them to do or look at>
+- To {reviewer}: "{summary of message}" — Action: {what you asked them to do or look at}
 
 ### Received
-- From <reviewer>: "<summary of message>" — Action taken: <what you did in response>
+- From {reviewer}: "{summary of message}" — Action taken: {what you did in response}
 
 ### Deferred Items
-- "<finding title>" — Deferred to <reviewer> because <reason>
+- "{finding title}" — Deferred to {reviewer} because {reason}
 
 ## Coverage Log
 
@@ -434,8 +434,8 @@ List every in-scope file with its review status. Files with no findings MUST sti
 | File | Status | Evidence |
 |------|--------|----------|
 | <file1> | Findings: #1, #3 | N/A |
-| <file2> | Reviewed — no issues | <N> functions, <M> lines examined |
-| <file3> | Reviewed — no issues | <N> functions, <M> lines examined |
+| {file2} | Reviewed — no issues | {N} functions, {M} lines examined |
+| {file3} | Reviewed — no issues | {N} functions, {M} lines examined |
 
 ## Overall Assessment
 **Score**: <X/10>
@@ -489,17 +489,17 @@ Before reading any reports, verify the expected files exist. The number of expec
 **Round 1**: Verify all 4 report files exist using the exact paths provided in your prompt:
 
 ```bash
-[ -f "<session-dir>/review-reports/clarity-review-<timestamp>.md" ] || echo "MISSING: clarity"
-[ -f "<session-dir>/review-reports/edge-cases-review-<timestamp>.md" ] || echo "MISSING: edge-cases"
-[ -f "<session-dir>/review-reports/correctness-review-<timestamp>.md" ] || echo "MISSING: correctness"
-[ -f "<session-dir>/review-reports/drift-review-<timestamp>.md" ] || echo "MISSING: drift"
+[ -f "{session-dir}/review-reports/clarity-review-{timestamp}.md" ] || echo "MISSING: clarity"
+[ -f "{session-dir}/review-reports/edge-cases-review-{timestamp}.md" ] || echo "MISSING: edge-cases"
+[ -f "{session-dir}/review-reports/correctness-review-{timestamp}.md" ] || echo "MISSING: correctness"
+[ -f "{session-dir}/review-reports/drift-review-{timestamp}.md" ] || echo "MISSING: drift"
 ```
 
 **Round 2+**: Verify 2 report files exist using exact paths:
 
 ```bash
-[ -f "<session-dir>/review-reports/correctness-review-<timestamp>.md" ] || echo "MISSING: correctness"
-[ -f "<session-dir>/review-reports/edge-cases-review-<timestamp>.md" ] || echo "MISSING: edge-cases"
+[ -f "{session-dir}/review-reports/correctness-review-{timestamp}.md" ] || echo "MISSING: correctness"
+[ -f "{session-dir}/review-reports/edge-cases-review-{timestamp}.md" ] || echo "MISSING: edge-cases"
 ```
 
 **All expected files MUST exist.** If any file is missing:
@@ -520,10 +520,10 @@ If any report file is missing after the initial check, do NOT wait indefinitely.
 
 **Polling loop (if files missing):**
 
-> **Template source note**: The angle-bracket values (`<session-dir>`, `<timestamp>`) in
+> **Template source note**: The curly-brace values (`{session-dir}`, `{timestamp}`) in
 > the code block below are **template placeholders**. `build-review-prompts.sh` substitutes
 > them with real paths before this brief is delivered to Big Head. When Big Head runs this
-> block, every `<session-dir>` and `<timestamp>` token will already be replaced with the
+> block, every `{session-dir}` and `{timestamp}` token will already be replaced with the
 > actual session directory and timestamp strings. The angle-bracket guard below (`case "$_path" in *'<'*|*'>'*`)
 > is checking the **substituted** paths — a failure there means substitution was incomplete upstream.
 
@@ -575,8 +575,8 @@ PLACEHOLDER_ERROR=0
 # Note: REVIEW_ROUND corruption is caught above in the case statement before we
 # reach this block, so REVIEW_ROUND is guaranteed to be a valid integer here.
 for _path in \
-  "<session-dir>/review-reports/correctness-review-<timestamp>.md" \
-  "<session-dir>/review-reports/edge-cases-review-<timestamp>.md"; do
+  "{session-dir}/review-reports/correctness-review-{timestamp}.md" \
+  "{session-dir}/review-reports/edge-cases-review-{timestamp}.md"; do
   if [ -z "$_path" ]; then
     echo "PLACEHOLDER ERROR: path resolved to empty string (SESSION_DIR or timestamp unset)"
     echo "Root cause: unset or empty shell variable in Pantry prompt composition."
@@ -599,8 +599,8 @@ done
 # unconditionally in round 2+ would always trigger a false PLACEHOLDER_ERROR.
 if [ "$REVIEW_ROUND" -eq 1 ]; then
 for _path in \
-  "<session-dir>/review-reports/clarity-review-<timestamp>.md" \
-  "<session-dir>/review-reports/drift-review-<timestamp>.md"; do
+  "{session-dir}/review-reports/clarity-review-{timestamp}.md" \
+  "{session-dir}/review-reports/drift-review-{timestamp}.md"; do
   if [ -z "$_path" ]; then
     echo "PLACEHOLDER ERROR: path resolved to empty string (SESSION_DIR or timestamp unset)"
     echo "Root cause: unset or empty shell variable in Pantry prompt composition."
@@ -627,13 +627,13 @@ while [ $ELAPSED -lt $POLL_TIMEOUT_SECS ]; do
   ALL_FOUND=1
 
   # Always expected (both rounds):
-  [ -f "<session-dir>/review-reports/correctness-review-<timestamp>.md" ] || ALL_FOUND=0
-  [ -f "<session-dir>/review-reports/edge-cases-review-<timestamp>.md" ] || ALL_FOUND=0
+  [ -f "{session-dir}/review-reports/correctness-review-{timestamp}.md" ] || ALL_FOUND=0
+  [ -f "{session-dir}/review-reports/edge-cases-review-{timestamp}.md" ] || ALL_FOUND=0
 
   # Round 1 only: clarity and drift reports are also expected.
   if [ "$REVIEW_ROUND" -eq 1 ]; then
-  [ -f "<session-dir>/review-reports/clarity-review-<timestamp>.md" ] || ALL_FOUND=0
-  [ -f "<session-dir>/review-reports/drift-review-<timestamp>.md" ] || ALL_FOUND=0
+  [ -f "{session-dir}/review-reports/clarity-review-{timestamp}.md" ] || ALL_FOUND=0
+  [ -f "{session-dir}/review-reports/drift-review-{timestamp}.md" ] || ALL_FOUND=0
   fi
 
   if [ $ALL_FOUND -eq 1 ]; then
@@ -667,15 +667,15 @@ If timeout is reached and any reports are still missing, IMMEDIATELY return an e
 # Big Head Consolidation - BLOCKED: Missing Nitpicker Reports
 
 **Status**: FAILED (timeout after 60 seconds)
-**Timestamp**: <current ISO 8601 timestamp>
+**Timestamp**: {current ISO 8601 timestamp}
 
 ## Missing Reports
 
 The following expected Nitpicker report files were not found:
-- Clarity review report (clarity-review-<timestamp>.md) — MISSING
-- Edge cases review report (edge-cases-review-<timestamp>.md) — MISSING [or: FOUND at <path>]
-- Correctness review report (correctness-review-<timestamp>.md) — MISSING [or: FOUND at <path>]
-- Drift review report (drift-review-<timestamp>.md) — MISSING [or: FOUND at <path>]
+- Clarity review report (clarity-review-{timestamp}.md) — MISSING
+- Edge cases review report (edge-cases-review-{timestamp}.md) — MISSING [or: FOUND at {path}]
+- Correctness review report (correctness-review-{timestamp}.md) — MISSING [or: FOUND at {path}]
+- Drift review report (drift-review-{timestamp}.md) — MISSING [or: FOUND at {path}]
 
 ## Remediation
 
@@ -684,7 +684,7 @@ Big Head cannot proceed with consolidation without all expected reports present.
 **Action required from Queen:**
 1. Check review agent logs for errors or crashes
 2. Verify all Nitpicker team members completed their reviews
-3. Confirm reports were written to: `<session-dir>/review-reports/`
+3. Confirm reports were written to: `{session-dir}/review-reports/`
 4. Once all expected reports are confirmed present, re-spawn Big Head consolidation
 
 **Re-spawn instruction:**
@@ -701,17 +701,17 @@ Once the error is returned:
 
 ### Step 1: Read All Reports
 
-Read all expected reports from `<session-dir>/review-reports/` (the Queen provides exact filenames in the consolidation prompt):
+Read all expected reports from `{session-dir}/review-reports/` (the Queen provides exact filenames in the consolidation prompt):
 
 Round 1 (4 reports):
-- `clarity-review-<timestamp>.md`
-- `edge-cases-review-<timestamp>.md`
-- `correctness-review-<timestamp>.md`
-- `drift-review-<timestamp>.md`
+- `clarity-review-{timestamp}.md`
+- `edge-cases-review-{timestamp}.md`
+- `correctness-review-{timestamp}.md`
+- `drift-review-{timestamp}.md`
 
 Round 2+ (2 reports):
-- `correctness-review-<timestamp>.md`
-- `edge-cases-review-<timestamp>.md`
+- `correctness-review-{timestamp}.md`
+- `edge-cases-review-{timestamp}.md`
 
 ### Step 2: Merge and Deduplicate
 
@@ -761,7 +761,7 @@ If the bash block above exits with code 1, stop immediately. Do NOT proceed to c
 
 For each root cause group, compare against existing crumb titles (from `/tmp/open-crumbs-$$.txt`):
 
-- **Exact title match** (case-insensitive): Do NOT file. Log in the summary: "Dedup: RC-N matches existing crumb <ID> — skipped."
+- **Exact title match** (case-insensitive): Do NOT file. Log in the summary: "Dedup: RC-N matches existing crumb {ID} — skipped."
 - **Similar title** (same root cause, different wording): Run `crumb search "<key phrases>"` to confirm. If the existing crumb covers the same root cause, do NOT file. Log the match and the existing crumb ID.
 - **No match found**: Mark the root cause for filing.
 
@@ -771,7 +771,7 @@ Include a **Cross-Session Dedup** section in the consolidated summary listing, f
 
 ### Step 3: Write Consolidated Summary
 
-Write the consolidated summary to `<session-dir>/review-reports/review-consolidated-<timestamp>.md`:
+Write the consolidated summary to `{session-dir}/review-reports/review-consolidated-{timestamp}.md`:
 
 ```markdown
 # Consolidated Review Summary
@@ -780,7 +780,7 @@ Write the consolidated summary to `<session-dir>/review-reports/review-consolida
 **Reviews completed**: <Round 1: Clarity, Edge Cases, Correctness, Drift | Round 2+: Correctness, Edge Cases>
 **Total raw findings**: <N across all reviews>
 **Root causes identified**: <N after dedup>
-**Crumbs filed**: <N>
+**Crumbs filed**: {N}
 
 ## Read Confirmation
 
@@ -791,15 +791,15 @@ Round 2+: 2 reports (correctness, edge-cases)
 
 | Report Type | File | Status | Finding Count |
 |-------------|------|--------|----------------|
-| <for each report in this round> | <filename> | ✓ Read | <N> findings |
+| {for each report in this round} | {filename} | ✓ Read | {N} findings |
 
-**Total findings from all reports**: <N>
+**Total findings from all reports**: {N}
 
 ## Root Causes Filed
 
 | Crumb ID | Priority | Title | Contributing Reviews | Surfaces |
 |---------|----------|-------|---------------------|----------|
-| <id> | P<N> | <title> | clarity, edge-cases | <N> files |
+| {id} | P{N} | {title} | clarity, edge-cases | {N} files |
 | ... | ... | ... | ... | ... |
 
 ## Deduplication Log
@@ -809,9 +809,9 @@ Findings merged:
 - ...
 
 ## Priority Breakdown
-- P1 (blocking): <N> crumbs
-- P2 (important): <N> crumbs
-- P3 (polish): <N> crumbs
+- P1 (blocking): {N} crumbs
+- P2 (important): {N} crumbs
+- P3 (polish): {N} crumbs
 
 ## Verdict
 <PASS / PASS WITH ISSUES / NEEDS WORK>
@@ -826,7 +826,7 @@ Findings merged:
 ```
 SendMessage(
   to="pest-control",
-  message="Consolidated report ready. Path: <session-dir>/review-reports/review-consolidated-<timestamp>.md. Please run DMVDC and CCB checkpoints and reply with PASS or FAIL + specifics."
+  message="Consolidated report ready. Path: {session-dir}/review-reports/review-consolidated-{timestamp}.md. Please run DMVDC and CCB checkpoints and reply with PASS or FAIL + specifics."
 )
 ```
 
@@ -871,7 +871,7 @@ SendMessage(
 Big Head checkpoint escalation to Queen:
 - Pest Control verdict: FAIL
 - Findings that failed validation: <list with reasons per finding>
-- Findings that passed: <list>
+- Findings that passed: {list}
 - Crumbs filed for validated findings: <ids or "none">
 - Action required: User decides whether to drop, adjust, or re-review failed findings.
 ```
@@ -906,7 +906,7 @@ substantive analysis, NOT a restatement of the title.>
 - [ ] <Third independently testable criterion>
 CRUMB_DESC
 
-crumb create --from-json "{\"type\":\"bug\",\"priority\":\"P<combined-priority>\",\"title\":\"<root cause title>\",\"description\":\"$(cat /tmp/crumb-desc-$$.md)\",\"review_source\":\"<primary-review-type>\",\"acceptance_criteria\":[],\"scope\":{},\"links\":{}}"
+crumb create --from-json "{\"type\":\"bug\",\"priority\":\"P{combined-priority}\",\"title\":\"{root-cause-title}\",\"description\":\"$(cat /tmp/crumb-desc-$$.md)\",\"review_source\":\"{primary-review-type}\",\"acceptance_criteria\":[],\"scope\":{},\"links\":{}}"
 rm -f /tmp/crumb-desc-$$.md
 ```
 
@@ -929,7 +929,7 @@ In round 2+, Big Head auto-files P3 findings to the "Future Work" trail without 
    <What is wrong — file:line refs to the primary location.>
 
    ## Affected Surfaces
-   - `file:line` — <instance> (from <reviewer>)
+   - `file:line` — {instance} (from {reviewer})
 
    ## Acceptance Criteria
    - [ ] <testable criterion>
@@ -945,7 +945,7 @@ In round 2+, Big Head auto-files P3 findings to the "Future Work" trail without 
    ## Auto-Filed P3s (Future Work)
    | Crumb ID | Title | Trail |
    |---------|-------|------|
-   | <id> | <title> | Future Work |
+   | {id} | {title} | Future Work |
    ~~~
 
 4. Do NOT include P3 findings in the fix-or-defer prompt to the Queen. They appear only in the consolidated summary for the record.
@@ -957,7 +957,7 @@ In round 2+, Big Head auto-files P3 findings to the "Future Work" trail without 
 ### Nitpicker Checklist (verify before launching team)
 
 Before launching the review agent team, confirm:
-- [ ] Review round number passed to Pantry (`Review round: <N>`)
+- [ ] Review round number passed to Pantry (`Review round: {N}`)
 - [ ] Round 1: All 4 Nitpicker prompts include review scope; Round 2+: 2 prompts (Correctness, Edge Cases)
 - [ ] Each Nitpicker has focus areas specific to their review type
 - [ ] Round 2+ reviewers include out-of-scope finding bar instructions from the Round 2+ Reviewer Instructions section
@@ -965,7 +965,7 @@ Before launching the review agent team, confirm:
 - [ ] Report format instructions included (use standard Nitpicker report format)
 - [ ] Each prompt says "Do NOT file crumbs — Big Head handles all crumb filing"
 - [ ] Messaging guidelines included (what to share, what not to share)
-- [ ] Reports write to `<session-dir>/review-reports/<review-type>-review-<timestamp>.md`
+- [ ] Reports write to `{session-dir}/review-reports/{review-type}-review-{timestamp}.md`
 - [ ] Round 1: Team has 6 members (4 Nitpickers + Big Head + Pest Control); Round 2+: persistent team re-tasked via SendMessage (NOT a new TeamCreate) — Correctness + Edge Cases + Big Head + Pest Control active; Clarity + Drift idle
 - [ ] Round 2+: Big Head prompt includes review round number and P3 auto-filing instructions
 
@@ -975,7 +975,7 @@ Before filing crumbs, confirm Big Head has:
 - [ ] Round 1: Read all 4 Nitpicker reports; Round 2+: Read 2 reports (Correctness, Edge Cases)
 - [ ] Merged duplicate findings across reviews
 - [ ] Grouped all findings by root cause (not per-occurrence)
-- [ ] Written consolidated summary to `<session-dir>/review-reports/review-consolidated-<timestamp>.md`
+- [ ] Written consolidated summary to `{session-dir}/review-reports/review-consolidated-{timestamp}.md`
 - [ ] Sent consolidated report path to Pest Control via SendMessage
 - [ ] Received Pest Control verdict (PASS or FAIL + specifics)
 - [ ] On PASS: filed ONE crumb per root cause with all affected surfaces listed
@@ -986,7 +986,7 @@ Before filing crumbs, confirm Big Head has:
 
 **Prerequisite**: Colony Census Bureau (CCB) must PASS before proceeding.
 
-Big Head writes the consolidated summary to `{session-dir}/review-reports/review-consolidated-<timestamp>.md`.
+Big Head writes the consolidated summary to `{session-dir}/review-reports/review-consolidated-{timestamp}.md`.
 
 This section documents the Queen's Step 3c (User Triage) workflow. **The Queen owns this step**, not the review agents.
 The Queen reads Big Head's consolidated summary and follows the procedures below.
@@ -1057,7 +1057,7 @@ Fix Dirt Pushers receive a lean prompt. The crumb is the source of truth — the
 ```
 You are fix-dp-N, a fix Dirt Pusher in the Nitpicker team.
 
-Your task crumb: <crumb-id>
+Your task crumb: {crumb-id}
 Run: crumb show <crumb-id>
 
 The crumb contains root cause, affected surfaces, fix approach, and acceptance criteria.
@@ -1065,7 +1065,7 @@ Implement the fix. Follow the acceptance criteria exactly.
 
 After committing:
 1. Record your commit hash in your task crumb: crumb update <crumb-id> --note="commit: <hash>"
-2. SendMessage to fix-pc-wwd: "Fix committed. Crumb: <crumb-id>. Commit: <hash>. Files changed: <list>."
+2. SendMessage to fix-pc-wwd: "Fix committed. Crumb: {crumb-id}. Commit: {hash}. Files changed: {list}."
 Then go idle and wait.
 ```
 
@@ -1120,23 +1120,23 @@ After all fix DPs complete and fix-pc-dmvdc has issued PASS for each:
 
 1. **Re-task Correctness reviewer**: SendMessage to `correctness` with:
    - Review round: N+1
-   - Fix commit range: `<first-fix-commit>..<last-fix-commit>`
-   - Changed files: `<list from git diff>`
-   - Task IDs reviewed: `<crumb-ids fixed this round>`
-   - Report output path: `{session-dir}/review-reports/correctness-r<N+1>-<timestamp>.md`
+   - Fix commit range: `{first-fix-commit}..{last-fix-commit}`
+   - Changed files: `{list from git diff}`
+   - Task IDs reviewed: `{crumb-ids fixed this round}`
+   - Report output path: `{session-dir}/review-reports/correctness-r{N+1}-{timestamp}.md`
 
 2. **Re-task Edge Cases reviewer**: SendMessage to `edge-cases` with:
    - Review round: N+1
-   - Fix commit range: `<first-fix-commit>..<last-fix-commit>`
-   - Changed files: `<list from git diff>`
-   - Task IDs reviewed: `<crumb-ids fixed this round>`
-   - Report output path: `{session-dir}/review-reports/edge-cases-r<N+1>-<timestamp>.md`
+   - Fix commit range: `{first-fix-commit}..{last-fix-commit}`
+   - Changed files: `{list from git diff}`
+   - Task IDs reviewed: `{crumb-ids fixed this round}`
+   - Report output path: `{session-dir}/review-reports/edge-cases-r{N+1}-{timestamp}.md`
 
 3. **Re-task Big Head**: SendMessage to `big-head` with:
    - Review round: N+1
    - Expected report count: 2 (correctness + edge cases only)
    - Report paths: paths from step 1 and 2 above
-   - Output path: `{session-dir}/review-reports/review-consolidated-r<N+1>-<timestamp>.md`
+   - Output path: `{session-dir}/review-reports/review-consolidated-r{N+1}-{timestamp}.md`
 
 4. **Clarity and Drift reviewers**: Leave idle after round 1. They are not re-tasked in subsequent rounds (round 2+ scopes only to fix commits, where style/drift issues are out of scope).
 
