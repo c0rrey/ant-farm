@@ -74,39 +74,39 @@ The summary MUST contain ALL of these sections — incomplete summaries will be 
 **Files changed**: {list}
 
 ## Approaches Considered
-### 1. <approach name>
-**Strategy**: <1-2 sentences>
-**Pros**: <bullet list>
-**Cons**: <bullet list>
-### 2. <approach name>
+### 1. {approach name}
+**Strategy**: {1-2 sentences}
+**Pros**: {bullet list}
+**Cons**: {bullet list}
+### 2. {approach name}
 ...
-### 3. <approach name>
+### 3. {approach name}
 ...
-### 4. <approach name>
+### 4. {approach name}
 ...
 
 ## Selected Approach
-**Choice**: <which approach or hybrid>
-**Rationale**: <why this was best>
+**Choice**: {which approach or hybrid}
+**Rationale**: {why this was best}
 
 ## Implementation
-<brief description of what was done>
+{brief description of what was done}
 
 ## Correctness Review
 For each file changed:
 ### {filename}
 - **Re-read**: yes
-- **Acceptance criteria verified**: <list each criterion + PASS/FAIL>
-- **Issues found**: <none, or describe what was found and fixed>
-- **Cross-file consistency**: <verified against which files>
+- **Acceptance criteria verified**: {list each criterion + PASS/FAIL}
+- **Issues found**: {none, or describe what was found and fixed}
+- **Cross-file consistency**: {verified against which files}
 
 ## Build/Test Validation
-- **Command run**: <what was run>
-- **Result**: <pass/fail + output summary>
+- **Command run**: {what was run}
+- **Result**: {pass/fail + output summary}
 
 ## Acceptance Criteria
-- [ ] <criterion 1> — PASS/FAIL
-- [ ] <criterion 2> — PASS/FAIL
+- [ ] {criterion 1} — PASS/FAIL
+- [ ] {criterion 2} — PASS/FAIL
 - [ ] ...
 ```
 
@@ -116,7 +116,7 @@ After all tasks in this batch:
 - DO NOT push to remote (the Queen handles this)
 - DO NOT modify documentation files (CHANGELOG, README, CLAUDE.md)
 
-Focus: <specific guidance for this file/component>
+Focus: {specific guidance for this file/component}
 ```
 
 ## Scope Boundary Insert

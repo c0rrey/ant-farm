@@ -85,7 +85,7 @@
             team using the Task tool with `team_name: "nitpicker-team"`. Do NOT add a second TeamCreate
             call anywhere in the workflow.
 
-            **Progress log (after Nitpicker team completes round 1):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_COMPLETE|round=<N>|team=complete|report=${SESSION_DIR}/review-reports/review-consolidated-${TIMESTAMP}.md" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after Nitpicker team completes round 1):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_COMPLETE|round={N}|team=complete|report=${SESSION_DIR}/review-reports/review-consolidated-${TIMESTAMP}.md" >> ${SESSION_DIR}/progress.log`
 
 **Step 3c:** User triage — **after CCB PASS and Big Head consolidation completes**:
             1. Read the consolidated review summary (Big Head sends crumb list to Queen via SendMessage — see big-head-skeleton.md step 12)

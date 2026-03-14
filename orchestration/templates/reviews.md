@@ -233,7 +233,7 @@ If you find something that looks like an edge case or correctness bug, message t
 relevant Nitpicker so they can investigate in depth.
 
 Review these files:
-<list of files changed in session>
+{list of files changed in session}
 ```
 
 ## Review 2: Edge Cases (P2)
@@ -271,7 +271,7 @@ Pay special attention to:
 - Error handling blocks
 
 Review these files:
-<list of files changed in session>
+{list of files changed in session}
 ```
 
 ## Review 3: Correctness (P1-P2)
@@ -357,7 +357,7 @@ For each change in scope, check:
 - Default copies still match the source of truth
 
 Review these files:
-<list of files changed in session>
+{list of files changed in session}
 ```
 
 ## Review Quality Metrics
@@ -387,26 +387,26 @@ Every reviewer MUST write their report to `{session-dir}/review-reports/{review-
 
 ## Findings Catalog
 
-### Finding 1: <short title>
-- **File(s)**: <file:line references>
+### Finding 1: {short title}
+- **File(s)**: {file:line references}
 - **Severity**: P1 / P2 / P3
-- **Category**: <clarity|edge-case|correctness|drift>
-- **Description**: <what's wrong>
-- **Suggested fix**: <how to fix>
-- **Cross-reference**: <if related to another reviewer's domain, note it>
+- **Category**: {clarity|edge-case|correctness|drift}
+- **Description**: {what's wrong}
+- **Suggested fix**: {how to fix}
+- **Cross-reference**: {if related to another reviewer's domain, note it}
 
-### Finding 2: <short title>
+### Finding 2: {short title}
 ...
 
 ## Preliminary Groupings
 
 Group findings that share a root cause:
 
-### Group A: <root cause title>
+### Group A: {root cause title}
 - Finding 1, Finding 3 — same underlying issue
-- **Suggested combined fix**: <one fix covering all>
+- **Suggested combined fix**: {one fix covering all}
 
-### Group B: <root cause title>
+### Group B: {root cause title}
 - Finding 2 — standalone
 
 ## Summary Statistics
@@ -433,13 +433,13 @@ List every in-scope file with its review status. Files with no findings MUST sti
 
 | File | Status | Evidence |
 |------|--------|----------|
-| <file1> | Findings: #1, #3 | N/A |
+| {file1} | Findings: #1, #3 | N/A |
 | {file2} | Reviewed — no issues | {N} functions, {M} lines examined |
 | {file3} | Reviewed — no issues | {N} functions, {M} lines examined |
 
 ## Overall Assessment
-**Score**: <X/10>
-**Verdict**: <PASS / PASS WITH ISSUES / NEEDS WORK>
+**Score**: {X/10}
+**Verdict**: {PASS / PASS WITH ISSUES / NEEDS WORK}
 <!-- Verdict Rubric:
   PASS           = 0 P1 findings AND 0 P2 findings
   PASS WITH ISSUES = 0 P1 findings AND any P2 or P3 findings
@@ -447,7 +447,7 @@ List every in-scope file with its review status. Files with no findings MUST sti
 
   Score formula: Start at 10, subtract 3 per P1, 1 per P2, 0.5 per P3 (floor at 0)
 -->
-<1-2 sentence summary>
+{1-2 sentence summary}
 ```
 
 ## Big Head Consolidation Protocol
@@ -649,7 +649,7 @@ if [ $REPORTS_FOUND -eq 0 ]; then
   cat > "{CONSOLIDATED_OUTPUT_PATH}" << 'EOF'
 # Big Head Consolidation — BLOCKED: Missing Nitpicker Reports
 **Status**: FAILED — prerequisite gate timeout
-**Timestamp**: <current ISO 8601 timestamp>
+**Timestamp**: {current ISO 8601 timestamp}
 **Reason**: Not all expected Nitpicker reports arrived within the polling timeout. Check the list of missing reports above.
 **Recovery**: Check reviewer logs. Once all expected reports are present, re-spawn Big Head consolidation.
 EOF
@@ -728,15 +728,15 @@ Round 2+ (2 reports):
 ## Root-Cause Grouping (Big Head Consolidation)
 
 For each group of related findings across all reviews:
-- **Root cause**: <what's systematically wrong>
+- **Root cause**: {what's systematically wrong}
 - **Affected surfaces**:
-  - file1.html:L10 — <specific instance> (from clarity review)
-  - file2.html:L25 — <specific instance> (from edge-cases review)
-  - file3.py:L100 — <specific instance> (from correctness review)
-- **Combined priority**: <highest priority from any contributing finding>
-- **Fix**: <one fix that covers all surfaces>
-- **Merge rationale**: <why these specific findings share this root cause — must reference shared code path, pattern, or design flaw>
-- **Acceptance criteria**: <how to verify across all surfaces>
+  - file1.html:L10 — {specific instance} (from clarity review)
+  - file2.html:L25 — {specific instance} (from edge-cases review)
+  - file3.py:L100 — {specific instance} (from correctness review)
+- **Combined priority**: {highest priority from any contributing finding}
+- **Fix**: {one fix that covers all surfaces}
+- **Merge rationale**: {why these specific findings share this root cause — must reference shared code path, pattern, or design flaw}
+- **Acceptance criteria**: {how to verify across all surfaces}
 ```
 
 ### Step 2.5: Deduplicate Against Existing Crumbs
@@ -749,7 +749,7 @@ if ! crumb list --open --short > /tmp/open-crumbs-$$.txt 2>&1; then
   cat > "{CONSOLIDATED_OUTPUT_PATH}" << 'EOF'
   # Big Head Consolidation — BLOCKED: Cross-Session Dedup Infrastructure Error
   **Status**: FAILED — crumb list infrastructure error
-  **Timestamp**: <current ISO 8601 timestamp>
+  **Timestamp**: {current ISO 8601 timestamp}
   **Reason**: `crumb list --open` failed. Crumb filing aborted to prevent duplicate filing. This is likely a file access or crumb CLI issue.
   **Recovery**: Retry after the issue clears. If the issue persists, run `crumb doctor` and re-spawn Big Head.
   EOF
@@ -776,10 +776,10 @@ Write the consolidated summary to `{session-dir}/review-reports/review-consolida
 ```markdown
 # Consolidated Review Summary
 
-**Scope**: <list of all files reviewed>
-**Reviews completed**: <Round 1: Clarity, Edge Cases, Correctness, Drift | Round 2+: Correctness, Edge Cases>
-**Total raw findings**: <N across all reviews>
-**Root causes identified**: <N after dedup>
+**Scope**: {list of all files reviewed}
+**Reviews completed**: {Round 1: Clarity, Edge Cases, Correctness, Drift | Round 2+: Correctness, Edge Cases}
+**Total raw findings**: {N across all reviews}
+**Root causes identified**: {N after dedup}
 **Crumbs filed**: {N}
 
 ## Read Confirmation
@@ -805,7 +805,7 @@ Round 2+: 2 reports (correctness, edge-cases)
 ## Deduplication Log
 
 Findings merged:
-- <Finding X from clarity> + <Finding Y from edge-cases> → Root Cause A
+- {Finding X from clarity} + {Finding Y from edge-cases} → Root Cause A
 - ...
 
 ## Priority Breakdown
@@ -814,8 +814,8 @@ Findings merged:
 - P3 (polish): {N} crumbs
 
 ## Verdict
-<PASS / PASS WITH ISSUES / NEEDS WORK>
-<overall quality assessment>
+{PASS / PASS WITH ISSUES / NEEDS WORK}
+{overall quality assessment}
 ```
 
 ### Step 4: Checkpoint Gate — Await Pest Control Validation Before Filing Crumbs
@@ -848,7 +848,7 @@ SendMessage(
   cat > "{CONSOLIDATED_OUTPUT_PATH%.md}-pc-timeout.md" << 'EOF'
   # Big Head Consolidation — BLOCKED: Pest Control Timeout
   **Status**: FAILED — Pest Control checkpoint unavailable
-  **Timestamp**: <current ISO 8601 timestamp>
+  **Timestamp**: {current ISO 8601 timestamp}
   **Reason**: Pest Control did not respond after 2 attempts (4 turns total). Consolidated report was written but checkpoints could not be validated.
   **Recovery**: Re-spawn Pest Control manually and provide the consolidated report path, or accept consolidated findings without checkpoint validation.
   EOF
@@ -870,9 +870,9 @@ SendMessage(
 ```
 Big Head checkpoint escalation to Queen:
 - Pest Control verdict: FAIL
-- Findings that failed validation: <list with reasons per finding>
+- Findings that failed validation: {list with reasons per finding}
 - Findings that passed: {list}
-- Crumbs filed for validated findings: <ids or "none">
+- Crumbs filed for validated findings: {ids or "none"}
 - Action required: User decides whether to drop, adjust, or re-review failed findings.
 ```
 
@@ -885,25 +885,25 @@ File ONE crumb per root cause (not per finding, not per review).
 ```bash
 cat > /tmp/crumb-desc-$$.md << 'CRUMB_DESC'
 ## Root Cause
-<What is specifically wrong — cite the code path, pattern, or design flaw.
+{What is specifically wrong — cite the code path, pattern, or design flaw.
 Reference file:line locations where the issue originates. This must be
-substantive analysis, NOT a restatement of the title.>
+substantive analysis, NOT a restatement of the title.}
 
 ## Affected Surfaces
-- `file1.py:L42` — <specific instance> (from clarity review)
-- `file2.sh:L15` — <specific instance> (from edge-cases review)
+- `file1.py:L42` — {specific instance} (from clarity review)
+- `file2.sh:L15` — {specific instance} (from edge-cases review)
 
 ## Fix
-<Specific corrective action — what to change, where, and why.>
+{Specific corrective action — what to change, where, and why.}
 
 ## Changes Needed
-- `path/to/file1.py`: <what to change>
-- `path/to/file2.sh`: <what to change>
+- `path/to/file1.py`: {what to change}
+- `path/to/file2.sh`: {what to change}
 
 ## Acceptance Criteria
-- [ ] <First independently testable criterion>
-- [ ] <Second independently testable criterion>
-- [ ] <Third independently testable criterion>
+- [ ] {First independently testable criterion}
+- [ ] {Second independently testable criterion}
+- [ ] {Third independently testable criterion}
 CRUMB_DESC
 
 crumb create --from-json "{\"type\":\"bug\",\"priority\":\"P{combined-priority}\",\"title\":\"{root-cause-title}\",\"description\":\"$(cat /tmp/crumb-desc-$$.md)\",\"review_source\":\"{primary-review-type}\",\"acceptance_criteria\":[],\"scope\":{},\"links\":{}}"
@@ -926,16 +926,16 @@ In round 2+, Big Head auto-files P3 findings to the "Future Work" trail without 
    ```bash
    cat > /tmp/crumb-desc-$$.md << 'CRUMB_DESC'
    ## Root Cause
-   <What is wrong — file:line refs to the primary location.>
+   {What is wrong — file:line refs to the primary location.}
 
    ## Affected Surfaces
    - `file:line` — {instance} (from {reviewer})
 
    ## Acceptance Criteria
-   - [ ] <testable criterion>
+   - [ ] {testable criterion}
    CRUMB_DESC
 
-   crumb create --from-json "{\"type\":\"bug\",\"priority\":\"P3\",\"title\":\"<root cause title>\",\"description\":\"$(cat /tmp/crumb-desc-$$.md)\",\"acceptance_criteria\":[],\"scope\":{},\"links\":{}}"
+   crumb create --from-json "{\"type\":\"bug\",\"priority\":\"P3\",\"title\":\"{root-cause-title}\",\"description\":\"$(cat /tmp/crumb-desc-$$.md)\",\"acceptance_criteria\":[],\"scope\":{},\"links\":{}}"
    crumb link <new-crumb-id> --parent <future-work-trail-id>
    rm -f /tmp/crumb-desc-$$.md
    ```
