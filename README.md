@@ -44,7 +44,7 @@ The system has four parts:
 1. **Task and artifact layer** — `crumb.py` stores tasks and trails in `.crumbs/tasks.jsonl`. Planning and execution sessions write durable artifacts under `.crumbs/sessions/`.
 2. **Two orchestrators** — the **Planner** handles decomposition; the **Queen** handles execution. They have different permissions, state models, and agent teams.
 3. **Specialist agents** — Claude Code agent definitions in `agents/` cover recon, prompt composition, implementation, review, consolidation, and verification.
-4. **Verification layer** — Pest Control runs hard checkpoints that gate progression: SSV, CCO, WWD, DMVDC, CCB, and ESV.
+4. **Verification layer** — Pest Control plays two roles: (1) a standalone checkpoint runner spawned directly by the Queen to audit prompt previews (CCO), verify post-wave commit scope and substance (WWD, DMVDC), and validate the exec summary (ESV); and (2) a member of the Nitpicker review team, where it runs DMVDC and CCB (Colony Census Bureau) inside the team before results are returned to the Queen.
 
 The core design is constrained delegation. Work is split across agents, but progression is controlled by artifacts, checkpoints, retry limits, and explicit escalation points.
 
