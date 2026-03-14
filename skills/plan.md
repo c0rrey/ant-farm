@@ -1,7 +1,5 @@
 ---
-name: ant-farm-plan
 description: This skill should be used when the user invokes "/ant-farm:plan", provides a spec file path or inline specification text to decompose, says "plan this", "decompose this spec", "break this into tasks", or asks to turn a requirement or idea into crumbs. Accepts a file path or inline text, classifies input as structured vs freeform, and routes to the RULES-decompose.md decomposition workflow.
-version: 1.0.0
 ---
 
 # /ant-farm:plan — Decomposition Skill

@@ -5,7 +5,7 @@
 #   agents/*.md         → ~/.claude/agents/
 #   orchestration/      → ~/.claude/orchestration/  (non-_archive files)
 #   scripts/build-review-prompts.sh → ~/.claude/orchestration/scripts/
-#   skills/*.md         → ~/.claude/skills/ant-farm-<name>/SKILL.md
+#   skills/*.md         → ~/.claude/plugins/ant-farm/commands/<name>.md
 #   crumb.py            → ~/.local/bin/crumb
 #   CLAUDE.md           → ~/.claude/CLAUDE.md  (block insert, not overwrite)
 #
@@ -296,22 +296,22 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Step 4: Install skills → ~/.claude/skills/ant-farm-<name>/SKILL.md
-#   Claude Code expects: ~/.claude/skills/<skill-name>/SKILL.md
-#   Each skills/*.md becomes its own directory named ant-farm-<basename>.
+# Step 4: Install skills → ~/.claude/plugins/ant-farm/commands/<name>.md
+#   Marketplace plugin format: ~/.claude/plugins/<namespace>/commands/<name>.md
+#   Commands are invocable as /ant-farm:<name> (colon-namespaced).
 # ---------------------------------------------------------------------------
-log "Installing skills → ~/.claude/skills/ ..."
+log "Installing skills → ~/.claude/plugins/ant-farm/commands/ ..."
 skills_installed=0
 
 if [ -d "$REPO_ROOT/skills" ]; then
+    PLUGIN_COMMANDS_DIR="${HOME}/.claude/plugins/ant-farm/commands"
+    if [ "$DRY_RUN" = false ]; then
+        mkdir -p "$PLUGIN_COMMANDS_DIR"
+    fi
     shopt -s nullglob
     for skill_file in "$REPO_ROOT/skills/"*.md; do
         name="$(basename "$skill_file" .md)"
-        skill_dir="${HOME}/.claude/skills/ant-farm-${name}"
-        dst="${skill_dir}/SKILL.md"
-        if [ "$DRY_RUN" = false ]; then
-            mkdir -p "$skill_dir"
-        fi
+        dst="${PLUGIN_COMMANDS_DIR}/${name}.md"
         backup_and_copy "$skill_file" "$dst" || { warn "Failed to install skill: $skill_file"; continue; }
         skills_installed=$((skills_installed + 1))
     done

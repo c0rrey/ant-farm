@@ -1,7 +1,5 @@
 ---
-name: ant-farm-init
 description: This skill should be used when the user invokes "/ant-farm:init", says "initialize crumbs", "set up .crumbs", "init ant-farm", or asks to scaffold the crumbs task system in a new project. Bootstraps .crumbs/ directory structure, installs crumb.py, and configures the project for crumb-based task management.
-version: 1.0.0
 ---
 
 # /ant-farm:init — Project Initialization Skill

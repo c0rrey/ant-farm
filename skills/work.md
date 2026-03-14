@@ -1,7 +1,5 @@
 ---
-name: ant-farm-work
 description: This skill should be used when the user invokes "/ant-farm:work", says "let's get to work", "start execution", "run the pipeline", "execute tasks", or asks to begin running crumbs or executing queued tasks. Triggers the ant-farm execution workflow: reads .crumbs/tasks.jsonl, runs a startup coherence check, creates a SESSION_DIR, then launches the Queen orchestration pipeline (RULES.md).
-version: 1.0.0
 ---
 
 # /ant-farm:work — Execution Session Skill

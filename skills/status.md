@@ -1,7 +1,5 @@
 ---
-name: ant-farm-status
 description: This skill should be used when the user invokes "/ant-farm:status", says "show project status", "what's the status", "show dashboard", "how many tasks are open", or asks for a quick overview of the current project's crumb task state. Displays a concise dashboard: trail completion counts, crumb status summary, and last session summary.
-version: 1.0.0
 ---
 
 # /ant-farm:status — Quick View Dashboard Skill
