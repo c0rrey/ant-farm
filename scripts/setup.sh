@@ -246,11 +246,11 @@ migrate_old_agents() {
         found_any=true
 
         # Identity check: YAML front matter must contain "name: <old-basename>"
-        if grep -qE "^name:[[:space:]]+${expected_name_value}[[:space:]]*$" "$old_path" 2>/dev/null; then
+        if grep -qF "name: ${expected_name_value}" "$old_path" 2>/dev/null; then
             if [ "$DRY_RUN" = true ]; then
                 log "[dry-run] would remove stale ant-farm agent: $old_path (replacing with $new_name)"
             else
-                rm "$old_path"
+                rm "$old_path" || { warn "Failed to remove stale agent -- check permissions. Continuing."; continue; }
                 log "Removed stale ant-farm agent: $old_path (replaced by $new_name)"
             fi
         else

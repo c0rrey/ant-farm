@@ -36,16 +36,14 @@
             fi
 
             # CHANGED_FILES: must be non-empty (at least one changed file)
-            # Use bash parameter expansion to strip all whitespace — simpler and
-            # more portable than the tr+sed pipeline (no subprocesses, no
-            # platform-specific tr/sed behavior differences).
-            if [[ -z "${CHANGED_FILES//[[:space:]]/}" ]]; then
+            # Use tr -d for POSIX-portable whitespace stripping (works under bash and zsh).
+            if [ -z "$(printf '%s' "${CHANGED_FILES}" | tr -d '[:space:]')" ]; then
               echo "ERROR: CHANGED_FILES is empty. git diff returned no files for the commit range. Verify the commit range contains actual changes." >&2
               exit 1
             fi
 
             # TASK_IDS: must be non-empty (at least one task ID)
-            if [[ -z "${TASK_IDS//[[:space:]]/}" ]]; then
+            if [ -z "$(printf '%s' "${TASK_IDS}" | tr -d '[:space:]')" ]; then
               echo "ERROR: TASK_IDS is empty. Round 1 requires all task IDs; round 2+ requires fix task IDs. Verify session state is populated." >&2
               exit 1
             fi
