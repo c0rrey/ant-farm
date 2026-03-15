@@ -15,8 +15,11 @@ Isolation strategy:
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
+import time
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List
 
@@ -222,4 +225,305 @@ class TestCLIIntegration:
         )
         assert task_id in show_result.stdout, (
             f"Expected ID {task_id!r} to appear in show output."
+        )
+
+
+# ---------------------------------------------------------------------------
+# Prune integration helpers
+# ---------------------------------------------------------------------------
+
+#: Seconds per day — used with os.utime to backdate directory mtimes.
+_SECS_PER_DAY: int = 86_400
+
+#: A mtime age (in seconds) guaranteed to be older than the 60-minute active
+#: guard window.  Two hours is enough headroom.
+_OLD_MTIME_SECS: int = 7_200
+
+
+def _make_sessions_dir(crumbs_dir: Path) -> Path:
+    """Create and return ``crumbs_dir/sessions/``.
+
+    Args:
+        crumbs_dir: The isolated ``.crumbs/`` directory.
+
+    Returns:
+        Path to the newly created ``sessions/`` sub-directory.
+    """
+    sessions_dir = crumbs_dir / "sessions"
+    sessions_dir.mkdir(parents=True, exist_ok=True)
+    return sessions_dir
+
+
+def _make_session_dir(
+    sessions_dir: Path,
+    name: str,
+    *,
+    backdate_secs: int = _OLD_MTIME_SECS,
+) -> Path:
+    """Create a named session directory and optionally backdate its mtime.
+
+    Args:
+        sessions_dir: Parent ``sessions/`` directory.
+        name: Directory name (e.g. ``_session-20260101-120000``).
+        backdate_secs: How many seconds in the past to set the mtime.
+            Pass ``0`` to leave the mtime as-is (i.e. current time).
+
+    Returns:
+        Path to the created directory.
+    """
+    d = sessions_dir / name
+    d.mkdir(parents=True, exist_ok=True)
+    if backdate_secs > 0:
+        past = time.time() - backdate_secs
+        os.utime(d, (past, past))
+    return d
+
+
+def _session_name(prefix: str, days_old: int, hour: int = 12) -> str:
+    """Build a valid session directory name whose embedded timestamp is *days_old* days ago.
+
+    Args:
+        prefix: One of ``_session-``, ``_decompose-``, ``_review-``.
+        days_old: How many days ago the timestamp should be.
+        hour: Hour component of the timestamp (default 12 for noon).
+
+    Returns:
+        Directory name string, e.g. ``_session-20260215-120000``.
+    """
+    ts: datetime = datetime.now() - timedelta(days=days_old)
+    ts = ts.replace(hour=hour, minute=0, second=0, microsecond=0)
+    return f"{prefix}{ts.strftime('%Y%m%d-%H%M%S')}"
+
+
+# ---------------------------------------------------------------------------
+# TestCLIPrune
+# ---------------------------------------------------------------------------
+
+
+class TestCLIPrune:
+    """Subprocess-based integration tests for the ``crumb prune`` subcommand.
+
+    Each test:
+    1. Creates an isolated ``.crumbs/`` environment in a fresh ``tmp_path``.
+    2. Populates ``sessions/`` with synthetic directories whose name-embedded
+       timestamps and filesystem mtimes are controlled to exercise specific
+       code paths.
+    3. Invokes ``crumb prune`` (with optional flags) via ``_run()``.
+    4. Asserts on exit code, stdout, stderr, and directory presence.
+    """
+
+    def test_default_prune_deletes_old_and_prints_count(
+        self, tmp_path: Path
+    ) -> None:
+        """Default ``crumb prune`` deletes dirs older than 14 days and prints count.
+
+        Acceptance criterion 2: default prune deletes dirs older than 14 days
+        and prints the deleted count to stdout.
+        """
+        crumbs_dir = _make_crumbs_env(tmp_path)
+        sessions_dir = _make_sessions_dir(crumbs_dir)
+
+        # 20-day-old directory — should be pruned
+        old_name = _session_name("_session-", days_old=20)
+        old_dir = _make_session_dir(sessions_dir, old_name, backdate_secs=_OLD_MTIME_SECS)
+
+        # 5-day-old directory — should be retained (below 14-day threshold)
+        recent_name = _session_name("_session-", days_old=5, hour=10)
+        recent_dir = _make_session_dir(sessions_dir, recent_name, backdate_secs=_OLD_MTIME_SECS)
+
+        result = _run(["prune"], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected exit 0.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        # stdout should mention "pruned" and the count
+        assert "pruned" in result.stdout.lower(), (
+            f"Expected 'pruned' in stdout.\nstdout: {result.stdout!r}"
+        )
+        assert "1" in result.stdout, (
+            f"Expected count '1' in stdout.\nstdout: {result.stdout!r}"
+        )
+        # Old dir must be gone; recent dir must survive
+        assert not old_dir.exists(), "Old session directory should have been deleted."
+        assert recent_dir.exists(), "Recent session directory should NOT have been deleted."
+
+    def test_days_7_deletes_only_dirs_older_than_7_days(
+        self, tmp_path: Path
+    ) -> None:
+        """``crumb prune --days 7`` deletes dirs >7 days old, retains newer ones.
+
+        Acceptance criterion 3: ``--days 7`` threshold is respected.
+        """
+        crumbs_dir = _make_crumbs_env(tmp_path)
+        sessions_dir = _make_sessions_dir(crumbs_dir)
+
+        # 10-day-old directory — should be pruned under --days 7
+        old_name = _session_name("_session-", days_old=10)
+        old_dir = _make_session_dir(sessions_dir, old_name, backdate_secs=_OLD_MTIME_SECS)
+
+        # 3-day-old directory — should be retained (age < 7 days)
+        new_name = _session_name("_session-", days_old=3, hour=10)
+        new_dir = _make_session_dir(sessions_dir, new_name, backdate_secs=_OLD_MTIME_SECS)
+
+        result = _run(["prune", "--days", "7"], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected exit 0.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        assert not old_dir.exists(), (
+            "10-day-old directory should have been deleted with --days 7."
+        )
+        assert new_dir.exists(), (
+            "3-day-old directory should NOT have been deleted with --days 7."
+        )
+
+    def test_days_0_skips_active_dirs_with_stderr_warning(
+        self, tmp_path: Path
+    ) -> None:
+        """``crumb prune --days 0`` skips active dirs (recent mtime) with warning.
+
+        Acceptance criterion 4: active sessions are skipped and a warning is
+        emitted to stderr when ``--days 0`` would otherwise qualify every dir.
+        """
+        crumbs_dir = _make_crumbs_env(tmp_path)
+        sessions_dir = _make_sessions_dir(crumbs_dir)
+
+        # A directory with an old name-timestamp but a *very recent* mtime
+        # (within 60 minutes) — crumb.py must skip it as an active session.
+        active_name = _session_name("_session-", days_old=20)
+        active_dir = _make_session_dir(
+            sessions_dir, active_name, backdate_secs=0  # mtime = now
+        )
+
+        result = _run(["prune", "--days", "0"], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected exit 0.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        # The active session must not have been deleted
+        assert active_dir.exists(), (
+            "Active session directory should NOT have been deleted by --days 0."
+        )
+        # A warning about the active session must appear on stderr
+        assert "warning" in result.stderr.lower(), (
+            f"Expected 'warning' in stderr for active session.\nstderr: {result.stderr!r}"
+        )
+        assert "active" in result.stderr.lower(), (
+            f"Expected 'active' in stderr warning.\nstderr: {result.stderr!r}"
+        )
+
+    def test_negative_days_exits_nonzero_no_deletion(
+        self, tmp_path: Path
+    ) -> None:
+        """``crumb prune --days -1`` exits non-zero without deleting anything.
+
+        Acceptance criterion 5: negative days argument causes non-zero exit
+        and no directories are removed.
+        """
+        crumbs_dir = _make_crumbs_env(tmp_path)
+        sessions_dir = _make_sessions_dir(crumbs_dir)
+
+        old_name = _session_name("_session-", days_old=30)
+        old_dir = _make_session_dir(sessions_dir, old_name, backdate_secs=_OLD_MTIME_SECS)
+
+        result = _run(["prune", "--days", "-1"], cwd=tmp_path)
+
+        assert result.returncode != 0, (
+            f"Expected non-zero exit for --days -1, got {result.returncode}."
+        )
+        # Nothing should have been deleted
+        assert old_dir.exists(), (
+            "Session directory must not be deleted when --days is negative."
+        )
+
+    def test_dry_run_does_not_delete_and_prints_counts(
+        self, tmp_path: Path
+    ) -> None:
+        """``crumb prune --dry-run`` prints would-prune/retain counts without deleting.
+
+        Acceptance criterion 6: ``--dry-run`` leaves all directories intact
+        and prints both would-prune and would-retain counts to stdout.
+        """
+        crumbs_dir = _make_crumbs_env(tmp_path)
+        sessions_dir = _make_sessions_dir(crumbs_dir)
+
+        # Old dir — would be pruned
+        old_name = _session_name("_session-", days_old=20)
+        old_dir = _make_session_dir(sessions_dir, old_name, backdate_secs=_OLD_MTIME_SECS)
+
+        # Recent dir — would be retained
+        recent_name = _session_name("_decompose-", days_old=3, hour=10)
+        recent_dir = _make_session_dir(sessions_dir, recent_name, backdate_secs=_OLD_MTIME_SECS)
+
+        result = _run(["prune", "--dry-run"], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected exit 0 for --dry-run.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        # Neither directory should have been deleted
+        assert old_dir.exists(), "Old dir must NOT be deleted by --dry-run."
+        assert recent_dir.exists(), "Recent dir must NOT be deleted by --dry-run."
+        # stdout must mention "would prune" and "would retain"
+        stdout_lower = result.stdout.lower()
+        assert "would prune" in stdout_lower, (
+            f"Expected 'would prune' in stdout.\nstdout: {result.stdout!r}"
+        )
+        assert "would retain" in stdout_lower, (
+            f"Expected 'would retain' in stdout.\nstdout: {result.stdout!r}"
+        )
+
+    def test_unknown_prefix_dirs_never_deleted(self, tmp_path: Path) -> None:
+        """Directories without known prefixes are silently skipped by prune.
+
+        Acceptance criterion 7: non-matching prefixes (e.g. ``mydata-``) are
+        never deleted regardless of age.
+        """
+        crumbs_dir = _make_crumbs_env(tmp_path)
+        sessions_dir = _make_sessions_dir(crumbs_dir)
+
+        # Unknown-prefix directory with an old-looking name
+        unknown_name = "mydata-20260101-120000"
+        unknown_dir = _make_session_dir(
+            sessions_dir, unknown_name, backdate_secs=_SECS_PER_DAY * 30
+        )
+
+        result = _run(["prune", "--days", "0"], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected exit 0.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        assert unknown_dir.exists(), (
+            "Directory with unknown prefix must NOT be deleted by prune."
+        )
+
+    def test_unparseable_timestamp_skipped_with_stderr_warning(
+        self, tmp_path: Path
+    ) -> None:
+        """A known-prefix dir with an unparseable timestamp is skipped with a warning.
+
+        Acceptance criterion 8: ``_session-baddate`` emits a stderr warning
+        and is not deleted.
+        """
+        crumbs_dir = _make_crumbs_env(tmp_path)
+        sessions_dir = _make_sessions_dir(crumbs_dir)
+
+        # Known prefix but unparseable timestamp portion
+        bad_name = "_session-baddate"
+        bad_dir = _make_session_dir(
+            sessions_dir, bad_name, backdate_secs=_SECS_PER_DAY * 30
+        )
+
+        result = _run(["prune", "--days", "0"], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected exit 0.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        assert bad_dir.exists(), (
+            "Directory with unparseable timestamp must NOT be deleted."
+        )
+        assert "warning" in result.stderr.lower(), (
+            f"Expected 'warning' in stderr.\nstderr: {result.stderr!r}"
+        )
+        assert "timestamp not parseable" in result.stderr.lower(), (
+            f"Expected 'timestamp not parseable' message.\nstderr: {result.stderr!r}"
         )
