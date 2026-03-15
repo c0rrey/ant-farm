@@ -2257,8 +2257,10 @@ def cmd_prune(args: argparse.Namespace) -> None:
     Enumerates ``.crumbs/sessions/`` children, filters to those matching a
     known session prefix (``_session-``, ``_decompose-``, ``_review-``),
     parses the name-embedded ``YYYYMMDD-HHMMSS`` timestamp to compute age,
-    and deletes directories exceeding the retention threshold.  Directories
-    modified within the last 60 minutes are never deleted regardless of age.
+    and deletes directories exceeding the retention threshold.  The age
+    comparison is inclusive: a directory exactly ``--days`` days old *is*
+    pruned (``age_days >= days``, not ``>``).  Directories modified within
+    the last 60 minutes are never deleted regardless of age.
 
     With ``--dry-run`` the would-be pruned and would-be retained lists are
     printed without any deletion taking place.
