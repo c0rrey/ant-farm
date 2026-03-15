@@ -28,6 +28,7 @@ Usage:
     crumb import <FILE> [--from-beads]
     crumb doctor
     crumb init [--prefix PREFIX]
+    crumb prune [--days N] [--dry-run]
 """
 
 from __future__ import annotations
@@ -36,12 +37,14 @@ import argparse
 import fcntl
 import json
 import os
+import re
+import shutil
 import sys
 import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -62,6 +65,15 @@ DEFAULT_CONFIG: Dict[str, Any] = {
 VALID_STATUSES = ("open", "in_progress", "closed")
 VALID_PRIORITIES = ("P0", "P1", "P2", "P3", "P4")
 VALID_TYPES = ("task", "bug", "feature", "trail")
+
+# ---------------------------------------------------------------------------
+# Prune constants
+# ---------------------------------------------------------------------------
+
+DEFAULT_RETENTION_DAYS: int = 14
+ACTIVE_GUARD_MINUTES: int = 60
+SESSION_DIR_PREFIXES: Tuple[str, ...] = ("_session-", "_decompose-", "_review-")
+SESSION_TS_FORMAT: str = "%Y%m%d-%H%M%S"
 
 
 # ---------------------------------------------------------------------------
@@ -603,6 +615,64 @@ def _auto_reopen_trail_if_needed(
     trail["updated_at"] = now
     write_tasks(path, tasks)
     print(f"auto-reopened trail {trail_id} (new open child linked)")
+
+
+def _parse_session_dir_timestamp(name: str) -> Optional[datetime]:
+    """Extract and parse the YYYYMMDD-HHMMSS timestamp from a session directory name.
+
+    Checks whether *name* starts with one of the known session directory
+    prefixes (``_session-``, ``_decompose-``, ``_review-``), strips the
+    prefix, and attempts to parse the remainder as a ``%Y%m%d-%H%M%S``
+    timestamp.  Returns ``None`` for names that do not match any known
+    prefix or whose timestamp portion is not parseable.
+
+    Args:
+        name: Directory base name (not a full path).
+
+    Returns:
+        Parsed :class:`datetime` (naive, local) or ``None``.
+    """
+    matched_prefix: Optional[str] = None
+    for prefix in SESSION_DIR_PREFIXES:
+        if name.startswith(prefix):
+            matched_prefix = prefix
+            break
+    if matched_prefix is None:
+        return None
+
+    ts_str = name[len(matched_prefix):]
+    # Accept only the first 15 characters (YYYYMMDD-HHMMSS) so that
+    # extra suffixes (e.g., _session-20260101-120000-extra) are still
+    # parseable from the leading timestamp portion.
+    ts_candidate = ts_str[:15]
+    try:
+        return datetime.strptime(ts_candidate, SESSION_TS_FORMAT)
+    except ValueError:
+        return None
+
+
+def _is_active_session(dir_path: Path, now_ts: float) -> bool:
+    """Return True if *dir_path* was modified within the active-guard window.
+
+    Uses ``os.stat(dir_path).st_mtime`` so that ongoing writes to the
+    session directory extend the guard window.  A fresh ``stat`` call is
+    made here (not cached) to mitigate TOCTOU between the age check and
+    the actual ``shutil.rmtree``.
+
+    Args:
+        dir_path: Absolute path to the session directory.
+        now_ts: Current time as a POSIX timestamp (``time.time()``).
+
+    Returns:
+        ``True`` if the directory's mtime is within
+        :data:`ACTIVE_GUARD_MINUTES` minutes of *now_ts*.
+    """
+    try:
+        mtime = os.stat(dir_path).st_mtime
+    except OSError:
+        # If stat fails the directory may have vanished; treat as not active.
+        return False
+    return (now_ts - mtime) < (ACTIVE_GUARD_MINUTES * 60)
 
 
 def cmd_list(args: argparse.Namespace) -> None:
@@ -2177,6 +2247,122 @@ def cmd_init(args: argparse.Namespace) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Prune subcommand — remove old session directories
+# ---------------------------------------------------------------------------
+
+
+def cmd_prune(args: argparse.Namespace) -> None:
+    """Delete session directories under .crumbs/sessions/ older than --days.
+
+    Enumerates ``.crumbs/sessions/`` children, filters to those matching a
+    known session prefix (``_session-``, ``_decompose-``, ``_review-``),
+    parses the name-embedded ``YYYYMMDD-HHMMSS`` timestamp to compute age,
+    and deletes directories exceeding the retention threshold.  Directories
+    modified within the last 60 minutes are never deleted regardless of age.
+
+    With ``--dry-run`` the would-be pruned and would-be retained lists are
+    printed without any deletion taking place.
+
+    Args:
+        args: Parsed arguments.
+            ``args.days`` (int): Retention threshold in days (default 14).
+            ``args.dry_run`` (bool): When True, list candidates but do not delete.
+
+    Raises:
+        SystemExit: If ``--days`` is negative, or on unrecoverable errors.
+    """
+    days: int = args.days
+    if days < 0:
+        die(f"--days must be 0 or greater, got {days}")
+
+    crumbs_dir = find_crumbs_dir()
+    sessions_dir = crumbs_dir / "sessions"
+
+    if not sessions_dir.is_dir():
+        print("nothing to prune (no sessions directory)")
+        return
+
+    now = datetime.now()
+    now_ts = time.time()
+
+    to_prune: List[Tuple[Path, int]] = []   # (dir_path, age_days)
+    to_retain: List[Tuple[Path, str]] = []  # (dir_path, reason)
+
+    for entry in sorted(sessions_dir.iterdir()):
+        if not entry.is_dir():
+            continue
+
+        # Only consider directories matching known prefixes
+        parsed_ts = _parse_session_dir_timestamp(entry.name)
+        if parsed_ts is None:
+            if any(entry.name.startswith(p) for p in SESSION_DIR_PREFIXES):
+                # Recognised prefix but unparseable timestamp — warn and skip
+                print(
+                    f"warning: skipping {entry.name}: timestamp not parseable",
+                    file=sys.stderr,
+                )
+            # Directories with no recognised prefix are silently skipped
+            continue
+
+        age_days = (now - parsed_ts).days
+
+        if age_days < days:
+            to_retain.append((entry, f"age {age_days}d < {days}d threshold"))
+            continue
+
+        # Re-stat immediately before deletion decision (TOCTOU mitigation)
+        if _is_active_session(entry, now_ts):
+            print(
+                f"warning: skipping {entry.name}: active session (mtime within "
+                f"{ACTIVE_GUARD_MINUTES} minutes)",
+                file=sys.stderr,
+            )
+            to_retain.append((entry, f"active session"))
+            continue
+
+        to_prune.append((entry, age_days))
+
+    if args.dry_run:
+        if to_prune:
+            print(f"would prune {len(to_prune)} director{'y' if len(to_prune) == 1 else 'ies'}:")
+            for dir_path, age_days in to_prune:
+                print(f"  {dir_path.name}  ({age_days}d old)")
+        else:
+            print("would prune: nothing")
+        if to_retain:
+            print(f"would retain {len(to_retain)} director{'y' if len(to_retain) == 1 else 'ies'}:")
+            for dir_path, reason in to_retain:
+                print(f"  {dir_path.name}  ({reason})")
+        else:
+            print("would retain: nothing")
+        return
+
+    if not to_prune:
+        print(f"nothing to prune (0 directories exceed {days} days)")
+        return
+
+    pruned_names: List[str] = []
+    for dir_path, _age in to_prune:
+        try:
+            shutil.rmtree(dir_path)
+            pruned_names.append(dir_path.name)
+        except FileNotFoundError:
+            # Already deleted concurrently — count it as pruned
+            pruned_names.append(dir_path.name)
+        except OSError as exc:
+            print(
+                f"warning: could not remove {dir_path.name}: {exc}",
+                file=sys.stderr,
+            )
+
+    if pruned_names:
+        names_str = ", ".join(pruned_names)
+        print(f"pruned {len(pruned_names)} director{'y' if len(pruned_names) == 1 else 'ies'}: {names_str}")
+    else:
+        print(f"nothing to prune (0 directories exceed {days} days)")
+
+
+# ---------------------------------------------------------------------------
 # Argument parser
 # ---------------------------------------------------------------------------
 
@@ -2364,6 +2550,30 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     p_init.set_defaults(func=cmd_init)
+
+    # --- prune ---
+    p_prune = sub.add_parser(
+        "prune",
+        help="Delete old session directories under .crumbs/sessions/",
+    )
+    p_prune.add_argument(
+        "--days",
+        type=int,
+        default=DEFAULT_RETENTION_DAYS,
+        metavar="N",
+        help=(
+            "Delete session directories whose name-embedded timestamp is older "
+            f"than N days (default: {DEFAULT_RETENTION_DAYS}). "
+            "Use 0 to delete all except active sessions."
+        ),
+    )
+    p_prune.add_argument(
+        "--dry-run",
+        action="store_true",
+        dest="dry_run",
+        help="List would-prune and would-retain directories without deleting.",
+    )
+    p_prune.set_defaults(func=cmd_prune)
 
     return parser
 
