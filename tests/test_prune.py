@@ -633,9 +633,10 @@ class TestCmdPruneAutoContract:
     1. ``.crumbs/sessions/`` does not yet exist (first-ever session).
     2. ``shutil.rmtree`` raises ``PermissionError`` on a stale directory.
 
-    In both cases the auto-prune invocation in RULES.md relies on ``|| true``
-    to suppress shell-level failure, but the Python contract is that
-    ``cmd_prune`` must not raise any exception itself.
+    In both cases the auto-prune invocation in RULES.md (line 527:
+    ``crumb prune >/dev/null || true``) relies on ``|| true`` to suppress
+    shell-level failure, but the Python contract is that ``cmd_prune`` must
+    not raise any exception itself.
     """
 
     def test_auto_prune_no_sessions_dir(
