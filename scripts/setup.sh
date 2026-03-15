@@ -7,7 +7,12 @@
 #   scripts/build-review-prompts.sh → ~/.claude/orchestration/scripts/
 #   skills/*.md         → ~/.claude/plugins/ant-farm/commands/<name>.md
 #   crumb.py            → ~/.local/bin/crumb
-#   CLAUDE.md           → ~/.claude/CLAUDE.md  (block insert, not overwrite)
+#
+# CLAUDE.md handling:
+#   Step 6a: Remove any existing ant-farm block from ~/.claude/CLAUDE.md
+#            (migration cleanup — the block now lives in per-project prompt-dir).
+#   Step 6b: Write block to this project's prompt-dir CLAUDE.md
+#            (~/.claude/projects/-Users-…-ant-farm/CLAUDE.md).
 #
 # Backs up any existing target file with a timestamped .bak suffix before
 # overwriting. Idempotent: re-running updates files; each run generates at
@@ -190,6 +195,65 @@ sync_claude_block() {
         return 1
     fi
     rm -f "$blockfile"
+}
+
+# remove_claude_block DST
+#   Removes the ant-farm sentinel block (inclusive of markers) from DST.
+#   User content outside the markers is preserved verbatim.
+#   If the block is not present, does nothing.
+#   If the file ends up empty (or whitespace-only) after removal, it is left
+#   in place (not deleted) — per AC-4.
+#   Always backs up DST before modifying using ${dst}.bak.${TS} convention.
+#   Respects DRY_RUN.
+remove_claude_block() {
+    local dst="$1"
+
+    if [ ! -f "$dst" ]; then
+        # Nothing to remove — file does not exist
+        return
+    fi
+
+    if ! grep -qF "$ANTFARM_START" "$dst"; then
+        # No block present — global CLAUDE.md is clean
+        if [ "$DRY_RUN" = true ]; then
+            log "[dry-run] no ant-farm block found in $dst — nothing to remove"
+        fi
+        return
+    fi
+
+    # Guard: both markers must be present
+    if ! grep -qF "$ANTFARM_END" "$dst"; then
+        echo "[ant-farm] ERROR: Found start marker but not end marker in $dst — refusing to remove. Fix the file manually." >&2
+        return 1
+    fi
+
+    if [ "$DRY_RUN" = true ]; then
+        log "[dry-run] would remove ant-farm block from: $dst (backup: ${dst}.bak.${TS})"
+        return
+    fi
+
+    # Backup before modifying
+    local bak="${dst}.bak.${TS}"
+    cp "$dst" "$bak" || { echo "[ant-farm] ERROR: backup failed for $dst" >&2; return 1; }
+    log "Backed up: $dst -> $bak"
+
+    # Strip the block: print all lines EXCEPT those between (inclusive) the sentinels.
+    # Write stripped result to a temp file, then atomically replace DST.
+    local tmpfile
+    tmpfile="$(mktemp)"
+
+    if awk -v start="$ANTFARM_START" -v end="$ANTFARM_END" '
+        $0 == start { skip=1; next }
+        skip && $0 == end { skip=0; next }
+        !skip { print }
+    ' "$dst" > "$tmpfile"; then
+        mv "$tmpfile" "$dst"
+        log "Removed ant-farm block from: $dst"
+    else
+        rm -f "$tmpfile"
+        echo "[ant-farm] ERROR: awk removal failed for $dst — backup at $bak" >&2
+        return 1
+    fi
 }
 
 # ---------------------------------------------------------------------------
@@ -405,18 +469,31 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Step 6: Sync ant-farm block into ~/.claude/CLAUDE.md
-#   Inserts or updates a sentinel-delimited block. User content outside
-#   the <!-- ant-farm:start/end --> markers is preserved.
+# Step 6a: Remove any existing ant-farm block from ~/.claude/CLAUDE.md
+#   Migration cleanup: the block now lives in the per-project prompt-dir.
+#   User content outside sentinel markers is preserved verbatim.
+#   If no block is present, the file is left unchanged.
 # ---------------------------------------------------------------------------
-CLAUDE_SRC="$REPO_ROOT/CLAUDE.md"
-CLAUDE_DST="${HOME}/.claude/CLAUDE.md"
+GLOBAL_CLAUDE_DST="${HOME}/.claude/CLAUDE.md"
+log "Checking for ant-farm block to remove from ${GLOBAL_CLAUDE_DST} ..."
+remove_claude_block "$GLOBAL_CLAUDE_DST"
 
-if [ ! -f "$CLAUDE_SRC" ]; then
-    warn "CLAUDE.md not found: $CLAUDE_SRC — skipping CLAUDE.md sync"
+# ---------------------------------------------------------------------------
+# Step 6b: Write ant-farm block to this project's prompt-dir CLAUDE.md
+#   Per-project prompt-dir path follows Claude Code's convention:
+#   ~/.claude/projects/<path-encoded-repo-root>/CLAUDE.md
+#   Block content is sourced from orchestration/templates/claude-block.md.
+# ---------------------------------------------------------------------------
+BLOCK_SRC="$REPO_ROOT/orchestration/templates/claude-block.md"
+# Encode REPO_ROOT as a prompt-dir path component: replace / with -
+PROMPTDIR_COMPONENT="$(printf '%s' "$REPO_ROOT" | tr '/' '-')"
+PROMPTDIR_CLAUDE_DST="${HOME}/.claude/projects/${PROMPTDIR_COMPONENT}/CLAUDE.md"
+
+if [ ! -f "$BLOCK_SRC" ]; then
+    warn "claude-block.md not found: $BLOCK_SRC — skipping prompt-dir CLAUDE.md install"
 else
-    log "Syncing ant-farm block → ${HOME}/.claude/CLAUDE.md ..."
-    sync_claude_block "$CLAUDE_SRC" "$CLAUDE_DST"
+    log "Installing ant-farm block → ${PROMPTDIR_CLAUDE_DST} ..."
+    sync_claude_block "$BLOCK_SRC" "$PROMPTDIR_CLAUDE_DST"
 fi
 
 # ---------------------------------------------------------------------------
