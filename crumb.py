@@ -2288,7 +2288,12 @@ def cmd_prune(args: argparse.Namespace) -> None:
     to_prune: List[Tuple[Path, int]] = []   # (dir_path, age_days)
     to_retain: List[Tuple[Path, str]] = []  # (dir_path, reason)
 
-    for entry in sorted(sessions_dir.iterdir()):
+    try:
+        entries = sorted(sessions_dir.iterdir())
+    except OSError as exc:
+        die(f"error: cannot read sessions directory: {sessions_dir}: {exc}")
+
+    for entry in entries:
         if not entry.is_dir():
             continue
 
