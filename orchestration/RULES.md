@@ -240,6 +240,12 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             team using the Task tool with `team_name: "nitpicker-team"`. Do NOT add a second TeamCreate
             call anywhere in the workflow.
 
+            **Stale team recovery:** If `TeamCreate` fails because a team already exists from a prior
+            session, do NOT delete the team (`TeamDelete`). Instead, spawn agents into the existing team
+            using the Agent tool with `team_name` set to the existing team name. Read
+            `~/.claude/teams/*/config.json` to discover the team name if needed. Deleting and recreating
+            is not possible within a single session — the TeamCreate slot is already consumed.
+
             **Progress log (after Nitpicker team completes round 1):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_COMPLETE|round=<N>|team=complete|report=${SESSION_DIR}/review-reports/review-consolidated-${TIMESTAMP}.md" >> ${SESSION_DIR}/progress.log`
 
 **Step 3c:** User triage — **after CCB PASS and Big Head consolidation completes**:
