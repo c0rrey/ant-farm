@@ -81,7 +81,7 @@ All checkpoint artifacts are written to `<session-dir>/pc/` with timestamped fil
 
 ```bash
 git clone <repo-url> && cd ant-farm
-./scripts/setup.sh           # installs agents, orchestration, skills, crumb CLI, and CLAUDE.md
+./scripts/setup.sh           # installs agents, orchestration, skills, crumb CLI
 ```
 
 The setup script installs:
@@ -89,7 +89,6 @@ The setup script installs:
 - Orchestration files to `~/.claude/orchestration/`
 - Skills to `~/.claude/plugins/ant-farm/commands/`
 - `crumb.py` to `~/.local/bin/crumb`
-- CLAUDE.md content into `~/.claude/CLAUDE.md` (sentinel-delimited block; your existing content is preserved)
 
 Then **restart Claude Code** — agent types are loaded at startup only.
 
@@ -97,7 +96,9 @@ For detailed installation, backup, and uninstall instructions, see `docs/install
 
 ### Wire Up a Target Project
 
-Add an orchestration section to the target project's `CLAUDE.md` (see `orchestration/SETUP.md` for the full recipe):
+Run `/ant-farm:init` inside the target project to install orchestration triggers into the project's prompt-dir `CLAUDE.md`. This creates a per-project installation scoped to that project's Claude Code prompt directory.
+
+After running `/ant-farm:init`, the project's `CLAUDE.md` will contain an orchestration section (see `orchestration/SETUP.md` for the full recipe and manual setup option):
 
 ```markdown
 ## Orchestration
@@ -323,7 +324,7 @@ All file paths in this document use **repo-root relative** format. At runtime, a
 
 | File | Read by | Purpose |
 |------|---------|---------|
-| `CLAUDE.md` | Claude Code (all projects) | Global instructions: triggers, session completion rules |
+| `CLAUDE.md` | Claude Code (per-project prompt-dir) | Per-project instructions: triggers, session completion rules |
 | `agents/*.md` | Claude Code (at startup) | Custom agent type definitions |
 | `orchestration/RULES.md` | The Queen | Execution workflow steps, hard gates, concurrency rules |
 | `orchestration/RULES-decompose.md` | The Planner | Decomposition workflow steps and gates |
