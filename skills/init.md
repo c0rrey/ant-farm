@@ -209,6 +209,134 @@ Surface this as a recommendation:
 
 > For a `[LANGUAGE]` project, recommended agent type is `[AGENT_TYPE]`. You can set this per-task with `crumb create --agent [AGENT_TYPE]` or add it to your project CLAUDE.md.
 
+## Step 8b — Install Orchestration Triggers to Prompt-Dir CLAUDE.md
+
+This step writes the ant-farm orchestration block into the Claude Code prompt-dir CLAUDE.md for the target project. The file lives at `~/.claude/projects/-<escaped-path>/CLAUDE.md` where `<escaped-path>` is the absolute project path with every `/` replaced by `-`.
+
+### 8b.1 — Compute Prompt-Dir Path
+
+```bash
+PROJECT_ROOT="$(pwd)"
+ESCAPED_PATH="$(printf '%s' "$PROJECT_ROOT" | tr '/' '-')"
+PROMPT_DIR="$HOME/.claude/projects/${ESCAPED_PATH}"
+PROMPT_CLAUDE="$PROMPT_DIR/CLAUDE.md"
+echo "Prompt-dir: $PROMPT_CLAUDE"
+```
+
+### 8b.2 — Create Prompt-Dir if Needed
+
+```bash
+mkdir -p "$PROMPT_DIR" && echo "OK" || echo "ERROR: mkdir -p $PROMPT_DIR failed"
+```
+
+If `ERROR`, surface a warning and skip the remaining sub-steps of Step 8b:
+
+> **Warning**: Could not create `~/.claude/projects/-<escaped-path>/`. Check permissions and try again, or create the directory manually.
+
+### 8b.3 — Read Block Content from Ant-Farm Repo
+
+The block content is sourced from the ant-farm repository's canonical file. Locate it relative to where crumb.py was installed or the ant-farm repo root:
+
+```bash
+# Locate the ant-farm repo's claude-block.md
+ANTFARM_REPO="$(dirname "$(command -v crumb)" 2>/dev/null)/../share/ant-farm"
+BLOCK_SRC=""
+# Try common locations
+for candidate in \
+    "$ANTFARM_REPO/orchestration/templates/claude-block.md" \
+    "$HOME/.local/share/ant-farm/orchestration/templates/claude-block.md" \
+    "$(dirname "$(find ~/.local -name 'crumb.py' 2>/dev/null | head -1)" 2>/dev/null)/../orchestration/templates/claude-block.md"; do
+    [ -f "$candidate" ] && { BLOCK_SRC="$candidate"; break; }
+done
+
+# Fall back: if this init is running from within the ant-farm repo itself
+[ -z "$BLOCK_SRC" ] && [ -f "orchestration/templates/claude-block.md" ] && \
+    BLOCK_SRC="orchestration/templates/claude-block.md"
+
+[ -n "$BLOCK_SRC" ] && echo "FOUND: $BLOCK_SRC" || echo "NOT_FOUND"
+```
+
+If `NOT_FOUND`, surface a warning and skip 8b.4–8b.5:
+
+> **Warning**: `claude-block.md` not found. Cannot install orchestration triggers automatically. Manually copy the block from the ant-farm repo's `orchestration/templates/claude-block.md` into `~/.claude/projects/-<escaped-path>/CLAUDE.md` between `<!-- ant-farm:start -->` and `<!-- ant-farm:end -->` sentinels.
+
+Store the block content (wrapped in sentinel markers) in a temp variable:
+
+```bash
+ANTFARM_START="<!-- ant-farm:start -->"
+ANTFARM_END="<!-- ant-farm:end -->"
+BLOCK_CONTENT="$(printf '%s\n' "$ANTFARM_START"; cat "$BLOCK_SRC"; printf '%s\n' "$ANTFARM_END")"
+```
+
+### 8b.4 — Detect Existing State
+
+```bash
+if [ ! -f "$PROMPT_CLAUDE" ]; then
+    echo "STATE=create"
+elif grep -qF "<!-- ant-farm:start -->" "$PROMPT_CLAUDE" && grep -qF "<!-- ant-farm:end -->" "$PROMPT_CLAUDE"; then
+    echo "STATE=update"
+elif grep -qF "<!-- ant-farm:start -->" "$PROMPT_CLAUDE" || grep -qF "<!-- ant-farm:end -->" "$PROMPT_CLAUDE"; then
+    echo "STATE=error_partial"
+else
+    echo "STATE=append"
+fi
+```
+
+### 8b.5 — Apply the Appropriate Write Action
+
+**If `STATE=create`** — File does not exist; create it with just the block:
+
+```bash
+printf '%s\n' "$BLOCK_CONTENT" > "${PROMPT_CLAUDE}.tmp" && mv "${PROMPT_CLAUDE}.tmp" "$PROMPT_CLAUDE"
+PROMPT_STATUS="created"
+```
+
+**If `STATE=append`** — File exists with user content but no ant-farm block; append, preserving existing content:
+
+```bash
+# Ensure trailing newline before appending
+[ -s "$PROMPT_CLAUDE" ] && [ "$(tail -c 1 "$PROMPT_CLAUDE" | wc -l)" -eq 0 ] && printf '\n' >> "$PROMPT_CLAUDE"
+printf '\n%s\n' "$BLOCK_CONTENT" >> "$PROMPT_CLAUDE"
+PROMPT_STATUS="updated"
+```
+
+**If `STATE=update`** — File exists with an ant-farm block; check if it needs updating first, then replace in-place using awk:
+
+```bash
+# Extract the current block for comparison
+EXISTING_BLOCK="$(awk '/^<!-- ant-farm:start -->/{found=1} found{print} /^<!-- ant-farm:end -->/{if(found){exit}}' "$PROMPT_CLAUDE")"
+if [ "$EXISTING_BLOCK" = "$BLOCK_CONTENT" ]; then
+    PROMPT_STATUS="already up to date"
+else
+    BLOCKFILE="$(mktemp)"
+    TMPFILE="$(mktemp)"
+    printf '%s\n' "$BLOCK_CONTENT" > "$BLOCKFILE"
+    if awk -v start="<!-- ant-farm:start -->" -v end="<!-- ant-farm:end -->" -v blockfile="$BLOCKFILE" '
+        $0 == start {
+            while ((getline line < blockfile) > 0) print line
+            close(blockfile)
+            skip=1; next
+        }
+        skip && $0 == end { skip=0; next }
+        !skip { print }
+    ' "$PROMPT_CLAUDE" > "$TMPFILE" && mv "$TMPFILE" "$PROMPT_CLAUDE"; then
+        PROMPT_STATUS="updated"
+    else
+        rm -f "$TMPFILE" "$BLOCKFILE"
+        echo "ERROR: awk replacement failed — $PROMPT_CLAUDE unchanged"
+    fi
+    rm -f "$BLOCKFILE"
+fi
+```
+
+**If `STATE=error_partial`** — Only one sentinel marker found; do not modify the file:
+
+> **Error**: `~/.claude/projects/-<escaped-path>/CLAUDE.md` contains only one of the two ant-farm sentinel markers (`<!-- ant-farm:start -->` / `<!-- ant-farm:end -->`). The file may be corrupt. Fix it manually, then re-run `/ant-farm:init`.
+
+Set `PROMPT_STATUS="error (partial markers)"`.
+
+Store `PROMPT_STATUS` for use in Step 9.
+
 ## Step 9 — Initialization Summary
 
 Print a summary of what was done:
@@ -221,6 +349,7 @@ Print a summary of what was done:
 > - `.crumbs/history/` — [created / already existed]
 > - `.gitignore` — [updated / already up to date]
 > - `crumb` CLI — [installed to `~/.local/bin/crumb` / already installed at `<PATH>` / manual install required]
+> - `~/.claude/projects/-<escaped-path>/CLAUDE.md` — [created / updated / already up to date / error (partial markers) / skipped (block source not found)]
 >
 > **Next steps:**
 > 1. Run `/ant-farm:plan` to decompose a spec or issue into tasks
