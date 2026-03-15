@@ -36,9 +36,9 @@ The script performs these steps:
 1. **Agent definitions** -- copies `agents/*.md` to `~/.claude/agents/`
 2. **Orchestration files** -- copies `orchestration/` to `~/.claude/orchestration/` (excluding `_archive/`)
 3. **Review script** -- copies `scripts/build-review-prompts.sh` to `~/.claude/orchestration/scripts/` and marks it executable
-4. **Skills** -- copies `skills/*.md` to `~/.claude/skills/ant-farm-<name>/SKILL.md`
+4. **Skills** -- copies `skills/*.md` to `~/.claude/plugins/ant-farm/commands/<name>.md`
 5. **Crumb CLI** -- copies `crumb.py` to `~/.local/bin/crumb` and marks it executable
-6. **CLAUDE.md** -- copies `CLAUDE.md` to `~/.claude/CLAUDE.md`
+6. **CLAUDE.md** -- inserts a sentinel-delimited block (`<!-- ant-farm:start/end -->`) into `~/.claude/CLAUDE.md`, preserving any user content outside the block
 7. **PATH check** -- warns if `~/.local/bin` is not in your PATH
 8. **Preflight check** -- warns if `~/.claude/agents/code-reviewer.md` is missing (required by the Nitpicker review team)
 
@@ -86,18 +86,8 @@ ls ~/.claude/orchestration/
 crumb --help
 
 # Confirm skills are installed
-ls ~/.claude/skills/ant-farm-*/
+ls ~/.claude/plugins/ant-farm/commands/
 ```
-
-**Verify the pre-commit PII scrubbing** (if `.crumbs/tasks.jsonl` contains email addresses):
-
-```bash
-# Stage tasks.jsonl and commit -- the hook should run automatically
-git add .crumbs/tasks.jsonl
-git commit -m "test: verify pre-commit scrub hook"
-```
-
-You should see the message: `[ant-farm] PII scrub applied and re-staged: .crumbs/tasks.jsonl`
 
 ## Understanding Setup Behavior
 
@@ -107,12 +97,10 @@ The setup process copies files from the repo to runtime locations. It is idempot
 
 - **Source**: `{repo-root}/CLAUDE.md`
 - **Target**: `~/.claude/CLAUDE.md`
-- **Behavior**: Copies with timestamped backup of existing file
+- **Behavior**: Inserts or updates a sentinel-delimited block (`<!-- ant-farm:start -->` / `<!-- ant-farm:end -->`). User content outside the sentinel markers is preserved.
 - **Why**: Project-specific instructions (like Parallel Work Mode) must be available in `~/.claude/` for the Queen to load at startup
 
-**Backup Location**: `~/.claude/CLAUDE.md.bak.[YYYYMMDDTHHMMSS]`
-
-If you edit `~/.claude/CLAUDE.md` directly, those changes will be overwritten next time you run `setup.sh`. Backup files are created but never automatically deleted.
+If you edit `~/.claude/CLAUDE.md` directly, content **inside** the sentinel block will be overwritten next time you run `setup.sh`. Content **outside** the block is preserved.
 
 ### Orchestration Directory Installation
 
@@ -135,8 +123,8 @@ New or changed agent files require a Claude Code restart to load.
 ### Skills Installation
 
 - **Source**: `{repo-root}/skills/*.md`
-- **Target**: `~/.claude/skills/ant-farm-<name>/SKILL.md`
-- **Behavior**: Each skill file gets its own directory named `ant-farm-<basename>`
+- **Target**: `~/.claude/plugins/ant-farm/commands/<name>.md`
+- **Behavior**: All skill files are placed in the `ant-farm` plugin's commands directory
 - **Contents**: Slash command definitions (e.g., `/ant-farm:work`, `/ant-farm:plan`)
 
 ### Crumb CLI Installation
@@ -213,17 +201,21 @@ If you want to remove ant-farm from your system, follow these steps.
 
 ```bash
 # Remove agents installed by ant-farm
-rm ~/.claude/agents/scout-organizer.md
-rm ~/.claude/agents/pantry-impl.md
-rm ~/.claude/agents/pest-control.md
-rm ~/.claude/agents/nitpicker.md
-rm ~/.claude/agents/big-head.md
+rm ~/.claude/agents/ant-farm-scout-organizer.md
+rm ~/.claude/agents/ant-farm-pantry-impl.md
+rm ~/.claude/agents/ant-farm-pest-control.md
+rm ~/.claude/agents/ant-farm-nitpicker.md
+rm ~/.claude/agents/ant-farm-big-head.md
+rm ~/.claude/agents/ant-farm-architect.md
+rm ~/.claude/agents/ant-farm-forager.md
+rm ~/.claude/agents/ant-farm-surveyor.md
+rm ~/.claude/agents/ant-farm-technical-writer.md
 
 # Remove orchestration directory
 rm -rf ~/.claude/orchestration/
 
 # Remove skills
-rm -rf ~/.claude/skills/ant-farm-*/
+rm -rf ~/.claude/plugins/ant-farm/
 
 # Remove crumb CLI
 rm ~/.local/bin/crumb

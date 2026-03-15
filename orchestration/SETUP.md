@@ -29,7 +29,7 @@ For complete details, see `docs/installation-guide.md`. Quick reference:
 - Agent definitions (`agents/*.md`) to `~/.claude/agents/`
 - Orchestration files to `~/.claude/orchestration/` (excluding `_archive/`)
 - `build-review-prompts.sh` to `~/.claude/orchestration/scripts/`
-- Skills (`skills/*.md`) to `~/.claude/skills/ant-farm-{name}/SKILL.md`
+- Skills (`skills/*.md`) to `~/.claude/plugins/ant-farm/commands/<name>.md`
 - `crumb.py` to `~/.local/bin/crumb` (marked executable)
 - `CLAUDE.md` to `~/.claude/CLAUDE.md`
 
@@ -94,9 +94,8 @@ crumb create --title="Test orchestration" --type=task --priority=3
 # Verify Claude (the Queen):
 # 1. Delegates to the Scout subagent (Scout runs crumb show — Queen does NOT run crumb show directly)
 # 2. Analyzes conflicts
-# 3. Presents strategy
-# 4. Waits for approval
-# 5. Spawns agent
+# 3. Presents strategy (SSV gate validates mechanically — no manual approval needed)
+# 4. Auto-proceeds to spawn agents after SSV PASS
 ```
 
 ## Recipe Card

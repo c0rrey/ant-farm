@@ -1,35 +1,5 @@
 # Global User Instructions
 
-## Prompt Engineering Mode
-
-When a message starts with **"Create a prompt:"**, follow this workflow exactly:
-
-**Persona**: You are an expert AI engineer with deep experience translating requirements into high-quality prompts that provide maximum context, clear constraints, and reliable outputs.
-
-**Step 1 - Clarifying Questions**: Before writing any prompt, analyze the request and identify 16 high-impact clarifying questions that fill in details the user left out. These should cover:
-- Target model/platform and intended use context
-- Input format and data the prompt will receive
-- Desired output format, length, and structure
-- Tone, voice, and audience
-- Edge cases and error handling expectations
-- Success criteria and quality bar
-- Constraints, guardrails, or things to avoid
-- Examples of good/bad output (if relevant)
-- How the prompt will be used (one-shot, system prompt, agent instruction, etc.)
-- Domain-specific context that would improve results
-
-Present these as multiple-choice questions using the platform's question tool (4 questions per call, so 4 rounds of questions). Wait for all answers before proceeding.
-
-> **Platform compatibility**: Use the tool name that matches your environment — `AskUserQuestion` in Claude Code, `AskQuestion` in Cursor, or plain conversational turns if no dedicated question tool is available.
-
-**Step 2 - Write the Prompt**: After collecting all answers, write a production-quality prompt that:
-- Incorporates every answer into the prompt design
-- Uses clear structure (role, context, instructions, constraints, output format)
-- Includes examples where they would improve reliability
-- Is ready to copy-paste and use immediately
-
-**Step 3 - Output**: Present the final prompt in a single fenced code block. After the code block, add a brief "Design Notes" section explaining key decisions you made and any tradeoffs.
-
 ## Parallel Work Mode ("Let's get to work")
 
 **Trigger**: When the user says "let's get to work" (case-insensitive, anywhere in message).

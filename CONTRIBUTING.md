@@ -97,6 +97,14 @@ Templates live in `orchestration/templates/`. Each template has a specific reade
 | `nitpicker-skeleton.md` | Queen, `build-review-prompts.sh` | Review agent spawn template |
 | `big-head-skeleton.md` | Queen, `build-review-prompts.sh` | Consolidation agent spawn template |
 | `queen-state.md` | Queen | Session state file schema |
+| `scribe-skeleton.md` | Queen | Scribe spawn template |
+| `review-focus-areas.md` | `build-review-prompts.sh` | Per-type focus blocks for Nitpicker prompts |
+| `surveyor.md` | Surveyor (self-read) | Requirements gathering instructions |
+| `surveyor-skeleton.md` | Planner | Surveyor spawn template |
+| `forager.md` | Forager (self-read) | Parallel research instructions |
+| `forager-skeleton.md` | Planner | Forager spawn template |
+| `decomposition.md` | Architect | Decomposition workflow instructions |
+| `architect-skeleton.md` | Planner | Architect spawn template |
 | `SESSION_PLAN_TEMPLATE.md` | User (optional) | Session planning template for new projects |
 
 ### Placeholder conventions
@@ -136,7 +144,7 @@ Common placeholders:
 4. **Verify the workflow reaches the gate you modified.** For example:
    - Changed `checkpoints.md` CCO checks? Verify the CCO report in `{SESSION_DIR}/pc/` reflects the new check.
    - Changed `implementation.md`? Verify the Dirt Pusher's summary doc follows the updated steps.
-   - Changed `reviews.md`? Verify the review skeletons in `{SESSION_DIR}/review-skeletons/` contain the expected content.
+   - Changed `reviews.md`? Verify the review previews in `{SESSION_DIR}/previews/` contain the expected content.
 
 ### Script validation
 
@@ -164,7 +172,7 @@ The orchestration framework runs from `~/.claude/`, not from the repo. Changes i
 - `agents/*.md` to `~/.claude/agents/`
 - `orchestration/` to `~/.claude/orchestration/` (excluding `_archive/` — existing files in the target that are not in the source are preserved)
 - `scripts/build-review-prompts.sh` to `~/.claude/orchestration/scripts/`
-- `skills/*.md` to `~/.claude/skills/ant-farm-<name>/SKILL.md`
+- `skills/*.md` to `~/.claude/plugins/ant-farm/commands/<name>.md`
 - `crumb.py` to `~/.local/bin/crumb`
 - `CLAUDE.md` to `~/.claude/CLAUDE.md` (backs up existing file first)
 
