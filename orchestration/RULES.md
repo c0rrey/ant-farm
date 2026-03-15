@@ -518,6 +518,7 @@ At session start (Step 0), generate a session ID and create the session artifact
     SESSION_ID=$(date +%Y%m%d-%H%M%S)
     SESSION_DIR=".crumbs/sessions/_session-${SESSION_ID}"
     mkdir -p "${SESSION_DIR}"/{task-metadata,previews,prompts,pc,summaries}
+    crumb prune >/dev/null || true
 
 Note: `review-reports/` is created lazily at Step 3b-iii — it does not exist until reviews run.
 

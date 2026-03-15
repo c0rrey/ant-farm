@@ -620,6 +620,74 @@ class TestCmdPruneErrorHandling:
 
 
 # ---------------------------------------------------------------------------
+# TestCmdPruneAutoContract
+# ---------------------------------------------------------------------------
+
+
+class TestCmdPruneAutoContract:
+    """Integration contract tests for the auto-prune hook wired in RULES.md.
+
+    These tests verify that ``cmd_prune`` with default args behaves safely
+    in the two edge-case scenarios that can occur at session startup:
+
+    1. ``.crumbs/sessions/`` does not yet exist (first-ever session).
+    2. ``shutil.rmtree`` raises ``PermissionError`` on a stale directory.
+
+    In both cases the auto-prune invocation in RULES.md relies on ``|| true``
+    to suppress shell-level failure, but the Python contract is that
+    ``cmd_prune`` must not raise any exception itself.
+    """
+
+    def test_auto_prune_no_sessions_dir(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """cmd_prune completes without exception when sessions/ does not exist.
+
+        Contract: auto-prune at session start is safe even before any session
+        directory has been created (e.g., the very first orchestration run).
+        """
+        crumbs_dir = tmp_path / ".crumbs"
+        crumbs_dir.mkdir()
+        # Intentionally do NOT create sessions/ subdirectory
+        monkeypatch.setattr(crumb, "find_crumbs_dir", lambda: crumbs_dir)
+
+        # Must not raise any exception
+        cmd_prune(_make_prune_args())
+
+    def test_auto_prune_rmtree_permission_error(
+        self,
+        sessions_env: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """cmd_prune completes without exception when rmtree raises PermissionError.
+
+        Contract: OSError subclasses (including PermissionError) from rmtree
+        are caught and logged to stderr; they are never re-raised.  The auto-
+        prune invocation must not propagate errors that would block session
+        startup.
+        """
+        from datetime import datetime, timedelta
+
+        old_dt = datetime.now() - timedelta(days=30)
+        old_dir = _make_session_dir(
+            sessions_env, _session_name("_session-", old_dt)
+        )
+        # Backdate mtime so the active-session guard does not protect it
+        past = old_dt.timestamp()
+        import os as _os
+        _os.utime(old_dir, (past, past))
+
+        def _always_permission_error(path: Any, *args: Any, **kwargs: Any) -> None:
+            raise PermissionError(f"permission denied: {path}")
+
+        with patch("crumb.shutil.rmtree", side_effect=_always_permission_error):
+            # Must not raise any exception
+            cmd_prune(_make_prune_args())
+
+
+# ---------------------------------------------------------------------------
 # Ensure `import os` is accessible in test module for utime calls
 # ---------------------------------------------------------------------------
 
