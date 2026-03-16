@@ -79,7 +79,7 @@ backup_and_copy() {
         fi
     fi
 
-    cp "$src" "$dst"
+    cp "$src" "$dst" || { echo "[ant-farm] ERROR: install failed for $dst" >&2; return 1; }
     log "Installed: $dst"
 }
 
