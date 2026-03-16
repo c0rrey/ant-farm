@@ -17,7 +17,7 @@ crumb close <id>         # Complete work
 
 ## Landing the Plane (Session Completion)
 
-See the **Landing the Plane** section in `CLAUDE.md` for the full mandatory workflow.
-`CLAUDE.md` is the single source of truth for session-completion steps. Do not duplicate
-that content here — edit `CLAUDE.md` if the procedure needs to change.
+See the **Landing the Plane** section in `orchestration/templates/claude-block.md` for the full mandatory workflow.
+That file is the single source of truth for session-completion steps — it is installed into
+each project's prompt-dir CLAUDE.md by `setup.sh` and `/ant-farm:init`.
 

@@ -174,7 +174,7 @@ The orchestration framework runs from `~/.claude/`, not from the repo. Changes i
 - `scripts/build-review-prompts.sh` to `~/.claude/orchestration/scripts/`
 - `skills/*.md` to `~/.claude/plugins/ant-farm/commands/<name>.md`
 - `crumb.py` to `~/.local/bin/crumb`
-- `CLAUDE.md` to `~/.claude/CLAUDE.md` (backs up existing file first)
+- Orchestration block from `orchestration/templates/claude-block.md` to the per-project prompt-dir `~/.claude/projects/-<escaped-path>/CLAUDE.md` (also removes any stale block from global `~/.claude/CLAUDE.md`)
 
 ### When syncing happens
 

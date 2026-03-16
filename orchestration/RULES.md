@@ -522,7 +522,7 @@ Every `Task` tool call the Queen makes MUST include the `model` parameter from t
 - No two agents edit the same file — queue conflicting tasks sequentially
 - Each agent runs `git pull --rebase` before committing
 - Only the Queen pushes to remote
-- Only the Queen updates README and CLAUDE.md; the Scribe writes CHANGELOG.md (Queen commits it at Step 6)
+- Only the Queen updates README; the Scribe writes CHANGELOG.md (Queen commits it at Step 6)
 - Pipeline wave N Dirt Pushers with wave N+1 Pantry in a single message (see Step 2 wave pipelining)
 
 ### Wave Management

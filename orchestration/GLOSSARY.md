@@ -4,39 +4,6 @@ Canonical definitions for all framework terms, checkpoint acronyms, and ant meta
 
 ---
 
-## Naming Conventions
-
-### Agent Names: Casing and Article Usage
-
-Agent role names are title-case proper nouns. When preceded by a definite article in prose, the article is lowercase:
-
-| Context | Correct | Incorrect |
-|---------|---------|-----------|
-| Mid-sentence prose | "the Queen spawns agents" | "The Queen spawns agents" |
-| Mid-sentence prose | "the Scout writes the briefing" | "The Scout writes the briefing" |
-| Mid-sentence prose | "the Pantry composes prompts" | "The Pantry composes prompts" |
-| Mid-sentence prose | "the Nitpickers review the work" | "The Nitpickers review the work" |
-| Sentence start | "The Queen reads the briefing" | n/a (sentence start is always capitalized) |
-| Section/document header | "The Queen's Session State" | n/a (headers use title case) |
-
-**Summary of the rule**: lowercase article ("the"), title-case role name ("Queen", "Scout", "Pantry", "Nitpickers", "Big Head"). The article is only capitalized when it begins a sentence or appears in a title or heading.
-
-### Filenames
-
-Agent definition files and orchestration template files use kebab-case:
-
-- Agent files: `ant-farm-scout-organizer.md`, `ant-farm-pantry-impl.md`, ~~`ant-farm-pantry-review.md`~~ (deprecated; see RULES.md Step 3b), `ant-farm-pest-control.md`, `ant-farm-nitpicker.md`, `ant-farm-big-head.md`
-- Template files: `dirt-pusher-skeleton.md`, `nitpicker-skeleton.md`, `big-head-skeleton.md`, `queen-state.md`
-
-### Role Names Without Article
-
-In tables, diagrams, and other non-prose contexts where the article is omitted, role names are title-case without a preceding article:
-
-- Table column value: "Queen", "Scout", "Pantry", "Pest Control", "Big Head", "Nitpicker"
-- ASCII diagram labels: "the Queen (orchestrator)" — article included for readability; lowercase
-
----
-
 ## Workflow Concepts
 
 | Term | Definition |
@@ -55,7 +22,7 @@ In tables, diagrams, and other non-prose contexts where the article is omitted, 
 | **summary doc** | A structured artifact written by each agent to `{session-dir}/summaries/{task-suffix}.md` at Step 6. Required sections: approaches considered, selected approach, implementation description, correctness review, build/test validation, and acceptance criteria checklist. Note: `{session-dir}` resolves to a path under `.crumbs/sessions/`. |
 | **hard gate** | A checkpoint that must return PASS before the system proceeds to the next phase. All six checkpoints (SSV, CCO, WWD, DMVDC, CCB, ESV) are hard gates. |
 | **context window** | The token budget available to a model in a single session. The Queen's information diet keeps its context window clean by offloading reads to subagents. |
-| **setup script** | `scripts/setup.sh` — the distribution mechanism for ant-farm. Installs agent definitions, orchestration files, skills, the `crumb` CLI, and `CLAUDE.md` to their runtime locations (`~/.claude/` and `~/.local/bin/`). `CLAUDE.md` is synced as a sentinel-delimited block (`<!-- ant-farm:start/end -->`) so user content outside the block is preserved. Backs up existing files with timestamped `.bak` suffixes before modifying. Idempotent: re-running updates changed files. Session artifacts are stored under `.crumbs/sessions/`. |
+| **setup script** | `scripts/setup.sh` — the distribution mechanism for ant-farm. Installs agent definitions, orchestration files, skills, and the `crumb` CLI to their runtime locations (`~/.claude/` and `~/.local/bin/`). For CLAUDE.md: removes any existing ant-farm sentinel block from the global `~/.claude/CLAUDE.md` (migration cleanup), then writes the orchestration block from `orchestration/templates/claude-block.md` to the per-project prompt-dir (`~/.claude/projects/-<escaped-path>/CLAUDE.md`). Backs up existing files with timestamped `.bak` suffixes before modifying. Idempotent: re-running updates changed files. |
 | **Scribe** | A `general-purpose` agent (model: sonnet) spawned by the Queen at Step 5b. The Scribe reads all session artifacts — briefing.md, summaries/*.md, review-consolidated-*.md, and progress.log — then runs git diff/log over the session's commit range. It produces two outputs: (1) `{SESSION_DIR}/exec-summary.md`, the canonical session record, and (2) a prepended CHANGELOG entry in `CHANGELOG.md`. The Scribe is the only agent that writes CHANGELOG.md; the Queen commits that file at Step 6. |
 | **exec summary** | A structured session artifact written by the Scribe to `{SESSION_DIR}/exec-summary.md`. Contains five required sections: At a Glance (summary table), Work Completed (per-task outcomes), Review Findings (Nitpicker/Big Head results), Open Issues (crumbs that remain open after the session), and Observations (narrative notes). The CHANGELOG entry is derived from the exec summary — every task ID and commit in the exec summary must also appear in the CHANGELOG. |
 | **ESV** | Exec Summary Verification. A Pest Control checkpoint (model: haiku) run at Step 5c that must PASS before the Queen proceeds to Step 6 (push). ESV verifies six things: task coverage (every session task ID appears in the exec summary), commit coverage (every commit hash is accounted for), open crumb accuracy (listed crumbs are actually open), CHANGELOG derivation fidelity (exec summary content matches CHANGELOG), section completeness (all five required exec summary sections present), and metric consistency (counts in the "At a Glance" table match body section counts). Artifact written to `{SESSION_DIR}/pc/pc-session-esv-{timestamp}.md`. On ESV FAIL, the Queen re-spawns the Scribe with the specific violations (max 1 retry); on a second FAIL, the Queen escalates to the user. |
