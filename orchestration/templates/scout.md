@@ -7,11 +7,7 @@ keeping task metadata and conflict analysis out of the Queen's context window.
 
 ## Term Definitions
 
-**For canonical extraction rules and detailed examples, see `~/.claude/orchestration/reference/dependency-analysis.md` (Term Definitions section).**
-
-- `{TASK_ID}` — full crumb ID including project prefix (e.g., `ant-farm-9oa`, `my-project-74g.1`)
-- `{TASK_SUFFIX}` — suffix portion only; extracted by splitting on the LAST hyphen (e.g., `9oa` from `ant-farm-9oa`, or `74g1` from `my-project-74g.1`). See reference file for extraction algorithm.
-- `{SESSION_DIR}` — session artifact directory path (e.g., `.crumbs/sessions/_session-abc123`)
+Read term definitions from `orchestration/reference/terms.md` for canonical definitions of `{TASK_ID}`, `{TASK_SUFFIX}`, and `{SESSION_DIR}`. For detailed extraction rules and examples, see `~/.claude/orchestration/reference/dependency-analysis.md` (Term Definitions section).
 
 ---
 
