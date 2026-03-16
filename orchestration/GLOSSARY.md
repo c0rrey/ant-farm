@@ -1,6 +1,6 @@
 # ant-farm Glossary
 
-Canonical definitions for all framework terms, checkpoint acronyms, and ant metaphor role names used across the orchestration system. This document is the single source of truth — when a term appears in `RULES.md`, `checkpoints.md`, `reviews.md`, or any template, its meaning is defined here.
+Canonical definitions for all framework terms, checkpoint acronyms, and ant metaphor role names used across the orchestration system. This document is the single source of truth — when a term appears in `RULES.md`, `checkpoints/`, `reviews.md`, or any template, its meaning is defined here.
 
 ---
 
@@ -15,7 +15,7 @@ Canonical definitions for all framework terms, checkpoint acronyms, and ant meta
 | **data file** | A per-task artifact written by the Pantry that contains the task's scope boundaries, affected files, root cause, acceptance criteria, agent type, and off-limits areas. The agent reads this file at Step 0. |
 | **briefing** | A ~40-line summary written by the Scout to `{session-dir}/briefing.md`. Contains ready/blocked task counts, proposed execution strategies with wave groupings, risk assessments, and agent type recommendations. The Queen reads only this — not raw task data. |
 | **preview file** | A combined file written by the Pantry to `{session-dir}/previews/` that merges the agent prompt skeleton with the task's data file. Pest Control audits these under CCO before the Queen spawns any agent. |
-| **verdict** | The outcome of a checkpoint audit. Valid values: PASS, WARN (CCO and WWD only), PARTIAL (DMVDC and CCB only), or FAIL. See `checkpoints.md` for per-checkpoint thresholds. |
+| **verdict** | The outcome of a checkpoint audit. Valid values: PASS, WARN (CCO and WWD only), PARTIAL (DMVDC and CCB only), or FAIL. See `checkpoints/common.md` for per-checkpoint thresholds. |
 | **information diet** | The design constraint that the Queen never reads source code, tests, configs, or implementation templates. It reads only the Scout's briefing, agent notifications, commit messages, and verdict tables. |
 | **escalation** | When a failing agent or stuck checkpoint exceeds its retry limit and the Queen surfaces the problem to the user with full context rather than retrying again. |
 | **adjacent issue** | A defect or improvement opportunity noticed by an agent that falls outside its scope boundary. Agents document these in their summary docs but do not fix them. |
@@ -31,7 +31,7 @@ Canonical definitions for all framework terms, checkpoint acronyms, and ant meta
 
 ## Checkpoint Acronyms
 
-All six checkpoints are executed by Pest Control. Full definitions live in `orchestration/templates/checkpoints.md`.
+All six checkpoints are executed by Pest Control. Full definitions live in `orchestration/templates/checkpoints/` (one file per checkpoint type, plus `common.md` shared preamble).
 
 | Acronym | Expansion | When it runs | What it verifies | Blocks |
 |---------|-----------|--------------|------------------|--------|

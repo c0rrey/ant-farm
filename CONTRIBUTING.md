@@ -51,20 +51,20 @@ If the agent does not require intra-team messaging, it can be spawned as a regul
 
 ## Adding a New Checkpoint
 
-Checkpoints are verification gates run by Pest Control. All checkpoint definitions live in a single file: `orchestration/templates/checkpoints.md`.
+Checkpoints are verification gates run by Pest Control. Checkpoint definitions live in `orchestration/templates/checkpoints/` — one file per checkpoint type, plus a shared `common.md` preamble.
 
 ### Where checkpoints are defined
 
-`orchestration/templates/checkpoints.md` contains the full prompt template for each checkpoint type (CCO, WWD, DMVDC, CCB). Pest Control reads this file at spawn time.
+`orchestration/templates/checkpoints/` contains a shared preamble (`common.md`) and one file per checkpoint type (e.g., `cco.md`, `wwd.md`). Pest Control reads `common.md` plus the specific checkpoint file at spawn time.
 
 ### How to add a new checkpoint
 
-1. **Define the checkpoint** in `orchestration/templates/checkpoints.md`:
+1. **Create a new checkpoint file** in `orchestration/templates/checkpoints/` (e.g., `ncp.md`):
    - Add a new H2 section (e.g., `## New Checkpoint Name (NCP): Description`)
    - Include: when it runs, what model to use, the verification prompt template, verdict thresholds (PASS/WARN/FAIL), and artifact naming convention
    - Follow the existing pattern: each checkpoint has a `When`, `Model`, `Agent type`, `Why` preamble followed by a fenced markdown block containing the actual Pest Control prompt
 
-2. **Add verdict thresholds** to the "Verdict Thresholds Summary" section at the top of `checkpoints.md`:
+2. **Add verdict thresholds** to `orchestration/templates/checkpoints/common.md`:
    - Add a row to the "Checkpoint-Specific Thresholds" table
    - Add a subsection under "Details by Checkpoint"
 
@@ -91,7 +91,7 @@ Templates live in `orchestration/templates/`. Each template has a specific reade
 | `scout.md` | Scout (self-read) | Pre-flight recon instructions |
 | `pantry.md` | Pantry (self-read) | Prompt composition instructions |
 | `implementation.md` | Pantry | Agent prompt template with 6 mandatory steps |
-| `checkpoints.md` | Pest Control | All checkpoint definitions |
+| `checkpoints/` | Pest Control | Per-checkpoint definitions (common.md + one per type) |
 | `reviews.md` | `build-review-prompts.sh` | Review protocol, report format |
 | `dirt-pusher-skeleton.md` | Queen | Minimal agent spawn template |
 | `nitpicker-skeleton.md` | Queen, `build-review-prompts.sh` | Review agent spawn template |
@@ -119,8 +119,8 @@ Common placeholders:
 
 ### What to watch when editing templates
 
-- **`implementation.md`** defines the 6 mandatory steps that every Dirt Pusher must follow. If you change a step, update the corresponding CCO check in `checkpoints.md` (Check 4 verifies all 6 steps are present).
-- **`reviews.md`** defines review types and report format. Changes here must stay in sync with `build-review-prompts.sh` (which reads `reviews.md` to build review prompts) and the CCB checks in `checkpoints.md` (which verify report structure).
+- **`implementation.md`** defines the 6 mandatory steps that every Dirt Pusher must follow. If you change a step, update the corresponding CCO check in `checkpoints/cco.md` (Check 4 verifies all 6 steps are present).
+- **`reviews.md`** defines review types and report format. Changes here must stay in sync with `build-review-prompts.sh` (which reads `reviews.md` to build review prompts) and the CCB checks in `checkpoints/ccb.md` (which verify report structure).
 - **`nitpicker-skeleton.md`** and **`big-head-skeleton.md`** are read by `build-review-prompts.sh` to produce filled prompt files. If you change their structure, verify the script still parses them correctly.
 - **`dirt-pusher-skeleton.md`** is what the Queen uses to spawn agents. If you add fields, the Pantry's task briefs must include the corresponding data.
 
@@ -142,7 +142,7 @@ Common placeholders:
    ```
 
 4. **Verify the workflow reaches the gate you modified.** For example:
-   - Changed `checkpoints.md` CCO checks? Verify the CCO report in `{SESSION_DIR}/pc/` reflects the new check.
+   - Changed `checkpoints/cco.md` CCO checks? Verify the CCO report in `{SESSION_DIR}/pc/` reflects the new check.
    - Changed `implementation.md`? Verify the Dirt Pusher's summary doc follows the updated steps.
    - Changed `reviews.md`? Verify the review previews in `{SESSION_DIR}/previews/` contain the expected content.
 
@@ -205,11 +205,11 @@ Changes to one file often require updates to others. This table lists the critic
 
 | If you change... | Also update... |
 |------------------|----------------|
-| The 6 mandatory steps | `checkpoints.md` CCO Check 4 (verifies all 6 steps present) |
-| Summary doc format | `checkpoints.md` DMVDC Check 1-4 (reads summary docs) |
-| Scope boundary format | `checkpoints.md` CCO Check 5, WWD (compares scope to diff) |
+| The 6 mandatory steps | `checkpoints/cco.md` CCO Check 4 (verifies all 6 steps present) |
+| Summary doc format | `checkpoints/dmvdc.md` DMVDC Check 1-4 (reads summary docs) |
+| Scope boundary format | `checkpoints/cco.md` CCO Check 5, `checkpoints/wwd.md` (compares scope to diff) |
 
-### checkpoints.md dependencies
+### checkpoints/ dependencies
 
 | If you change... | Also update... |
 |------------------|----------------|
@@ -224,7 +224,7 @@ Changes to one file often require updates to others. This table lists the critic
 |------------------|----------------|
 | Review types or report format | `build-review-prompts.sh` (reads reviews.md to build review prompts) |
 | Report output paths | `build-review-prompts.sh` `{{REPORT_OUTPUT_PATH}}` slot logic |
-| Number of review types per round | `checkpoints.md` CCB Check 0 (verifies expected report count) |
+| Number of review types per round | `checkpoints/ccb.md` CCB Check 0 (verifies expected report count) |
 | Review types per round | `RULES.md` Step 3b (specifies round 1: 4 types, round 2+: 2 types) |
 
 ### Skeleton template dependencies

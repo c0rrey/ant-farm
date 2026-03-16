@@ -153,7 +153,9 @@ ant-farm/
 │   ├── templates/           # Agent prompt templates and skeletons
 │   │   ├── claude-block.md  # Canonical orchestration block (triggers + session completion)
 │   │   ├── scout.md, pantry.md, implementation.md, reviews.md
-│   │   ├── checkpoints.md   # All checkpoint definitions (SSV through ESV)
+│   │   ├── checkpoints/     # Per-checkpoint definitions (common.md + one file per checkpoint)
+│   │   │   ├── common.md   # Shared preamble (term definitions, verdict thresholds)
+│   │   │   ├── cco.md, wwd.md, dmvdc.md, ccb.md, ssv.md, esv.md, tdv.md
 │   │   ├── dirt-pusher-skeleton.md, nitpicker-skeleton.md, big-head-skeleton.md
 │   │   ├── scribe-skeleton.md, surveyor-skeleton.md, forager-skeleton.md
 │   │   ├── decomposition.md, architect-skeleton.md
@@ -213,7 +215,7 @@ Queen                          Pantry                    Pest Control
   │                                                          │
   ├──spawn─────────────────────────────────────────────────► │
   │  "audit previews against CCO"                            │
-  │                                                          ├─read checkpoints.md
+  │                                                          ├─read checkpoints/common.md + cco.md
   │                                                          ├─audit each preview
   │  ◄──return verdict table─────────────────────────────────┤
   │                                                          │
@@ -332,7 +334,7 @@ All file paths in this document use repo-root relative format. At runtime, agent
 | `orchestration/SETUP.md` | User | How to wire orchestration into a new project |
 | `orchestration/GLOSSARY.md` | Reference | Term definitions used across orchestration docs |
 | `orchestration/templates/implementation.md` | The Pantry | Agent prompt template with 6 mandatory steps |
-| `orchestration/templates/checkpoints.md` | Pest Control | All checkpoint definitions (SSV through ESV) |
+| `orchestration/templates/checkpoints/` | Pest Control | Per-checkpoint definitions (common.md preamble + one file per checkpoint type) |
 | `orchestration/templates/reviews.md` | `build-review-prompts.sh` | Review protocol, 4 review types, Big Head consolidation |
 | `orchestration/templates/pantry.md` | The Pantry | Pantry's own instructions |
 | `orchestration/templates/scout.md` | The Scout | Pre-flight recon instructions |
