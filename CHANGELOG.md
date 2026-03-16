@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-03-16 — Session 20260315-191629 (Move orchestration block to per-project prompt-dir)
+
+### Summary
+
+6 tasks completed across 3 waves, plus a review fix wave that resolved all P2 findings. The session migrated the ant-farm orchestration trigger block out of the global `~/.claude/CLAUDE.md` and into per-project Claude Code prompt-dir files. Wave 1 extracted the canonical block to `orchestration/templates/claude-block.md` and replaced `CLAUDE.md` with project-specific content. Wave 2 rewrote `scripts/setup.sh` Step 6 to remove any existing block from the global file (migration cleanup) and write the block to `~/.claude/projects/-<escaped-path>/CLAUDE.md`. Wave 3 ran 4 agents in parallel: shell tests for the migration logic, a new Step 8b in `skills/init.md` for the `/ant-farm:init` path, and documentation updates across `README.md`, `orchestration/SETUP.md`, and `docs/installation-guide.md`. Review Round 1 (4 reviewers, 21 raw findings, 13 root causes) found no P1s and 5 P2s — all fixed in-session. Round 2 (2 reviewers) returned 0 findings. 13 commits total; 7 P3 crumbs filed for future work.
+
+### Implementation
+
+- **AF-97** (`139722b`): refactor: extract orchestration block to canonical template file — created `orchestration/templates/claude-block.md` with the full 50-line orchestration block; rewrote `CLAUDE.md` as an ant-farm project-specific file with no orchestration block content (grep count for "Parallel Work Mode" in `CLAUDE.md` → 0)
+- **AF-98** (`24181c4`): refactor: replace global CLAUDE.md sync with migration removal + prompt-dir write — added `remove_claude_block` to `scripts/setup.sh` (awk sentinel-strip, dry-run, backup, atomic replace); Step 6a calls it on `~/.claude/CLAUDE.md`; Step 6b calls existing `sync_claude_block` with `claude-block.md` as source to write to per-project prompt-dir; 309 existing Python tests passed
+- **AF-99** (`9630398`): test: add shell tests for setup.sh migration removal and prompt-dir write — created `tests/test_setup_migration.sh` (295 lines, executable); 5 tests using subshell-per-test pattern with isolated fake `HOME` dirs; all 5 pass
+- **AF-100** (`fb5d248`): feat: add prompt-dir CLAUDE.md install step to init skill — inserted Step 8b ("Install Orchestration Triggers to Prompt-Dir CLAUDE.md") into `skills/init.md` between Step 8 and Step 9; 5 sub-steps handle path computation, `mkdir -p`, block sourcing, state detection (create/append/update/error_partial), and atomic write; Step 9 summary updated
+- **AF-101 + AF-102** (`ff74127`): docs: update installation guide for per-project CLAUDE.md flow — `README.md` Wire Up section leads with `/ant-farm:init`; File Reference table updated to "per-project prompt-dir"; `orchestration/SETUP.md` Quick Setup removes stale CLAUDE.md bullet; Step 2 documents `/ant-farm:init`; `docs/installation-guide.md` rewrote Step 6 description, added Per-Project Prompt-Dir Installation subsection, updated Uninstalling and Troubleshooting sections for the new model
+
+### Review Fixes
+
+- **AF-106** (`28617f9`): fix: correct `/ant-farm:init` target path parenthetical in `CLAUDE.md:7` from `~/.claude/CLAUDE.md` to `~/.claude/projects/-<escaped-project-path>/CLAUDE.md` (RC-D)
+- **AF-107** (`a0e4fe7`): fix: add error guard to install `cp` in `backup_and_copy` — bare `cp "$src" "$dst"` at `scripts/setup.sh:82` now has `|| { echo ... >&2; return 1; }` so a failed install is not silently swallowed (RC-K)
+- **AF-103/104/105** (`d1930ac`): fix: correct three `docs/installation-guide.md` documentation errors — wrong source path (`CLAUDE.md` → `orchestration/templates/claude-block.md`) in Per-Project section (RC-A); stale "every setup run backs up before overwriting" backup section rewritten for removal-only behavior (RC-B); spurious `Source` field removed from Global Migration Cleanup section (RC-C)
+- **AF-116** (`d2efac7`): fix: add `mkdir -p` error guards to both failure-artifact write blocks in `orchestration/templates/big-head-skeleton.md` (surfaced during review, not in original task plan)
+
+### Review Statistics
+
+| Round | Reviewers | Scope | P1 | P2 | P3 | Verdict |
+|-------|-----------|-------|----|----|-----|---------|
+| 1 | 4 (Clarity, Edge Cases, Correctness, Drift) | 9 files, 6 planned tasks | 0 | 5 | 7 | PASS WITH ISSUES |
+| 2 | 2 (Correctness, Edge Cases) | 4 fix commits | 0 | 0 | 0 | PASS — CLEAN |
+
+21 raw findings consolidated to 13 root cause groups in Round 1. 1 group (RC-F: SETUP.md duplicate content) deduplicated against existing open crumb ant-farm-y719 and skipped. 5 P2 root causes auto-fixed in the review fix wave. 7 P3 root causes filed as new crumbs (AF-108 through AF-114) to Future Work. Round 2 verified all fixes and terminated with 0 findings.
+
 ## 2026-03-14 — Session 20260314-104356 (Agent Name Prefix Sweep + Setup Migration)
 
 ### Summary
