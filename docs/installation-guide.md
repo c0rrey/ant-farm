@@ -95,7 +95,6 @@ The setup process copies files from the repo to runtime locations. It is idempot
 
 ### CLAUDE.md: Global Migration Cleanup
 
-- **Source**: `{repo-root}/CLAUDE.md`
 - **Action**: Removes any existing ant-farm sentinel block (`<!-- ant-farm:start -->` / `<!-- ant-farm:end -->` and everything between them) from `~/.claude/CLAUDE.md`. Content outside the block is left untouched.
 - **Why**: Earlier versions of ant-farm injected a sentinel block into the global `~/.claude/CLAUDE.md`. The current model stores per-project instructions in the project's prompt-dir file instead. Step 6 removes the old block so the global file is not polluted.
 
@@ -105,10 +104,10 @@ If `~/.claude/CLAUDE.md` contains no ant-farm sentinel block, this step is a no-
 
 After migration cleanup, `setup.sh` writes the ant-farm prompt block to the per-project prompt-dir file for the ant-farm project:
 
-- **Source**: `{repo-root}/CLAUDE.md`
+- **Source**: `{repo-root}/orchestration/templates/claude-block.md`
 - **Target**: `~/.claude/projects/-<escaped-project-path>/CLAUDE.md`
   - The escaped path replaces each `/` in the absolute project path with `-`. For example, a project at `/Users/alice/projects/ant-farm` writes to `~/.claude/projects/-Users-alice-projects-ant-farm/CLAUDE.md`.
-- **Behavior**: Overwrites (or creates) the prompt-dir file with the current repo CLAUDE.md content.
+- **Behavior**: Inserts (or updates) the ant-farm sentinel block in the prompt-dir file using content from `orchestration/templates/claude-block.md`. User content outside the sentinel markers is preserved. If the file does not exist, it is created.
 - **Why**: Claude Code loads prompt-dir files automatically when a matching project is opened. Storing the block here means the instructions are active for this project without modifying the global `~/.claude/CLAUDE.md`.
 
 You can also create or update this file at any time by running the `/ant-farm:init` skill from within Claude Code. The skill writes the same content to the same path and is the recommended way to onboard a new checkout without running the full setup script.
@@ -159,7 +158,7 @@ The setup process automatically creates timestamped backups of changed files. Un
 
 **CLAUDE.md Backup**
 
-Every setup run backs up the existing `~/.claude/CLAUDE.md` before overwriting (if the content differs):
+When setup.sh detects an ant-farm block in `~/.claude/CLAUDE.md`, it backs up the file before removing the block. If no block is present, no backup is created.
 
 ```
 ~/.claude/CLAUDE.md.bak.20260217T214523
@@ -168,8 +167,8 @@ Every setup run backs up the existing `~/.claude/CLAUDE.md` before overwriting (
 
 Format: `<filename>.bak.<YYYYMMDDTHHMMSS>`
 
-**When**: Every time `setup.sh` runs and the file has changed
-**Why**: If the repo's CLAUDE.md becomes corrupted or accidentally breaks your Claude Code behavior, you can restore a previous version
+**When**: Only when setup.sh removes an ant-farm block from `~/.claude/CLAUDE.md`.
+**Why**: If the block removal has an unintended side effect, you can restore the pre-removal state from the backup
 
 **How to Restore**:
 
