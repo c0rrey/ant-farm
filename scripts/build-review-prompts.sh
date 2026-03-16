@@ -194,7 +194,7 @@ fill_slot() {
     BEGIN {
         # Read the full replacement value from file (newline-delimited, one line
         # per getline call). Lines are rejoined with "\n" to reconstruct the
-        # original multiline value inside awk's string variable.
+        # original multiline value inside awk string variable.
         val = ""
         while ((getline line < valfile) > 0) {
             if (val != "") val = val "\n"
