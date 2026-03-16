@@ -31,16 +31,18 @@
 2. **Run quality gates** (if code changed) - Tests, linters, builds
 3. **Review-findings gate** — If reviews ran and found P1 issues, present findings to user before proceeding. User decides: fix now, or document deferred P1s in CHANGELOG and push. Do NOT push with undisclosed P1 blockers. If no reviews ran or no P1s exist, proceed.
 4. **Update issue status** - Close finished work, update in-progress items
-5. **PUSH TO REMOTE** - This is MANDATORY:
+5. **Run Scribe** — Spawn the Scribe (`technical-writer`, `model: "sonnet"`) to write `{SESSION_DIR}/exec-summary.md` and prepend a CHANGELOG entry. Use `orchestration/templates/scribe-skeleton.md` as the prompt template. Commit the Scribe output.
+6. **ESV gate** — Spawn Pest Control (`pest-control`, `model: "haiku"`) for Exec Summary Verification. Pass `{SESSION_DIR}` and `orchestration/templates/checkpoints.md`. ESV must PASS before pushing. On FAIL: re-spawn Scribe with violations (max 1 retry); if still failing, present to user.
+7. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
    git pull --rebase
    git push
    git status  # MUST show "up to date with origin"
    ```
-6. **Clean up** - Clear stashes, prune remote branches
+8. **Clean up** - Clear stashes, prune remote branches
    (Session artifacts in .crumbs/sessions/_session-*/ are retained for posterity. Prune old sessions manually when needed.)
-7. **Verify** - All changes committed AND pushed
-8. **Hand off** - Provide context for next session
+9. **Verify** - All changes committed AND pushed
+10. **Hand off** - Provide context for next session
 
 **CRITICAL RULES:**
 - Work is NOT complete until `git push` succeeds
