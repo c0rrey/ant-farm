@@ -60,7 +60,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             generate SESSION_ID and SESSION_DIR. Store both as variables in your context.
             Then immediately proceed to Step 1.
             Do NOT examine, read, or query any task/issue details.
-            **Progress log:** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SESSION_INIT|complete|session_dir=${SESSION_DIR}" >> ${SESSION_DIR}/progress.log`
+            **Progress log:** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SESSION_INIT|complete|session_dir=${SESSION_DIR}|next_step=STEP_1_SCOUT" >> ${SESSION_DIR}/progress.log`
 
             **Crash recovery detection (run BEFORE generating a new SESSION_ID):**
             Check whether the user's message contains a session directory path
@@ -80,6 +80,27 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             4. On exit 2: the prior session completed — proceed normally with a new SESSION_ID.
             5. On exit 1: surface the error (including the path that was not found) to the user and await instruction.
             If no prior session is indicated, skip crash recovery and proceed normally.
+
+**Position Check (MANDATORY):**
+
+            **Run this check before every major phase transition.** This is required after every wave
+            completion (WAVE_VERIFIED) and after every fix agent completion (FIX_DMVDC_COMPLETE).
+            It is also recommended at any Step boundary where context may have been refreshed.
+
+            ```bash
+            tail -1 "${SESSION_DIR}/progress.log" | grep -o 'next_step=[^|]*'
+            ```
+
+            Compare the `next_step=` value against the step you are about to execute:
+            - **Match**: proceed normally.
+            - **Mismatch**: STOP. Do not execute the intended step. Re-read the full progress log
+              to determine the actual workflow position, then reconcile before continuing.
+            - **Empty / no match**: progress.log may be missing or malformed. Run
+              `parse-progress-log.sh ${SESSION_DIR}` to diagnose and present the resume plan.
+
+            **Hard requirement**: If the last WAVE_VERIFIED entry shows `next_step=REVIEW_3B` and
+            no subsequent WAVE_SPAWNED entry is present, the next action MUST be Step 3b (Review).
+            Skipping Step 3b is a critical workflow violation.
 
 **Step 1:** Recon — Read `{SESSION_DIR}/briefing.md` written by the Scout's previous run, or spawn the Scout
             (`ant-farm-scout-organizer` subagent, `model: "opus"`) if this is the first session. Include in Scout's prompt:
@@ -112,7 +133,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             after one re-Scout run, do NOT re-run Scout a second time. Surface the SSV violations to
             the user and await instruction.
 
-            **Progress log (after SSV PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SCOUT_COMPLETE|briefing=${SESSION_DIR}/briefing.md|ssv=pass|tasks_accepted=<N>" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after SSV PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SCOUT_COMPLETE|briefing=${SESSION_DIR}/briefing.md|ssv=pass|tasks_accepted=<N>|next_step=STEP_2_PANTRY" >> ${SESSION_DIR}/progress.log`
             where `<N>` is the count of tasks in the briefing task list after SSV PASS (N=0 is not logged — it is caught by the zero-task guard earlier in Step 1b).
 
 **Step 2:** Spawn — Spawn the Pantry (`ant-farm-pantry-impl`, `model: "opus"`) for task briefs + combined previews
@@ -130,7 +151,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             3. Wave N Dirt Pushers finish → run WWD/DMVDC (Step 3)
             4. Wave N+1 CCO PASS + wave N WWD + DMVDC both PASS → spawn wave N+1 Dirt Pushers + wave N+2 Pantry
             For the final wave (no wave N+1), skip the Pantry — just spawn Dirt Pushers alone.
-            **Progress log (after each wave's Dirt Pushers are spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_SPAWNED|wave=<N>|spawned=<agent-ids>|previews_dir=${SESSION_DIR}/previews" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after each wave's Dirt Pushers are spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_SPAWNED|wave=<N>|spawned=<agent-ids>|previews_dir=${SESSION_DIR}/previews|next_step=STEP_3_VERIFY" >> ${SESSION_DIR}/progress.log`
 
 **Step 3:** Verify — Run WWD, then DMVDC, for each wave.
 
@@ -145,29 +166,30 @@ The Queen's window is restricted to prevent context bloat, but certain files are
               simultaneously.
             **Mode selection rule**: If you spawned agents in a single message (parallel wave), use batch
             mode. If you spawned agents individually in separate messages, use serial mode.
-            **Progress log (after all WWD reports PASS for the wave):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_WWD_PASS|wave=<N>|mode=<serial|batch>|tasks_checked=<ids>" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after all WWD reports PASS for the wave):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_WWD_PASS|wave=<N>|mode=<serial|batch>|tasks_checked=<ids>|next_step=STEP_3_DMVDC" >> ${SESSION_DIR}/progress.log`
 
             After all WWD reports PASS, spawn Pest Control (`model: "sonnet"`) for Dirt Moved vs Dirt Claimed (DMVDC)
             (pass task IDs, commit hashes, summary doc paths; Pest Control reads
             `orchestration/templates/checkpoints/common.md` + `orchestration/templates/checkpoints/dmvdc.md` + task-metadata/ + git diffs itself).
             Failed DMVDC → resume agent (max 2 retries).
-            **Progress log (after DMVDC PASS for each wave):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_VERIFIED|wave=<N>|dmvdc=pass|tasks_verified=<ids>|commits=<hashes>" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after DMVDC PASS for each wave):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_VERIFIED|wave=<N>|dmvdc=pass|tasks_verified=<ids>|commits=<hashes>|next_step=REVIEW_3B" >> ${SESSION_DIR}/progress.log`
+            Note: For non-final waves, use `next_step=NEXT_WAVE` instead. The Position Check (see below) uses this value to confirm the correct next action.
 
 **Step 3b:** Review — Read `orchestration/RULES-review.md` now for the full Step 3b workflow.
 
-            **Progress log (after Nitpicker team completes round 1):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_COMPLETE|round=<N>|team=complete|report=${SESSION_DIR}/review-reports/review-consolidated-${TIMESTAMP}.md" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after Nitpicker team completes round 1):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_COMPLETE|round=<N>|team=complete|report=${SESSION_DIR}/review-reports/review-consolidated-${TIMESTAMP}.md|next_step=STEP_3C_TRIAGE" >> ${SESSION_DIR}/progress.log`
 
 **Step 3c:** User triage — Read `orchestration/RULES-review.md` now for the full Step 3c workflow.
 
-            **Progress log (after fix Scout SSV PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_SCOUT_COMPLETE|round=<N>|ssv=pass|fix_crumbs=<crumb-ids>" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after fix Scout SSV PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_SCOUT_COMPLETE|round=<N>|ssv=pass|fix_crumbs=<crumb-ids>|next_step=FIX_AGENTS_SPAWN" >> ${SESSION_DIR}/progress.log`
 
-            **Progress log (after fix agents spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_AGENTS_SPAWNED|round=<N>|fix_dps=<names>|fix_pcs=fix-pc-wwd,fix-pc-dmvdc" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after fix agents spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_AGENTS_SPAWNED|round=<N>|fix_dps=<names>|fix_pcs=fix-pc-wwd,fix-pc-dmvdc|next_step=FIX_INNER_LOOP" >> ${SESSION_DIR}/progress.log`
 
-            **Progress log (after all fix DPs verified by fix-pc-dmvdc):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_DMVDC_COMPLETE|round=<N>|verified_dps=<names>|commits=<hashes>" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after all fix DPs verified by fix-pc-dmvdc):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_DMVDC_COMPLETE|round=<N>|verified_dps=<names>|commits=<hashes>|next_step=ROUND_TRANSITION" >> ${SESSION_DIR}/progress.log`
 
-            **Progress log (after round transition messages sent):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|ROUND_TRANSITION|from_round=<N>|to_round=<N+1>|fix_commits=<range>" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after round transition messages sent):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|ROUND_TRANSITION|from_round=<N>|to_round=<N+1>|fix_commits=<range>|next_step=REVIEW_3B" >> ${SESSION_DIR}/progress.log`
 
-            **Progress log (after triage decision):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_TRIAGED|round=<N>|p1=<count>|p2=<count>|decision=<auto_fix|fix_now|defer|terminated>|root_causes=<count>" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after triage decision):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_TRIAGED|round=<N>|p1=<count>|p2=<count>|decision=<auto_fix|fix_now|defer|terminated>|root_causes=<count>|next_step=STEP_4_DOCS" >> ${SESSION_DIR}/progress.log`
 
 **Step 4:** Documentation — update README and CLAUDE.md in single commit.
             Note: session narrative and changelog entry are handled by the Scribe at Step 5b.
@@ -175,11 +197,11 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             builds) if code changed; apply review-findings gate (if reviews found P1 issues, present
             to user before proceeding — user decides fix now or defer; do NOT push with undisclosed
             P1 blockers).
-            **Progress log (after doc commit):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|DOCS_COMMITTED|complete|commit=<hash>" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after doc commit):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|DOCS_COMMITTED|complete|commit=<hash>|next_step=STEP_5_XREF" >> ${SESSION_DIR}/progress.log`
 
 **Step 5:** Verify — cross-references valid, all tasks accounted for. Update issue status: close
             finished tasks, update in-progress items.
-            **Progress log (after cross-reference check):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|XREF_VERIFIED|complete|tasks_closed=<ids>" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after cross-reference check):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|XREF_VERIFIED|complete|tasks_closed=<ids>|next_step=STEP_5B_SCRIBE" >> ${SESSION_DIR}/progress.log`
 
 **Step 5b:** Scribe — spawn the Scribe agent to write the session exec summary and CHANGELOG entry.
             ```
@@ -196,7 +218,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             range, and produces two outputs:
             1. `{SESSION_DIR}/exec-summary.md` — canonical session record
             2. Prepends a CHANGELOG entry to `CHANGELOG.md`
-            **Progress log (after Scribe completes):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SCRIBE_COMPLETE|exec_summary=${SESSION_DIR}/exec-summary.md" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after Scribe completes):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SCRIBE_COMPLETE|exec_summary=${SESSION_DIR}/exec-summary.md|next_step=STEP_5C_ESV" >> ${SESSION_DIR}/progress.log`
 
 **Step 5c:** ESV — spawn Pest Control for Exec Summary Verification. **Hard gate: must PASS before Step 6.**
             ```
@@ -217,7 +239,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             Artifact written to `{SESSION_DIR}/pc/pc-session-esv-{timestamp}.md`.
             **On ESV FAIL**: Re-spawn Scribe with specific violations from ESV report (max 1 retry).
             **On second ESV FAIL**: Escalate to user — present failed checks, await decision.
-            **Progress log (after ESV PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|ESV_PASS|artifact=${SESSION_DIR}/pc/pc-session-esv-$(date +%Y%m%d-%H%M%S).md" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after ESV PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|ESV_PASS|artifact=${SESSION_DIR}/pc/pc-session-esv-$(date +%Y%m%d-%H%M%S).md|next_step=STEP_6_PUSH" >> ${SESSION_DIR}/progress.log`
 
 **Step 6:** Land the plane — Queen commits the Scribe's CHANGELOG.md, copies the exec summary to history, then pulls and pushes.
             ```bash
@@ -231,7 +253,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             Run `git status` after push — output MUST show "up to date with origin".
 
             Clean up stashes and remote branches. Provide hand-off context for the next session.
-            **Progress log (after git push succeeds):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SESSION_COMPLETE|pushed=true" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after git push succeeds):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SESSION_COMPLETE|pushed=true|next_step=DONE" >> ${SESSION_DIR}/progress.log`
 
 ## Hard Gates
 

@@ -125,7 +125,7 @@ _MAP_DIR=""
 
 map_init() {
     _MAP_DIR="$(mktemp -d)"
-    mkdir -p "${_MAP_DIR}/completed" "${_MAP_DIR}/timestamp" "${_MAP_DIR}/details"
+    mkdir -p "${_MAP_DIR}/completed" "${_MAP_DIR}/timestamp" "${_MAP_DIR}/details" "${_MAP_DIR}/next_step"
 }
 
 map_cleanup() {
@@ -188,6 +188,22 @@ while IFS='|' read -r timestamp step_key rest; do
     # early-exit guard below and report the session as complete. This is intentional:
     # a SESSION_COMPLETE entry is treated as authoritative regardless of position.
     map_set "details"   "$step_key" "$rest"
+    # Extract next_step= value from the rest fields (e.g. "next_step=REVIEW_3B").
+    # Uses parameter expansion on $rest (pipe-delimited fields after step_key).
+    _ns_val=""
+    _ns_rest="$rest"
+    while [ -n "$_ns_rest" ]; do
+        # Split off the first pipe-delimited field
+        _ns_field="${_ns_rest%%|*}"
+        case "$_ns_field" in
+            next_step=*) _ns_val="${_ns_field#next_step=}" ;;
+        esac
+        if [ "$_ns_field" = "$_ns_rest" ]; then
+            break
+        fi
+        _ns_rest="${_ns_rest#*|}"
+    done
+    [ -n "$_ns_val" ] && map_set "next_step" "$step_key" "$_ns_val"
 done < "$PROGRESS_LOG"
 
 # ---------------------------------------------------------------------------
@@ -289,6 +305,10 @@ fi
         details="$(map_get "details" "$LAST_COMPLETED")"
         if [ -n "$details" ]; then
             echo "- **Details**: \`${details}\`"
+        fi
+        next_step_val="$(map_get "next_step" "$LAST_COMPLETED")"
+        if [ -n "$next_step_val" ]; then
+            echo "- **Next step breadcrumb**: \`next_step=${next_step_val}\`"
         fi
         echo ""
     fi
