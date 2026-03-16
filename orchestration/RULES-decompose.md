@@ -334,7 +334,7 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|ARCHITECT_COMPLETE|brief=${DECOMPOSE_DIR}/d
 **Step 5:** Verification — spawn Pest Control for TDV (Trail Decomposition Verification).
 
 TDV is a **Pest Control spawn**, not an inline check. Spawn Pest Control using the TDV checkpoint
-from `orchestration/templates/checkpoints.md` (section "Trail Decomposition Verification (TDV)").
+from `orchestration/templates/checkpoints/common.md` and `orchestration/templates/checkpoints/tdv.md`.
 
 **Note**: The TDV checkpoint template uses `{SESSION_DIR}` as its output path placeholder. During
 decomposition, substitute `{DECOMPOSE_DIR}` for `{SESSION_DIR}` when filling the spawn prompt.
@@ -343,7 +343,7 @@ decomposition, substitute `{DECOMPOSE_DIR}` for `{SESSION_DIR}` when filling the
 Task(
   subagent_type="ant-farm-pest-control",
   model="haiku",
-  prompt="<TDV checkpoint from checkpoints.md, with {SESSION_DIR} replaced by {DECOMPOSE_DIR}>"
+  prompt="<TDV checkpoint from checkpoints/tdv.md, with {SESSION_DIR} replaced by {DECOMPOSE_DIR}>"
 )
 ```
 
