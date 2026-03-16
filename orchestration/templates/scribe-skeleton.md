@@ -163,10 +163,10 @@ cat > /tmp/changelog-new.md << 'ENTRY'
 ENTRY
 
 # Atomic prepend: new entry on top, existing file below
-cat /tmp/changelog-new.md {CHANGELOG_PATH} > {CHANGELOG_PATH}.tmp && mv {CHANGELOG_PATH}.tmp {CHANGELOG_PATH}
-
-# Clean up
-rm -f /tmp/changelog-new.md
+cat /tmp/changelog-new.md {CHANGELOG_PATH} > {CHANGELOG_PATH}.tmp \
+  && mv {CHANGELOG_PATH}.tmp {CHANGELOG_PATH} \
+  && rm -f /tmp/changelog-new.md \
+  || { echo "ERROR: CHANGELOG prepend failed. New entry preserved at /tmp/changelog-new.md" >&2; exit 1; }
 ```
 
 Preserve the `# Changelog` heading at the top of the file if it exists — your new entry goes after the heading, not before it. To do this, write the heading as the first line of your temp file, followed immediately by your new entry.
