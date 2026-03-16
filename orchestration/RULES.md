@@ -15,7 +15,7 @@ accessible at `~/.claude/orchestration/templates/scout.md`. To translate repo pa
 
 - **NEVER** run `crumb show`, `crumb ready`, `crumb list`, `crumb blocked`, or any `crumb` query command — the Scout does this
 - **NEVER** read source code, tests, project data files, or config files — agents do this
-- **NEVER** read agent **instruction files** (scout.md, pantry.md, implementation.md, checkpoints.md, reviews.md, etc.) — pass the path to the agent, let it read its own instructions
+- **NEVER** read agent **instruction files** (scout.md, pantry.md, implementation.md, checkpoints/*.md, reviews.md, etc.) — pass the path to the agent, let it read its own instructions
 - **NEVER** send `shutdown_request` to any Nitpicker team member before Step 4. The **only** authorized shutdown trigger is the termination check in Step 3c (zero P1/P2 findings). Do NOT send shutdown_request at the Step 3c decision fork or anywhere else before convergence.
 
 Your first instinct will be to "gather context" by running `crumb show` on the task list.
@@ -46,7 +46,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 - `orchestration/templates/scout.md` — Scout's instruction file
 - `orchestration/templates/pantry.md` — Pantry's instruction file
 - `orchestration/templates/implementation.md` — Implementation details (read by Pantry)
-- `orchestration/templates/checkpoints.md` — Checkpoint definitions (read by Pest Control)
+- `orchestration/templates/checkpoints/` — Checkpoint definitions (read by Pest Control; common.md + specific checkpoint file)
 - `orchestration/templates/reviews.md` — Review protocol (read by build-review-prompts.sh)
 - `orchestration/reference/dependency-analysis.md` — Used by Scout for conflict analysis
 - `orchestration/reference/known-failures.md` — Reference material; for post-mortem only
@@ -96,8 +96,8 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 
 **Step 1b:** SSV gate — After Scout writes `{SESSION_DIR}/briefing.md`, spawn Pest Control
             (`ant-farm-pest-control`, `model: "haiku"`) for Scout Strategy Verification (SSV).
-            Pass `Session directory: <value of SESSION_DIR>` and the path `orchestration/templates/checkpoints.md`
-            as its instruction file. Pest Control reads `{SESSION_DIR}/briefing.md` itself and runs all three
+            Pass `Session directory: <value of SESSION_DIR>` and the paths `orchestration/templates/checkpoints/common.md`
+            and `orchestration/templates/checkpoints/ssv.md` as its instruction files. Pest Control reads `{SESSION_DIR}/briefing.md` itself and runs all three
             mechanical checks (file overlap within waves, file list match against crumbs, intra-wave dependency
             ordering). **SSV must PASS before proceeding.**
 
@@ -118,7 +118,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 **Step 2:** Spawn — Spawn the Pantry (`ant-farm-pantry-impl`, `model: "opus"`) for task briefs + combined previews
             (→ orchestration/templates/pantry.md, Section 1). Include `Session directory: <value of SESSION_DIR>`
             in Pantry's prompt. Pass preview file paths and SESSION_DIR to Pest Control
-            (`ant-farm-pest-control`, `model: "haiku"`) for Colony Cartography Office (CCO); Pest Control reads orchestration/templates/checkpoints.md itself.
+            (`ant-farm-pest-control`, `model: "haiku"`) for Colony Cartography Office (CCO); Pest Control reads `orchestration/templates/checkpoints/common.md` and `orchestration/templates/checkpoints/cco.md` itself.
             Only after all CCO PASS: spawn agents using skeleton
             (→ orchestration/templates/dirt-pusher-skeleton.md, using Agent Type from Pantry verdict table, `model: "sonnet"` for all Dirt Pushers regardless of subagent_type).
             **Wave pipelining**: When spawning wave N Dirt Pushers, include the wave N+1 Pantry
@@ -149,7 +149,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 
             After all WWD reports PASS, spawn Pest Control (`model: "sonnet"`) for Dirt Moved vs Dirt Claimed (DMVDC)
             (pass task IDs, commit hashes, summary doc paths; Pest Control reads
-            checkpoints.md + task-metadata/ + git diffs itself).
+            `orchestration/templates/checkpoints/common.md` + `orchestration/templates/checkpoints/dmvdc.md` + task-metadata/ + git diffs itself).
             Failed DMVDC → resume agent (max 2 retries).
             **Progress log (after DMVDC PASS for each wave):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_VERIFIED|wave=<N>|dmvdc=pass|tasks_verified=<ids>|commits=<hashes>" >> ${SESSION_DIR}/progress.log`
 
@@ -208,7 +208,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
                       Session end commit: {SESSION_END_COMMIT} (final commit before push, typically HEAD).
                       Session start date: {SESSION_START_DATE} (ISO 8601, e.g. 2026-02-22 — used to scope crumb list).
                       Verify exec-summary.md and CHANGELOG.md.
-                      Read orchestration/templates/checkpoints.md for full instructions."
+                      Read orchestration/templates/checkpoints/common.md and orchestration/templates/checkpoints/esv.md for full instructions."
             )
             ```
             > **Field derivation**: `SESSION_START_COMMIT` is the first commit the Queen or any agent made this session (visible in `git log` since the pre-session HEAD). `SESSION_END_COMMIT` is the commit at HEAD immediately before Step 6's `git add CHANGELOG.md` commit. `SESSION_START_DATE` is the calendar date (UTC) when Step 0 ran (stored in queen-state.md or derivable from `SESSION_ID`).
@@ -310,7 +310,7 @@ Store SESSION_DIR in your context and pass it explicitly to every agent that nee
 | Review skeleton for team (Step 3b) | orchestration/templates/nitpicker-skeleton.md |
 | Big Head skeleton for consolidation (Step 3b) | orchestration/templates/big-head-skeleton.md |
 | Implementation details (read by the Pantry) | orchestration/templates/implementation.md |
-| Checkpoint details (read by Pest Control) | orchestration/templates/checkpoints.md |
+| Checkpoint details (read by Pest Control) | orchestration/templates/checkpoints/ (common.md + specific checkpoint file) |
 | Review details (read by build-review-prompts.sh) | orchestration/templates/reviews.md |
 | Pre-flight recon (Step 1) | orchestration/templates/scout.md |
 | Conflict patterns (read by the Scout) | orchestration/reference/dependency-analysis.md |
