@@ -56,6 +56,15 @@ REVIEW_ROUND="$6"
 NITPICKER_SKELETON="$7"
 BIG_HEAD_SKELETON="$8"
 
+if [ -z "$SESSION_DIR" ]; then
+    echo "ERROR: SESSION_DIR argument is empty." >&2
+    exit 1
+fi
+if [ ! -d "$SESSION_DIR" ]; then
+    echo "ERROR: SESSION_DIR does not exist: $SESSION_DIR" >&2
+    exit 1
+fi
+
 for f in "$NITPICKER_SKELETON" "$BIG_HEAD_SKELETON"; do
     if [ ! -f "$f" ]; then
         echo "ERROR: Template file not found: $f" >&2
@@ -87,6 +96,10 @@ resolve_arg() {
 
 CHANGED_FILES="$(resolve_arg "$CHANGED_FILES_RAW")" || { echo "ERROR: resolve_arg failed for CHANGED_FILES_RAW='${CHANGED_FILES_RAW}'" >&2; exit 1; }
 TASK_IDS="$(resolve_arg "$TASK_IDS_RAW")" || { echo "ERROR: resolve_arg failed for TASK_IDS_RAW='${TASK_IDS_RAW}'" >&2; exit 1; }
+if [[ -z "${TASK_IDS//[[:space:]]/}" ]]; then
+    echo "ERROR: TASK_IDS is empty (got: '${TASK_IDS_RAW}')." >&2
+    exit 1
+fi
 
 # ---------------------------------------------------------------------------
 # Input validation (after @file resolution)
@@ -442,9 +455,9 @@ for f in "${SCAN_FILES[@]}"; do
     # template (e.g. <P>, <title>, <new-crumb-id>) contain intentional angle-bracket
     # tokens in instructional examples that are meant to reach the agent verbatim.
     # Those tokens are documented in the template source note added to reviews.md.
-    if grep -qP '\{\{[A-Z][A-Z_0-9]*\}\}' "$f" 2>/dev/null; then
+    if grep -qE '\{\{[A-Z][A-Z_0-9]*\}\}' "$f" 2>/dev/null; then
         echo "ERROR: Unfilled {{SLOT}} placeholder(s) found in: $f" >&2
-        grep -nP '\{\{[A-Z][A-Z_0-9]*\}\}' "$f" | while IFS= read -r line; do
+        grep -nE '\{\{[A-Z][A-Z_0-9]*\}\}' "$f" | while IFS= read -r line; do
             echo "  $line" >&2
         done
         PLACEHOLDER_FOUND=true
