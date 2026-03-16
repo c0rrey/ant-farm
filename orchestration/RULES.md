@@ -190,7 +190,9 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 
             **Progress log (after round transition messages sent):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|ROUND_TRANSITION|from_round=<N>|to_round=<N+1>|fix_commits=<range>|next_step=REVIEW_3B" >> ${SESSION_DIR}/progress.log`
 
-            **Progress log (after triage decision):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_TRIAGED|round=<N>|p1=<count>|p2=<count>|decision=<auto_fix|fix_now|defer|terminated>|root_causes=<count>|next_step=STEP_4_DOCS" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after triage decision — fix path):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_TRIAGED|round=<N>|p1=<count>|p2=<count>|decision=<auto_fix|fix_now>|root_causes=<count>|next_step=FIX_SCOUT" >> ${SESSION_DIR}/progress.log`
+
+            **Progress log (after triage decision — non-fix path):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_TRIAGED|round=<N>|p1=<count>|p2=<count>|decision=<defer|terminated>|root_causes=<count>|next_step=STEP_4_DOCS" >> ${SESSION_DIR}/progress.log`
 
 **Step 4:** Documentation — update README and CLAUDE.md in single commit.
             Note: session narrative and changelog entry are handled by the Scribe at Step 5b.
