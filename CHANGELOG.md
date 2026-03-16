@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-03-16 — Session 144528 (next_step Breadcrumbs, Crumb Cheat Sheet, Review Fix Cycle)
+
+### Summary
+
+Five tasks completed in two feature waves followed by a two-round Nitpicker review cycle. AF-140 added crash-recovery `next_step=` breadcrumbs to all progress log echo statements across RULES.md and RULES-review.md and extended parse-progress-log.sh to display them. AF-141 added a crumb CLI cheat sheet. Round 1 found 3 P2 and 7 P3 issues across 10 root causes; the three P2s were auto-fixed as AF-142, AF-143, and AF-144. Round 2 returned PASS with zero findings. 5 commits total.
+
+### Implementation (Waves 1–2 + fix cycle)
+
+- **AF-140**: feat: add next_step breadcrumbs to progress log entries — appended `|next_step=<VALUE>` to all 22 echo statements across `orchestration/RULES.md` and `orchestration/RULES-review.md`; added mandatory Position Check block; extended `scripts/parse-progress-log.sh` to extract and surface the breadcrumb value
+- **AF-141**: docs: add crumb CLI cheat sheet and register in RULES.md permitted list — created `orchestration/reference/crumb-cheatsheet.md` (78 lines) with syntax templates, examples, and gotchas for all 9 crumb subcommands
+- **AF-142**: fix: make REVIEW_TRIAGED next_step conditional on decision value — split unconditional `next_step=STEP_4_DOCS` into fix-path (`next_step=FIX_SCOUT`) and non-fix-path branches in `orchestration/RULES.md` and `orchestration/RULES-review.md`
+- **AF-143**: fix: macOS grep -P compat in build-review-prompts.sh — replaced `grep -qP` with `grep -qE` at both scan call sites in `scripts/build-review-prompts.sh`
+- **AF-144**: fix: input validation for SESSION_DIR and TASK_IDS in build-review-prompts.sh — added empty/existence guards mirroring the existing CHANGED_FILES pattern
+- **Queen fix** (`bd8b362`): fix: remove stray apostrophe in awk comment that broke single-quote block in `scripts/build-review-prompts.sh`
+
+### Review Fixes (Round 1)
+
+- **RC-1** (AF-142): fix: REVIEW_TRIAGED logs wrong next_step for fix-path decisions (`orchestration/RULES.md`, `orchestration/RULES-review.md`)
+- **RC-2** (AF-143): fix: grep -P silently no-ops on macOS, disabling placeholder scan (`scripts/build-review-prompts.sh:458,460`)
+- **RC-3** (AF-144): fix: SESSION_DIR and TASK_IDS not validated in build-review-prompts.sh (`scripts/build-review-prompts.sh:59-66,99-102`)
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 5 files, 2 tasks (AF-140, AF-141) | 0 | 3 | 7 | PASS WITH ISSUES |
+| 2 | 2 files, 3 tasks (AF-142, AF-143, AF-144) | 0 | 0 | 0 | PASS |
+
+10 root causes consolidated from 13 raw findings (Round 1). 3 P2s auto-fixed; 7 P3s filed as new crumbs.
+
 ## 2026-03-16 — Session 20260315-191629 (Move orchestration block to per-project prompt-dir)
 
 ### Summary
