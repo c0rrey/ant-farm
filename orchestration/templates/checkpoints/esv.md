@@ -70,7 +70,7 @@ If `crumb show <id>` fails (task not found, unreadable, or crumb command error):
 
 ## Check 4: CHANGELOG Derivation Fidelity
 
-1. Identify the new CHANGELOG.md entry written by the Scribe for this session (it will be the most recently added entry).
+1. Run `head -n 50 CHANGELOG.md` to read the top of the file (the new entry is always at the top; reading the full file wastes context tokens on irrelevant history). Identify the new entry written by the Scribe for this session.
 2. Read the exec summary's task IDs and commit hashes.
 3. Verify that every task ID and commit hash present in the exec summary also appears in the CHANGELOG entry.
 4. Report each missing item as: "Task ID `{TASK_ID}` in exec summary but absent from CHANGELOG entry." or "Commit `{HASH}` in exec summary but absent from CHANGELOG entry."
