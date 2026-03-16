@@ -105,7 +105,7 @@ Your workflow:
      # NOTE: {CONSOLIDATED_OUTPUT_PATH} below is a shell variable — it is substituted at
      # runtime by build-review-prompts.sh via fill_slot, NOT a template-time placeholder
      # you fill manually. By the time Big Head runs this block, the braces are gone.
-     mkdir -p "$(dirname "{CONSOLIDATED_OUTPUT_PATH}")"
+     mkdir -p "$(dirname "{CONSOLIDATED_OUTPUT_PATH}")" || { echo "ERROR: failed to create output directory for {CONSOLIDATED_OUTPUT_PATH}. Aborting."; exit 1; }
      cat > "{CONSOLIDATED_OUTPUT_PATH}" << 'EOF'
      # Big Head Consolidation — BLOCKED: Missing Nitpicker Reports
      **Status**: FAILED — prerequisite gate timeout
@@ -125,7 +125,7 @@ Your workflow:
    ```bash
    if ! crumb list --open --short > /tmp/open-crumbs-$$.txt 2>&1; then
      echo "ERROR: crumb list failed (file error or crumb error). Aborting crumb filing to prevent duplicates."
-     mkdir -p "$(dirname "{CONSOLIDATED_OUTPUT_PATH}")"
+     mkdir -p "$(dirname "{CONSOLIDATED_OUTPUT_PATH}")" || { echo "ERROR: failed to create output directory for {CONSOLIDATED_OUTPUT_PATH}. Aborting."; exit 1; }
      cat > "{CONSOLIDATED_OUTPUT_PATH}" << 'EOF'
      # Big Head Consolidation — BLOCKED: Cross-Session Dedup Infrastructure Error
      **Status**: FAILED — crumb list infrastructure error
