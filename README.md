@@ -19,8 +19,8 @@ It is not an open-ended autonomous coding agent. It is a constrained orchestrati
 
 ant-farm defines two workflows:
 
-- **Planning** (`/ant-farm:plan`): turns a freeform request or structured spec into dependency-aware tasks (trails and crumbs) via requirements gathering, parallel research, and decomposition.
-- **Execution** (`/ant-farm:work` or "let's get to work"): runs an implementation session with recon, prompt composition, parallel agent spawning, post-commit verification, code review, and documentation.
+- **Planning** (`/ant-farm-plan`): turns a freeform request or structured spec into dependency-aware tasks (trails and crumbs) via requirements gathering, parallel research, and decomposition.
+- **Execution** (`/ant-farm-work` or "let's get to work"): runs an implementation session with recon, prompt composition, parallel agent spawning, post-commit verification, code review, and documentation.
 
 The core idea is **constrained delegation**. Work is split across specialist agents, but progression is controlled by artifacts on disk, verification checkpoints, retry limits, and explicit escalation to you when things go wrong.
 
@@ -102,9 +102,9 @@ git clone <repo-url> && cd ant-farm
 The setup script installs:
 - Agent definitions (`agents/*.md`) to `~/.claude/agents/`
 - Orchestration files to `~/.claude/orchestration/`
-- Skills to `~/.claude/plugins/ant-farm/commands/`
+- Skills to `~/.claude/skills/ant-farm-*/SKILL.md`
 - `crumb.py` to `~/.local/bin/crumb`
-- Orchestration triggers to your per-project prompt-dir CLAUDE.md
+- Orchestration triggers to your project's `CLAUDE.md`
 
 Then **restart Claude Code**. Agent types are loaded at startup only.
 
@@ -112,7 +112,7 @@ For detailed installation, backup, and uninstall instructions, see `docs/install
 
 ### Wire Up a Target Project
 
-Run `/ant-farm:init` inside the target project to install orchestration triggers. This writes the canonical orchestration block into the project's prompt-dir CLAUDE.md (`~/.claude/projects/-<escaped-path>/CLAUDE.md`), scoped to that project only.
+Run `/ant-farm-init` inside the target project to install orchestration triggers. This writes the canonical orchestration block into the project's `CLAUDE.md`, which Claude Code loads into the system prompt at session start.
 
 See `orchestration/SETUP.md` for the full recipe and manual setup option.
 
@@ -167,7 +167,7 @@ ant-farm/
 │   ├── setup.sh                     # Installs everything to ~/.claude/ and PATH
 │   ├── build-review-prompts.sh      # Builds review prompts from templates
 │   └── parse-progress-log.sh        # Session recovery from progress log
-├── skills/                  # Slash commands (/ant-farm:work, /ant-farm:plan, etc.)
+├── skills/                  # Slash commands (/ant-farm-work, /ant-farm-plan, etc.)
 ├── crumb.py                 # Task-tracking CLI (installed to ~/.local/bin/crumb)
 ├── tests/                   # Tests for crumb.py
 ├── CONTRIBUTING.md          # How to add agents, checkpoints, and templates
@@ -309,7 +309,7 @@ Most orchestration problems are trust problems wearing a concurrency costume.
 
 ## Forking This Repo
 
-The `.crumbs/tasks.jsonl` file is the issue database for **this** project's development history. If you adopt ant-farm for another project, run `/ant-farm:init` which creates a project-local `.crumbs/` directory.
+The `.crumbs/tasks.jsonl` file is the issue database for **this** project's development history. If you adopt ant-farm for another project, run `/ant-farm-init` which creates a project-local `.crumbs/` directory.
 
 ## Contributing
 
@@ -326,7 +326,7 @@ All file paths in this document use repo-root relative format. At runtime, agent
 
 | File | Read by | Purpose |
 |------|---------|---------|
-| `orchestration/templates/claude-block.md` | `setup.sh`, `/ant-farm:init` | Canonical orchestration block (triggers + session completion) |
+| `orchestration/templates/claude-block.md` | `setup.sh`, `/ant-farm-init` | Canonical orchestration block (triggers + session completion) |
 | `agents/*.md` | Claude Code (at startup) | Custom agent type definitions |
 | `orchestration/RULES.md` | The Queen | Execution workflow steps, hard gates, concurrency rules |
 | `orchestration/RULES-decompose.md` | The Planner | Decomposition workflow steps and gates |

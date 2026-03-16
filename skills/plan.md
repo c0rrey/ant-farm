@@ -1,17 +1,17 @@
 ---
-description: This skill should be used when the user invokes "/ant-farm:plan", provides a spec file path or inline specification text to decompose, says "plan this", "decompose this spec", "break this into tasks", or asks to turn a requirement or idea into crumbs. Accepts a file path or inline text, classifies input as structured vs freeform, and routes to the RULES-decompose.md decomposition workflow.
+description: This skill should be used when the user invokes "/ant-farm-plan", provides a spec file path or inline specification text to decompose, says "plan this", "decompose this spec", "break this into tasks", or asks to turn a requirement or idea into crumbs. Accepts a file path or inline text, classifies input as structured vs freeform, and routes to the RULES-decompose.md decomposition workflow.
 ---
 
-# /ant-farm:plan — Decomposition Skill
+# /ant-farm-plan — Decomposition Skill
 
-This skill governs the `/ant-farm:plan` slash command. It accepts a spec file path or inline specification text, detects the input type, classifies the input as structured or freeform, creates a timestamped `DECOMPOSE_DIR` under `.crumbs/sessions/`, and routes to `orchestration/RULES-decompose.md` for execution.
+This skill governs the `/ant-farm-plan` slash command. It accepts a spec file path or inline specification text, detects the input type, classifies the input as structured or freeform, creates a timestamped `DECOMPOSE_DIR` under `.crumbs/sessions/`, and routes to `orchestration/RULES-decompose.md` for execution.
 
 ## Trigger Conditions
 
 Activate this skill when the user:
-- Invokes `/ant-farm:plan` (with or without an argument)
-- Provides a file path to a spec document as an argument to `/ant-farm:plan`
-- Provides inline specification text as an argument to `/ant-farm:plan`
+- Invokes `/ant-farm-plan` (with or without an argument)
+- Provides a file path to a spec document as an argument to `/ant-farm-plan`
+- Provides inline specification text as an argument to `/ant-farm-plan`
 - Says "plan this", "decompose this spec", "break this into tasks", "turn this into crumbs", or similar
 
 ## Step 0 — Pre-flight Error Handling
@@ -26,18 +26,18 @@ Before doing anything else, check for fatal conditions. Surface clear error mess
 
 If `NOT_INITIALIZED`:
 
-> **Error**: `.crumbs/` is not initialized in this project. Run `/ant-farm:init` first to scaffold the task system, then return to `/ant-farm:plan`.
+> **Error**: `.crumbs/` is not initialized in this project. Run `/ant-farm-init` first to scaffold the task system, then return to `/ant-farm-plan`.
 
 Stop. Do not proceed.
 
 ### Error: Empty input
 
-If the user invoked `/ant-farm:plan` with no argument and no inline text:
+If the user invoked `/ant-farm-plan` with no argument and no inline text:
 
 > **Error**: No input provided. Usage:
 >
-> - `/ant-farm:plan path/to/spec.md` — decompose a spec file
-> - `/ant-farm:plan <inline text>` — decompose inline specification text
+> - `/ant-farm-plan path/to/spec.md` — decompose a spec file
+> - `/ant-farm-plan <inline text>` — decompose inline specification text
 >
 > Provide a file path or paste your spec text directly as the argument.
 
@@ -45,7 +45,7 @@ Stop. Do not proceed.
 
 ## Step 1 — Detect Input Type
 
-Examine the argument provided to `/ant-farm:plan`.
+Examine the argument provided to `/ant-farm-plan`.
 
 ### File path detection
 
@@ -157,11 +157,11 @@ The decomposition workflow in `RULES-decompose.md` is responsible for:
 
 | Condition | Behavior |
 |---|---|
-| `.crumbs/` not initialized | Hard stop — instruct user to run `/ant-farm:init` |
+| `.crumbs/` not initialized | Hard stop — instruct user to run `/ant-farm-init` |
 | No argument provided | Hard stop — show usage message |
 | Argument looks like file path but file not found | Hard stop — show path and suggest inline alternative |
 | File found but empty | Hard stop — report empty file |
 | Inline text is whitespace-only | Hard stop — report empty input |
-| `RULES-decompose.md` not found | Hard stop — report missing file: `orchestration/RULES-decompose.md does not exist. This file must be created before /ant-farm:plan can execute decomposition.` |
+| `RULES-decompose.md` not found | Hard stop — report missing file: `orchestration/RULES-decompose.md does not exist. This file must be created before /ant-farm-plan can execute decomposition.` |
 | `mkdir` fails for DECOMPOSE_DIR | Hard stop — report permissions error on `.crumbs/sessions/` |
-| `crumb` CLI not available | Hard stop — instruct user to run `/ant-farm:init` to install the `crumb` CLI |
+| `crumb` CLI not available | Hard stop — instruct user to run `/ant-farm-init` to install the `crumb` CLI |

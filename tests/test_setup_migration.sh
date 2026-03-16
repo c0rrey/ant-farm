@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_setup_migration.sh — Shell tests for setup.sh migration removal behavior
-# and prompt-dir write functionality.
+# and repo CLAUDE.md write functionality.
 #
 # Test cases:
 #   1. Block surrounded by user content: block removed, user content preserved
@@ -8,7 +8,7 @@
 #   2. No ant-farm block present: file unchanged after setup.sh.
 #   3. Empty file after block removal: file still exists (not deleted).
 #   4. --dry-run: does not modify any files (checksum comparison).
-#   5. Prompt-dir CLAUDE.md: contains the ant-farm block after setup.sh.
+#   5. Repo CLAUDE.md: contains the ant-farm block after setup.sh.
 #
 # Each test runs in its own subshell with an isolated HOME (temp dir), so
 # real ~/.claude/ is never touched. All tests always run; failures are
@@ -205,10 +205,6 @@ run_test "dry_run_does_not_modify_files" '
 
     before_global="$(checksum "$global_claude")"
 
-    # Compute the prompt-dir CLAUDE.md path (same logic as setup.sh Step 6b)
-    promptdir_component="$(printf "%s" "$REPO_ROOT" | tr "/" "-")"
-    promptdir_claude="$fake_home/.claude/projects/${promptdir_component}/CLAUDE.md"
-
     # Run in --dry-run mode
     HOME="$fake_home" bash "$SETUP_SH" --dry-run >/dev/null 2>&1
 
@@ -219,39 +215,30 @@ run_test "dry_run_does_not_modify_files" '
         exit 1
     fi
 
-    # Prompt-dir CLAUDE.md must NOT have been created
-    if [ -f "$promptdir_claude" ]; then
-        echo "ASSERTION FAILED: --dry-run created $promptdir_claude — must not write files" >&2
-        exit 1
-    fi
-
     rm -rf "$fake_home"
 '
 
 # ---------------------------------------------------------------------------
-# Test 5: Prompt-dir CLAUDE.md contains the ant-farm block after setup.sh
+# Test 5: Repo CLAUDE.md contains the ant-farm block after setup.sh
+#   Note: setup.sh writes to $REPO_ROOT/CLAUDE.md (the actual repo file).
+#   This test verifies the block is present — it does not run setup.sh again
+#   (to avoid modifying the repo file in a test), but checks the current state.
 # ---------------------------------------------------------------------------
-run_test "promptdir_claude_md_contains_block" '
-    fake_home="$(make_fake_home)"
+run_test "repo_claude_md_contains_block" '
+    repo_claude="$REPO_ROOT/CLAUDE.md"
 
-    # Compute the expected prompt-dir CLAUDE.md path (mirrors setup.sh Step 6b)
-    promptdir_component="$(printf "%s" "$REPO_ROOT" | tr "/" "-")"
-    promptdir_claude="$fake_home/.claude/projects/${promptdir_component}/CLAUDE.md"
-
-    run_setup "$fake_home"
-
-    if [ ! -f "$promptdir_claude" ]; then
-        echo "ASSERTION FAILED: prompt-dir CLAUDE.md was not created at $promptdir_claude" >&2
+    if [ ! -f "$repo_claude" ]; then
+        echo "ASSERTION FAILED: repo CLAUDE.md does not exist at $repo_claude" >&2
         exit 1
     fi
 
     # Must contain both sentinel markers
-    if ! grep -qF "<!-- ant-farm:start -->" "$promptdir_claude"; then
-        echo "ASSERTION FAILED: start sentinel missing from prompt-dir CLAUDE.md" >&2
+    if ! grep -qF "<!-- ant-farm:start -->" "$repo_claude"; then
+        echo "ASSERTION FAILED: start sentinel missing from repo CLAUDE.md" >&2
         exit 1
     fi
-    if ! grep -qF "<!-- ant-farm:end -->" "$promptdir_claude"; then
-        echo "ASSERTION FAILED: end sentinel missing from prompt-dir CLAUDE.md" >&2
+    if ! grep -qF "<!-- ant-farm:end -->" "$repo_claude"; then
+        echo "ASSERTION FAILED: end sentinel missing from repo CLAUDE.md" >&2
         exit 1
     fi
 
@@ -262,23 +249,21 @@ run_test "promptdir_claude_md_contains_block" '
         exit 1
     fi
 
-    # Extract the content between sentinels (exclusive) from the installed file
+    # Extract the content between sentinels (exclusive) from the repo file
     extracted="$(awk -v start="<!-- ant-farm:start -->" -v end="<!-- ant-farm:end -->" \
-        '"'"'$0==start{f=1;next} f&&$0==end{exit} f{print}'"'"' "$promptdir_claude")"
+        '"'"'$0==start{f=1;next} f&&$0==end{exit} f{print}'"'"' "$repo_claude")"
 
     # Compare against the source block content
     expected="$(cat "$block_src")"
 
     if [ "$extracted" != "$expected" ]; then
-        echo "ASSERTION FAILED: block content in prompt-dir CLAUDE.md does not match claude-block.md" >&2
+        echo "ASSERTION FAILED: block content in repo CLAUDE.md does not match claude-block.md" >&2
         echo "--- expected (claude-block.md) ---" >&2
         echo "$expected" | head -5 >&2
-        echo "--- got (extracted from promptdir CLAUDE.md) ---" >&2
+        echo "--- got (extracted from repo CLAUDE.md) ---" >&2
         echo "$extracted" | head -5 >&2
         exit 1
     fi
-
-    rm -rf "$fake_home"
 '
 
 # ---------------------------------------------------------------------------

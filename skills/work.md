@@ -1,15 +1,15 @@
 ---
-description: This skill should be used when the user invokes "/ant-farm:work", says "let's get to work", "start execution", "run the pipeline", "execute tasks", or asks to begin running crumbs or executing queued tasks. Triggers the ant-farm execution workflow: reads .crumbs/tasks.jsonl, runs a startup coherence check, creates a SESSION_DIR, then launches the Queen orchestration pipeline (RULES.md).
+description: This skill should be used when the user invokes "/ant-farm-work", says "let's get to work", "start execution", "run the pipeline", "execute tasks", or asks to begin running crumbs or executing queued tasks. Triggers the ant-farm execution workflow: reads .crumbs/tasks.jsonl, runs a startup coherence check, creates a SESSION_DIR, then launches the Queen orchestration pipeline (RULES.md).
 ---
 
-# /ant-farm:work — Execution Session Skill
+# /ant-farm-work — Execution Session Skill
 
-This skill governs the `/ant-farm:work` slash command. It reads `.crumbs/tasks.jsonl`, runs a startup coherence check, and launches the Queen orchestration pipeline defined in `orchestration/RULES.md`.
+This skill governs the `/ant-farm-work` slash command. It reads `.crumbs/tasks.jsonl`, runs a startup coherence check, and launches the Queen orchestration pipeline defined in `orchestration/RULES.md`.
 
 ## Trigger Conditions
 
 Activate this skill when the user:
-- Invokes `/ant-farm:work` (with or without arguments)
+- Invokes `/ant-farm-work` (with or without arguments)
 - Says "let's get to work" (case-insensitive)
 - Asks to run, execute, or start the pipeline against existing crumbs
 
@@ -25,7 +25,7 @@ Before doing anything else, check for these fatal conditions. Surface clear erro
 
 If `.crumbs/tasks.jsonl` or `.crumbs/config.json` does not exist:
 
-> **Error**: `.crumbs/tasks.jsonl` not found. Run `/ant-farm:init` to initialize the project, then `/ant-farm:plan` to create tasks before running `/ant-farm:work`.
+> **Error**: `.crumbs/tasks.jsonl` not found. Run `/ant-farm-init` to initialize the project, then `/ant-farm-plan` to create tasks before running `/ant-farm-work`.
 
 Stop. Do not proceed.
 
@@ -37,7 +37,7 @@ crumb list --type=task --short 2>/dev/null | wc -l
 
 If the file exists but contains zero crumbs (trails only, or empty):
 
-> **Error**: No crumbs found in `.crumbs/tasks.jsonl`. Run `/ant-farm:plan` to decompose a spec into executable tasks first.
+> **Error**: No crumbs found in `.crumbs/tasks.jsonl`. Run `/ant-farm-plan` to decompose a spec into executable tasks first.
 
 Stop. Do not proceed.
 
@@ -49,7 +49,7 @@ crumb list --open --short 2>/dev/null | wc -l
 
 If all crumbs are closed (open count = 0):
 
-> **All tasks are closed.** Nothing to execute. If you have new work, run `/ant-farm:plan` to add tasks.
+> **All tasks are closed.** Nothing to execute. If you have new work, run `/ant-farm-plan` to add tasks.
 
 Stop. Do not proceed.
 
@@ -120,10 +120,10 @@ All other orchestration rules from `orchestration/RULES.md` apply without except
 
 | Condition | Behavior |
 |---|---|
-| `.crumbs/` not initialized | Hard stop — instruct user to run `/ant-farm:init` |
-| No crumbs in tasks.jsonl | Hard stop — instruct user to run `/ant-farm:plan` |
+| `.crumbs/` not initialized | Hard stop — instruct user to run `/ant-farm-init` |
+| No crumbs in tasks.jsonl | Hard stop — instruct user to run `/ant-farm-plan` |
 | All crumbs closed | Hard stop — nothing to do |
 | Dangling `blocked_by` reference | Warning — surface to user, offer fix command, proceed after acknowledgment |
 | Dangling `parent` link | Warning — surface to user, offer fix command, proceed after acknowledgment |
 | Stale `in_progress` crumbs | Warning — list crumbs, offer reset command, **wait for user decision** before proceeding |
-| `crumb doctor` command not found | Assume crumb CLI not installed — instruct user to run `/ant-farm:init` to install it |
+| `crumb doctor` command not found | Assume crumb CLI not installed — instruct user to run `/ant-farm-init` to install it |

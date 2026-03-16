@@ -119,7 +119,7 @@ def find_crumbs_dir() -> Path:
             # Reached filesystem root without finding .crumbs/
             die(
                 f"no {CRUMBS_DIR_NAME}/ directory found in {Path.cwd()} or any parent. "
-                "Run /ant-farm:init first."
+                "Run /ant-farm-init first."
             )
         current = parent
 
@@ -465,7 +465,7 @@ def require_tasks_jsonl() -> Path:
     """
     path = tasks_path()
     if not path.exists():
-        die("no .crumbs/tasks.jsonl found. Run /ant-farm:init first.")
+        die("no .crumbs/tasks.jsonl found. Run /ant-farm-init first.")
     return path
 
 

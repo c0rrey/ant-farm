@@ -29,7 +29,7 @@ For complete details, see `docs/installation-guide.md`. Quick reference:
 - Agent definitions (`agents/*.md`) to `~/.claude/agents/`
 - Orchestration files to `~/.claude/orchestration/` (excluding `_archive/`)
 - `build-review-prompts.sh` to `~/.claude/orchestration/scripts/`
-- Skills (`skills/*.md`) to `~/.claude/plugins/ant-farm/commands/<name>.md`
+- Skills (`skills/*.md`) to `~/.claude/skills/ant-farm-<name>/SKILL.md`
 - `crumb.py` to `~/.local/bin/crumb` (marked executable)
 
 Re-run `setup.sh` after pulling upstream changes to update installed files. Use `--dry-run` to preview changes.
@@ -43,9 +43,9 @@ repository's `~/.claude/agents/code-reviewer.md` on the machine where the system
 Without this file, the Nitpicker team members will fail to spawn (Claude Code will not recognize the
 `code-reviewer` agent type).
 
-**Step 2: Install orchestration triggers into the project's prompt-dir CLAUDE.md**
+**Step 2: Install orchestration triggers into the project's CLAUDE.md**
 
-Run `/ant-farm:init` inside the target project in Claude Code. This installs orchestration triggers into the project's prompt-dir `CLAUDE.md` (the per-project Claude Code prompt directory, not the global `~/.claude/CLAUDE.md`).
+Run `/ant-farm-init` inside the target project in Claude Code. This installs the orchestration block into the project's `CLAUDE.md` file (which Claude Code loads into the system prompt at session start).
 
 Alternatively, add the orchestration section manually:
 

@@ -1,6 +1,6 @@
 # Decomposition Workflow Rules
 
-> This is the Planner's workflow document for `/ant-farm:plan`. The Planner reads THIS file alone
+> This is the Planner's workflow document for `/ant-farm-plan`. The Planner reads THIS file alone
 > and follows it exactly. Do NOT read `orchestration/RULES.md` — it governs the Queen's
 > implementation session workflow, which is separate from decomposition.
 
@@ -37,7 +37,7 @@ misapplying Queen patterns to decomposition sessions.
 
 | Dimension | Planner | Queen |
 |-----------|---------|-------|
-| Trigger | `/ant-farm:plan` command | "let's get to work" message |
+| Trigger | `/ant-farm-plan` command | "let's get to work" message |
 | Purpose | Decompose a feature into trails and crumbs | Execute a prepared work session |
 | Workflow file | `orchestration/RULES-decompose.md` (this file) | `orchestration/RULES.md` |
 | Read permissions | `spec.md` and `decomposition-brief.md` only | `queen-state.md`, task files, git diffs |
@@ -109,7 +109,7 @@ The Planner's context window is restricted to prevent bloat. The following are e
 
 ---
 
-## Workflow: `/ant-farm:plan`
+## Workflow: `/ant-farm-plan`
 
 **Step 0:** Session setup — generate a DECOMPOSE_ID and DECOMPOSE_DIR. Store both as variables.
 

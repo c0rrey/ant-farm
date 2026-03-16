@@ -5,14 +5,16 @@
 #   agents/*.md         → ~/.claude/agents/
 #   orchestration/      → ~/.claude/orchestration/  (non-_archive files)
 #   scripts/build-review-prompts.sh → ~/.claude/orchestration/scripts/
-#   skills/*.md         → ~/.claude/plugins/ant-farm/commands/<name>.md
+#   skills/*.md         → ~/.claude/skills/ant-farm-<name>/SKILL.md
 #   crumb.py            → ~/.local/bin/crumb
 #
 # CLAUDE.md handling:
 #   Step 6a: Remove any existing ant-farm block from ~/.claude/CLAUDE.md
-#            (migration cleanup — the block now lives in per-project prompt-dir).
-#   Step 6b: Write block to this project's prompt-dir CLAUDE.md
-#            (~/.claude/projects/-Users-…-ant-farm/CLAUDE.md).
+#            (migration cleanup — the block now lives in the repo's CLAUDE.md).
+#   Step 6b: Remove stale ant-farm block from prompt-dir CLAUDE.md
+#            (migration cleanup — the block previously lived there).
+#   Step 6c: Write block to the repo's own CLAUDE.md (loaded by Claude Code
+#            at session start).
 #
 # Backs up any existing target file with a timestamped .bak suffix before
 # overwriting. Idempotent: re-running updates files; each run generates at
@@ -421,22 +423,22 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Step 4: Install skills → ~/.claude/plugins/ant-farm/commands/<name>.md
-#   Marketplace plugin format: ~/.claude/plugins/<namespace>/commands/<name>.md
-#   Commands are invocable as /ant-farm:<name> (colon-namespaced).
+# Step 4: Install skills → ~/.claude/skills/ant-farm-<name>/SKILL.md
+#   Claude Code personal skills format: ~/.claude/skills/<skill-name>/SKILL.md
+#   Commands are invocable as /ant-farm-<name> (hyphenated).
 # ---------------------------------------------------------------------------
-log "Installing skills → ~/.claude/plugins/ant-farm/commands/ ..."
+log "Installing skills → ~/.claude/skills/ ..."
 skills_installed=0
 
 if [ -d "$REPO_ROOT/skills" ]; then
-    PLUGIN_COMMANDS_DIR="${HOME}/.claude/plugins/ant-farm/commands"
-    if [ "$DRY_RUN" = false ]; then
-        mkdir -p "$PLUGIN_COMMANDS_DIR"
-    fi
     shopt -s nullglob
     for skill_file in "$REPO_ROOT/skills/"*.md; do
         name="$(basename "$skill_file" .md)"
-        dst="${PLUGIN_COMMANDS_DIR}/${name}.md"
+        skill_dir="${HOME}/.claude/skills/ant-farm-${name}"
+        dst="${skill_dir}/SKILL.md"
+        if [ "$DRY_RUN" = false ]; then
+            mkdir -p "$skill_dir"
+        fi
         backup_and_copy "$skill_file" "$dst" || { warn "Failed to install skill: $skill_file"; continue; }
         skills_installed=$((skills_installed + 1))
     done
@@ -479,21 +481,29 @@ log "Checking for ant-farm block to remove from ${GLOBAL_CLAUDE_DST} ..."
 remove_claude_block "$GLOBAL_CLAUDE_DST"
 
 # ---------------------------------------------------------------------------
-# Step 6b: Write ant-farm block to this project's prompt-dir CLAUDE.md
-#   Per-project prompt-dir path follows Claude Code's convention:
-#   ~/.claude/projects/<path-encoded-repo-root>/CLAUDE.md
+# Step 6b: Remove stale ant-farm block from prompt-dir CLAUDE.md (migration)
+#   The block previously lived in the per-project prompt-dir. It now lives in
+#   the repo's own CLAUDE.md (Step 6c). Clean up the old location.
+# ---------------------------------------------------------------------------
+PROMPTDIR_COMPONENT="$(printf '%s' "$REPO_ROOT" | tr '/' '-')"
+PROMPTDIR_CLAUDE="${HOME}/.claude/projects/${PROMPTDIR_COMPONENT}/CLAUDE.md"
+log "Checking for stale ant-farm block in prompt-dir ${PROMPTDIR_CLAUDE} ..."
+remove_claude_block "$PROMPTDIR_CLAUDE"
+
+# ---------------------------------------------------------------------------
+# Step 6c: Write ant-farm block to the repo's CLAUDE.md
+#   Claude Code loads the repo's CLAUDE.md into the system prompt at session
+#   start. The prompt-dir CLAUDE.md is NOT loaded, so the block must live here.
 #   Block content is sourced from orchestration/templates/claude-block.md.
 # ---------------------------------------------------------------------------
 BLOCK_SRC="$REPO_ROOT/orchestration/templates/claude-block.md"
-# Encode REPO_ROOT as a prompt-dir path component: replace / with -
-PROMPTDIR_COMPONENT="$(printf '%s' "$REPO_ROOT" | tr '/' '-')"
-PROMPTDIR_CLAUDE_DST="${HOME}/.claude/projects/${PROMPTDIR_COMPONENT}/CLAUDE.md"
+REPO_CLAUDE_DST="$REPO_ROOT/CLAUDE.md"
 
 if [ ! -f "$BLOCK_SRC" ]; then
-    warn "claude-block.md not found: $BLOCK_SRC — skipping prompt-dir CLAUDE.md install"
+    warn "claude-block.md not found: $BLOCK_SRC — skipping repo CLAUDE.md install"
 else
-    log "Installing ant-farm block → ${PROMPTDIR_CLAUDE_DST} ..."
-    sync_claude_block "$BLOCK_SRC" "$PROMPTDIR_CLAUDE_DST"
+    log "Installing ant-farm block → ${REPO_CLAUDE_DST} ..."
+    sync_claude_block "$BLOCK_SRC" "$REPO_CLAUDE_DST"
 fi
 
 # ---------------------------------------------------------------------------

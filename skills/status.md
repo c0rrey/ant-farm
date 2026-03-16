@@ -1,15 +1,15 @@
 ---
-description: This skill should be used when the user invokes "/ant-farm:status", says "show project status", "what's the status", "show dashboard", "how many tasks are open", or asks for a quick overview of the current project's crumb task state. Displays a concise dashboard: trail completion counts, crumb status summary, and last session summary.
+description: This skill should be used when the user invokes "/ant-farm-status", says "show project status", "what's the status", "show dashboard", "how many tasks are open", or asks for a quick overview of the current project's crumb task state. Displays a concise dashboard: trail completion counts, crumb status summary, and last session summary.
 ---
 
-# /ant-farm:status — Quick View Dashboard Skill
+# /ant-farm-status — Quick View Dashboard Skill
 
-This skill governs the `/ant-farm:status` slash command. It renders a concise, scannable dashboard showing trail completion counts, crumb status totals by state, and the last session summary. It does not modify any data.
+This skill governs the `/ant-farm-status` slash command. It renders a concise, scannable dashboard showing trail completion counts, crumb status totals by state, and the last session summary. It does not modify any data.
 
 ## Trigger Conditions
 
 Activate this skill when the user:
-- Invokes `/ant-farm:status` (with or without arguments)
+- Invokes `/ant-farm-status` (with or without arguments)
 - Asks for project status, task counts, or a dashboard overview
 - Asks how many tasks are open, blocked, or completed
 
@@ -23,7 +23,7 @@ Before gathering any data, verify the project is initialized.
 
 If `NOT_INITIALIZED`:
 
-> **Error**: `.crumbs/` is not initialized in this project. Run `/ant-farm:init` to set up the task system.
+> **Error**: `.crumbs/` is not initialized in this project. Run `/ant-farm-init` to set up the task system.
 
 Stop. Do not proceed.
 
@@ -99,7 +99,7 @@ If `HAS_TRAILS=false` AND `HAS_CRUMBS=false` AND `HAS_SESSION=false`:
 
 > **ant-farm status**
 >
-> No tasks found. Run `/ant-farm:plan` to decompose a spec into tasks.
+> No tasks found. Run `/ant-farm-plan` to decompose a spec into tasks.
 
 Stop. Do not render further.
 
@@ -172,9 +172,9 @@ If `HAS_SESSION=false`:
 
 | Condition | Behavior |
 |---|---|
-| `.crumbs/` not initialized | Hard stop — instruct user to run `/ant-farm:init` |
-| `crumb` CLI not found | Hard stop — instruct user to run `/ant-farm:init` to install it |
-| No trails, no crumbs, no sessions | Show minimal "no tasks" message with `/ant-farm:plan` hint |
+| `.crumbs/` not initialized | Hard stop — instruct user to run `/ant-farm-init` |
+| `crumb` CLI not found | Hard stop — instruct user to run `/ant-farm-init` to install it |
+| No trails, no crumbs, no sessions | Show minimal "no tasks" message with `/ant-farm-plan` hint |
 | `crumb trail list` fails | Set `HAS_TRAILS=false`, render `(no trails)` |
 | `crumb list` fails for any status | Treat count as `0` for that status |
 | No exec-summary files in `.crumbs/history/` | Set `HAS_SESSION=false`, render `(no sessions completed yet)` |

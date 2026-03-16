@@ -19,5 +19,5 @@ crumb close <id>         # Complete work
 
 See the **Landing the Plane** section in `orchestration/templates/claude-block.md` for the full mandatory workflow.
 That file is the single source of truth for session-completion steps — it is installed into
-each project's prompt-dir CLAUDE.md by `setup.sh` and `/ant-farm:init`.
+each project's `CLAUDE.md` by `setup.sh` and `/ant-farm-init`.
 
