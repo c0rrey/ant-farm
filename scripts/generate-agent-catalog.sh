@@ -20,7 +20,8 @@ OUTPUT="$REPO_ROOT/orchestration/agent-catalog.md"
 } > "$OUTPUT"
 
 # Process each agent file in sorted order
-for filepath in $(ls "$AGENTS_DIR"/*.md | sort); do
+shopt -s nullglob
+for filepath in "$AGENTS_DIR"/*.md; do
   name=""
   description=""
   in_frontmatter=0
@@ -89,5 +90,6 @@ for filepath in $(ls "$AGENTS_DIR"/*.md | sort); do
   safe_desc=$(echo "$first_sentence" | sed 's/|/\\|/g')
   printf "| %s | %s | %s | %s |\n" "$name" "$safe_desc" "$rel_path" "$agent_type" >> "$OUTPUT"
 done
+shopt -u nullglob
 
 echo "Wrote $OUTPUT"
