@@ -50,12 +50,9 @@ Then (skip for `ready` mode — tasks are already unblocked):
 
 ## Step 2.5: Discover Available Agents
 
-Scan for agent definitions. Project-level (`.claude/agents/*.md`) takes
-priority over global (`~/.claude/agents/*.md`) for same-name agents.
-
-For each `.md` file, read the YAML frontmatter (`---` delimiters).
-Extract `name` and first sentence of `description`. Skip files without
-valid frontmatter. **Also track the file path for each agent** — you will use these paths only on tie-breaking (Step 3, below).
+Read `orchestration/agent-catalog.md` once to get the full agent list.
+Extract `Agent Name`, `Description`, and `File Path` columns from the catalog table.
+**Also track the file path for each agent** — you will use these paths only on tie-breaking (Step 3, below).
 
 All agents appear in your internal catalog for reference, but implementation candidates are separate from orchestration agents. Orchestration agents (ant-farm-scout-organizer, ant-farm-pantry-impl, ant-farm-pest-control, etc.) coordinate the work; they do not implement tasks. Therefore, they are excluded from Dirt Pusher recommendations. Implementation candidates are agents who will execute tasks (python-pro, debugger, etc.).
 
@@ -120,7 +117,7 @@ your Step 2.5 catalog. Consider in order:
 - **Step A (Deep Read)**: For ONLY the tied candidates, read their full `.md` files (from the file paths recorded in Step 2.5). Re-evaluate the match against task root cause, title, and acceptance criteria using full descriptions.
 - **Step B (Explicit Fallback)**: If tie persists after Step A, record the agent type as: `PICK ONE: [type-a | type-b]` (pipe-separated list of tied types). This signals to the Queen that multiple agents are equally suitable for this task.
 
-**Important**: Do NOT read full agent `.md` files unless a tie occurs. Frontmatter-only reads are the default path, keeping context usage minimal for the common case.
+**Important**: Do NOT read full agent `.md` files unless a tie occurs. Catalog-only reads are the default path, keeping context usage minimal for the common case.
 
 For blocked tasks: include `**Blocked by**: {blocker-id-1}, {blocker-id-2}` in the metadata file,
 and note which wave the blockers are expected to complete in (based on Step 5 wave assignments).
