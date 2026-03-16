@@ -53,7 +53,7 @@ Extract `Agent Name`, `Description`, and `File Path` columns from the catalog ta
 All agents appear in your internal catalog for reference, but implementation candidates are separate from orchestration agents. Orchestration agents (ant-farm-scout-organizer, ant-farm-pantry-impl, ant-farm-pest-control, etc.) coordinate the work; they do not implement tasks. Therefore, they are excluded from Dirt Pusher recommendations. Implementation candidates are agents who will execute tasks (python-pro, debugger, etc.).
 
 **Exclusions from Dirt Pusher recommendations** (orchestration agents):
-ant-farm-scout-organizer, ant-farm-pantry-impl, ant-farm-pest-control, ant-farm-nitpicker, ant-farm-big-head
+ant-farm-scout-organizer, ant-farm-pantry-impl, ant-farm-pest-control, ant-farm-nitpicker-clarity, ant-farm-nitpicker-edge-cases, ant-farm-nitpicker-correctness, ant-farm-nitpicker-drift, ant-farm-big-head
 
 Build an internal two-tier catalog (keep in context, do NOT write to disk):
 

@@ -34,9 +34,11 @@ Your workflow:
    - **Timeout note**: The polling timeout is determined by the consolidation brief (the `while` loop parameters in Step 0a are authoritative — the value here is approximate). This allows reviewers to finish writing their reports before Big Head proceeds. If your reviewers are consistently timing out, the Queen should re-spawn Big Head rather than increasing the timeout — a longer timeout blocks the Queen's context with an idle agent.
    - **On timeout (REPORTS_FOUND=0)**: Before returning the error to the Queen, write a failure artifact using this bash block:
      ```bash
-     # NOTE: {CONSOLIDATED_OUTPUT_PATH} below is a shell variable — it is substituted at
-     # runtime by build-review-prompts.sh via fill_slot, NOT a template-time placeholder
-     # you fill manually. By the time Big Head runs this block, the braces are gone.
+     # NOTE: {CONSOLIDATED_OUTPUT_PATH} is a template placeholder (pre-substitution form).
+     # build-review-prompts.sh replaces it with a literal path (e.g.
+     # /path/to/session/consolidated.md) before this prompt reaches Big Head.
+     # By the time Big Head executes this block, the braces are gone and a real
+     # filesystem path appears in their place.
      mkdir -p "$(dirname "{CONSOLIDATED_OUTPUT_PATH}")" || { echo "ERROR: failed to create output directory for {CONSOLIDATED_OUTPUT_PATH}. Aborting."; exit 1; }
      cat > "{CONSOLIDATED_OUTPUT_PATH}" << 'EOF'
      # Big Head Consolidation — BLOCKED: Missing Nitpicker Reports

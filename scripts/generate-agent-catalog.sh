@@ -71,15 +71,15 @@ for filepath in "$AGENTS_DIR"/*.md; do
     agent_type="orchestration"
   fi
   # Scout, Surveyor, Architect, Pantry, Big Head, Technical Writer are orchestration roles.
-  # Nitpicker is implementation (runs as one of 4 parallel reviewers, not a coordinator itself).
-  # Pest Control is implementation (auditor, not a spawner).
+  # Nitpicker specialists are review agents (run as parallel reviewers, not coordinators).
+  # Pest Control is review (auditor, not a spawner).
   # Override by name for precision:
   case "$name" in
     ant-farm-scout-organizer|ant-farm-surveyor|ant-farm-architect|ant-farm-pantry-impl|ant-farm-big-head|ant-farm-technical-writer|ant-farm-forager)
       agent_type="orchestration"
       ;;
-    ant-farm-nitpicker|ant-farm-pest-control)
-      agent_type="implementation"
+    ant-farm-nitpicker-clarity|ant-farm-nitpicker-edge-cases|ant-farm-nitpicker-correctness|ant-farm-nitpicker-drift|ant-farm-pest-control)
+      agent_type="review"
       ;;
   esac
 
