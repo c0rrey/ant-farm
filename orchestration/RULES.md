@@ -241,10 +241,30 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             call anywhere in the workflow.
 
             **Stale team recovery:** If `TeamCreate` fails because a team already exists from a prior
-            session, do NOT delete the team (`TeamDelete`). Instead, spawn agents into the existing team
-            using the Agent tool with `team_name` set to the existing team name. Read
-            `~/.claude/teams/*/config.json` to discover the team name if needed. Deleting and recreating
-            is not possible within a single session — the TeamCreate slot is already consumed.
+            session, do NOT delete the team (`TeamDelete`). Instead:
+
+            1. **Discover the existing team name**: Read `~/.claude/teams/*/config.json` to find it.
+            2. **Shut down stale members**: Send `shutdown_request` to every active member listed in
+               the config. Wait for terminations before spawning new agents — stale members hold name
+               slots that cause collisions (see below).
+            3. **Spawn new agents into the existing team**: Use the Agent tool with `team_name` set to
+               the existing team name. Deleting and recreating is not possible within a single session —
+               the `TeamCreate` slot is already consumed.
+
+            **Name collision hazard:** When a stale member has the same name as a new agent you are
+            spawning, Claude Code appends a numeric suffix (e.g., `fix-pc-dmvdc` becomes
+            `fix-pc-dmvdc-2`). This causes **message routing failures** — other agents told to message
+            `fix-pc-dmvdc` will reach the stale (terminated) member, not the new one. To prevent this:
+
+            - **Always check the returned agent name** after spawning. The Agent tool result includes
+              `name: "<actual-name>"`. If it differs from the requested name, use the actual name in
+              all subsequent prompts and SendMessage calls.
+            - **Pass actual names to collaborators**: When spawning fix-pc-wwd and fix-pc-dmvdc together,
+              if fix-pc-dmvdc was renamed to `fix-pc-dmvdc-2`, tell fix-pc-wwd to message
+              `fix-pc-dmvdc-2` — not `fix-pc-dmvdc`.
+            - **Prefer shutting down stale members first** (step 2 above) to avoid collisions entirely.
+              If shutdown is slow or members are unresponsive, proceed with spawning but track the
+              actual names.
 
             **Progress log (after Nitpicker team completes round 1):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_COMPLETE|round=<N>|team=complete|report=${SESSION_DIR}/review-reports/review-consolidated-${TIMESTAMP}.md" >> ${SESSION_DIR}/progress.log`
 
