@@ -41,6 +41,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 - `orchestration/templates/scribe-skeleton.md` — Once per session (read to fill placeholders before spawning the Scribe at Step 5b)
 - Project's `CLAUDE.md` — Global project rules
 - `{SESSION_DIR}/exec-summary.md` — Scribe output; read only when ESV escalates to user with a failed exec summary
+- `orchestration/reference/crumb-cheatsheet.md` — crumb CLI quick reference; read when composing agent prompts that invoke crumb commands
 
 **FORBIDDEN (agents read; Queen never reads):**
 - `orchestration/templates/scout.md` — Scout's instruction file
