@@ -155,15 +155,30 @@ Prepend a new entry to `{CHANGELOG_PATH}`. The entry is derived from the exec su
 
 Then continue with your formatted entry. Do not prepend to a nonexistent file; create-then-write.
 
-To prepend to an existing file: read the current contents of `{CHANGELOG_PATH}`, then write a new file with your new entry at the top followed by the existing contents. Preserve the `# Changelog` heading at the top of the file if it exists — your new entry goes after the heading, not before it.
+To prepend to an existing file: use the following bash pattern — do NOT read the full file into context.
+
+```bash
+# Write new entry to a temp file
+cat > /tmp/changelog-new.md << 'ENTRY'
+{YOUR_NEW_ENTRY_HERE}
+ENTRY
+
+# Atomic prepend: new entry on top, existing file below
+cat /tmp/changelog-new.md {CHANGELOG_PATH} > {CHANGELOG_PATH}.tmp && mv {CHANGELOG_PATH}.tmp {CHANGELOG_PATH}
+
+# Clean up
+rm -f /tmp/changelog-new.md
+```
+
+Preserve the `# Changelog` heading at the top of the file if it exists — your new entry goes after the heading, not before it. To do this, write the heading as the first line of your temp file, followed immediately by your new entry.
 
 If there were no review rounds this session, omit the Review Fixes and Review Statistics sections.
 
 ### Step 4 — Verify and report
 
-Re-read both output files:
+Re-read the exec summary and verify the top of the CHANGELOG:
 - `{SESSION_DIR}/exec-summary.md`
-- `{CHANGELOG_PATH}` (the new top entry only)
+- Run `head -n 50 {CHANGELOG_PATH}` — read only the first 50 lines to verify the new entry was prepended correctly. Do NOT read the full file.
 
 Confirm:
 1. All 5 sections present in exec-summary.md (At a Glance, Work Completed, Review Findings, Open Issues, Observations)
