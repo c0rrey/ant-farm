@@ -500,7 +500,7 @@ class TestUpdate:
         tasks = read_tasks(tasks_file)
         assert tasks[0]["priority"] == "P0"
 
-    def test_update_invalid_status_raises_system_exit(
+    def test_update_closed_crumb_status_raises_system_exit(
         self, crumbs_env: Path
     ) -> None:
         """cmd_update raises SystemExit when given an unrecognised status value.
