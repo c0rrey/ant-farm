@@ -2085,15 +2085,13 @@ def cmd_doctor(args: argparse.Namespace) -> None:
 
             # Skip trails for orphan and parent checks (trails have no parent)
             if rec_type != "trail":
-                # Resolve parent from top-level field or links.parent
-                top_parent = record.get("parent") or ""
+                # Resolve parent exclusively from links.parent (canonical field)
                 links_raw = record.get("links") or {}
-                links_parent = (
+                parent_id = (
                     links_raw.get("parent") or ""
                     if isinstance(links_raw, dict)
                     else ""
                 )
-                parent_id = top_parent or links_parent
 
                 if parent_id:
                     # Dangling parent: parent ID doesn't exist or isn't a trail
