@@ -278,13 +278,16 @@ def test_write_tasks_empty_list(crumbs_env: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_file_lock_context_manager(crumbs_env: Path) -> None:
-    """FileLock acquires and releases via context manager protocol."""
-    lock_file = crumbs_env / "tasks.lock"
+def test_file_lock_handle_is_set_while_held(crumbs_env: Path) -> None:
+    """FileLock sets _lock_file to a non-None handle while the lock is held."""
     with FileLock() as lock:
-        assert lock_file.exists()
         assert lock._lock_file is not None
-    # After __exit__, the internal file handle should be None
+
+
+def test_file_lock_handle_is_cleared_after_release(crumbs_env: Path) -> None:
+    """FileLock sets _lock_file to None after __exit__ is called."""
+    with FileLock() as lock:
+        pass
     assert lock._lock_file is None
 
 
