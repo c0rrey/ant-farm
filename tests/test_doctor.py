@@ -1,9 +1,8 @@
-"""Tests for the doctor command and cleanup_stale_tmp_files helper.
+"""Tests for the doctor command.
 
 Covers:
   - TestDoctor: cmd_doctor — clean state, malformed JSONL, duplicate IDs,
     dangling blocked_by refs, dangling parent refs, and --fix repair mode.
-  - TestCleanup: cleanup_stale_tmp_files integration.
 """
 
 from __future__ import annotations
@@ -17,7 +16,6 @@ import pytest
 
 import crumb
 from crumb import (
-    cleanup_stale_tmp_files,
     cmd_doctor,
     read_tasks,
 )
@@ -366,70 +364,3 @@ class TestDoctor:
 
         captured = capsys.readouterr()
         assert "orphan" in captured.err.lower()
-
-
-# ---------------------------------------------------------------------------
-# TestCleanup
-# ---------------------------------------------------------------------------
-
-
-class TestCleanup:
-    """Tests for cleanup_stale_tmp_files integration."""
-
-    def test_cleanup_removes_tmp_files_from_crumbs_dir(
-        self, crumbs_env: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """cleanup_stale_tmp_files removes *.tmp files present in .crumbs/."""
-        # Create stale tmp files in the crumbs directory
-        tmp_a = crumbs_env / "tasks.jsonl.tmp"
-        tmp_b = crumbs_env / "config.json.tmp"
-        tmp_a.write_text("stale", encoding="utf-8")
-        tmp_b.write_text("stale", encoding="utf-8")
-
-        # cleanup_stale_tmp_files walks up from cwd, so patch cwd to be inside
-        # the crumbs_env's parent (i.e. tmp_path)
-        monkeypatch.setattr(Path, "cwd", classmethod(lambda cls: crumbs_env.parent))
-
-        cleanup_stale_tmp_files()
-
-        assert not tmp_a.exists(), "tasks.jsonl.tmp should have been removed"
-        assert not tmp_b.exists(), "config.json.tmp should have been removed"
-
-    def test_cleanup_leaves_non_tmp_files_intact(
-        self, crumbs_env: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """cleanup_stale_tmp_files does not remove non-.tmp files."""
-        tasks_file = crumbs_env / "tasks.jsonl"
-        config_file = crumbs_env / "config.json"
-
-        monkeypatch.setattr(Path, "cwd", classmethod(lambda cls: crumbs_env.parent))
-
-        cleanup_stale_tmp_files()
-
-        assert tasks_file.exists(), "tasks.jsonl must not be removed"
-        assert config_file.exists(), "config.json must not be removed"
-
-    def test_cleanup_is_silent_when_no_crumbs_dir(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """cleanup_stale_tmp_files is silent and does not raise when no .crumbs/ exists."""
-        # tmp_path has no .crumbs/ subdirectory
-        monkeypatch.setattr(Path, "cwd", classmethod(lambda cls: tmp_path))
-
-        # Should not raise
-        cleanup_stale_tmp_files()
-
-    def test_cleanup_removes_multiple_tmp_files(
-        self, crumbs_env: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """cleanup_stale_tmp_files removes all *.tmp files, not just one."""
-        tmp_files = [crumbs_env / f"file{i}.tmp" for i in range(5)]
-        for f in tmp_files:
-            f.write_text("stale", encoding="utf-8")
-
-        monkeypatch.setattr(Path, "cwd", classmethod(lambda cls: crumbs_env.parent))
-
-        cleanup_stale_tmp_files()
-
-        for f in tmp_files:
-            assert not f.exists(), f"{f.name} should have been removed"
