@@ -124,7 +124,7 @@ step_resume_action() {
 _MAP_DIR=""
 
 map_init() {
-    _MAP_DIR="$(mktemp -d)"
+    _MAP_DIR="$(mktemp -d)" || { echo "ERROR: mktemp -d failed -- check TMPDIR and disk space." >&2; exit 1; }
     mkdir -p "${_MAP_DIR}/completed" "${_MAP_DIR}/timestamp" "${_MAP_DIR}/details" "${_MAP_DIR}/next_step"
 }
 
