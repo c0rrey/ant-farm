@@ -16,6 +16,7 @@ Covers:
 from __future__ import annotations
 
 import argparse
+import os
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -677,8 +678,7 @@ class TestCmdPruneAutoContract:
         )
         # Backdate mtime so the active-session guard does not protect it
         past = old_dt.timestamp()
-        import os as _os
-        _os.utime(old_dir, (past, past))
+        os.utime(old_dir, (past, past))
 
         def _always_permission_error(path: Any, *args: Any, **kwargs: Any) -> None:
             raise PermissionError(f"permission denied: {path}")
@@ -687,9 +687,3 @@ class TestCmdPruneAutoContract:
             # Must not raise any exception
             cmd_prune(_make_prune_args())
 
-
-# ---------------------------------------------------------------------------
-# Ensure `import os` is accessible in test module for utime calls
-# ---------------------------------------------------------------------------
-
-import os
