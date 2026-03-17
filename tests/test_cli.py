@@ -237,7 +237,7 @@ _SECS_PER_DAY: int = 86_400
 
 #: A mtime age (in seconds) guaranteed to be older than the 60-minute active
 #: guard window.  Two hours is enough headroom.
-_OLD_MTIME_SECS: int = 7_200
+_OUTSIDE_ACTIVE_GUARD_SECS: int = 7_200
 
 
 def _make_sessions_dir(crumbs_dir: Path) -> Path:
@@ -258,7 +258,7 @@ def _make_session_dir(
     sessions_dir: Path,
     name: str,
     *,
-    backdate_secs: int = _OLD_MTIME_SECS,
+    backdate_secs: int = _OUTSIDE_ACTIVE_GUARD_SECS,
 ) -> Path:
     """Create a named session directory and optionally backdate its mtime.
 
@@ -325,11 +325,11 @@ class TestCLIPrune:
 
         # 20-day-old directory — should be pruned
         old_name = _session_name("_session-", days_old=20)
-        old_dir = _make_session_dir(sessions_dir, old_name, backdate_secs=_OLD_MTIME_SECS)
+        old_dir = _make_session_dir(sessions_dir, old_name, backdate_secs=_OUTSIDE_ACTIVE_GUARD_SECS)
 
         # 5-day-old directory — should be retained (below 14-day threshold)
         recent_name = _session_name("_session-", days_old=5, hour=10)
-        recent_dir = _make_session_dir(sessions_dir, recent_name, backdate_secs=_OLD_MTIME_SECS)
+        recent_dir = _make_session_dir(sessions_dir, recent_name, backdate_secs=_OUTSIDE_ACTIVE_GUARD_SECS)
 
         result = _run(["prune"], cwd=tmp_path)
 
@@ -359,11 +359,11 @@ class TestCLIPrune:
 
         # 10-day-old directory — should be pruned under --days 7
         old_name = _session_name("_session-", days_old=10)
-        old_dir = _make_session_dir(sessions_dir, old_name, backdate_secs=_OLD_MTIME_SECS)
+        old_dir = _make_session_dir(sessions_dir, old_name, backdate_secs=_OUTSIDE_ACTIVE_GUARD_SECS)
 
         # 3-day-old directory — should be retained (age < 7 days)
         new_name = _session_name("_session-", days_old=3, hour=10)
-        new_dir = _make_session_dir(sessions_dir, new_name, backdate_secs=_OLD_MTIME_SECS)
+        new_dir = _make_session_dir(sessions_dir, new_name, backdate_secs=_OUTSIDE_ACTIVE_GUARD_SECS)
 
         result = _run(["prune", "--days", "7"], cwd=tmp_path)
 
@@ -424,7 +424,7 @@ class TestCLIPrune:
         sessions_dir = _make_sessions_dir(crumbs_dir)
 
         old_name = _session_name("_session-", days_old=30)
-        old_dir = _make_session_dir(sessions_dir, old_name, backdate_secs=_OLD_MTIME_SECS)
+        old_dir = _make_session_dir(sessions_dir, old_name, backdate_secs=_OUTSIDE_ACTIVE_GUARD_SECS)
 
         result = _run(["prune", "--days", "-1"], cwd=tmp_path)
 
@@ -449,11 +449,11 @@ class TestCLIPrune:
 
         # Old dir — would be pruned
         old_name = _session_name("_session-", days_old=20)
-        old_dir = _make_session_dir(sessions_dir, old_name, backdate_secs=_OLD_MTIME_SECS)
+        old_dir = _make_session_dir(sessions_dir, old_name, backdate_secs=_OUTSIDE_ACTIVE_GUARD_SECS)
 
         # Recent dir — would be retained
         recent_name = _session_name("_decompose-", days_old=3, hour=10)
-        recent_dir = _make_session_dir(sessions_dir, recent_name, backdate_secs=_OLD_MTIME_SECS)
+        recent_dir = _make_session_dir(sessions_dir, recent_name, backdate_secs=_OUTSIDE_ACTIVE_GUARD_SECS)
 
         result = _run(["prune", "--dry-run"], cwd=tmp_path)
 
