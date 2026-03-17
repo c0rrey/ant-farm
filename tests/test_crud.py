@@ -48,6 +48,7 @@ def _make_create_args(**kwargs: Any) -> argparse.Namespace:
     defaults: Dict[str, Any] = {
         "title": None,
         "from_json": None,
+        "from_file": None,
         "priority": None,
         "crumb_type": None,
         "description": None,
@@ -301,6 +302,65 @@ class TestCreate:
         """cmd_create with type='trail' in --from-json raises SystemExit."""
         payload = {"title": "A trail", "type": "trail"}
         args = _make_create_args(from_json=json.dumps(payload))
+        with pytest.raises(SystemExit):
+            cmd_create(args)
+
+    def test_create_from_file_creates_crumb(
+        self, crumbs_env: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_create --from-file reads a JSON file and creates the crumb."""
+        payload: Dict[str, Any] = {
+            "title": "File task",
+            "type": "bug",
+            "priority": "P1",
+            "description": "A bug from a file",
+        }
+        json_file = tmp_path / "crumb.json"
+        json_file.write_text(json.dumps(payload), encoding="utf-8")
+
+        args = _make_create_args(from_file=str(json_file))
+        cmd_create(args)
+
+        tasks_file = crumbs_env / "tasks.jsonl"
+        tasks = read_tasks(tasks_file)
+        assert len(tasks) == 1
+        task = tasks[0]
+        assert task["title"] == "File task"
+        assert task["type"] == "bug"
+        assert task["priority"] == "P1"
+        assert task["description"] == "A bug from a file"
+
+    def test_create_from_file_nonexistent_path_exits(
+        self, crumbs_env: Path, tmp_path: Path
+    ) -> None:
+        """cmd_create --from-file with a missing path raises SystemExit."""
+        missing = str(tmp_path / "does_not_exist.json")
+        args = _make_create_args(from_file=missing)
+        with pytest.raises(SystemExit):
+            cmd_create(args)
+
+    def test_create_from_file_invalid_json_exits(
+        self, crumbs_env: Path, tmp_path: Path
+    ) -> None:
+        """cmd_create --from-file with invalid JSON content raises SystemExit."""
+        bad_file = tmp_path / "bad.json"
+        bad_file.write_text("{not valid json", encoding="utf-8")
+
+        args = _make_create_args(from_file=str(bad_file))
+        with pytest.raises(SystemExit):
+            cmd_create(args)
+
+    def test_create_from_file_and_from_json_mutual_exclusion_exits(
+        self, crumbs_env: Path, tmp_path: Path
+    ) -> None:
+        """cmd_create with both --from-file and --from-json raises SystemExit."""
+        json_file = tmp_path / "crumb.json"
+        json_file.write_text(json.dumps({"title": "File task"}), encoding="utf-8")
+
+        args = _make_create_args(
+            from_file=str(json_file),
+            from_json=json.dumps({"title": "JSON task"}),
+        )
         with pytest.raises(SystemExit):
             cmd_create(args)
 

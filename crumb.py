@@ -798,9 +798,10 @@ def cmd_show(args: argparse.Namespace) -> None:
 def cmd_create(args: argparse.Namespace) -> None:
     """Create a new crumb and append it to tasks.jsonl.
 
-    Accepts either --title with optional flags, or --from-json with a
-    JSON object containing explicit fields. Auto-assigns an ID from
-    config if not provided in the JSON payload.
+    Accepts either --title with optional flags, --from-json with a
+    JSON object containing explicit fields, or --from-file with a path
+    to a JSON file. Auto-assigns an ID from config if not provided in
+    the JSON payload.
 
     Args:
         args: Parsed arguments from the create subparser.
@@ -816,6 +817,9 @@ def cmd_create(args: argparse.Namespace) -> None:
         # --- build the new record ---
         config = read_config()
         prefix = config["prefix"]
+
+        if args.from_json and args.from_file:
+            die("--from-json and --from-file are mutually exclusive")
 
         if args.from_json:
             try:
@@ -835,9 +839,30 @@ def cmd_create(args: argparse.Namespace) -> None:
                 payload["type"] = args.crumb_type
             if args.description:
                 payload["description"] = args.description
+        elif args.from_file:
+            file_path = Path(args.from_file)
+            if not file_path.exists():
+                die(f"--from-file path does not exist: {args.from_file}")
+            try:
+                payload = json.loads(file_path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError as exc:
+                die(f"invalid JSON in --from-file: {exc}")
+            if not isinstance(payload, dict):
+                die("--from-file must contain a JSON object, not a list or scalar")
+
+            # Merge explicit --title / --priority / --type / --description
+            # CLI flags override JSON payload fields
+            if args.title:
+                payload["title"] = args.title
+            if args.priority:
+                payload["priority"] = args.priority
+            if args.crumb_type:
+                payload["type"] = args.crumb_type
+            if args.description:
+                payload["description"] = args.description
         else:
             if not args.title:
-                die("--title is required unless --from-json is provided")
+                die("--title is required unless --from-json or --from-file is provided")
             payload = {"title": args.title}
             if args.priority:
                 payload["priority"] = args.priority
@@ -2434,6 +2459,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_create = sub.add_parser("create", help="Create a new crumb")
     p_create.add_argument("--title", metavar="TITLE")
     p_create.add_argument("--from-json", dest="from_json", metavar="JSON")
+    p_create.add_argument("--from-file", dest="from_file", metavar="PATH")
     p_create.add_argument("--priority", choices=VALID_PRIORITIES)
     p_create.add_argument("--type", dest="crumb_type", choices=["task", "bug", "feature"])
     p_create.add_argument("--description", metavar="TEXT")
