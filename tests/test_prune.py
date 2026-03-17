@@ -62,6 +62,12 @@ def _session_name(prefix: str, dt: datetime) -> str:
     return f"{prefix}{dt.strftime(SESSION_TS_FORMAT)}"
 
 
+def _backdate(d: Path, days: int) -> None:
+    """Set a directory's mtime to ``days`` days ago (> active guard window)."""
+    old_ts = time.time() - (days * 86400)
+    os.utime(d, (old_ts, old_ts))
+
+
 # ---------------------------------------------------------------------------
 # TestParseSessionDirTimestamp
 # ---------------------------------------------------------------------------
@@ -255,11 +261,6 @@ class TestCmdPruneNothingToPrune:
 class TestCmdPruneAgeFiltering:
     """cmd_prune deletes directories that exceed the retention threshold."""
 
-    def _backdate(self, d: Path, days: int) -> None:
-        """Set a directory's mtime to ``days`` days ago (> active guard window)."""
-        old_ts = time.time() - (days * 86400)
-        os.utime(d, (old_ts, old_ts))
-
     def test_prune_default_14_days(
         self,
         sessions_env: Path,
@@ -268,7 +269,7 @@ class TestCmdPruneAgeFiltering:
         old_dt = datetime.now() - timedelta(days=20)
         old_name = _session_name("_session-", old_dt)
         old_dir = _make_session_dir(sessions_env, old_name)
-        self._backdate(old_dir, 20)
+        _backdate(old_dir, 20)
 
         cmd_prune(_make_prune_args())
 
@@ -285,7 +286,7 @@ class TestCmdPruneAgeFiltering:
         old_dt = datetime.now() - timedelta(days=10)
         old_name = _session_name("_session-", old_dt)
         old_dir = _make_session_dir(sessions_env, old_name)
-        self._backdate(old_dir, 10)
+        _backdate(old_dir, 10)
 
         recent_dt = datetime.now() - timedelta(days=5)
         recent_name = _session_name("_session-", recent_dt)
@@ -306,7 +307,7 @@ class TestCmdPruneAgeFiltering:
         for prefix in SESSION_DIR_PREFIXES:
             name = _session_name(prefix, old_dt)
             d = _make_session_dir(sessions_env, name)
-            self._backdate(d, 20)
+            _backdate(d, 20)
             dirs.append(d)
 
         cmd_prune(_make_prune_args())
@@ -561,11 +562,6 @@ class TestCmdPruneUnparseableTimestamp:
 class TestCmdPruneErrorHandling:
     """FileNotFoundError and OSError from rmtree are handled gracefully."""
 
-    def _backdate(self, d: Path, days: int) -> None:
-        """Set a directory's mtime to ``days`` days ago (> active guard window)."""
-        old_ts = time.time() - (days * 86400)
-        os.utime(d, (old_ts, old_ts))
-
     def test_file_not_found_counted_as_pruned(
         self,
         sessions_env: Path,
@@ -574,7 +570,7 @@ class TestCmdPruneErrorHandling:
         old_dt = datetime.now() - timedelta(days=30)
         old_name = _session_name("_session-", old_dt)
         old_dir = _make_session_dir(sessions_env, old_name)
-        self._backdate(old_dir, 30)
+        _backdate(old_dir, 30)
 
         original_rmtree = __import__("shutil").rmtree
 
@@ -599,8 +595,8 @@ class TestCmdPruneErrorHandling:
         old_dt2 = datetime.now() - timedelta(days=25)
         dir1 = _make_session_dir(sessions_env, _session_name("_session-", old_dt1))
         dir2 = _make_session_dir(sessions_env, _session_name("_decompose-", old_dt2))
-        self._backdate(dir1, 30)
-        self._backdate(dir2, 25)
+        _backdate(dir1, 30)
+        _backdate(dir2, 25)
 
         call_count = {"n": 0}
         original_rmtree = __import__("shutil").rmtree
