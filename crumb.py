@@ -856,6 +856,18 @@ def cmd_create(args: argparse.Namespace) -> None:
             # Duplicate detection
             if _find_crumb(tasks, crumb_id) is not None:
                 die(f"crumb '{crumb_id}' already exists")
+            # Advance counter past this explicit numeric ID so subsequent
+            # auto-ID calls don't wastefully hit the duplicate check loop.
+            prefix_dash = f"{prefix}-"
+            if crumb_id.startswith(prefix_dash):
+                suffix = crumb_id[len(prefix_dash):]
+                try:
+                    explicit_num = int(suffix)
+                    if explicit_num >= int(config.get("next_crumb_id", 1)):
+                        config["next_crumb_id"] = explicit_num + 1
+                        write_config(config)
+                except ValueError:
+                    pass  # non-numeric suffix (e.g. T-prefixed trail): leave counter alone
         else:
             next_id = int(config.get("next_crumb_id", 1))
             crumb_id = f"{prefix}-{next_id}"
