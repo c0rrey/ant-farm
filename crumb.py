@@ -2322,7 +2322,7 @@ def cmd_prune(args: argparse.Namespace) -> None:
                 f"{ACTIVE_GUARD_MINUTES} minutes)",
                 file=sys.stderr,
             )
-            to_retain.append((entry, f"active session"))
+            to_retain.append((entry, "active session"))
             continue
 
         to_prune.append((entry, age_days))
