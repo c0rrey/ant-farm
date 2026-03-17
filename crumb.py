@@ -291,36 +291,6 @@ def write_tasks(path: Path, records: List[Dict[str, Any]]) -> None:
         die(f"cannot write {path.name}: {exc}")
 
 
-def iter_jsonl(path: Path) -> Iterator[Dict[str, Any]]:
-    """Yield parsed records from a JSONL file, skipping malformed lines.
-
-    Args:
-        path: Path to the JSONL file.
-
-    Yields:
-        Parsed dict records.
-
-    Raises:
-        SystemExit: If the file cannot be opened (OS error). Malformed
-            JSON lines emit a warning to stderr and are skipped, not raised.
-    """
-    try:
-        fh_ctx = open(path, "r", encoding="utf-8")
-    except OSError as exc:
-        die(f"cannot read {path}: {exc}")
-    with fh_ctx as fh:
-        for lineno, line in enumerate(fh, start=1):
-            line = line.rstrip("\n")
-            if not line:
-                continue
-            try:
-                yield json.loads(line)
-            except json.JSONDecodeError as exc:
-                print(
-                    f"warning: skipping malformed JSON on line {lineno}: {exc}",
-                    file=sys.stderr,
-                )
-
 
 # ---------------------------------------------------------------------------
 # File locking — exclusive flock on tasks.lock
