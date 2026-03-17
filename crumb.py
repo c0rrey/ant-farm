@@ -37,7 +37,6 @@ import argparse
 import fcntl
 import json
 import os
-import re
 import shutil
 import sys
 import tempfile
