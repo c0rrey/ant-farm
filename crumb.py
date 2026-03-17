@@ -1087,11 +1087,11 @@ def _get_blocked_by(crumb: Dict[str, Any]) -> List[str]:
         links_level = [links_level] if links_level else []
 
     # Merge both locations, deduplicated, preserving order
-    seen: List[str] = []
+    merged: List[str] = []
     for bid in top_level + links_level:
-        if bid not in seen:
-            seen.append(bid)
-    return seen
+        if bid not in merged:
+            merged.append(bid)
+    return merged
 
 
 def _is_crumb_blocked(
