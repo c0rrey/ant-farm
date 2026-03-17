@@ -1701,7 +1701,8 @@ def _convert_beads_record(
             dep_type = dep.get("type", "")
             depends_on = dep.get("depends_on_id", "")
             if dep_type == "parent-child" and depends_on:
-                # This record is a child of depends_on (epic/trail)
+                # This record is a child of depends_on (epic/trail).
+                # If multiple parent-child deps exist, last one wins (intentional).
                 parent_id = dep.get("depends_on_id", "")
             # "blocks" deps are handled by _apply_blocks_deps post-pass
 
