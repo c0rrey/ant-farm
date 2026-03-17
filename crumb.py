@@ -1958,8 +1958,10 @@ def cmd_import(args: argparse.Namespace) -> None:
                 die(f"cannot read {import_path}: {exc}")
 
         # --- Update config counters to exceed highest imported numeric ID ---
-        max_crumb_num = int(config.get("next_crumb_id", 1)) - 1
-        max_trail_num = int(config.get("next_trail_id", 1)) - 1
+        # Clamp to 0 so corrupt config values (e.g. 0 or missing) cannot
+        # produce a negative starting point.
+        max_crumb_num = max(0, int(config.get("next_crumb_id", 1)) - 1)
+        max_trail_num = max(0, int(config.get("next_trail_id", 1)) - 1)
         prefix = config["prefix"]
         prefix_dash = f"{prefix}-"
         prefix_trail = f"{prefix}-T"
@@ -1989,7 +1991,10 @@ def cmd_import(args: argparse.Namespace) -> None:
 
         if imported_count > 0:
             write_tasks(path, existing_tasks)
-            write_config(config)
+        # Always write config: counters are updated above regardless of
+        # imported_count, and must be persisted even when all records were
+        # duplicates or the file contained only malformed lines.
+        write_config(config)
 
     print(
         f"imported {imported_count} record(s)"
