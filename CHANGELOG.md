@@ -1,5 +1,61 @@
 # Changelog
 
+## 2026-03-17 — Session 20260317-162123 (Large-Scale Maintenance Sweep — crumb.py, Scripts, Tests)
+
+### Summary
+
+25 tasks completed across crumb.py, shell scripts, and test files in a single-wave batch. Work covered dead-code removal, behavioral correctness fixes (counter arithmetic, status transition warnings, path validation, import path warnings), shell script security and robustness fixes (anchored grep, temp-file leak, mktemp diagnostic, sed regex), and test hygiene (dedup, rename, restructure, import cleanup). Round 1 review found 0 P1, 1 P2, 8 P3 across 10 root causes; the P2 (outer `set -e` aborting the test harness) was auto-fixed as AF-152 and verified clean in Round 2. 25 commits total.
+
+### Implementation (Wave 1 — 24 tasks + 1 review fix)
+
+**crumb.py — dead code and correctness**
+- **AF-88**: fix: remove unused `import re` from crumb.py import block (`ba37f6e`)
+- **AF-42**: fix: remove unused `iter_jsonl` to eliminate SystemExit-in-generator (`c195bb4`)
+- **AF-34**: fix: rename `seen` → `merged` in `_get_blocked_by` for type/name accuracy (`baf3730`)
+- **AF-36**: fix: add comment to document last-wins behavior in `_convert_beads_record` (`aac6d5c`)
+- **AF-89**: fix: remove unnecessary f-string prefix from plain literal in `cmd_prune` (`25ede64`)
+
+**crumb.py — behavioral fixes**
+- **AF-70**: fix: warn on `in_progress → open` transition in `cmd_update` (`f284228`)
+- **AF-71**: fix: advance `next_crumb_id` past explicit numeric IDs in `cmd_create` (`5af3e6a`)
+- **AF-32**: fix: clamp counter and unconditionally write config in `cmd_import` (`84925fa`)
+- **AF-72**: fix: add `is_dir()` check to `cmd_import` path validation (`f5306a4`)
+- **AF-43**: fix: emit stderr warning for blocks dep to missing target in `_apply_blocks_deps` (`8c0d13d`)
+- **AF-45**: fix: use only `links.get("parent")` in `cmd_doctor` parent lookup (`47363af`)
+
+**scripts**
+- **AF-81, AF-113**: fix: anchor identity grep with `-x` and fix `$blockfile` leak on awk failure (`71f2913`)
+- **AF-148**: fix: add `mktemp -d` error diagnostic in `map_init` (`fe871ac`)
+- **AF-151**: fix: include digits in sed slot-conversion regex (`f9bcab1`)
+
+**tests — clarity and deduplication**
+- **AF-31**: fix: rename misleading test to reflect closed→in_progress guard (`073ac52`)
+- **AF-37**: refactor: remove `_blocked_args()` passthrough helper, inline `Namespace()` directly (`ecd7d7b`)
+- **AF-38**: fix: split conflated FileLock umbrella test into two focused tests (`9c20870`)
+- **AF-39**: fix: replace dual-or assertion with precise "is not a trail" check (`f879dc3`)
+- **AF-44**: fix: remove duplicate `cleanup_stale_tmp_files` tests from `test_doctor.py` (`0441ffa`)
+- **AF-85**: fix: move `import os` to top-level import block, remove inline alias (`fd009ad`)
+- **AF-90**: refactor: extract duplicated `_backdate` into module-level helper (`46feb6c`)
+- **AF-91**: fix: rename `_OLD_MTIME_SECS` → `_OUTSIDE_ACTIVE_GUARD_SECS` to clarify purpose (`f9f0995`)
+
+**test harness**
+- **AF-112**: fix: add `-e` to set options in test harness with explanatory comment (`140d0df`)
+
+### Review Fixes (Round 1 → Round 2)
+
+- **RC-1 / AF-152**: fix: replace `|| true; local rc=$?` with `local rc=0; ( ... ) || rc=$?` in `run_test()` to correctly capture subshell exit code under outer `set -e` (`475f791`, `16c1fe4`)
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 12 files, 24 tasks | 0 | 1 | 8 | PASS WITH ISSUES |
+| 2 | 1 file, 1 fix task | 0 | 0 | 0 | CLEAN |
+
+10 root causes consolidated (16 raw findings). 1 cross-session dedup skip (RC-3 → AF-146 already open). 9 new crumbs filed (AF-152–AF-160); AF-152 fixed this session, AF-153–AF-160 deferred as P3.
+
+# Changelog
+
 ## 2026-03-16 — Session 144528 (next_step Breadcrumbs, Crumb Cheat Sheet, Review Fix Cycle)
 
 ### Summary
