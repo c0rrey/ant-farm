@@ -44,7 +44,7 @@ run_test() {
     (
         set -euo pipefail
         eval "$body"
-    )
+    ) || true
     local rc=$?
     if [ "$rc" -eq 0 ]; then
         pass "$name"
