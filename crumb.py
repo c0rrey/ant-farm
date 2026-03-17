@@ -1852,6 +1852,8 @@ def cmd_import(args: argparse.Namespace) -> None:
     import_path = Path(args.file)
     if not import_path.exists():
         die(f"file not found: {import_path}")
+    if import_path.is_dir():
+        die(f"path is a directory, not a file: {import_path}")
 
     with FileLock():
         path = tasks_path()
