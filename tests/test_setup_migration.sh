@@ -16,7 +16,7 @@
 #
 # Usage:
 #   bash tests/test_setup_migration.sh
-set -uo pipefail
+set -euo pipefail  # -e catches harness setup errors; run_test() captures per-test exit codes independently.
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SETUP_SH="$REPO_ROOT/scripts/setup.sh"
