@@ -41,11 +41,11 @@ run_test() {
     local body="$2"
     echo ""
     echo "--- $name ---"
+    local rc=0
     (
         set -euo pipefail
         eval "$body"
-    ) || true
-    local rc=$?
+    ) || rc=$?
     if [ "$rc" -eq 0 ]; then
         pass "$name"
     else
