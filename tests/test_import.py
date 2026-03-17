@@ -419,8 +419,8 @@ class TestImportBeads:
         target = next(r for r in records if r["id"] == "BD-2")
         assert "AF-T1" in target["links"]["blocked_by"]
 
-    def test_apply_blocks_deps_ignores_missing_targets(self) -> None:
-        """Block dependencies pointing to missing records are silently skipped."""
+    def test_apply_blocks_deps_warns_missing_targets(self, capsys: pytest.CaptureFixture) -> None:
+        """Block dependencies pointing to missing records emit a stderr warning."""
         raw_beads = [
             {
                 "id": "BD-1",
@@ -429,9 +429,12 @@ class TestImportBeads:
             }
         ]
         records = [{"id": "BD-1", "type": "task"}]
-        # Should not raise
+        # Should not raise; missing target is skipped after warning
         _apply_blocks_deps(raw_beads, records, {})
         assert "links" not in records[0]
+        captured = capsys.readouterr()
+        assert "warning" in captured.err
+        assert "BD-GHOST" in captured.err
 
     # --- cmd_import integration tests (--from-beads mode) ---
 

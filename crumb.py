@@ -1825,6 +1825,11 @@ def _apply_blocks_deps(
             target_crumb_id = beads_id_to_crumb_id.get(target_beads_id, target_beads_id)
             target_record = record_index.get(target_crumb_id)
             if target_record is None:
+                print(
+                    f"warning: blocks dep from '{source_crumb_id}' targets "
+                    f"'{target_crumb_id}' which is not in the converted set — skipping",
+                    file=sys.stderr,
+                )
                 continue  # target not in converted set (e.g. skipped as duplicate)
             # Append source to target's blocked_by list (no duplicates)
             links = target_record.setdefault("links", {})
