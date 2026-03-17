@@ -927,6 +927,12 @@ def cmd_update(args: argparse.Namespace) -> None:
                     f"cannot transition from 'closed' to '{args.status}'. "
                     f"Use 'crumb reopen {args.id}' to reopen first."
                 )
+            if current_status == "in_progress" and args.status == "open":
+                print(
+                    f"warning: unclaiming '{args.id}' (transitioning from "
+                    f"in_progress to open)",
+                    file=sys.stderr,
+                )
             if crumb.get("status") != args.status:
                 crumb["status"] = args.status
                 changed = True
