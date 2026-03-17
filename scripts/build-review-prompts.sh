@@ -247,7 +247,7 @@ build_nitpicker_prompt() {
     body="$(extract_agent_section "$NITPICKER_SKELETON")"
 
     # 2. Convert {UPPERCASE} -> {{UPPERCASE}} (mark as slots for fill_slot)
-    body="$(printf '%s\n' "$body" | sed 's/{\([A-Z][A-Z_]*\)}/{{\1}}/g')"
+    body="$(printf '%s\n' "$body" | sed 's/{\([A-Z][A-Z_0-9]*\)}/{{\1}}/g')"
 
     # 3. Fill {{REVIEW_TYPE}} with actual type name
     body="$(printf '%s\n' "$body" | sed "s/{{REVIEW_TYPE}}/${review_type}/g")"
