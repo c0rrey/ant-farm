@@ -192,7 +192,7 @@ sync_claude_block() {
         mv "$tmpfile" "$dst"
         log "Updated ant-farm block in: $dst"
     else
-        rm -f "$tmpfile"
+        rm -f "$tmpfile" "$blockfile"
         echo "[ant-farm] ERROR: awk replacement failed for $dst — backup at $bak" >&2
         return 1
     fi
@@ -312,7 +312,7 @@ migrate_old_agents() {
         found_any=true
 
         # Identity check: YAML front matter must contain "name: <old-basename>"
-        if grep -qF "name: ${expected_name_value}" "$old_path" 2>/dev/null; then
+        if grep -qxF "name: ${expected_name_value}" "$old_path" 2>/dev/null; then
             if [ "$DRY_RUN" = true ]; then
                 log "[dry-run] would remove stale ant-farm agent: $old_path (replacing with $new_name)"
             else
