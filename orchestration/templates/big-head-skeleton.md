@@ -110,8 +110,13 @@ Your workflow:
       - [ ] <Third independently testable criterion>
       CRUMB_DESC
 
-      crumb create --from-json "{\"type\":\"bug\",\"priority\":\"P<P>\",\"title\":\"<title>\",\"description\":\"$(cat /tmp/crumb-desc-$$.md)\",\"acceptance_criteria\":[],\"scope\":{},\"links\":{}}"
-      rm -f /tmp/crumb-desc-$$.md
+      python3 -c "
+import json, pathlib
+desc = pathlib.Path('/tmp/crumb-desc-$$.md').read_text()
+print(json.dumps({'type': 'bug', 'priority': 'P<P>', 'title': '<title>', 'description': desc, 'acceptance_criteria': [], 'scope': {}, 'links': {}}))
+" > /tmp/crumb-$$.json
+      crumb create --from-file /tmp/crumb-$$.json
+      rm -f /tmp/crumb-desc-$$.md /tmp/crumb-$$.json
       ```
     - **FAIL**: Escalate to Queen with specifics (which findings failed, why); file crumbs ONLY for validated findings
     - **TIMEOUT/UNAVAILABLE**: Escalate to Queen with consolidated report path; do NOT file crumbs
@@ -130,9 +135,14 @@ Your workflow:
       - [ ] <testable criterion>
       CRUMB_DESC
 
-      crumb create --from-json "{\"type\":\"bug\",\"priority\":\"P3\",\"title\":\"<title>\",\"description\":\"$(cat /tmp/crumb-desc-$$.md)\",\"acceptance_criteria\":[],\"scope\":{},\"links\":{}}"
+      python3 -c "
+import json, pathlib
+desc = pathlib.Path('/tmp/crumb-desc-$$.md').read_text()
+print(json.dumps({'type': 'bug', 'priority': 'P3', 'title': '<title>', 'description': desc, 'acceptance_criteria': [], 'scope': {}, 'links': {}}))
+" > /tmp/crumb-$$.json
+      crumb create --from-file /tmp/crumb-$$.json
       crumb link <new-crumb-id> --parent <trail-id>
-      rm -f /tmp/crumb-desc-$$.md
+      rm -f /tmp/crumb-desc-$$.md /tmp/crumb-$$.json
       ```
     - Mark P3s as "auto-filed, no action required" in the consolidated summary
     - Do NOT include P3 findings in the fix-or-defer prompt to the Queen

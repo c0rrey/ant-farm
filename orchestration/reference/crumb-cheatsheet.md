@@ -6,6 +6,24 @@
 ```
 crumb create --title "Title" [--priority P0-P4] [--type task|bug|feature] [--description TEXT]
 crumb create --from-json '{"title":"Fix login","priority":"P1","type":"bug"}'
+crumb create --from-file /tmp/crumb-$$.json
+```
+
+`--from-file` reads a JSON file containing crumb fields. Use it when the description is multi-line markdown — write the description to a temp file, build the JSON object with Python, then pass the path:
+```bash
+cat > /tmp/crumb-desc-$$.md << 'EOF'
+## Root Cause
+<description text here — may span multiple lines, quotes, etc.>
+EOF
+
+python3 -c "
+import json, pathlib
+desc = pathlib.Path('/tmp/crumb-desc-$$.md').read_text()
+print(json.dumps({'type': 'bug', 'priority': 'P1', 'title': '<title>', 'description': desc, 'acceptance_criteria': [], 'scope': {}, 'links': {}}))
+" > /tmp/crumb-$$.json
+
+crumb create --from-file /tmp/crumb-$$.json
+rm -f /tmp/crumb-desc-$$.md /tmp/crumb-$$.json
 ```
 
 **show** — Show full detail for a crumb or trail
@@ -61,9 +79,15 @@ crumb doctor --fix
 
 ## Gotchas
 
-- **--from-json takes inline JSON string, not a file path.**
-  Correct: `--from-json '{"priority":"P1"}'`
+- **--from-json takes inline JSON string, not a file path. Use only for single-line descriptions.**
+  Correct: `--from-json '{"title":"Fix login","priority":"P1"}'`
   Wrong: `--from-json ./data.json`
+  Wrong: embedding multi-line content via `$(cat file)` — use `--from-file` instead.
+
+- **--from-file takes a path to a JSON file (not a JSON string).**
+  Use for multi-line descriptions that would break JSON string escaping via `--from-json`.
+  Correct: `--from-file /tmp/crumb-$$.json` (file contains a JSON object)
+  Wrong: `--from-file '{"title":"..."}'` (that is `--from-json` syntax)
 
 - **Priority values are strings P0–P4, not integers.**
   Correct: `--priority P1`
