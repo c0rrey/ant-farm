@@ -90,12 +90,6 @@ def _ready_args(**kwargs: Any) -> Namespace:
     return Namespace(**defaults)
 
 
-def _blocked_args(**kwargs: Any) -> Namespace:
-    """Build a Namespace matching cmd_blocked's expected attributes."""
-    defaults: Dict[str, Any] = {}
-    defaults.update(kwargs)
-    return Namespace(**defaults)
-
 
 def _search_args(query: str) -> Namespace:
     """Build a Namespace matching cmd_search's expected attributes."""
@@ -535,7 +529,7 @@ class TestBlocked:
             _task("AF-1", "Blocker", "open"),
             _task("AF-2", "Blocked task", "open", blocked_by=["AF-1"]),
         ])
-        cmd_blocked(_blocked_args())
+        cmd_blocked(Namespace())
         out = capsys.readouterr().out
         assert "AF-2" in out
 
@@ -547,7 +541,7 @@ class TestBlocked:
             _task("AF-1", "In-progress blocker", "in_progress"),
             _task("AF-2", "Blocked task", "open", blocked_by=["AF-1"]),
         ])
-        cmd_blocked(_blocked_args())
+        cmd_blocked(Namespace())
         out = capsys.readouterr().out
         assert "AF-2" in out
 
@@ -559,7 +553,7 @@ class TestBlocked:
             _task("AF-1", "Closed blocker", "closed"),
             _task("AF-2", "No longer blocked", "open", blocked_by=["AF-1"]),
         ])
-        cmd_blocked(_blocked_args())
+        cmd_blocked(Namespace())
         out = capsys.readouterr().out
         assert "AF-2" not in out
 
@@ -568,7 +562,7 @@ class TestBlocked:
     ) -> None:
         """An open crumb with no blocked_by does not appear in blocked output."""
         _write(crumbs_env, [_task("AF-1", "Free task", "open")])
-        cmd_blocked(_blocked_args())
+        cmd_blocked(Namespace())
         out = capsys.readouterr().out
         assert "AF-1" not in out
 
@@ -580,7 +574,7 @@ class TestBlocked:
             _task("AF-1", "Open blocker", "open"),
             _task("AF-2", "Closed blocked", "closed", blocked_by=["AF-1"]),
         ])
-        cmd_blocked(_blocked_args())
+        cmd_blocked(Namespace())
         out = capsys.readouterr().out
         assert "AF-2" not in out
 
@@ -592,7 +586,7 @@ class TestBlocked:
             _task("AF-1", "Blocker", "open"),
             _task("AF-2", "I am blocked", "open", blocked_by=["AF-1"]),
         ])
-        cmd_blocked(_blocked_args())
+        cmd_blocked(Namespace())
         out = capsys.readouterr().out
         # The blocked crumb ID itself must appear in the output
         assert "AF-2" in out
@@ -604,7 +598,7 @@ class TestBlocked:
         _write(crumbs_env, [
             _task("AF-2", "Dangling blocker", "open", blocked_by=["AF-99"]),
         ])
-        cmd_blocked(_blocked_args())
+        cmd_blocked(Namespace())
         out = capsys.readouterr().out
         # Non-existent blocker -> treated as resolved -> AF-2 is not blocked
         assert "AF-2" not in out
@@ -618,7 +612,7 @@ class TestBlocked:
             _task("AF-2", "Blocked A", "open", blocked_by=["AF-1"]),
             _task("AF-3", "Blocked B", "open", blocked_by=["AF-1"]),
         ])
-        cmd_blocked(_blocked_args())
+        cmd_blocked(Namespace())
         out = capsys.readouterr().out
         assert "AF-2" in out
         assert "AF-3" in out
@@ -638,7 +632,7 @@ class TestBlocked:
                 "links": {"blocked_by": ["AF-1"]},
             },
         ])
-        cmd_blocked(_blocked_args())
+        cmd_blocked(Namespace())
         out = capsys.readouterr().out
         assert "AF-T1" not in out
 
@@ -647,7 +641,7 @@ class TestBlocked:
     ) -> None:
         """cmd_blocked produces no output when no crumbs are blocked."""
         _write(crumbs_env, [_task("AF-1", "Free", "open")])
-        cmd_blocked(_blocked_args())
+        cmd_blocked(Namespace())
         out = capsys.readouterr().out
         assert out.strip() == ""
 
@@ -660,7 +654,7 @@ class TestBlocked:
             _task("AF-2", "Open blocker", "open"),
             _task("AF-3", "Partially resolved", "open", blocked_by=["AF-1", "AF-2"]),
         ])
-        cmd_blocked(_blocked_args())
+        cmd_blocked(Namespace())
         out = capsys.readouterr().out
         assert "AF-3" in out
 
