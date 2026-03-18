@@ -4,12 +4,12 @@
 
 **When**: Two execution modes depending on how agents were spawned (a "wave" is a group of agents spawned for the same execution round):
 - **Serial mode**: After each individual agent commits, BEFORE spawning the next agent in the wave. Agents were spawned one at a time; true per-agent gating is possible.
-- **Batch mode**: After ALL agents in the wave have committed (agents were spawned in parallel in a single message, so per-agent serial gating is mechanically impossible). One WWD instance per committed task, run concurrently. All WWD reports must PASS before DMVDC runs.
+- **Batch mode**: After ALL agents in the wave have committed (agents were spawned in parallel in a single message, so per-agent serial gating is mechanically impossible). One WWD instance per committed task, run concurrently. All WWD reports must PASS before CMVCC runs.
 
 **Mode selection rule**: If the Queen spawned agents in a single message (parallel wave), use batch mode. If the Queen spawned agents individually in separate messages, use serial mode. (Authoritative source: RULES.md Step 3.)
 **Model**: `haiku` (mechanical file list comparison — cheap, fast)
 
-**Why**: Catches scope creep in real-time between agents, before DMVDC runs. Prevents cascading work attribution errors when multiple agents work on related files.
+**Why**: Catches scope creep in real-time between agents, before CMVCC runs. Prevents cascading work attribution errors when multiple agents work on related files.
 
 **Known failure mode**: In Wave 1 of Epic 74g, agent 74g.6 (comment task) made functional changes belonging to 74g.7 (foundingDate filter), which cascaded into 74g.7 making changes belonging to 74g.4 (sameAs conditional). WWD would have caught the first scope violation immediately.
 
@@ -55,7 +55,7 @@ Write your verification report to:
 
 ### The Queen's Response
 
-**On PASS**: Continue normally (run DMVDC, backfill queue).
+**On PASS**: Continue normally (run CMVCC, backfill queue).
 
 **On WARN** (does NOT block queue):
 - Review the extra files within 30 seconds of receiving this report

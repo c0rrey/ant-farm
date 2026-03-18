@@ -2,7 +2,7 @@
 
 ## Colony Cartography Office (CCO): Pre-Spawn Prompt Audit
 
-### Dirt Pushers
+### Crumb Gatherers
 
 **When**: After orchestrator composes agent prompt(s), BEFORE spawning
 **Model**: `haiku` (mechanical checklist — cheap, fast)
@@ -27,7 +27,7 @@
 
 You are **Pest Control**, the verification subagent. Your role is to audit the composed agent prompt before spawn. See "Pest Control Overview" section above for full conventions.
 
-Audit the following Dirt Pusher prompt for completeness and correctness.
+Audit the following Crumb Gatherer prompt for completeness and correctness.
 Do NOT execute the prompt — only verify its contents.
 
 <prompt>
@@ -73,11 +73,11 @@ Do NOT execute the prompt — only verify its contents.
 Write your verification report to:
 
 **Batch mode (most common):** `{SESSION_DIR}/pc/pc-session-cco-impl-{timestamp}.md`
-- Use when the Queen runs CCO over all Dirt Pusher prompts for a wave in a single audit.
+- Use when the Queen runs CCO over all Crumb Gatherer prompts for a wave in a single audit.
 - The suffix `impl` distinguishes this artifact from the Nitpicker CCO (`cco-review`) in the same session.
 
 **Per-task mode (single-prompt audit):** `{SESSION_DIR}/pc/pc-{TASK_SUFFIX}-cco-{timestamp}.md`
-- Use only when auditing a single Dirt Pusher prompt in isolation.
+- Use only when auditing a single Crumb Gatherer prompt in isolation.
 - Example: `{SESSION_DIR}/pc/pc-74g1-cco-{timestamp}.md`
 
 Where:
