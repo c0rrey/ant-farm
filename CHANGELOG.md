@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-03-17 — Session 20260317-193045 (--from-file Feature, Heredoc Migration, Review Fixes)
+
+### Summary
+
+Session completed 5 tasks across 2 execution waves and 2 review rounds in approximately 55 minutes. Wave 1 shipped the `crumb create --from-file` feature (AF-161) and migrated the Big Head template away from fragile `--from-json $(cat ...)` heredoc concatenation (AF-162). Round 1 review across four reviewers produced 3 P2 and 5 P3 findings; the 3 P2s were auto-fixed in a second wave as AF-171, AF-172, and AF-173. Round 2 found zero new findings and all 10 acceptance criteria passed. The 5 P3 findings were deferred as open crumbs. 5 commits total.
+
+### Implementation (Wave 1–2 + Review Fixes)
+
+- **AF-161**: feat: add `--from-file` flag to `crumb create` for JSON file input (`crumb.py`, `tests/test_crud.py`) (`2ae72fd`)
+- **AF-162**: docs: switch Big Head crumb filing to `--from-file` to fix heredoc escaping (`orchestration/templates/big-head-skeleton.md`, `orchestration/reference/crumb-cheatsheet.md`) (`ee09a31`)
+- **AF-171**: fix: add `is_dir()` guard and widen `except` to `OSError` in `cmd_create --from-file` (`crumb.py:846-851`) (`93ad832`)
+- **AF-172**: fix: warn on stderr when `--fix` silently removes malformed lines (`crumb.py:2175-2180`, `tests/test_doctor.py`) (`b02e4df`)
+- **AF-173**: fix: replace `--from-json` heredoc patterns with `--from-file` across templates (`orchestration/templates/reviews.md`, `orchestration/templates/decomposition.md`, `orchestration/templates/architect-skeleton.md`, `agents/ant-farm-architect.md`) (`1aab383`)
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 9 files, 2 tasks (AF-161, AF-162) | 0 | 3 | 5 | PASS WITH ISSUES |
+| 2 | fix commits only, 3 tasks (AF-171, AF-172, AF-173) | 0 | 0 | 0 | PASS |
+
+8 root causes consolidated (2 cross-session duplicates skipped: C1 → AF-158, E4 → AF-92). All 3 P2 findings resolved; 5 P3 findings filed as AF-174 through AF-178 and deferred.
+
+
 ## 2026-03-17 — Session 20260317-162123 (Large-Scale Maintenance Sweep — crumb.py, Scripts, Tests)
 
 ### Summary
@@ -54,7 +78,6 @@
 
 10 root causes consolidated (16 raw findings). 1 cross-session dedup skip (RC-3 → AF-146 already open). 9 new crumbs filed (AF-152–AF-160); AF-152 fixed this session, AF-153–AF-160 deferred as P3.
 
-# Changelog
 
 ## 2026-03-16 — Session 144528 (next_step Breadcrumbs, Crumb Cheat Sheet, Review Fix Cycle)
 
