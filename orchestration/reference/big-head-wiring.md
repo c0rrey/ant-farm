@@ -6,7 +6,7 @@ Extracted from `orchestration/templates/big-head-skeleton.md` (formerly lines 1�
 ## Overview
 
 Big Head is a **member of the Nitpicker team** (spawned via TeamCreate, NOT as a separate Task agent).
-Do NOT use the Task tool for Big Head — it runs inside the same TeamCreate call as the Nitpickers (4 in round 1; 2 in round 2+).
+Do NOT use the Task tool for Big Head — it runs inside the same TeamCreate call as the Nitpickers (typically 4 in round 1, 2 in round 2+; exact count from consolidation brief's `expected_paths`).
 
 ## Term Definitions
 
@@ -16,7 +16,7 @@ Canonical across all orchestration templates:
 - `{TASK_SUFFIX}` — suffix portion only; extracted by splitting on the LAST hyphen (e.g., `9oa` from `ant-farm-9oa`, or `74g1` from `my-project-74g.1`)
 - `{TIMESTAMP}` — UTC timestamp in `YYYYMMDD-HHmmss` format (e.g., `20260217-143000`)
 - `{SESSION_DIR}` — session artifact directory (e.g., `.crumbs/sessions/_session-abc123`)
-- `{REVIEW_ROUND}` — review round number (1, 2, 3, ...). Determines report count and P3 handling.
+- `{REVIEW_ROUND}` — review round number (1, 2, 3, ...). Determines which review types are active and P3 handling. Report count is determined by the consolidation brief's `expected_paths` list, not by a fixed number.
 
 ## Step Numbering Note
 
@@ -42,7 +42,7 @@ Replace `{PLACEHOLDER}` values (uppercase) in the agent-facing template below:
 
 Pass the filled-in template text (everything below the `---` separator in `big-head-skeleton.md`) as Big Head's `prompt`. Include all expected Nitpicker report paths directly in Big Head's spawn prompt so it can begin consolidation as soon as the reports are ready. Pest Control must be a team member so Big Head can SendMessage to it directly for checkpoint validation (see Step 4 in reviews.md).
 
-**Round 1**: Big Head is the 5th member; Pest Control is the 6th.
+**Round 1**: Big Head is the 5th member (or later, if split reviewer instances are added); Pest Control is the last member. The consolidation brief's `expected_paths` list is authoritative for how many report paths Big Head must wait for.
 
 ```
 TeamCreate(
@@ -52,13 +52,13 @@ TeamCreate(
     { "name": "edge-cases-reviewer",   "subagent_type": "ant-farm-nitpicker-edge-cases",   "prompt": "<filled nitpicker template with REVIEW_TYPE=edge-cases>", "model": "opus" },
     { "name": "correctness-reviewer",  "subagent_type": "ant-farm-nitpicker-correctness",  "prompt": "<filled nitpicker template with REVIEW_TYPE=correctness>", "model": "opus" },
     { "name": "drift-reviewer",        "subagent_type": "ant-farm-nitpicker-drift",         "prompt": "<filled nitpicker template with REVIEW_TYPE=drift>", "model": "sonnet" },
-    { "name": "ant-farm-big-head",     "prompt": "<filled big-head template with all 4 expected report paths embedded>", "model": "{MODEL}" },
+    { "name": "ant-farm-big-head",     "prompt": "<filled big-head template — report count from consolidation brief's expected_paths>", "model": "{MODEL}" },
     { "name": "ant-farm-pest-control", "prompt": "<pest-control prompt>", "model": "sonnet" }
   ]
 )
 ```
 
-**Round 2+**: Big Head is the 3rd member; Pest Control is the 4th. Only Correctness and Edge Cases reviewers are spawned.
+**Round 2+**: Big Head is the 3rd member (or later, if split instances present); Pest Control is the last member. Only Correctness and Edge Cases reviewers are spawned by default; the consolidation brief's `expected_paths` is authoritative.
 
 ```
 TeamCreate(
@@ -66,7 +66,7 @@ TeamCreate(
   members=[
     { "name": "correctness-reviewer",  "subagent_type": "ant-farm-nitpicker-correctness",  "prompt": "<filled nitpicker template with REVIEW_TYPE=correctness>", "model": "opus" },
     { "name": "edge-cases-reviewer",   "subagent_type": "ant-farm-nitpicker-edge-cases",   "prompt": "<filled nitpicker template with REVIEW_TYPE=edge-cases>", "model": "opus" },
-    { "name": "ant-farm-big-head",     "prompt": "<filled big-head template with 2 expected report paths embedded>", "model": "{MODEL}" },
+    { "name": "ant-farm-big-head",     "prompt": "<filled big-head template — report count from consolidation brief's expected_paths>", "model": "{MODEL}" },
     { "name": "ant-farm-pest-control", "prompt": "<pest-control prompt>", "model": "sonnet" }
   ]
 )

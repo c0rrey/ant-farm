@@ -24,13 +24,13 @@ Directory creation is handled by the Queen in RULES.md Step 3b-iii. All active r
 
 ## Agent Teams Protocol
 
-After the transition gate passes, the Queen launches **the Nitpickers** using **TeamCreate** (NOT the Task tool) — four specialized reviewers plus **Big Head** (the consolidator) plus **Pest Control** (checkpoint validator), all as members of the same team. Reviewers produce **reports only** and do NOT file crumbs. Big Head consolidates all findings, deduplicates by root cause, and files crumbs.
+After the transition gate passes, the Queen launches **the Nitpickers** using **TeamCreate** (NOT the Task tool) — reviewers plus **Big Head** (the consolidator) plus **Pest Control** (checkpoint validator), all as members of the same team. Reviewers produce **reports only** and do NOT file crumbs. Big Head consolidates all findings, deduplicates by root cause, and files crumbs.
 
 **CRITICAL**: Reviews MUST use Agent Teams (TeamCreate + SendMessage), NOT plain Task tool subagents. The team structure enables cross-pollination between reviewers. **Big Head MUST be spawned as a team member** (not a separate Task agent) so it can receive messages from reviewers and coordinate within the team.
 
 ### Why Agent Teams (Not Sequential)
 
-- **Wall-clock time**: 4 parallel reviews vs 4 sequential = ~4x faster
+- **Wall-clock time**: parallel reviews vs sequential = proportional speedup (scales with reviewer count)
 - **Cross-pollination**: Reviewers can message each other about overlapping findings, reducing duplicate work
 - **Unified dedup**: Lead sees ALL findings before filing, so root-cause grouping is authoritative — no duplicate crumbs
 
@@ -58,11 +58,11 @@ The short name is the authoritative identifier. Any template using a review type
 
 **Pre-spawn requirement**: Before creating the Nitpickers, run **CCO** on all review prompts. See `templates/checkpoints.md`.
 
-**Round 1**: the Queen creates the Nitpicker team with **6 members** (4 reviewers + Big Head + Pest Control):
+**Round 1**: the Queen creates the Nitpicker team with **6 members** (4 reviewers + Big Head + Pest Control; may be more if split reviewer instances are added):
 
 ~~~markdown
-Create a team with these 6 members. The 4 reviewers work in parallel.
-Big Head waits for all 4 reports, then consolidates.
+Create a team with these members. Reviewers work in parallel.
+Big Head waits for all expected reports (count from consolidation brief's expected_paths), then consolidates.
 Pest Control is a team member so Big Head can SendMessage to it directly for checkpoint validation.
 
 Nitpickers produce REPORTS ONLY — do NOT file crumbs (`crumb create`).
@@ -80,7 +80,7 @@ Task IDs for acceptance criteria: {list of all task IDs worked this session}
 6. Pest Control (checkpoint validator) — receives consolidated report path from Big Head via SendMessage; runs DMVDC and CCB checkpoints and replies with verdict
 ~~~
 
-**Round 2+**: the Nitpicker team is **persistent** — do NOT create a new team. Re-task the existing Correctness and Edge Cases reviewers via SendMessage (see Round Transition via SendMessage section). Big Head and Pest Control remain in the team and are re-tasked the same way. The team has 4 active members (Correctness + Edge Cases + Big Head + Pest Control); Clarity and Drift reviewers stay idle.
+**Round 2+**: the Nitpicker team is **persistent** — do NOT create a new team. Re-task the existing Correctness and Edge Cases reviewers via SendMessage (see Round Transition via SendMessage section). Big Head and Pest Control remain in the team and are re-tasked the same way. The team has at minimum 4 active members (Correctness + Edge Cases + Big Head + Pest Control); Clarity and Drift reviewers stay idle.
 
 Re-tasking message fields for each reviewer:
 
@@ -455,7 +455,7 @@ List every in-scope file with its review status. Files with no findings MUST sti
 
 **Model:** `opus`
 
-After all Nitpicker reports are complete (4 in round 1; 2 in round 2+), Big Head (a member of the same team) consolidates:
+After all Nitpicker reports are complete (count determined by the consolidation brief's `expected_paths` list; typically 4 in round 1, 2 in round 2+, but may vary if split reviewer instances are used), Big Head (a member of the same team) consolidates:
 
 ### Step Numbering Cross-Reference
 
@@ -477,7 +477,7 @@ reviews.md and big-head-skeleton.md use different step numbering schemes. Use th
 
 The Big Head consolidation process includes two distinct verification layers that work together:
 
-1. **Big Head Step 0 (Prerequisite Gate)**: A mandatory check performed by Big Head BEFORE reading any reports. This gate ensures all expected reports exist (4 in round 1; 2 in round 2+) before consolidation logic begins. This prevents wasted effort on reading partial report sets or proceeding with missing data.
+1. **Big Head Step 0 (Prerequisite Gate)**: A mandatory check performed by Big Head BEFORE reading any reports. This gate ensures all expected reports exist (count from the consolidation brief's `expected_paths` list) before consolidation logic begins. This prevents wasted effort on reading partial report sets or proceeding with missing data.
 
 2. **Pest Control CCB Check 0 (Independent Audit)**: A separate, independent check performed AFTER Big Head consolidation is complete (see checkpoints.md). This audit verifies the same round-appropriate reports but runs in a different context — it confirms that consolidation did not proceed in a degraded state (e.g., no reviewer failures during the review phase).
 
@@ -485,22 +485,24 @@ The Big Head consolidation process includes two distinct verification layers tha
 
 ### Step 0: Verify All Reports Exist (MANDATORY GATE)
 
-Before reading any reports, verify the expected files exist. The number of expected reports depends on the review round:
+Before reading any reports, verify the expected files exist. The authoritative list of expected paths is in the consolidation brief's `expected_paths` section — use that list, not a hardcoded count. The bash examples below show typical paths for the default reviewer set; adapt for split instances if present.
 
-**Round 1**: Verify all 4 report files exist using the exact paths provided in your prompt:
+**Round 1** (typical paths — verify all paths in `expected_paths`):
 
 ```bash
 [ -f "{session-dir}/review-reports/clarity-review-{timestamp}.md" ] || echo "MISSING: clarity"
 [ -f "{session-dir}/review-reports/edge-cases-review-{timestamp}.md" ] || echo "MISSING: edge-cases"
 [ -f "{session-dir}/review-reports/correctness-review-{timestamp}.md" ] || echo "MISSING: correctness"
 [ -f "{session-dir}/review-reports/drift-review-{timestamp}.md" ] || echo "MISSING: drift"
+# If split instances exist (e.g., clarity-2), add additional [ -f ] checks here
 ```
 
-**Round 2+**: Verify 2 report files exist using exact paths:
+**Round 2+** (typical paths — verify all paths in `expected_paths`):
 
 ```bash
 [ -f "{session-dir}/review-reports/correctness-review-{timestamp}.md" ] || echo "MISSING: correctness"
 [ -f "{session-dir}/review-reports/edge-cases-review-{timestamp}.md" ] || echo "MISSING: edge-cases"
+# If split instances exist, add additional [ -f ] checks here
 ```
 
 **All expected files MUST exist.** If any file is missing:
@@ -514,7 +516,7 @@ Before reading any reports, verify the expected files exist. The number of expec
 
 If any report file is missing after the initial check, do NOT wait indefinitely. Instead:
 
-**Timeout specification:** Wait a maximum of 30 seconds for all expected reports to appear (4 in round 1; 2 in round 2+).
+**Timeout specification:** Wait a maximum of 30 seconds for all expected reports to appear (count determined by the consolidation brief's `expected_paths` list).
 - Check once at T=0
 - If all expected reports exist, proceed to Step 1
 - If any reports are missing, enter the polling loop below
@@ -561,9 +563,10 @@ POLL_TIMEOUT_SECS=60
 POLL_INTERVAL_SECS=2
 ELAPSED=0
 
-# --- Report count constraint (which reports to expect per round) ---
-# Round 1:  correctness, edge-cases, clarity, drift (4 reports)
-# Round 2+: correctness, edge-cases only (2 reports)
+# --- Report paths to expect ---
+# The consolidation brief's expected_paths list is authoritative. Typical counts:
+# Round 1:  correctness, edge-cases, clarity, drift (4 paths, or more if split instances)
+# Round 2+: correctness, edge-cases only (2 paths, or more if split instances)
 # The Pantry writes the exact file paths (with timestamp) into this brief.
 # Use [ -f "$EXACT_PATH" ] — no globs. Globs match stale reports from prior rounds.
 
@@ -702,15 +705,15 @@ Once the error is returned:
 
 ### Step 1: Read All Reports
 
-Read all expected reports from `{session-dir}/review-reports/` (the Queen provides exact filenames in the consolidation prompt):
+Read all expected reports from `{session-dir}/review-reports/` using the exact paths provided in the consolidation brief's `expected_paths` list. The count varies based on how many reviewers were spawned.
 
-Round 1 (4 reports):
+Round 1 typical paths (may include additional paths for split reviewer instances):
 - `clarity-review-{timestamp}.md`
 - `edge-cases-review-{timestamp}.md`
 - `correctness-review-{timestamp}.md`
 - `drift-review-{timestamp}.md`
 
-Round 2+ (2 reports):
+Round 2+ typical paths (may include additional paths for split reviewer instances):
 - `correctness-review-{timestamp}.md`
 - `edge-cases-review-{timestamp}.md`
 
@@ -720,10 +723,12 @@ Round 2+ (2 reports):
 2. **Identify duplicates** — findings reported by multiple reviewers about the same issue
 3. **Merge cross-referenced items** — where one reviewer flagged something for another's domain
 4. **Group by root cause** — apply the root-cause grouping principle across ALL review types:
-5. **Document merge rationale** — for EVERY merge (two or more findings combined into one root cause), state:
+5. **Split-instance dedup**: If the same reviewer type produced multiple reports (e.g., `clarity-1` and `clarity-2`), treat them as a **single logical review type** for root-cause grouping. A finding from `clarity-1` and a finding from `clarity-2` about the same root cause are merged into one root cause entry — they are NOT treated as cross-type duplicates. Dedup across split instances by **file path + line range**, not solely by prose similarity. If two findings reference the same `file:line` location, treat them as the same instance regardless of how the finding is worded.
+6. **Document merge rationale** — for EVERY merge (two or more findings combined into one root cause), state:
    - WHY these findings share a root cause (not just that they do)
    - What the common code path, pattern, or design flaw is
    - If merged findings span unrelated files or functions, provide extra justification
+   - For split-instance merges, note which split instance each finding came from (e.g., "from clarity-1" vs "from clarity-2")
 
 ```markdown
 ## Root-Cause Grouping (Big Head Consolidation)
@@ -785,14 +790,14 @@ Write the consolidated summary to `{session-dir}/review-reports/review-consolida
 
 ## Read Confirmation
 
-**Reports read and processed by Big Head consolidation:**
+**Reports Received** (all paths from consolidation brief's `expected_paths` list):
 
-Round 1: 4 reports (clarity, edge-cases, correctness, drift)
-Round 2+: 2 reports (correctness, edge-cases)
+| Path | Status | Finding Count |
+|------|--------|---------------|
+| {full path from expected_paths} | PRESENT / MISSING | {N} findings |
+| ... | ... | ... |
 
-| Report Type | File | Status | Finding Count |
-|-------------|------|--------|----------------|
-| {for each report in this round} | {filename} | ✓ Read | {N} findings |
+Every path in `expected_paths` MUST appear in this table. A MISSING entry indicates a reviewer did not produce output.
 
 **Total findings from all reports**: {N}
 
@@ -983,7 +988,7 @@ Before launching the review agent team, confirm:
 ### Big Head Consolidation Checklist (after all Nitpickers finish)
 
 Before filing crumbs, confirm Big Head has:
-- [ ] Round 1: Read all 4 Nitpicker reports; Round 2+: Read 2 reports (Correctness, Edge Cases)
+- [ ] Read all reports listed in consolidation brief's `expected_paths` (count varies; typically 4 in round 1, 2 in round 2+, more if split instances present)
 - [ ] Merged duplicate findings across reviews
 - [ ] Grouped all findings by root cause (not per-occurrence)
 - [ ] Written consolidated summary to `{session-dir}/review-reports/review-consolidated-{timestamp}.md`
@@ -1145,7 +1150,7 @@ After all fix DPs complete and fix-pc-dmvdc has issued PASS for each:
 
 3. **Re-task Big Head**: SendMessage to `ant-farm-big-head` with:
    - Review round: N+1
-   - Expected report count: 2 (correctness + edge cases only)
+   - Expected report paths: list the exact paths from step 1 and 2 above (consolidation brief's expected_paths is authoritative; typically correctness + edge cases, but include any split instances)
    - Report paths: paths from step 1 and 2 above
    - Output path: `{session-dir}/review-reports/review-consolidated-r{N+1}-{timestamp}.md`
 

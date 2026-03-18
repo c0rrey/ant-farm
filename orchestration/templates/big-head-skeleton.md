@@ -10,8 +10,9 @@ Consolidate the Nitpicker reports into a unified summary.
 
 **Review round**: {REVIEW_ROUND}
 **Input guard**: If {REVIEW_ROUND} is blank or non-numeric, halt immediately and return: "BIG HEAD ABORTED: REVIEW_ROUND is invalid. Expected a positive integer; got: '{REVIEW_ROUND}'." Do NOT read any reports or proceed.
-- Round 1: expect 4 reports (clarity, edge-cases, correctness, drift)
-- Round 2+: expect 2 reports (correctness, edge-cases only)
+- Expected reports: read the `expected_paths` list in your consolidation brief (Step 0) — the count varies based on how many reviewers were spawned. Do NOT assume a fixed number.
+- Round 1 typical: clarity, edge-cases, correctness, drift (but split instances of a type may produce additional paths)
+- Round 2+ typical: correctness, edge-cases only
 
 Step 0: Read your consolidation brief from {DATA_FILE_PATH}
 (Format: markdown. Sections: Report Paths, Deduplication Protocol, Crumb Filing Instructions, Consolidated Output Path, Pest Control Coordination Note, Review Round, P3 Auto-Filing Instructions (round 2+ only).)
@@ -28,7 +29,7 @@ When any step reaches a FAIL condition, write a brief failure artifact to the ex
 This ensures downstream consumers (Queen, Pest Control) have a written record of the failure at the path they expect — even if the output is a FAILED file rather than a consolidated summary.
 
 Your workflow:
-1. Verify all expected report files exist (4 for round 1; 2 for round 2+) — follow the missing-report handling protocol in your consolidation brief (Step 0a)
+1. Verify all expected report files exist (count determined by the consolidation brief's `expected_paths` list) — follow the missing-report handling protocol in your consolidation brief (Step 0a)
    - The brief is authoritative for this step: it specifies the polling timeout, error return format, and failure conditions
    - **Single-invocation constraint**: The polling bash block in the brief (the `while` loop with `sleep`) MUST be executed in a single Bash tool call. Do NOT attempt to poll by calling Bash repeatedly across multiple turns — the shell state does not persist between turns and you cannot `sleep` across turns. Submit the entire polling block as one Bash tool invocation and wait for its result.
    - **Timeout note**: The polling timeout is determined by the consolidation brief (the `while` loop parameters in Step 0a are authoritative — the value here is approximate). This allows reviewers to finish writing their reports before Big Head proceeds. If your reviewers are consistently timing out, the Queen should re-spawn Big Head rather than increasing the timeout — a longer timeout blocks the Queen's context with an idle agent.
@@ -53,6 +54,7 @@ Your workflow:
 2. Read all expected reports
 3. Collect all findings into a single list
 4. Deduplicate: merge findings about the same issue across reviewers
+   **Split-instance dedup rule**: If the same reviewer type was spawned multiple times (e.g., `clarity-1` and `clarity-2`), treat them as a single logical review type for root-cause grouping — do NOT treat a finding from `clarity-1` and a finding from `clarity-2` about the same root cause as cross-type duplicates. Merge them under one root cause entry. Dedup across split instances by file path + line range (not solely prose similarity): if two findings reference the same file:line range, they are the same instance regardless of wording.
 5. Group by root cause: one group per underlying problem, not per occurrence
 6. For each merge, document WHY findings share a root cause
 7. **Cross-session dedup**: Before writing the summary or filing crumbs, check for existing open crumbs that already cover your root causes:
@@ -182,8 +184,18 @@ print(json.dumps({'type': 'bug', 'priority': 'P3', 'title': '<title>', 'descript
     After sending, your work is complete. End your turn.
 
 Your output MUST include (see brief for full format):
+- **Reports Received**: a section listing every path from the consolidation brief's `expected_paths` list with present/missing status. Example:
+  ```
+  ## Reports Received
+  | Path | Status |
+  |------|--------|
+  | .../clarity-review-{timestamp}.md | PRESENT |
+  | .../clarity-2-review-{timestamp}.md | MISSING |
+  | .../edge-cases-review-{timestamp}.md | PRESENT |
+  ```
+  Every path in `expected_paths` MUST appear in this table — do not omit paths that were present.
 - Root cause groups with all affected surfaces and merge rationale
-- Deduplication log (which findings merged, why)
+- Deduplication log (which findings merged, why; include split-instance merges)
 - Cross-session dedup log: for each root cause, whether it was filed (new crumb ID), skipped (matched existing crumb ID), or merged with existing
 - Crumb IDs filed, with priority breakdown
 - Overall verdict
