@@ -12,7 +12,7 @@
             team-based round 2+ reviews.
 
             **Team roster progression**:
-            - **Round 1 (initial)**: 6 members — 4 Nitpickers (Clarity, Edge Cases, Correctness, Drift) + Big Head + Pest Control
+            - **Round 1 (initial)**: 6 members — 4 Nitpickers (Clarity, Edge Cases, Correctness, Drift) + Big Head + Pest Control (mixed-model: Correctness + Edge Cases use `opus`; Clarity + Drift use `sonnet`)
             - **After fix wave**: + N fix DPs + fix-pc-wwd + fix-pc-dmvdc (names: fix-dp-1..N, fix-pc-wwd, fix-pc-dmvdc; round suffixes for round 2+: fix-dp-r2-1, fix-pc-wwd-r2, fix-pc-dmvdc-r2)
             - **Peak**: up to 15 members (6 + 7 fix DPs + 2 fix PCs), but only N+2 fix agents are active during the fix phase; the original 6 are idle
             - **Round 2+**: Clarity and Drift reviewers remain idle; Correctness and Edge Cases are re-tasked via SendMessage
@@ -69,6 +69,7 @@
 
             **3b-iv. Spawn Nitpicker team** (round 1 only — team persists for round 2+):
             - Round 1: 6 members — 4 reviewers + Big Head + Pest Control
+            - Model assignments: Correctness (`model: "opus"`), Edge Cases (`model: "opus"`), Clarity (`model: "sonnet"`), Drift (`model: "sonnet"`)
             - Round 2+: do NOT spawn a new team — re-task Correctness and Edge Cases reviewers via SendMessage (see Step 3c fix workflow)
             - Big Head MUST be a team member, NOT a separate Task agent
             - Pest Control MUST be a team member so Big Head can SendMessage to it
@@ -189,11 +190,12 @@
 
             **Step 3c-iv. Round transition via SendMessage** — after all fix DPs complete and
             fix-pc-dmvdc has issued PASS for each, the Queen sends messages to re-task the persistent
-            team members for round N+1:
-            1. **Re-task Correctness reviewer**: SendMessage to `correctness` with review round N+1,
+            team members for round N+1. Model assignments do NOT change in round 2+: Correctness and
+            Edge Cases remain `opus` (they were spawned with opus in round 1; SendMessage does not change model):
+            1. **Re-task Correctness reviewer** (`opus` — unchanged): SendMessage to `correctness` with review round N+1,
                fix commit range, changed files, and task IDs; provide new report output path
                `{SESSION_DIR}/review-reports/correctness-r{N+1}-{timestamp}.md`
-            2. **Re-task Edge Cases reviewer**: SendMessage to `edge-cases` with review round N+1,
+            2. **Re-task Edge Cases reviewer** (`opus` — unchanged): SendMessage to `edge-cases` with review round N+1,
                fix commit range, changed files, and task IDs; provide new report output path
                `{SESSION_DIR}/review-reports/edge-cases-r{N+1}-{timestamp}.md`
             3. **Re-task Big Head**: SendMessage to `ant-farm-big-head` with review round N+1, expected report

@@ -72,10 +72,10 @@ Review scope: commits {first-commit} through {last-commit} ({N} commits total, a
 Files to review: {deduplicated list of ALL files changed across all trails}
 Task IDs for acceptance criteria: {list of all task IDs worked this session}
 
-1. Clarity Review (P3) — see prompt below
-2. Edge Cases Review (P2) — see prompt below
-3. Correctness Review (P1-P2) — see prompt below
-4. Drift Review (P3) — see prompt below
+1. Clarity Review (P3) — see prompt below; model: sonnet
+2. Edge Cases Review (P2) — see prompt below; model: opus
+3. Correctness Review (P1-P2) — see prompt below; model: opus
+4. Drift Review (P3) — see prompt below; model: sonnet
 5. Big Head (consolidation) — see prompt from big-head-skeleton.md; model specified in Big Head Consolidation Protocol section
 6. Pest Control (checkpoint validator) — receives consolidated report path from Big Head via SendMessage; runs DMVDC and CCB checkpoints and replies with verdict
 ~~~
@@ -91,8 +91,8 @@ Task IDs for acceptance criteria: {list of fix task IDs}
 Review round: {N+1}
 Report output path: {reviewer-specific path from Round Transition section}
 
-1. Correctness Review (P1-P2) — re-tasked via SendMessage
-2. Edge Cases Review (P2) — re-tasked via SendMessage
+1. Correctness Review (P1-P2) — re-tasked via SendMessage; model: opus (unchanged from round 1)
+2. Edge Cases Review (P2) — re-tasked via SendMessage; model: opus (unchanged from round 1)
 3. Big Head (consolidation) — re-tasked via SendMessage with round N+1 and 2 expected report paths
 4. Pest Control (checkpoint validator) — remains available; Big Head SendMessages it as in round 1
 ~~~
@@ -240,7 +240,7 @@ Review these files:
 ## Review 2: Edge Cases (P2)
 
 **Agent Type:** `code-reviewer`
-**Model:** `sonnet`
+**Model:** `opus`
 **Priority:** P2 (important, should fix soon)
 
 ```markdown
@@ -278,7 +278,7 @@ Review these files:
 ## Review 3: Correctness (P1-P2)
 
 **Agent Type:** `code-reviewer`
-**Model:** `sonnet`
+**Model:** `opus`
 **Priority:** P1-P2 (critical, must fix before deploy)
 
 ```markdown
