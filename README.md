@@ -35,11 +35,11 @@ Planning Workflow                    Execution Workflow
      |                                    |
   TDV gate                             CCO gate (prompt audit)
      |                                    |
-  User approval gate                   Dirt Pushers (implementation, up to 7 parallel)
+  User approval gate                   Dirt Pushers (up to 7 parallel)
      |                                    |
-  .crumbs/tasks.jsonl  ────────►       WWD + DMVDC gates (scope + substance verification)
+  .crumbs/tasks.jsonl                  WWD + DMVDC gates (scope + substance)
                                           |
-                                       Nitpickers (4+ parallel review) + Big Head (consolidation)
+         ────────────────────────►     Nitpickers (4+ parallel review) + Big Head
                                           |
                                        CCB gate (consolidation audit)
                                           |
