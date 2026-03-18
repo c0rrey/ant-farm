@@ -49,8 +49,8 @@ TeamCreate(
   name="nitpicker-team",
   members=[
     { "name": "clarity-reviewer",      "subagent_type": "ant-farm-nitpicker-clarity",     "prompt": "<filled nitpicker template with REVIEW_TYPE=clarity>", "model": "sonnet" },
-    { "name": "edge-cases-reviewer",   "subagent_type": "ant-farm-nitpicker-edge-cases",   "prompt": "<filled nitpicker template with REVIEW_TYPE=edge-cases>", "model": "sonnet" },
-    { "name": "correctness-reviewer",  "subagent_type": "ant-farm-nitpicker-correctness",  "prompt": "<filled nitpicker template with REVIEW_TYPE=correctness>", "model": "sonnet" },
+    { "name": "edge-cases-reviewer",   "subagent_type": "ant-farm-nitpicker-edge-cases",   "prompt": "<filled nitpicker template with REVIEW_TYPE=edge-cases>", "model": "opus" },
+    { "name": "correctness-reviewer",  "subagent_type": "ant-farm-nitpicker-correctness",  "prompt": "<filled nitpicker template with REVIEW_TYPE=correctness>", "model": "opus" },
     { "name": "drift-reviewer",        "subagent_type": "ant-farm-nitpicker-drift",         "prompt": "<filled nitpicker template with REVIEW_TYPE=drift>", "model": "sonnet" },
     { "name": "ant-farm-big-head",     "prompt": "<filled big-head template with all 4 expected report paths embedded>", "model": "{MODEL}" },
     { "name": "ant-farm-pest-control", "prompt": "<pest-control prompt>", "model": "sonnet" }
@@ -64,8 +64,8 @@ TeamCreate(
 TeamCreate(
   name="nitpicker-team",
   members=[
-    { "name": "correctness-reviewer",  "subagent_type": "ant-farm-nitpicker-correctness",  "prompt": "<filled nitpicker template with REVIEW_TYPE=correctness>", "model": "sonnet" },
-    { "name": "edge-cases-reviewer",   "subagent_type": "ant-farm-nitpicker-edge-cases",   "prompt": "<filled nitpicker template with REVIEW_TYPE=edge-cases>", "model": "sonnet" },
+    { "name": "correctness-reviewer",  "subagent_type": "ant-farm-nitpicker-correctness",  "prompt": "<filled nitpicker template with REVIEW_TYPE=correctness>", "model": "opus" },
+    { "name": "edge-cases-reviewer",   "subagent_type": "ant-farm-nitpicker-edge-cases",   "prompt": "<filled nitpicker template with REVIEW_TYPE=edge-cases>", "model": "opus" },
     { "name": "ant-farm-big-head",     "prompt": "<filled big-head template with 2 expected report paths embedded>", "model": "{MODEL}" },
     { "name": "ant-farm-pest-control", "prompt": "<pest-control prompt>", "model": "sonnet" }
   ]
