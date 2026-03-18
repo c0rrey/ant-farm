@@ -140,6 +140,10 @@ mkdir -p "${SESSION_DIR}/review-reports" || {
 # ---------------------------------------------------------------------------
 
 REVIEW_SPLIT_THRESHOLD="${REVIEW_SPLIT_THRESHOLD:-8}"
+if ! [[ "${REVIEW_SPLIT_THRESHOLD}" =~ ^[1-9][0-9]*$ ]]; then
+    echo "ERROR: REVIEW_SPLIT_THRESHOLD must be a positive integer >= 1, got: '${REVIEW_SPLIT_THRESHOLD}'." >&2
+    exit 1
+fi
 
 # ---------------------------------------------------------------------------
 # Determine which review types to produce based on round, applying
