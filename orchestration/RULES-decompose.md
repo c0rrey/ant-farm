@@ -277,7 +277,7 @@ for focus in stack architecture pitfall pattern; do
 done
 ```
 
-Then proceed to Step 4.
+Then proceed to Step 3.5.
 
 **On gate FAIL** (one or more files missing or empty): Re-spawn only the missing/failed Forager(s).
 Maximum **1 retry per Forager**. If a Forager still fails after one retry, surface the error to
@@ -285,6 +285,42 @@ the user and await instruction.
 
 ```bash
 echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|RESEARCH_COMPLETE|pass|foragers=4|spec=${DECOMPOSE_DIR}/spec.md" \
+  >> "${DECOMPOSE_DIR}/progress.log"
+```
+
+---
+
+**Step 3.5:** User approval — present the plan and await confirmation (HARD GATE — blocks Step 4).
+
+After research is complete (or immediately after the spec quality gate if research was skipped),
+present the plan to the user for review before decomposition into tasks.
+
+Read `{DECOMPOSE_DIR}/spec.md` (permitted) and summarize:
+- The feature scope and goals from the spec
+- Key requirements and acceptance criteria
+- If research ran: high-level findings from each Forager focus area (stack, architecture, pitfalls, patterns).
+  Do NOT read the research files yourself — summarize from the Forager file names and any notes
+  you recorded during the research complete gate check.
+
+Then ask the user for approval using `AskUserQuestion`:
+
+> "The spec is finalized and research is complete. Review the plan above and confirm:
+> approve — proceed to decomposition into tasks, or
+> revise — describe what to change (I'll update the spec and re-run research if needed)."
+
+**On approve**: Proceed to Step 4 (Architect).
+
+**On revise**: Apply the user's feedback:
+- If the revision affects the spec: update `{DECOMPOSE_DIR}/spec.md` with the changes
+  (or re-spawn the Surveyor if the revision is substantial). Re-run affected Foragers if
+  the spec changes invalidate their research. Return to Step 3.5.
+- If the revision is minor (scope adjustment, priority change): update the spec directly
+  and return to Step 3.5.
+- Maximum **2 revision cycles**. If the user is still unsatisfied after two revisions,
+  proceed to Step 4 with the current state and note the unresolved concerns in the progress log.
+
+```bash
+echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|USER_APPROVAL|approved" \
   >> "${DECOMPOSE_DIR}/progress.log"
 ```
 
@@ -364,33 +400,6 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|TDV|pass|trails=<N>|crumbs=<N>|brief=${DECO
 
 ---
 
-**Step 5.5:** User approval — present the plan and await confirmation (HARD GATE — blocks Step 6).
-
-After TDV PASS, read `{DECOMPOSE_DIR}/decomposition-brief.md` and present a summary to the user:
-- Trail names, crumb counts, and wave structure
-- Key design decisions from the brief (dependency edges, agent types, file partitioning)
-- Any heuristic warnings from TDV
-
-Then ask the user for approval using `AskUserQuestion`:
-
-> "The decomposition is structurally verified. Review the plan above and confirm:
-> approve — proceed to handoff, or
-> revise — describe what to change (I'll re-spawn the Architect with your feedback)."
-
-**On approve**: Proceed to Step 6.
-
-**On revise**: Re-spawn the Architect with the user's feedback. After the Architect revises,
-re-run TDV. If TDV passes, return to Step 5.5 (present revised plan for approval). Maximum
-**2 revision cycles**. If the user is still unsatisfied after two revisions, proceed to Step 6
-with whatever the current state is and note the unresolved concerns in the progress log.
-
-```bash
-echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|USER_APPROVAL|approved" \
-  >> "${DECOMPOSE_DIR}/progress.log"
-```
-
----
-
 **Step 6:** Handoff — copy artifacts, present results, and close the decomposition session.
 
 Copy the decomposition brief to the tracked `.crumbs/` directory and stage it:
@@ -428,7 +437,8 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|DECOMPOSE_COMPLETE|handoff=done" \
 | Gate | Step | Blocks | Failure Action |
 |------|------|--------|----------------|
 | Spec quality gate | After Step 2 (Surveyor) | Step 3 (Forager spawn) | Re-spawn Surveyor with violations; max 1 retry; escalate to user |
-| Research complete | After Step 3 (all Foragers) | Step 4 (Architect spawn) | Re-spawn failed Forager(s); max 1 retry each; escalate to user |
+| Research complete | After Step 3 (all Foragers) | Step 3.5 (User approval) | Re-spawn failed Forager(s); max 1 retry each; escalate to user |
+| User approval | Step 3.5 | Step 4 (Architect spawn) | User revises spec; max 2 revision cycles; proceed with current state |
 | TDV PASS | After Step 5 (Pest Control TDV) | Step 6 (Handoff) | Re-spawn Architect with violations; max 2 retries; escalate to user |
 
 ---
@@ -493,5 +503,5 @@ The `_decompose-` prefix distinguishes decomposition directories from other entr
 - Skipping the spec quality gate — a weak spec produces a weak decomposition
 - Spawning the Architect before all four research briefs exist — partial inputs cause incomplete trails
 - Re-spawning a Forager for exceeding the line cap — truncate at 100 lines and proceed
-- Skipping the user approval gate (Step 5.5) — TDV is the mechanical gate, but the user must
-  confirm the plan before handoff. Do not auto-proceed from TDV PASS to Step 6.
+- Skipping the user approval gate (Step 3.5) — after research completes, the user must
+  approve the plan before decomposition into tasks. Do not auto-proceed to the Architect.

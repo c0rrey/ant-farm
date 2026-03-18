@@ -31,11 +31,11 @@ Planning Workflow                    Execution Workflow
      |                                    |
   Foragers (4x parallel research)      SSV gate
      |                                    |
-  Architect (decomposition)            Pantry (prompt composition)
+  User approval gate                   Pantry (prompt composition)
      |                                    |
-  TDV gate                             CCO gate (prompt audit)
+  Architect (decomposition)            CCO gate (prompt audit)
      |                                    |
-  User approval gate                   Dirt Pushers (up to 7 parallel)
+  TDV gate                             Dirt Pushers (up to 7 parallel)
      |                                    |
   .crumbs/tasks.jsonl                  WWD + DMVDC gates (scope + substance)
                                           |
