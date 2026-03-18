@@ -33,13 +33,13 @@ Planning Workflow                    Execution Workflow
      |                                    |
   Architect (decomposition)            Pantry (prompt composition)
      |                                    |
-  .crumbs/tasks.jsonl  ────────►       CCO gate (prompt audit)
+  TDV gate                             CCO gate (prompt audit)
+     |                                    |
+  User approval gate                   Dirt Pushers (implementation, up to 7 parallel)
+     |                                    |
+  .crumbs/tasks.jsonl  ────────►       WWD + DMVDC gates (scope + substance verification)
                                           |
-                                       Dirt Pushers (implementation, up to 7 parallel)
-                                          |
-                                       WWD + DMVDC gates (scope + substance verification)
-                                          |
-                                       Nitpickers (4x parallel review) + Big Head (consolidation)
+                                       Nitpickers (4+ parallel review) + Big Head (consolidation)
                                           |
                                        CCB gate (consolidation audit)
                                           |
