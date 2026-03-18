@@ -19,7 +19,7 @@ All session-scoped artifacts go here (6 subdirectories total; `review-reports/` 
 - `previews/` — combined prompt previews written by Pantry
 - `prompts/` — full task and review prompt files written by Pantry
 - `pc/` — Pest Control checkpoint artifact files
-- `summaries/` — Dirt Pusher summary docs
+- `summaries/` — Crumb Gatherer summary docs
 - `review-reports/` — Nitpicker and Big Head reports (created lazily at Step 3b-iii via `mkdir -p`, not at Step 0)
 
 Root-level artifacts in `${SESSION_DIR}`:
