@@ -240,6 +240,19 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# Preflight: team-size check.
+# Total expected team members = reviewer instances + Big Head + Pest Control.
+# Claude Code supports at most 15 concurrent agents; exceeding this silently
+# drops agents. Error early rather than silently under-review.
+# ---------------------------------------------------------------------------
+EXPECTED_TEAM_SIZE=$(( ${#ACTIVE_REVIEW_TYPES[@]} + 2 ))
+if [ "$EXPECTED_TEAM_SIZE" -gt 15 ]; then
+    echo "ERROR: Team size check failed: expected_team_size=${EXPECTED_TEAM_SIZE} (${#ACTIVE_REVIEW_TYPES[@]} reviewer instances + Big Head + Pest Control) exceeds the 15-agent ceiling." >&2
+    echo "Reduce REVIEW_SPLIT_THRESHOLD or limit the number of changed files per session." >&2
+    exit 1
+fi
+
+# ---------------------------------------------------------------------------
 # Helper: extract agent-facing section from a skeleton template file
 # (everything after the line containing only "---")
 # ---------------------------------------------------------------------------

@@ -397,6 +397,136 @@ run_test "round2_never_partitions" '
 '
 
 # ---------------------------------------------------------------------------
+# Test 10: Return table emits one row per split instance (8 rows for 20-file/threshold-8)
+# ---------------------------------------------------------------------------
+run_test "return_table_one_row_per_split_instance" '
+    session="$(make_session)"
+    # 20 files, threshold 8 → clarity-1,2,3 + edge-cases + correctness + drift-1,2,3 = 8 rows
+    files_arg="$(write_files_list "$session" \
+        f01.sh f02.sh f03.sh f04.sh f05.sh f06.sh f07.sh f08.sh \
+        f09.sh f10.sh f11.sh f12.sh f13.sh f14.sh f15.sh f16.sh \
+        f17.sh f18.sh f19.sh f20.sh)"
+
+    output="$(run_script "$session" "$files_arg" 1 8)"
+
+    # Extract only the table rows (lines starting with "| " but not the header/separator)
+    row_count="$(printf '%s\n' "$output" | grep "^| " | grep -v "Review Type" | grep -v "\-\-\-" | wc -l | tr -d " ")"
+    if [ "$row_count" -ne 8 ]; then
+        echo "ASSERTION FAILED: expected 8 return table rows, got $row_count" >&2
+        exit 1
+    fi
+
+    # Verify each split instance has a row
+    for t in clarity-1 clarity-2 clarity-3 edge-cases correctness drift-1 drift-2 drift-3; do
+        if ! printf "%s\n" "$output" | grep -qF "| ${t} |"; then
+            echo "ASSERTION FAILED: return table missing row for $t" >&2
+            exit 1
+        fi
+    done
+
+    # Verify report path pattern: {type}-review-{timestamp}.md (e.g., clarity-1-review-...)
+    for t in clarity-1 drift-2; do
+        if ! printf "%s\n" "$output" | grep -qF "${t}-review-20260317-120000.md"; then
+            echo "ASSERTION FAILED: return table missing correct report path for $t" >&2
+            exit 1
+        fi
+    done
+
+    rm -rf "$session"
+'
+
+# ---------------------------------------------------------------------------
+# Test 11: Big Head expected_paths lists one path per split instance
+# ---------------------------------------------------------------------------
+run_test "big_head_expected_paths_per_split_instance" '
+    session="$(make_session)"
+    # 20 files, threshold 8 → 8 instances in ACTIVE_REVIEW_TYPES
+    files_arg="$(write_files_list "$session" \
+        f01.sh f02.sh f03.sh f04.sh f05.sh f06.sh f07.sh f08.sh \
+        f09.sh f10.sh f11.sh f12.sh f13.sh f14.sh f15.sh f16.sh \
+        f17.sh f18.sh f19.sh f20.sh)"
+
+    run_script "$session" "$files_arg" 1 8 >/dev/null
+
+    brief="$session/prompts/review-big-head-consolidation.md"
+
+    # Count lines in the "Expected report paths" section
+    path_count="$(awk "/Expected report paths/,/^$/" "$brief" | grep -c "^- " || true)"
+    if [ "$path_count" -ne 8 ]; then
+        echo "ASSERTION FAILED: Big Head brief expected_paths has $path_count entries, want 8" >&2
+        exit 1
+    fi
+
+    # Each split instance must have its own entry
+    for t in clarity-1 clarity-2 clarity-3 drift-1 drift-2 drift-3; do
+        if ! grep -qF "${t}-review-20260317-120000.md" "$brief"; then
+            echo "ASSERTION FAILED: Big Head brief missing path for $t" >&2
+            exit 1
+        fi
+    done
+
+    rm -rf "$session"
+'
+
+# ---------------------------------------------------------------------------
+# Test 12: Preflight team-size check — errors when team would exceed 15
+# ---------------------------------------------------------------------------
+run_test "preflight_team_size_exceeds_15_errors" '
+    session="$(make_session)"
+    # threshold=1, 14 files → 14 partitions × 2 (clarity+drift) + edge-cases + correctness = 30 types
+    # 30 + 2 (Big Head + Pest Control) = 32 > 15 → must error
+    files_arg="$(write_files_list "$session" \
+        f01.sh f02.sh f03.sh f04.sh f05.sh f06.sh f07.sh \
+        f08.sh f09.sh f10.sh f11.sh f12.sh f13.sh f14.sh)"
+
+    rc=0
+    stderr_out="$(env REVIEW_SPLIT_THRESHOLD=1 bash "$SCRIPT" \
+        "$session" "abc1234..HEAD" "$files_arg" "AF-1" \
+        "20260317-120000" "1" \
+        "$NITPICKER_SKELETON" "$BIG_HEAD_SKELETON" 2>&1 >/dev/null)" || rc=$?
+
+    if [ "$rc" -eq 0 ]; then
+        echo "ASSERTION FAILED: expected non-zero exit for team size > 15, got 0" >&2
+        exit 1
+    fi
+
+    if ! printf "%s\n" "$stderr_out" | grep -qF "Team size check failed"; then
+        echo "ASSERTION FAILED: expected team size error message, got: $stderr_out" >&2
+        exit 1
+    fi
+
+    rm -rf "$session"
+'
+
+# ---------------------------------------------------------------------------
+# Test 13: Preflight team-size check — passes for exactly 13 reviewer instances (=15 total)
+# ---------------------------------------------------------------------------
+run_test "preflight_team_size_exactly_15_passes" '
+    session="$(make_session)"
+    # threshold=1, 5 files → 5 clarity + 5 drift + edge-cases + correctness = 12
+    # Hmm, 12 + 2 = 14 ≤ 15 (still under). Use threshold=1 with 6 files:
+    # 6 clarity-1..6 + 6 drift-1..6 + edge-cases + correctness = 14 types
+    # But 14 + 2 = 16 > 15 — that would fail. Need exactly 13 types.
+    # threshold=1, 5 files: 5 clarity + 5 drift + 2 = 12 types + 2 = 14 ≤ 15 → passes
+    # threshold=2, 7 files: ceil(7/2)=4, 4 clarity + 4 drift + 2 = 10 types + 2 = 12 ≤ 15 → passes
+    # Let us test threshold=1 with 5 files: ACTIVE_REVIEW_TYPES size = 5+5+2 = 12, team = 14
+    files_arg="$(write_files_list "$session" a.sh b.sh c.sh d.sh e.sh)"
+
+    rc=0
+    env REVIEW_SPLIT_THRESHOLD=1 bash "$SCRIPT" \
+        "$session" "abc1234..HEAD" "$files_arg" "AF-1" \
+        "20260317-120000" "1" \
+        "$NITPICKER_SKELETON" "$BIG_HEAD_SKELETON" >/dev/null 2>&1 || rc=$?
+
+    if [ "$rc" -ne 0 ]; then
+        echo "ASSERTION FAILED: expected success when team size = 14 (≤ 15), got rc=$rc" >&2
+        exit 1
+    fi
+
+    rm -rf "$session"
+'
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 echo ""
