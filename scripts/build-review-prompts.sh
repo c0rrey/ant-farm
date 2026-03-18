@@ -136,14 +136,107 @@ mkdir -p "${SESSION_DIR}/review-reports" || {
 }
 
 # ---------------------------------------------------------------------------
-# Determine which review types to produce based on round
+# Partitioning threshold (env var, default 8)
 # ---------------------------------------------------------------------------
 
+REVIEW_SPLIT_THRESHOLD="${REVIEW_SPLIT_THRESHOLD:-8}"
+
+# ---------------------------------------------------------------------------
+# Determine which review types to produce based on round, applying
+# file partitioning for Clarity and Drift when file count > threshold.
+# ---------------------------------------------------------------------------
+
+# Sort CHANGED_FILES with LC_ALL=C for reproducible partition assignments.
+CHANGED_FILES_SORTED="$(printf '%s\n' "$CHANGED_FILES" | LC_ALL=C sort)"
+
+# Count non-empty lines in the sorted list.
+FILE_COUNT=0
+while IFS= read -r line; do
+    [[ -n "$line" ]] && (( FILE_COUNT++ )) || true
+done <<< "$CHANGED_FILES_SORTED"
+
+# Per-type file list storage: stored in dynamically-named variables
+# REVIEW_FILES__<key> where <key> is the review type with hyphens replaced by underscores.
+# This avoids bash 4+ associative arrays and works on bash 3.2 (macOS default).
+#
+# set_review_files TYPE FILES — stores file list for a review type.
+set_review_files() {
+    local key="${1//-/_}"
+    printf -v "REVIEW_FILES__${key}" '%s' "$2"
+}
+
+# get_review_files TYPE — prints the stored file list for a review type.
+get_review_files() {
+    local key="${1//-/_}"
+    local varname="REVIEW_FILES__${key}"
+    printf '%s' "${!varname}"
+}
+
 if [ "$REVIEW_ROUND" -eq 1 ]; then
-    ACTIVE_REVIEW_TYPES=(clarity edge-cases correctness drift)
+    if [ "$FILE_COUNT" -gt "$REVIEW_SPLIT_THRESHOLD" ]; then
+        # Partition files into groups of at most REVIEW_SPLIT_THRESHOLD.
+        # Read sorted files into an indexed array.
+        ALL_FILES_ARRAY=()
+        while IFS= read -r line; do
+            [[ -n "$line" ]] && ALL_FILES_ARRAY+=("$line")
+        done <<< "$CHANGED_FILES_SORTED"
+
+        # Compute number of partitions (ceiling division).
+        NUM_PARTITIONS=$(( (FILE_COUNT + REVIEW_SPLIT_THRESHOLD - 1) / REVIEW_SPLIT_THRESHOLD ))
+
+        ACTIVE_REVIEW_TYPES=()
+
+        # Helper: build a newline-separated slice of ALL_FILES_ARRAY[start .. start+count-1].
+        make_slice() {
+            local start="$1"
+            local count="$2"
+            local i end result=""
+            end=$(( start + count ))
+            for (( i=start; i<end && i<${#ALL_FILES_ARRAY[@]}; i++ )); do
+                result="${result}${ALL_FILES_ARRAY[$i]}"$'\n'
+            done
+            # Strip trailing newline
+            printf '%s' "${result%$'\n'}"
+        }
+
+        # Add split Clarity instances.
+        for (( part=1; part<=NUM_PARTITIONS; part++ )); do
+            type_name="clarity-${part}"
+            start=$(( (part - 1) * REVIEW_SPLIT_THRESHOLD ))
+            slice="$(make_slice "$start" "$REVIEW_SPLIT_THRESHOLD")"
+            set_review_files "$type_name" "$slice"
+            ACTIVE_REVIEW_TYPES+=("$type_name")
+        done
+
+        # Edge Cases gets the full list (never partitioned).
+        ACTIVE_REVIEW_TYPES+=(edge-cases)
+        set_review_files "edge-cases" "$CHANGED_FILES_SORTED"
+
+        # Correctness gets the full list (never partitioned).
+        ACTIVE_REVIEW_TYPES+=(correctness)
+        set_review_files "correctness" "$CHANGED_FILES_SORTED"
+
+        # Add split Drift instances.
+        for (( part=1; part<=NUM_PARTITIONS; part++ )); do
+            type_name="drift-${part}"
+            start=$(( (part - 1) * REVIEW_SPLIT_THRESHOLD ))
+            slice="$(make_slice "$start" "$REVIEW_SPLIT_THRESHOLD")"
+            set_review_files "$type_name" "$slice"
+            ACTIVE_REVIEW_TYPES+=("$type_name")
+        done
+    else
+        # Below threshold: single instance per type (unchanged behavior).
+        ACTIVE_REVIEW_TYPES=(clarity edge-cases correctness drift)
+        for rt in "${ACTIVE_REVIEW_TYPES[@]}"; do
+            set_review_files "$rt" "$CHANGED_FILES_SORTED"
+        done
+    fi
 else
-    # Round 2+: correctness and edge-cases only
+    # Round 2+: correctness and edge-cases only (never partitioned).
     ACTIVE_REVIEW_TYPES=(correctness edge-cases)
+    for rt in "${ACTIVE_REVIEW_TYPES[@]}"; do
+        set_review_files "$rt" "$CHANGED_FILES_SORTED"
+    done
 fi
 
 # ---------------------------------------------------------------------------
@@ -169,7 +262,10 @@ fi
 
 extract_focus_block() {
     local review_type="$1"
-    awk -v type="$review_type" '
+    # Strip trailing -N suffix from split instance names (e.g., clarity-1 -> clarity,
+    # drift-2 -> drift) before looking up the focus block marker.
+    local base_type="${review_type%-[0-9]*}"
+    awk -v type="$base_type" '
         $0 ~ "<!-- FOCUS: " type " -->" { found=1; next }
         $0 ~ "<!-- /FOCUS: " type " -->" { found=0; next }
         found { print }
@@ -242,6 +338,13 @@ build_nitpicker_prompt() {
     local report_output_path="${SESSION_DIR}/review-reports/${review_type}-review-${TIMESTAMP}.md"
     local data_file_path="${out_prompt}"
 
+    # Resolve the file list for this review type.
+    # Split instances (e.g. clarity-1) have a subset; non-split types use full list.
+    local type_files
+    type_files="$(get_review_files "$review_type")"
+    # Fall back to full sorted list if nothing was stored (safety guard).
+    [[ -z "$type_files" ]] && type_files="$CHANGED_FILES_SORTED"
+
     # 1. Extract agent-facing section from master template
     local body
     body="$(extract_agent_section "$NITPICKER_SKELETON")"
@@ -266,7 +369,7 @@ build_nitpicker_prompt() {
         echo "**Review round**: ${REVIEW_ROUND}"
         echo ""
         echo "**Files to review**:"
-        echo "${CHANGED_FILES}"
+        echo "${type_files}"
         echo ""
         echo "## Focus"
         echo ""
@@ -291,7 +394,7 @@ build_nitpicker_prompt() {
     fill_slot "{{REPORT_OUTPUT_PATH}}"  "$report_output_path"    "$out_prompt"
     fill_slot "{{REVIEW_ROUND}}"        "$REVIEW_ROUND"          "$out_prompt"
     fill_slot "{{COMMIT_RANGE}}"        "$COMMIT_RANGE"          "$out_prompt"
-    fill_slot "{{CHANGED_FILES}}"       "$CHANGED_FILES"         "$out_prompt"
+    fill_slot "{{CHANGED_FILES}}"       "$type_files"            "$out_prompt"
     fill_slot "{{TASK_IDS}}"            "$TASK_IDS"              "$out_prompt"
     fill_slot "{{TIMESTAMP}}"           "$TIMESTAMP"             "$out_prompt"
 
