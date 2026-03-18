@@ -11,7 +11,7 @@ It is not an open-ended autonomous coding agent. It is a constrained orchestrati
 > - Decomposes specs into dependency-aware tasks, then executes them in parallel waves
 > - Six verification checkpoints block progression if agents cut corners or drift out of scope
 > - The orchestrator (the Queen) never reads source code. It reads briefings, verdicts, and commit messages. Everything else is delegated.
-> - Four parallel code reviewers consolidate findings by root cause, file fix tasks, and re-review until convergence
+> - Four parallel code reviewers (with automatic split-instancing for large file sets) consolidate findings by root cause, file fix tasks, and re-review until convergence
 > - Every session produces a full artifact trail: metadata, prompts, summaries, review reports, checkpoint audits, exec summary, and CHANGELOG entry
 > - If something goes wrong, the system escalates to you with context instead of retrying forever
 
@@ -138,7 +138,7 @@ ant-farm/
 │   ├── ant-farm-scout-organizer.md
 │   ├── ant-farm-pantry-impl.md
 │   ├── ant-farm-pest-control.md
-│   ├── ant-farm-nitpicker.md
+│   ├── ant-farm-nitpicker-{clarity,edge-cases,correctness,drift}.md
 │   ├── ant-farm-big-head.md
 │   ├── ant-farm-architect.md
 │   ├── ant-farm-forager.md
@@ -244,16 +244,18 @@ Failed DMVDC means the agent is resumed with specific gaps, re-verified, and esc
 
 ### Step 3b: Quality Review
 
-After all implementation and DMVDC checks pass, the Queen enters a mandatory review phase with a Nitpicker team (4 parallel reviewers + Big Head + Pest Control):
+After all implementation and DMVDC checks pass, the Queen enters a mandatory review phase with a Nitpicker team (4+ parallel reviewers + Big Head + Pest Control):
 
-| Review | Severity Focus |
-|--------|---------------|
-| **Clarity** | P3: readability, naming, documentation |
-| **Edge Cases** | P2: input validation, error handling, boundary conditions |
-| **Correctness** | P1-P2: acceptance criteria, logic errors, regressions |
-| **Drift** | P3: stale cross-file references, broken assumptions |
+| Review | Severity Focus | Model |
+|--------|---------------|-------|
+| **Clarity** | P3: readability, naming, documentation | sonnet |
+| **Edge Cases** | P2: input validation, error handling, boundary conditions | opus |
+| **Correctness** | P1-P2: acceptance criteria, logic errors, regressions | opus |
+| **Drift** | P3: stale cross-file references, broken assumptions | sonnet |
 
-Big Head reads all 4 reports, merges duplicates by root cause, and files one issue per root cause. Pest Control runs DMVDC + CCB inside the team before results return to the Queen.
+When the changed-file count exceeds `REVIEW_SPLIT_THRESHOLD` (default 8), Clarity and Drift are split into multiple instances (e.g., `clarity-1`, `clarity-2`) with partitioned file subsets. Correctness and Edge Cases always receive the full file list.
+
+Big Head reads all reports, merges duplicates by root cause, and files one issue per root cause. Pest Control runs DMVDC + CCB inside the team before results return to the Queen.
 
 If P1/P2 issues are found, the system enters a review/fix/re-review loop until convergence, deferral, or the round cap.
 
@@ -273,7 +275,10 @@ Agent definitions live in `agents/` and are installed to `~/.claude/agents/` by 
 | `ant-farm-scout-organizer` | Pre-flight recon: task discovery, dependency analysis, execution strategy |
 | `ant-farm-pantry-impl` | Prompt composer: builds task briefs and combined previews |
 | `ant-farm-pest-control` | Verification auditor: runs all six checkpoints |
-| `ant-farm-nitpicker` | Code reviewer: file:line specificity, calibrated severity |
+| `ant-farm-nitpicker-clarity` | Clarity reviewer: readability, naming, documentation |
+| `ant-farm-nitpicker-edge-cases` | Edge cases reviewer: input validation, error handling, boundary conditions |
+| `ant-farm-nitpicker-correctness` | Correctness reviewer: acceptance criteria, logic errors, regressions |
+| `ant-farm-nitpicker-drift` | Drift reviewer: stale cross-file references, broken assumptions |
 | `ant-farm-big-head` | Consolidation: merges and deduplicates findings across Nitpickers |
 | `ant-farm-architect` | Spec decomposition: creates trails, crumbs, and dependencies |
 | `ant-farm-forager` | Parallel research: investigates one focus area against a spec |
