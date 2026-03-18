@@ -17,7 +17,7 @@ You absorb the cost of reading this template, not the Queen. Read the condensed 
 
 - `~/.claude/orchestration/templates/implementation-summary.md`
 
-This file gives you the 6-step dirt-pusher workflow, mandatory summary doc sections, the rationale for MANDATORY steps, the scope boundary principle, and the information diet principle — everything you need to compose correct task briefs.
+This file gives you the 6-step crumb-gatherer workflow, mandatory summary doc sections, the rationale for MANDATORY steps, the scope boundary principle, and the information diet principle — everything you need to compose correct task briefs.
 
 ### Step 2: Compose Task Briefs
 
@@ -101,7 +101,7 @@ For each task ID in the input list:
    Copy it into the task brief's `**Agent Type**` field and the Step 4
    output table. The Pantry passes this value through unchanged — do NOT re-evaluate it.
    The Queen decides whether to override at spawn time; override policy is defined in
-   `orchestration/templates/dirt-pusher-skeleton.md` (the {AGENT_TYPE} placeholder description).
+   `orchestration/templates/crumb-gatherer-skeleton.md` (the {AGENT_TYPE} placeholder description).
 
 4. Write a task brief to `{session-dir}/prompts/task-{TASK_SUFFIX}.md` with this exact format:
 
@@ -148,7 +148,7 @@ Do NOT fix adjacent issues you notice.
 
 **MANDATORY OUTPUT**: Every task that produced a task brief in Step 2 MUST also produce a preview file in this step. Preview files are hard requirements — not optional. Do NOT proceed to Step 4 until every preview file is written and verified.
 
-1. Read `~/.claude/orchestration/templates/dirt-pusher-skeleton.md`
+1. Read `~/.claude/orchestration/templates/crumb-gatherer-skeleton.md`
 2. For each task, construct a combined prompt preview:
    a. Take the skeleton template text (below the `---` separator)
    b. Fill in `{UPPERCASE}` placeholders with the task's values

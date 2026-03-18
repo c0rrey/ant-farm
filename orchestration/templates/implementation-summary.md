@@ -1,9 +1,9 @@
 <!-- Reader: the Pantry (implementation mode). Condensed extract of implementation.md. -->
-# Dirt Pusher Workflow — Pantry Reference
+# Crumb Gatherer Workflow — Pantry Reference
 
 ## The 6-Step Workflow
 
-Every dirt pusher executes these steps in order. Task briefs you compose must instruct agents to follow them exactly:
+Every crumb gatherer executes these steps in order. Task briefs you compose must instruct agents to follow them exactly:
 
 1. **Claim** — `crumb show <id>` + `crumb update <id> --status=in_progress`
 2. **Design (MANDATORY)** — 4+ genuinely distinct approaches with pros/cons; document choice before coding

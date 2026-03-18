@@ -1,9 +1,9 @@
 <!-- Reader: the Pantry (implementation mode). The Queen does NOT read this file. -->
-# Dirt Pusher Templates
+# Crumb Gatherer Templates
 
 ## Agent Prompt Template
 
-⚠️ (MANDATORY): Every spawned Dirt Pusher MUST receive ALL sections below. All 6 steps are required — skipping Step 2 (Design), Step 4 (Correctness Review), or Step 6 (Summary Doc) is a process failure. Copy this template verbatim and fill in the placeholders.
+⚠️ (MANDATORY): Every spawned Crumb Gatherer MUST receive ALL sections below. All 6 steps are required — skipping Step 2 (Design), Step 4 (Correctness Review), or Step 6 (Summary Doc) is a process failure. Copy this template verbatim and fill in the placeholders.
 
 ```markdown
 Execute {task-type} for {file-or-component}:
@@ -59,7 +59,7 @@ After implementation, review EVERY file you changed or created:
 - `git pull --rebase && git add <files> && git commit -m "<type>: <description> (<task-id>)"`
 - (MANDATORY): Include the task ID in parentheses at the end of the commit message (e.g., `fix: handle None input (my-project-abc)`)
 - (MANDATORY) **Conditional Re-Review**: If `git pull --rebase` resolves any merge conflicts, you MUST repeat Step 4 (Per-File Correctness Review) on all files affected by the conflict resolution before committing. Conflict resolution can silently change code semantics. Verify the merged files are correct before proceeding.
-- Record your commit hash in the summary doc (Step 6) so Dirt Moved vs Dirt Claimed (DMVDC) can identify your commits without scanning `git log`
+- Record your commit hash in the summary doc (Step 6) so Crumbs Moved vs Crumbs Claimed (CMVCC) can identify your commits without scanning `git log`
 
 ## Step 6: Write Summary Doc (MANDATORY)
 Write a structured summary to `{session-dir}/summaries/{task-id}.md` using the Write tool.
@@ -121,7 +121,7 @@ Focus: {specific guidance for this file/component}
 
 ## Scope Boundary Insert
 
-**When to use**: For all Dirt Pushers, especially when multiple tasks touch the same file.
+**When to use**: For all Crumb Gatherers, especially when multiple tasks touch the same file.
 
 **Why**: Agents are helpful by nature and will fix adjacent problems they notice ("while I'm here..."). This creates work attribution scrambling and misleading audit trails.
 

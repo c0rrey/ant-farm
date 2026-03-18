@@ -50,9 +50,9 @@ Read `orchestration/agent-catalog.md` once to get the full agent list.
 Extract `Agent Name`, `Description`, and `File Path` columns from the catalog table.
 **Also track the file path for each agent** — you will use these paths only on tie-breaking (Step 3, below).
 
-All agents appear in your internal catalog for reference, but implementation candidates are separate from orchestration agents. Orchestration agents (ant-farm-scout-organizer, ant-farm-pantry-impl, ant-farm-pest-control, etc.) coordinate the work; they do not implement tasks. Therefore, they are excluded from Dirt Pusher recommendations. Implementation candidates are agents who will execute tasks (python-pro, debugger, etc.).
+All agents appear in your internal catalog for reference, but implementation candidates are separate from orchestration agents. Orchestration agents (ant-farm-scout-organizer, ant-farm-pantry-impl, ant-farm-pest-control, etc.) coordinate the work; they do not implement tasks. Therefore, they are excluded from Crumb Gatherer recommendations. Implementation candidates are agents who will execute tasks (python-pro, debugger, etc.).
 
-**Exclusions from Dirt Pusher recommendations** (orchestration agents):
+**Exclusions from Crumb Gatherer recommendations** (orchestration agents):
 ant-farm-scout-organizer, ant-farm-pantry-impl, ant-farm-pest-control, ant-farm-nitpicker-clarity, ant-farm-nitpicker-edge-cases, ant-farm-nitpicker-correctness, ant-farm-nitpicker-drift, ant-farm-big-head
 
 Build an internal two-tier catalog (keep in context, do NOT write to disk):

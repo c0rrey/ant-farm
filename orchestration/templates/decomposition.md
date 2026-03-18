@@ -44,7 +44,7 @@ descriptions. Note the exact files affected — do NOT propose new file structur
 that conflict with what is already there.
 
 **Greenfield** (files do not exist): Propose the file paths the implementation
-should create. Note them as "new file" in crumb descriptions so dirt pushers
+should create. Note them as "new file" in crumb descriptions so crumb gatherers
 know they are creating, not editing.
 
 Build an internal codebase map:

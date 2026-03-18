@@ -8,7 +8,7 @@ Do NOT include this instruction block in the spawn prompt.
 
 **Model**: The Task tool call MUST include `model: "opus"`. The Architect synthesizes
 multiple research briefs against a spec and makes design decisions that shape all
-downstream dirt-pusher work — this requires the most capable model.
+downstream crumb-gatherer work — this requires the most capable model.
 
 **Prerequisites**: Before spawning the Architect, verify ALL of the following exist:
 - `{DECOMPOSE_DIR}/spec.md` (Surveyor output)
@@ -123,7 +123,7 @@ requirements to fill gaps.
 - **Brownfield** (file exists): use the exact path; specify line ranges if known.
   Do NOT propose restructuring files that already exist unless the spec requires it.
 - **Greenfield** (file does not exist): mark the path as "new file" in crumb
-  descriptions so dirt pushers know they are creating, not editing.
+  descriptions so crumb gatherers know they are creating, not editing.
 - **Mixed**: handle each file independently — existing files are brownfield,
   proposed new files are greenfield.
 

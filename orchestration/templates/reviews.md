@@ -3,12 +3,12 @@
 
 ## Transition Gate Checklist
 
-**When**: After all Dirt Pushers from Step 3 complete across ALL trails, BEFORE launching the Nitpickers.
+**When**: After all Crumb Gatherers from Step 3 complete across ALL trails, BEFORE launching the Nitpickers.
 
 Verify all 4 criteria before proceeding to team launch. These checks span ALL trails worked in this session:
 
-1. **All Dirt Pushers completed across ALL trails** — none stuck or errored (check the Queen's state file for every trail)
-2. **Dirt Moved vs Dirt Claimed (DMVDC) PASS for every agent** — verify at least one artifact exists at `{session-dir}/pc/pc-{task-id}-dmvdc-*.md`; if multiple files match (e.g., after retries), check the most recent by timestamp — it must contain an explicit `PASS` verdict, not merely exist
+1. **All Crumb Gatherers completed across ALL trails** — none stuck or errored (check the Queen's state file for every trail)
+2. **Crumbs Moved vs Crumbs Claimed (CMVCC) PASS for every agent** — verify at least one artifact exists at `{session-dir}/pc/pc-{task-id}-cmvcc-*.md`; if multiple files match (e.g., after retries), check the most recent by timestamp — it must contain an explicit `PASS` verdict, not merely exist
 3. **The Queen's state file updated** — all completions tracked, checkpoint results recorded for all trails
 4. **Git log shows expected commits** — run `git log --oneline -N` (where N = total number of agents across all trails) to confirm commits exist
 
@@ -39,7 +39,7 @@ After the transition gate passes, the Queen launches **the Nitpickers** using **
 - **Nitpickers — Correctness, Edge Cases**: `opus` — higher-judgment reviews requiring deeper reasoning
 - **Nitpickers — Clarity, Drift**: `sonnet` — lower-judgment reviews sufficient for code review and finding cataloging
 - **Big Head**: `opus` — consolidation requires high-judgment dedup and root-cause grouping
-- **Pest Control (team member)**: `sonnet` — runs DMVDC (judgment-heavy) inside the team; sonnet needed for substance verification
+- **Pest Control (team member)**: `sonnet` — runs CMVCC (judgment-heavy) inside the team; sonnet needed for substance verification
 
 ### Review Type Canonical Names
 
@@ -81,7 +81,7 @@ Task IDs for acceptance criteria: {list of all task IDs worked this session}
 3. Correctness Review (P1-P2) — see prompt below; model: opus
 4. Drift Review (P3) — see prompt below; model: sonnet
 5. Big Head (consolidation) — see prompt from big-head-skeleton.md; model specified in Big Head Consolidation Protocol section
-6. Pest Control (checkpoint validator) — receives consolidated report path from Big Head via SendMessage; runs DMVDC and CCB checkpoints and replies with verdict
+6. Pest Control (checkpoint validator) — receives consolidated report path from Big Head via SendMessage; runs CMVCC and CCB checkpoints and replies with verdict
 ~~~
 
 Split instance example (2 Clarity + 2 Drift splits) — 8 members:
@@ -105,7 +105,7 @@ Task IDs for acceptance criteria: {list of all task IDs worked this session}
 5. Drift Review part 1 (P3) — drift-1; file subset A from return table; model: sonnet
 6. Drift Review part 2 (P3) — drift-2; file subset B from return table; model: sonnet
 7. Big Head (consolidation) — see prompt from big-head-skeleton.md; model specified in Big Head Consolidation Protocol section
-8. Pest Control (checkpoint validator) — receives consolidated report path from Big Head via SendMessage; runs DMVDC and CCB checkpoints and replies with verdict
+8. Pest Control (checkpoint validator) — receives consolidated report path from Big Head via SendMessage; runs CMVCC and CCB checkpoints and replies with verdict
 ~~~
 
 **Round 2+**: the Nitpicker team is **persistent** — do NOT create a new team. Re-task the existing Correctness and Edge Cases reviewers via named-member SendMessage (see Round Transition via SendMessage section). Big Head and Pest Control remain in the team and are re-tasked the same way. The team has at minimum 4 active members (Correctness + Edge Cases + Big Head + Pest Control); Clarity and Drift reviewers — including all split instances (e.g., `clarity-1`, `clarity-2`, `drift-1`, `drift-2`) — remain idle and are NOT re-tasked.
@@ -161,7 +161,7 @@ re-tasked — they remain idle. Do NOT send them messages in round 2+.
 
 4. **Quality assurance**:
    - CCO still runs on all 4 review prompts (before spawning reviewers)
-   - DMVDC and CCB still run on review artifacts (after Big Head completes)
+   - CMVCC and CCB still run on review artifacts (after Big Head completes)
    - Final output format identical to Team Protocol
 
 #### Trade-offs of Fallback Mode
@@ -863,7 +863,7 @@ Findings merged:
 ```
 SendMessage(
   to="ant-farm-pest-control",
-  message="Consolidated report ready. Path: {session-dir}/review-reports/review-consolidated-{timestamp}.md. Please run DMVDC and CCB checkpoints and reply with PASS or FAIL + specifics."
+  message="Consolidated report ready. Path: {session-dir}/review-reports/review-consolidated-{timestamp}.md. Please run CMVCC and CCB checkpoints and reply with PASS or FAIL + specifics."
 )
 ```
 
@@ -876,7 +876,7 @@ SendMessage(
   ```
   SendMessage(
     to="ant-farm-pest-control",
-    message="Retry request: Consolidated report ready at {CONSOLIDATED_OUTPUT_PATH}. Please run DMVDC and CCB checkpoints and reply with PASS or FAIL + specifics. (First message sent — no reply received after 2 turns.)"
+    message="Retry request: Consolidated report ready at {CONSOLIDATED_OUTPUT_PATH}. Please run CMVCC and CCB checkpoints and reply with PASS or FAIL + specifics. (First message sent — no reply received after 2 turns.)"
   )
   ```
   Then end your turn again and await the reply.
@@ -1091,18 +1091,18 @@ Fix agents spawn into the Nitpicker team with the following naming convention:
 
 | Role | Round 1 name | Round 2+ name |
 |---|---|---|
-| Fix Dirt Pusher N | `fix-dp-1`, `fix-dp-2`, ... | `fix-dp-r2-1`, `fix-dp-r2-2`, ... |
+| Fix Crumb Gatherer N | `fix-dp-1`, `fix-dp-2`, ... | `fix-dp-r2-1`, `fix-dp-r2-2`, ... |
 | Fix PC — What Was Done | `fix-pc-wwd` | `fix-pc-wwd-r2` |
-| Fix PC — DMVDC | `fix-pc-dmvdc` | `fix-pc-dmvdc-r2` |
+| Fix PC — CMVCC | `fix-pc-cmvcc` | `fix-pc-cmvcc-r2` |
 
 Round suffix (`-r2`, `-r3`, etc.) increments with each review round to avoid name collisions within the persistent team.
 
 #### Fix DP Prompt Structure
 
-Fix Dirt Pushers receive a lean prompt. The crumb is the source of truth — the DP does not need a full brief composed by the Queen.
+Fix Crumb Gatherers receive a lean prompt. The crumb is the source of truth — the CG does not need a full brief composed by the Queen.
 
 ```
-You are fix-dp-N, a fix Dirt Pusher in the Nitpicker team.
+You are fix-dp-N, a fix Crumb Gatherer in the Nitpicker team.
 
 Your task crumb: {crumb-id}
 Run: crumb show <crumb-id>
@@ -1129,10 +1129,10 @@ fix-dp-N  -->  [commit]  -->  SendMessage(fix-pc-wwd)
                                     |
                          PASS ------+------ FAIL
                           |                   |
-               SendMessage(fix-pc-dmvdc)   SendMessage(fix-dp-N) with specifics
+               SendMessage(fix-pc-cmvcc)   SendMessage(fix-dp-N) with specifics
                           |                   |
-                    fix-pc-dmvdc          fix-dp-N iterates (max 2 retries total)
-                    runs DMVDC                |
+                    fix-pc-cmvcc          fix-dp-N iterates (max 2 retries total)
+                    runs CMVCC                |
                           |             if retry limit hit → SendMessage(Queen) to escalate
                  PASS ----+---- FAIL
                   |              |
@@ -1141,11 +1141,11 @@ fix-dp-N  -->  [commit]  -->  SendMessage(fix-pc-wwd)
                               if retry limit hit → SendMessage(Queen) to escalate
 ```
 
-**Retry limit**: Each fix DP has a maximum of 2 retries total across both WWD and DMVDC failures. On the third failure, the DP sends a message to the Queen with the failure details and goes idle. The Queen escalates to the user.
+**Retry limit**: Each fix CG has a maximum of 2 retries total across both WWD and CMVCC failures. On the third failure, the CG sends a message to the Queen with the failure details and goes idle. The Queen escalates to the user.
 
 **fix-pc-wwd** (Haiku): Lightweight "What Was Done" check — verifies the commit touches only the files listed in the crumb, no stray edits, and the commit message is well-formed. Fast and cheap.
 
-**fix-pc-dmvdc** (Sonnet): Full Dirt Moved vs Dirt Claimed check — verifies the fix satisfies the crumb's acceptance criteria, tests pass, and no regressions introduced.
+**fix-pc-cmvcc** (Sonnet): Full Crumbs Moved vs Crumbs Claimed check — verifies the fix satisfies the crumb's acceptance criteria, tests pass, and no regressions introduced.
 
 #### Wave Composition
 
@@ -1157,13 +1157,13 @@ P1 and P2 fixes run in waves as follows:
 Wave 1: [P1 fix-dp tasks] + [P2 fix-dp tasks]    (concurrent, no file overlap)
 ```
 
-Unlike the old TDD workflow, P1 fixes do not require a separate test-writing wave in the persistent team design. The crumb's acceptance criteria serve as the verification specification; fix-pc-dmvdc enforces them.
+Unlike the old TDD workflow, P1 fixes do not require a separate test-writing wave in the persistent team design. The crumb's acceptance criteria serve as the verification specification; fix-pc-cmvcc enforces them.
 
-Spawn fix-pc-wwd and fix-pc-dmvdc once per round (they serve all fix DPs in that round via SendMessage). Do not re-spawn them per DP.
+Spawn fix-pc-wwd and fix-pc-cmvcc once per round (they serve all fix CGs in that round via SendMessage). Do not re-spawn them per CG.
 
 #### Round Transition via SendMessage
 
-After all fix DPs complete and fix-pc-dmvdc has issued PASS for each:
+After all fix CGs complete and fix-pc-cmvcc has issued PASS for each:
 
 1. **Re-task Correctness reviewer**: SendMessage to `correctness` with:
    - Review round: N+1
