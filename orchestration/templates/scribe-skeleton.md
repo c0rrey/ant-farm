@@ -112,8 +112,8 @@ Prepend a new entry to `{CHANGELOG_PATH}`. The entry is derived from the exec su
 **What to include**:
 - Session header line: `## YYYY-MM-DD — Session {SESSION_ID} ({short descriptive title})`
 - `### Summary` — one paragraph condensing the session's scope and outcome (draw from Observations; omit tactical detail)
-- `### Implementation` — the Work Completed bullets from the exec summary, grouped by wave if applicable
-- `### Review Fixes` — only if review-round auto-fixes occurred; list the RC bullets as in prior entries
+- `### Implementation` — the Work Completed bullets from the exec summary, grouped by wave if applicable. Each bullet MUST end with the commit hash in parentheses and backticks, e.g. (`abcdef1`). Get hashes from `git log --oneline {COMMIT_RANGE}`.
+- `### Review Fixes` — only if review-round auto-fixes occurred; list the fix task bullets with commit hashes in the same format
 - `### Review Statistics` — the review findings table from the exec summary
 
 **What to omit**:
@@ -131,11 +131,11 @@ Prepend a new entry to `{CHANGELOG_PATH}`. The entry is derived from the exec su
 
 ### Implementation ({wave label or summary})
 
-- **{task-id}**: {commit type}: {description of what changed and which files}
+- **{task-id}**: {commit type}: {description of what changed and which files} (`{commit-hash}`)
 
 ### Review Fixes ({round label})
 
-- **{RC-N}**: {commit type}: {description} ({file list})
+- **{RC-N}**: {commit type}: {description} ({file list}) (`{commit-hash}`)
 
 ### Review Statistics
 
