@@ -1,5 +1,36 @@
 # Changelog
 
+## 2026-03-18 — Session 20260317-203111 (Split-Instance Reviewer Support)
+
+### Summary
+
+Completed the split-instance reviewer feature across 10 tasks in 5 execution waves (~2h 5m). The primary work (AF-163–AF-170) added file-partitioning logic to `build-review-prompts.sh` so that Clarity and Drift reviewer prompts are split across multiple instances when the changed-file count exceeds `REVIEW_SPLIT_THRESHOLD`, while Correctness and Edge Cases always receive the full file list. Supporting changes updated model-assignment docs to reflect the mixed-model Nitpicker team (opus for Correctness/Edge Cases, sonnet for Clarity/Drift), revised Big Head templates for variable report counts and split-instance dedup, updated wiring docs and `RULES-review.md` for dynamic member lists, and added 18 integration tests. Review round 1 found 2 P2 issues (unvalidated env var, stale GLOSSARY entries) that were fixed and verified clean in round 2. 10 P3 deferred items were filed to the backlog. 11 commits total.
+
+### Implementation (Waves 1–5)
+
+- **AF-163**: docs: update Nitpicker model assignments — Correctness and Edge Cases now opus (`orchestration/reference/model-assignments.md`, `reviews.md`, `GLOSSARY.md`, `big-head-wiring.md`) (`3ca2c1d`)
+- **AF-164**: docs: specify opus model for Correctness and Edge Cases reviewers in RULES-review and reviews.md TeamCreate blocks (`orchestration/RULES-review.md`, `orchestration/templates/reviews.md`) (`fe54c05`)
+- **AF-165**: fix: audit and remove stale all-Sonnet Nitpicker references; revert out-of-scope Step 5.5 addition (`dependency-analysis.md`, `_archive/ORCHESTRATOR_DISCIPLINE.md`, `_archive/QUALITY_REVIEW_TEMPLATES.md`, `RULES-decompose.md`) (`7eceb15`, `fea5527`)
+- **AF-166**: feat: add file partitioning logic to build-review-prompts.sh with REVIEW_SPLIT_THRESHOLD env var and 9 unit tests (`scripts/build-review-prompts.sh`, `tests/test_build_review_prompts.sh`) (`3352948`)
+- **AF-167**: feat: add preflight team-size check and 4 tests for split instance return table and Big Head expected paths (`scripts/build-review-prompts.sh`, `tests/test_build_review_prompts.sh`) (`ed0579c`)
+- **AF-168**: feat: update Big Head skeleton for variable report count and split-instance dedup guidance (`orchestration/templates/big-head-skeleton.md`, `orchestration/reference/big-head-wiring.md`, `orchestration/templates/reviews.md`) (`c994be9`)
+- **AF-169**: docs: update wiring docs and RULES-review for split instance team setup — dynamic member lists, naming convention, idle semantics, named-member SendMessage (`orchestration/reference/big-head-wiring.md`, `orchestration/RULES-review.md`, `orchestration/templates/reviews.md`) (`21732e7`)
+- **AF-170**: test: add integration tests for split-instance file partitioning — 5 tests covering threshold boundaries, file-list coverage, and Big Head expected_paths (`tests/test_build_review_prompts_split.sh`) (`4b1820e`)
+
+### Review Fixes (Round 1 P2)
+
+- **AF-179**: fix: validate REVIEW_SPLIT_THRESHOLD is a positive integer — regex guard `^[1-9][0-9]*$` added after default assignment (`scripts/build-review-prompts.sh`) (`ee01178`)
+- **AF-180**: fix: update GLOSSARY.md stale Scribe and Nitpicker agent entries — `general-purpose` → `ant-farm-technical-writer` and unified file → four-file brace expansion (`orchestration/GLOSSARY.md`) (`1db08a0`)
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 13 files, 8 tasks | 0 | 2 | 10 | PASS WITH ISSUES |
+| 2 | 2 fix tasks | 0 | 0 | 0 | PASS |
+
+15 root causes consolidated (20 raw findings). 2 P2s auto-fixed; 10 P3s deferred to backlog (AF-181–AF-190); 3 skipped as cross-session duplicates.
+
 ## 2026-03-17 — Session 20260317-193045 (--from-file Feature, Heredoc Migration, Review Fixes)
 
 ### Summary
