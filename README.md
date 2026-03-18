@@ -35,9 +35,9 @@ Planning Workflow                    Execution Workflow
      |                                    |
   Architect (decomposition)            CCO gate (prompt audit)
      |                                    |
-  TDV gate                             Dirt Pushers (up to 7 parallel)
+  TDV gate                             Crumb Gatherers (up to 7 parallel)
      |                                    |
-  .crumbs/tasks.jsonl                  WWD + DMVDC gates (scope + substance)
+  .crumbs/tasks.jsonl                  WWD + CMVCC gates (scope + substance)
                                           |
          ────────────────────────►     Nitpickers (4+ parallel review) + Big Head
                                           |
@@ -54,11 +54,11 @@ Four layers, each with a clear job.
 
 **1. Task and artifact layer.** `crumb.py` stores tasks and trails in `.crumbs/tasks.jsonl`. Sessions write durable artifacts (metadata, prompts, summaries, review reports, checkpoint audits) under `.crumbs/sessions/`.
 
-**2. Two orchestrators.** The Planner handles decomposition (Surveyor, Foragers, Architect). The Queen handles execution (Scout, Pantry, Dirt Pushers, Nitpickers, Big Head, Scribe). They have different permissions, different state models, and different agent teams.
+**2. Two orchestrators.** The Planner handles decomposition (Surveyor, Foragers, Architect). The Queen handles execution (Scout, Pantry, Crumb Gatherers, Nitpickers, Big Head, Scribe). They have different permissions, different state models, and different agent teams.
 
 **3. Specialist agents.** Claude Code agent definitions in `agents/` cover recon, prompt composition, implementation, review, consolidation, verification, and documentation.
 
-**4. Verification layer.** Pest Control runs six checkpoint types (SSV, CCO, WWD, DMVDC, CCB, ESV) that mechanically block progression. It operates both as a standalone checkpoint runner and as a member of the Nitpicker review team.
+**4. Verification layer.** Pest Control runs six checkpoint types (SSV, CCO, WWD, CMVCC, CCB, ESV) that mechanically block progression. It operates both as a standalone checkpoint runner and as a member of the Nitpicker review team.
 
 ### The Queen's Information Diet
 
@@ -77,7 +77,7 @@ Nothing progresses until these pass.
 | **SSV** | Scout Strategy Verification | Pantry spawn | haiku |
 | **CCO** | Colony Cartography Office | Agent spawn | haiku |
 | **WWD** | Wandering Worker Detection | Next agent in wave | haiku |
-| **DMVDC** | Dirt Moved vs Dirt Claimed | Task closure | sonnet |
+| **CMVCC** | Crumbs Moved vs Crumbs Claimed | Task closure | sonnet |
 | **CCB** | Colony Census Bureau | Presenting results to user | haiku |
 | **ESV** | Exec Summary Verification | Git push | haiku |
 
@@ -155,8 +155,8 @@ ant-farm/
 │   │   ├── scout.md, pantry.md, implementation.md, reviews.md
 │   │   ├── checkpoints/     # Per-checkpoint definitions (common.md + one file per checkpoint)
 │   │   │   ├── common.md   # Shared preamble (term definitions, verdict thresholds)
-│   │   │   ├── cco.md, wwd.md, dmvdc.md, ccb.md, ssv.md, esv.md, tdv.md
-│   │   ├── dirt-pusher-skeleton.md, nitpicker-skeleton.md, big-head-skeleton.md
+│   │   │   ├── cco.md, wwd.md, cmvcc.md, ccb.md, ssv.md, esv.md, tdv.md
+│   │   ├── crumb-gatherer-skeleton.md, nitpicker-skeleton.md, big-head-skeleton.md
 │   │   ├── scribe-skeleton.md, surveyor-skeleton.md, forager-skeleton.md
 │   │   ├── decomposition.md, architect-skeleton.md
 │   │   └── review-focus-areas.md, queen-state.md, SESSION_PLAN_TEMPLATE.md
@@ -219,10 +219,10 @@ Queen                          Pantry                    Pest Control
   │                                                          ├─audit each preview
   │  ◄──return verdict table─────────────────────────────────┤
   │                                                          │
-  ├──spawn Dirt Pushers (up to 7 parallel)──►                │
+  ├──spawn Crumb Gatherers (up to 7 parallel)──►              │
 ```
 
-Each Dirt Pusher executes 6 mandatory steps:
+Each Crumb Gatherer executes 6 mandatory steps:
 
 1. **Claim** the task
 2. **Design** 4+ genuinely distinct approaches with tradeoffs
@@ -238,13 +238,13 @@ Agents are constrained by scope boundaries: they may only edit the files and lin
 After each wave, Pest Control runs:
 
 - **WWD** (scope verification): files changed in the commit match expected scope. No scope creep.
-- **DMVDC** (substance verification): git diff matches summary claims, acceptance criteria are genuinely met, design approaches are substantively distinct.
+- **CMVCC** (substance verification): git diff matches summary claims, acceptance criteria are genuinely met, design approaches are substantively distinct.
 
-Failed DMVDC means the agent is resumed with specific gaps, re-verified, and escalated to you after 2 retries.
+Failed CMVCC means the agent is resumed with specific gaps, re-verified, and escalated to you after 2 retries.
 
 ### Step 3b: Quality Review
 
-After all implementation and DMVDC checks pass, the Queen enters a mandatory review phase with a Nitpicker team (4+ parallel reviewers + Big Head + Pest Control):
+After all implementation and CMVCC checks pass, the Queen enters a mandatory review phase with a Nitpicker team (4+ parallel reviewers + Big Head + Pest Control):
 
 | Review | Severity Focus | Model |
 |--------|---------------|-------|
@@ -255,7 +255,7 @@ After all implementation and DMVDC checks pass, the Queen enters a mandatory rev
 
 When the changed-file count exceeds `REVIEW_SPLIT_THRESHOLD` (default 8), Clarity and Drift are split into multiple instances (e.g., `clarity-1`, `clarity-2`) with partitioned file subsets. Correctness and Edge Cases always receive the full file list.
 
-Big Head reads all reports, merges duplicates by root cause, and files one issue per root cause. Pest Control runs DMVDC + CCB inside the team before results return to the Queen.
+Big Head reads all reports, merges duplicates by root cause, and files one issue per root cause. Pest Control runs CMVCC + CCB inside the team before results return to the Queen.
 
 If P1/P2 issues are found, the system enters a review/fix/re-review loop until convergence, deferral, or the round cap.
 
@@ -297,7 +297,7 @@ Agent definitions live in `agents/` and are installed to `~/.claude/agents/` by 
 
 | Situation | Max retries | After limit |
 |-----------|-------------|-------------|
-| Agent fails DMVDC | 2 | Escalate to user |
+| Agent fails CMVCC | 2 | Escalate to user |
 | CCB fails | 1 | Present to user with verification report |
 | Agent stuck (no commit in 15 turns) | 0 | Check status, escalate |
 | Total retries per session | 5 | Pause all spawns, triage with user |
@@ -306,7 +306,7 @@ Agent definitions live in `agents/` and are installed to `~/.claude/agents/` by 
 
 Documented in `orchestration/reference/known-failures.md`. Two incidents shaped the system more than anything else.
 
-**Agents skipped the hard parts.** During Epic 3, agents bypassed mandatory design and correctness review steps. They claimed "4 approaches considered" without actually considering them. DMVDC now verifies substance, not just completion claims. It reads the git diff and checks whether the summary matches reality.
+**Agents skipped the hard parts.** During Epic 3, agents bypassed mandatory design and correctness review steps. They claimed "4 approaches considered" without actually considering them. CMVCC now verifies substance, not just completion claims. It reads the git diff and checks whether the summary matches reality.
 
 **Three agents trampled the same file.** During Epic 74g, three agents worked on the same file without line-level boundaries. Each one "helpfully" fixed adjacent issues and introduced conflicts. This produced WWD (scope verification), enhanced CCO (requiring line-number specificity in prompts), anti-scope-creep template language, and pre-flight conflict risk assessment in the Scout.
 
@@ -346,7 +346,7 @@ All file paths in this document use repo-root relative format. At runtime, agent
 | `orchestration/templates/surveyor.md` | The Surveyor | Requirements gathering instructions |
 | `orchestration/templates/forager.md` | The Forager | Parallel research instructions |
 | `orchestration/templates/decomposition.md` | The Architect | Decomposition workflow instructions |
-| `orchestration/templates/dirt-pusher-skeleton.md` | The Queen | Minimal agent spawn template |
+| `orchestration/templates/crumb-gatherer-skeleton.md` | The Queen | Minimal agent spawn template |
 | `orchestration/templates/nitpicker-skeleton.md` | The Queen | Minimal review agent spawn template |
 | `orchestration/templates/big-head-skeleton.md` | The Queen | Big Head consolidation spawn template |
 | `orchestration/templates/scribe-skeleton.md` | The Queen | Scribe spawn template |

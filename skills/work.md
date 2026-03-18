@@ -114,7 +114,7 @@ Store `SESSION_ID` and `SESSION_DIR` in context. Pass `SESSION_DIR` explicitly t
 
 Read `orchestration/RULES.md`. Follow its workflow from **Step 1** (Recon / Scout spawn) onward. The Scout reads `.crumbs/tasks.jsonl` via the `crumb` CLI.
 
-All other orchestration rules from `orchestration/RULES.md` apply without exception: wave management, concurrency limits, hard gates (SSV, CCO, WWD, DMVDC, ESV), model assignments, and landing-the-plane protocol.
+All other orchestration rules from `orchestration/RULES.md` apply without exception: wave management, concurrency limits, hard gates (SSV, CCO, WWD, CMVCC, ESV), model assignments, and landing-the-plane protocol.
 
 ## Error Reference
 

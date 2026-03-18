@@ -78,9 +78,9 @@ step_label() {
     case "$1" in
         SESSION_INIT)     echo "Session Init: Session setup" ;;
         SCOUT_COMPLETE)   echo "Scout Complete: Recon (Scout + SSV gate + user approval)" ;;
-        WAVE_SPAWNED)     echo "Wave Spawned: Spawn (Pantry + CCO + Dirt Pushers)" ;;
+        WAVE_SPAWNED)     echo "Wave Spawned: Spawn (Pantry + CCO + Crumb Gatherers)" ;;
         WAVE_WWD_PASS)    echo "Wave WWD Passed: WWD verification passed" ;;
-        WAVE_VERIFIED)    echo "Wave Verified: Verify (WWD + DMVDC)" ;;
+        WAVE_VERIFIED)    echo "Wave Verified: Verify (WWD + CMVCC)" ;;
         REVIEW_COMPLETE)  echo "Review Complete: Review (Nitpicker team)" ;;
         REVIEW_TRIAGED)   echo "Review Triaged: Triage (P1/P2 decision)" ;;
         DOCS_COMMITTED)   echo "Docs Committed: Documentation (CHANGELOG/README/CLAUDE.md)" ;;
@@ -96,9 +96,9 @@ step_resume_action() {
     case "$1" in
         SESSION_INIT)     echo "Re-run SESSION_INIT to regenerate SESSION_ID and SESSION_DIR (fresh start recommended)." ;;
         SCOUT_COMPLETE)   echo "Re-run SCOUT_COMPLETE: check for existing briefing.md; if absent, re-spawn the Scout." ;;
-        WAVE_SPAWNED)     echo "Re-run WAVE_SPAWNED: re-read briefing.md and re-spawn Pantry + Dirt Pushers for unfinished waves." ;;
-        WAVE_WWD_PASS)    echo "Proceed to DMVDC verification: WWD already passed; re-spawn Pest Control for DMVDC only." ;;
-        WAVE_VERIFIED)    echo "Re-run WAVE_VERIFIED: re-spawn Pest Control for WWD/DMVDC on any unverified waves." ;;
+        WAVE_SPAWNED)     echo "Re-run WAVE_SPAWNED: re-read briefing.md and re-spawn Pantry + Crumb Gatherers for unfinished waves." ;;
+        WAVE_WWD_PASS)    echo "Proceed to CMVCC verification: WWD already passed; re-spawn Pest Control for CMVCC only." ;;
+        WAVE_VERIFIED)    echo "Re-run WAVE_VERIFIED: re-spawn Pest Control for WWD/CMVCC on any unverified waves." ;;
         REVIEW_COMPLETE)  echo "Re-run REVIEW_COMPLETE: re-spawn the Nitpicker team (check for existing review reports first)." ;;
         REVIEW_TRIAGED)   echo "Re-run REVIEW_TRIAGED: re-read the Big Head summary and re-present findings to the user." ;;
         DOCS_COMMITTED)   echo "Re-run DOCS_COMMITTED: update CHANGELOG, README, CLAUDE.md in a single commit." ;;

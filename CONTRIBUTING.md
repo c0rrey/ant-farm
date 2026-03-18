@@ -93,7 +93,7 @@ Templates live in `orchestration/templates/`. Each template has a specific reade
 | `implementation.md` | Pantry | Agent prompt template with 6 mandatory steps |
 | `checkpoints/` | Pest Control | Per-checkpoint definitions (common.md + one per type) |
 | `reviews.md` | `build-review-prompts.sh` | Review protocol, report format |
-| `dirt-pusher-skeleton.md` | Queen | Minimal agent spawn template |
+| `crumb-gatherer-skeleton.md` | Queen | Minimal agent spawn template |
 | `nitpicker-skeleton.md` | Queen, `build-review-prompts.sh` | Review agent spawn template |
 | `big-head-skeleton.md` | Queen, `build-review-prompts.sh` | Consolidation agent spawn template |
 | `queen-state.md` | Queen | Session state file schema |
@@ -119,10 +119,10 @@ Common placeholders:
 
 ### What to watch when editing templates
 
-- **`implementation.md`** defines the 6 mandatory steps that every Dirt Pusher must follow. If you change a step, update the corresponding CCO check in `checkpoints/cco.md` (Check 4 verifies all 6 steps are present).
+- **`implementation.md`** defines the 6 mandatory steps that every Crumb Gatherer must follow. If you change a step, update the corresponding CCO check in `checkpoints/cco.md` (Check 4 verifies all 6 steps are present).
 - **`reviews.md`** defines review types and report format. Changes here must stay in sync with `build-review-prompts.sh` (which reads `reviews.md` to build review prompts) and the CCB checks in `checkpoints/ccb.md` (which verify report structure).
 - **`nitpicker-skeleton.md`** and **`big-head-skeleton.md`** are read by `build-review-prompts.sh` to produce filled prompt files. If you change their structure, verify the script still parses them correctly.
-- **`dirt-pusher-skeleton.md`** is what the Queen uses to spawn agents. If you add fields, the Pantry's task briefs must include the corresponding data.
+- **`crumb-gatherer-skeleton.md`** is what the Queen uses to spawn agents. If you add fields, the Pantry's task briefs must include the corresponding data.
 
 ## Testing Changes
 
@@ -143,7 +143,7 @@ Common placeholders:
 
 4. **Verify the workflow reaches the gate you modified.** For example:
    - Changed `checkpoints/cco.md` CCO checks? Verify the CCO report in `{SESSION_DIR}/pc/` reflects the new check.
-   - Changed `implementation.md`? Verify the Dirt Pusher's summary doc follows the updated steps.
+   - Changed `implementation.md`? Verify the Crumb Gatherer's summary doc follows the updated steps.
    - Changed `reviews.md`? Verify the review previews in `{SESSION_DIR}/previews/` contain the expected content.
 
 ### Script validation
@@ -206,7 +206,7 @@ Changes to one file often require updates to others. This table lists the critic
 | If you change... | Also update... |
 |------------------|----------------|
 | The 6 mandatory steps | `checkpoints/cco.md` CCO Check 4 (verifies all 6 steps present) |
-| Summary doc format | `checkpoints/dmvdc.md` DMVDC Check 1-4 (reads summary docs) |
+| Summary doc format | `checkpoints/cmvcc.md` CMVCC Check 1-4 (reads summary docs) |
 | Scope boundary format | `checkpoints/cco.md` CCO Check 5, `checkpoints/wwd.md` (compares scope to diff) |
 
 ### checkpoints/ dependencies
@@ -233,7 +233,7 @@ Changes to one file often require updates to others. This table lists the critic
 |------------------|----------------|
 | `nitpicker-skeleton.md` structure | `build-review-prompts.sh` (parses this file) |
 | `big-head-skeleton.md` structure | `build-review-prompts.sh` (parses this file) |
-| `dirt-pusher-skeleton.md` fields | `pantry.md` (Pantry must produce matching task brief data) |
+| `crumb-gatherer-skeleton.md` fields | `pantry.md` (Pantry must produce matching task brief data) |
 | Slot marker names (`{{...}}`) | `build-review-prompts.sh` (fills the markers) |
 
 ### Agent file dependencies
