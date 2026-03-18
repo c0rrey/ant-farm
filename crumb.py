@@ -843,10 +843,12 @@ def cmd_create(args: argparse.Namespace) -> None:
             file_path = Path(args.from_file)
             if not file_path.exists():
                 die(f"--from-file path does not exist: {args.from_file}")
+            if file_path.is_dir():
+                die(f"--from-file path is a directory, not a file: {args.from_file}")
             try:
                 payload = json.loads(file_path.read_text(encoding="utf-8"))
-            except json.JSONDecodeError as exc:
-                die(f"invalid JSON in --from-file: {exc}")
+            except (json.JSONDecodeError, OSError) as exc:
+                die(f"cannot read --from-file: {exc}")
             if not isinstance(payload, dict):
                 die("--from-file must contain a JSON object, not a list or scalar")
 
