@@ -42,7 +42,17 @@ Replace `{PLACEHOLDER}` values (uppercase) in the agent-facing template below:
 
 Pass the filled-in template text (everything below the `---` separator in `big-head-skeleton.md`) as Big Head's `prompt`. Include all expected Nitpicker report paths directly in Big Head's spawn prompt so it can begin consolidation as soon as the reports are ready. Pest Control must be a team member so Big Head can SendMessage to it directly for checkpoint validation (see Step 4 in reviews.md).
 
-**Round 1**: Big Head is the 5th member (or later, if split reviewer instances are added); Pest Control is the last member. The consolidation brief's `expected_paths` list is authoritative for how many report paths Big Head must wait for.
+**Round 1**: Big Head is the 5th member in the base case (6 total); Pest Control is always the last member. The consolidation brief's `expected_paths` list is authoritative for how many report paths Big Head must wait for.
+
+**Dynamic member list**: The Queen reads the return table from `build-review-prompts.sh` to determine which reviewer slots were filled and how many split instances were produced. Do NOT use a fixed 6-member list. Instead, build the `members` array from the return table:
+- Base case (no splits): 4 reviewers (`clarity-reviewer`, `edge-cases-reviewer`, `correctness-reviewer`, `drift-reviewer`)
+- Split Clarity: replace `clarity-reviewer` with `clarity-1`, `clarity-2` (and `clarity-3` if 3-way split); each gets its own filled nitpicker template with `REVIEW_TYPE=clarity`
+- Split Drift: replace `drift-reviewer` with `drift-1`, `drift-2`, etc.
+- Big Head and Pest Control are always appended last (Big Head second-to-last, Pest Control last)
+
+**Split instance naming convention**: `{review-type}-{N}` where `N` starts at 1 (e.g., `clarity-1`, `clarity-2`, `drift-1`, `drift-2`). SendMessage targeting must use these exact names — broadcast is prohibited because it would re-task idle split instances in round 2+.
+
+Base case (no splits) — 6 members:
 
 ```
 TeamCreate(
@@ -58,7 +68,29 @@ TeamCreate(
 )
 ```
 
-**Round 2+**: Big Head is the 3rd member (or later, if split instances present); Pest Control is the last member. Only Correctness and Edge Cases reviewers are spawned by default; the consolidation brief's `expected_paths` is authoritative.
+Split instance example (2 Clarity + 2 Drift splits) — 8 members:
+
+```
+TeamCreate(
+  name="nitpicker-team",
+  members=[
+    { "name": "clarity-1",             "subagent_type": "ant-farm-nitpicker-clarity",     "prompt": "<filled nitpicker template with REVIEW_TYPE=clarity, file subset A>", "model": "sonnet" },
+    { "name": "clarity-2",             "subagent_type": "ant-farm-nitpicker-clarity",     "prompt": "<filled nitpicker template with REVIEW_TYPE=clarity, file subset B>", "model": "sonnet" },
+    { "name": "edge-cases-reviewer",   "subagent_type": "ant-farm-nitpicker-edge-cases",   "prompt": "<filled nitpicker template with REVIEW_TYPE=edge-cases>", "model": "opus" },
+    { "name": "correctness-reviewer",  "subagent_type": "ant-farm-nitpicker-correctness",  "prompt": "<filled nitpicker template with REVIEW_TYPE=correctness>", "model": "opus" },
+    { "name": "drift-1",               "subagent_type": "ant-farm-nitpicker-drift",         "prompt": "<filled nitpicker template with REVIEW_TYPE=drift, file subset A>", "model": "sonnet" },
+    { "name": "drift-2",               "subagent_type": "ant-farm-nitpicker-drift",         "prompt": "<filled nitpicker template with REVIEW_TYPE=drift, file subset B>", "model": "sonnet" },
+    { "name": "ant-farm-big-head",     "prompt": "<filled big-head template — report count from consolidation brief's expected_paths>", "model": "{MODEL}" },
+    { "name": "ant-farm-pest-control", "prompt": "<pest-control prompt>", "model": "sonnet" }
+  ]
+)
+```
+
+**Round 2+**: Only Correctness and Edge Cases reviewers are re-tasked; the consolidation brief's `expected_paths` is authoritative for the 2 expected report paths. Pest Control is always the last member of the persistent team.
+
+**Split instance idle semantics**: In round 2+, split Clarity instances (`clarity-1`, `clarity-2`, etc.) and split Drift instances (`drift-1`, `drift-2`, etc.) remain idle — exactly like the base-case `clarity-reviewer` and `drift-reviewer`. They are NOT re-tasked via SendMessage. Round 2+ SendMessage targets only `correctness-reviewer`, `edge-cases-reviewer`, `ant-farm-big-head`, and `ant-farm-pest-control` by name. Never use broadcast in round 2+.
+
+Round 2+ re-task targets (named-member SendMessage only — no broadcast):
 
 ```
 TeamCreate(
@@ -71,6 +103,8 @@ TeamCreate(
   ]
 )
 ```
+
+> Note: The Round 2+ TeamCreate block above shows the initial spawn composition only. The team is persistent — do NOT re-issue TeamCreate. Round 2+ uses SendMessage to re-task `correctness-reviewer` and `edge-cases-reviewer` (and Big Head and Pest Control) by their exact member names. Any split instances present in the team (e.g., `clarity-1`, `drift-2`) stay idle and receive no messages.
 
 ### Step 3 — Report paths are included automatically
 

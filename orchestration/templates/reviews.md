@@ -58,7 +58,11 @@ The short name is the authoritative identifier. Any template using a review type
 
 **Pre-spawn requirement**: Before creating the Nitpickers, run **CCO** on all review prompts. See `templates/checkpoints.md`.
 
-**Round 1**: the Queen creates the Nitpicker team with **6 members** (4 reviewers + Big Head + Pest Control; may be more if split reviewer instances are added):
+**Round 1**: the Queen creates the Nitpicker team with a **variable member count** determined by `build-review-prompts.sh`'s return table. Base case is 6 members (4 reviewers + Big Head + Pest Control); when split reviewer instances occur the count increases (e.g., 8 members when 2 Clarity + 2 Drift splits are produced). Do NOT hardcode 6 members — build the list from the return table.
+
+**Split instance naming**: When `build-review-prompts.sh` splits a reviewer type across multiple instances, each instance is named `{review-type}-{N}` (e.g., `clarity-1`, `clarity-2`, `drift-1`, `drift-2`). The base-case single-instance names (`clarity-reviewer`, `drift-reviewer`) apply only when no split occurred. SendMessage to these members must use these exact names — never broadcast.
+
+Base case (no splits) — 6 members:
 
 ~~~markdown
 Create a team with these members. Reviewers work in parallel.
@@ -80,9 +84,33 @@ Task IDs for acceptance criteria: {list of all task IDs worked this session}
 6. Pest Control (checkpoint validator) — receives consolidated report path from Big Head via SendMessage; runs DMVDC and CCB checkpoints and replies with verdict
 ~~~
 
-**Round 2+**: the Nitpicker team is **persistent** — do NOT create a new team. Re-task the existing Correctness and Edge Cases reviewers via SendMessage (see Round Transition via SendMessage section). Big Head and Pest Control remain in the team and are re-tasked the same way. The team has at minimum 4 active members (Correctness + Edge Cases + Big Head + Pest Control); Clarity and Drift reviewers stay idle.
+Split instance example (2 Clarity + 2 Drift splits) — 8 members:
 
-Re-tasking message fields for each reviewer:
+~~~markdown
+Create a team with these members. Reviewers work in parallel.
+Big Head waits for all expected reports (count from consolidation brief's expected_paths), then consolidates.
+Pest Control is a team member so Big Head can SendMessage to it directly for checkpoint validation.
+
+Nitpickers produce REPORTS ONLY — do NOT file crumbs (`crumb create`).
+Big Head consolidates all reports, groups findings by root cause, and files crumbs.
+
+Review scope: commits {first-commit} through {last-commit} ({N} commits total, across trails: {trail-list})
+Files to review: {deduplicated list of ALL files changed across all trails}
+Task IDs for acceptance criteria: {list of all task IDs worked this session}
+
+1. Clarity Review part 1 (P3) — clarity-1; file subset A from return table; model: sonnet
+2. Clarity Review part 2 (P3) — clarity-2; file subset B from return table; model: sonnet
+3. Edge Cases Review (P2) — see prompt below; model: opus
+4. Correctness Review (P1-P2) — see prompt below; model: opus
+5. Drift Review part 1 (P3) — drift-1; file subset A from return table; model: sonnet
+6. Drift Review part 2 (P3) — drift-2; file subset B from return table; model: sonnet
+7. Big Head (consolidation) — see prompt from big-head-skeleton.md; model specified in Big Head Consolidation Protocol section
+8. Pest Control (checkpoint validator) — receives consolidated report path from Big Head via SendMessage; runs DMVDC and CCB checkpoints and replies with verdict
+~~~
+
+**Round 2+**: the Nitpicker team is **persistent** — do NOT create a new team. Re-task the existing Correctness and Edge Cases reviewers via named-member SendMessage (see Round Transition via SendMessage section). Big Head and Pest Control remain in the team and are re-tasked the same way. The team has at minimum 4 active members (Correctness + Edge Cases + Big Head + Pest Control); Clarity and Drift reviewers — including all split instances (e.g., `clarity-1`, `clarity-2`, `drift-1`, `drift-2`) — remain idle and are NOT re-tasked.
+
+Re-tasking message fields for each reviewer (named-member SendMessage — no broadcast):
 
 ~~~markdown
 Review scope: fix commits only — {first-fix-commit} through HEAD
@@ -91,10 +119,13 @@ Task IDs for acceptance criteria: {list of fix task IDs}
 Review round: {N+1}
 Report output path: {reviewer-specific path from Round Transition section}
 
-1. Correctness Review (P1-P2) — re-tasked via SendMessage; model: opus (unchanged from round 1)
-2. Edge Cases Review (P2) — re-tasked via SendMessage; model: opus (unchanged from round 1)
-3. Big Head (consolidation) — re-tasked via SendMessage with round N+1 and 2 expected report paths
-4. Pest Control (checkpoint validator) — remains available; Big Head SendMessages it as in round 1
+1. Correctness Review (P1-P2) — SendMessage to `correctness-reviewer`; model: opus (unchanged from round 1)
+2. Edge Cases Review (P2) — SendMessage to `edge-cases-reviewer`; model: opus (unchanged from round 1)
+3. Big Head (consolidation) — SendMessage to `ant-farm-big-head` with round N+1 and 2 expected report paths
+4. Pest Control (checkpoint validator) — remains available; Big Head SendMessages `ant-farm-pest-control` as in round 1
+
+Clarity and Drift reviewers (including split instances clarity-1, clarity-2, drift-1, drift-2, etc.) are NOT
+re-tasked — they remain idle. Do NOT send them messages in round 2+.
 ~~~
 
 **Big Head is spawned as a team member using the big-head-skeleton.md template**, not as a separate Task agent. The Queen fills in the skeleton placeholders and uses the result as the teammate's prompt.
@@ -166,7 +197,7 @@ The review pipeline supports multiple rounds. The Queen passes `Review round: {N
 - **Reviewers**: 4 (Clarity, Edge Cases, Correctness, Drift)
 - **Scope**: All session commits (`{first-session-commit}..HEAD`)
 - **Findings**: All severities reported and presented to user
-- **Team size**: 6 (4 reviewers + Big Head + Pest Control)
+- **Team size**: 6 base case (4 reviewers + Big Head + Pest Control); more when split reviewer instances are present (count from `build-review-prompts.sh` return table)
 
 This is the existing protocol — no changes to round 1 behavior.
 

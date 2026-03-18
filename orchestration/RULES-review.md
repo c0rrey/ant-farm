@@ -12,10 +12,10 @@
             team-based round 2+ reviews.
 
             **Team roster progression**:
-            - **Round 1 (initial)**: 6 members — 4 Nitpickers (Clarity, Edge Cases, Correctness, Drift) + Big Head + Pest Control (mixed-model: Correctness + Edge Cases use `opus`; Clarity + Drift use `sonnet`)
+            - **Round 1 (initial)**: base case 6 members — 4 Nitpickers (Clarity, Edge Cases, Correctness, Drift) + Big Head + Pest Control (mixed-model: Correctness + Edge Cases use `opus`; Clarity + Drift use `sonnet`). When split reviewer instances are present, member count increases (e.g., 8 members for 2 Clarity + 2 Drift splits). Member names and count come from `build-review-prompts.sh` return table.
             - **After fix wave**: + N fix DPs + fix-pc-wwd + fix-pc-dmvdc (names: fix-dp-1..N, fix-pc-wwd, fix-pc-dmvdc; round suffixes for round 2+: fix-dp-r2-1, fix-pc-wwd-r2, fix-pc-dmvdc-r2)
-            - **Peak**: up to 15 members (6 + 7 fix DPs + 2 fix PCs), but only N+2 fix agents are active during the fix phase; the original 6 are idle
-            - **Round 2+**: Clarity and Drift reviewers remain idle; Correctness and Edge Cases are re-tasked via SendMessage
+            - **Peak**: up to 15 members in the base case (6 + 7 fix DPs + 2 fix PCs); higher with split instances. Only N+2 fix agents are active during the fix phase; the original reviewers are idle.
+            - **Round 2+**: Clarity and Drift reviewers — including split instances (e.g., `clarity-1`, `clarity-2`, `drift-1`, `drift-2`) — remain idle; Correctness and Edge Cases are re-tasked via named-member SendMessage
 
             **3b-i. Gather inputs** from the Queen's state file:
             - Review round: read from session state (default: 1)
@@ -68,9 +68,11 @@
             Pest Control (`model: "haiku"`) for CCO on review previews. Must PASS before spawning team.
 
             **3b-iv. Spawn Nitpicker team** (round 1 only — team persists for round 2+):
-            - Round 1: 6 members — 4 reviewers + Big Head + Pest Control
-            - Model assignments: Correctness (`model: "opus"`), Edge Cases (`model: "opus"`), Clarity (`model: "sonnet"`), Drift (`model: "sonnet"`)
-            - Round 2+: do NOT spawn a new team — re-task Correctness and Edge Cases reviewers via SendMessage (see Step 3c fix workflow)
+            - Round 1: base case is 6 members (4 reviewers + Big Head + Pest Control); may be more if `build-review-prompts.sh` produces split reviewer instances
+            - **Dynamic member list**: The Queen reads the return table from `build-review-prompts.sh` to determine member count and names. Do NOT use a fixed 6-member list. The return table lists every filled slot (e.g., `clarity-1`, `clarity-2`, `drift-1`, `drift-2`) along with their prompt file paths. Build the `members` array from this table — each slot becomes one TeamCreate member entry.
+            - **Split instance naming**: When a reviewer type is split across multiple instances, each instance is named `{review-type}-{N}` (e.g., `clarity-1`, `clarity-2`, `drift-1`, `drift-2`). The base-case single-instance names (`clarity-reviewer`, `drift-reviewer`) are used only when no split occurred.
+            - Model assignments: Correctness (`model: "opus"`), Edge Cases (`model: "opus"`), Clarity and all clarity-N instances (`model: "sonnet"`), Drift and all drift-N instances (`model: "sonnet"`)
+            - Round 2+: do NOT spawn a new team — re-task Correctness and Edge Cases reviewers via named-member SendMessage (see Step 3c fix workflow)
             - Big Head MUST be a team member, NOT a separate Task agent
             - Pest Control MUST be a team member so Big Head can SendMessage to it
             - Templates: `nitpicker-skeleton.md`, `big-head-skeleton.md`
@@ -192,17 +194,20 @@
             fix-pc-dmvdc has issued PASS for each, the Queen sends messages to re-task the persistent
             team members for round N+1. Model assignments do NOT change in round 2+: Correctness and
             Edge Cases remain `opus` (they were spawned with opus in round 1; SendMessage does not change model):
-            1. **Re-task Correctness reviewer** (`opus` — unchanged): SendMessage to `correctness` with review round N+1,
+            1. **Re-task Correctness reviewer** (`opus` — unchanged): SendMessage to `correctness-reviewer` with review round N+1,
                fix commit range, changed files, and task IDs; provide new report output path
                `{SESSION_DIR}/review-reports/correctness-r{N+1}-{timestamp}.md`
-            2. **Re-task Edge Cases reviewer** (`opus` — unchanged): SendMessage to `edge-cases` with review round N+1,
+            2. **Re-task Edge Cases reviewer** (`opus` — unchanged): SendMessage to `edge-cases-reviewer` with review round N+1,
                fix commit range, changed files, and task IDs; provide new report output path
                `{SESSION_DIR}/review-reports/edge-cases-r{N+1}-{timestamp}.md`
             3. **Re-task Big Head**: SendMessage to `ant-farm-big-head` with review round N+1, expected report
                count 2, both report paths, and new consolidated output path
                `{SESSION_DIR}/review-reports/review-consolidated-r{N+1}-{timestamp}.md`
-            4. **Clarity and Drift**: leave idle — not re-tasked in round 2+ (fix-scope reviews cover
-               only fix commits; style/drift are out of scope)
+            4. **Clarity and Drift — idle semantics**: These reviewers are NOT re-tasked in round 2+ (fix-scope reviews cover
+               only fix commits; style/drift are out of scope). This applies equally to split instances: if round 1 spawned
+               `clarity-1` and `clarity-2` (or `drift-1` and `drift-2`), ALL of those instances remain idle in round 2+.
+               Do NOT send them any message. Named-member SendMessage is required — never use broadcast, which would
+               inadvertently wake idle Clarity and Drift split instances.
 
             **Progress log (after round transition messages sent):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|ROUND_TRANSITION|from_round={N}|to_round={N+1}|fix_commits={range}|next_step=REVIEW_3B" >> ${SESSION_DIR}/progress.log`
 
