@@ -2172,6 +2172,12 @@ def cmd_doctor(args: argparse.Namespace) -> None:
             write_tasks(path, valid_records)
             for msg in fixes_applied:
                 print(f"fixed: {msg}")
+            if malformed_lines:
+                print(
+                    f"note: {len(malformed_lines)} malformed line(s) were removed "
+                    f"from tasks.jsonl (lines: {malformed_lines})",
+                    file=sys.stderr,
+                )
 
     # --- Report ---
     for msg in errors:

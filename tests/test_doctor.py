@@ -364,3 +364,33 @@ class TestDoctor:
 
         captured = capsys.readouterr()
         assert "orphan" in captured.err.lower()
+
+    def test_doctor_fix_warns_about_malformed_lines_removed(
+        self,
+        crumbs_env: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """--fix with co-occurring malformed lines AND dangling refs prints a stderr warning."""
+        _write_tasks(crumbs_env, [
+            {
+                "id": "AF-1",
+                "type": "task",
+                "title": "Has dangling blocker",
+                "status": "open",
+                "priority": "P2",
+                "links": {"blocked_by": ["AF-GHOST"]},
+            },
+        ])
+        # Append a malformed line so both conditions co-occur
+        _append_raw_line(crumbs_env, "this is not valid json{{{")
+
+        # Malformed lines produce an error, so cmd_doctor exits 1 — that's expected
+        with pytest.raises(SystemExit):
+            cmd_doctor(_make_doctor_args(fix=True))
+
+        captured = capsys.readouterr()
+        # Fix confirmation goes to stdout
+        assert "fixed" in captured.out.lower()
+        # Malformed-line warning goes to stderr
+        assert "malformed" in captured.err.lower()
+        assert "removed" in captured.err.lower()
