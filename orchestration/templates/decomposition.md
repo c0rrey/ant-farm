@@ -282,7 +282,7 @@ cat > /tmp/crumb-session-store.json << 'EOF'
 EOF
 
 # Create the crumb
-crumb create --from-json /tmp/crumb-session-store.json
+crumb create --from-file /tmp/crumb-session-store.json
 ```
 
 Record the returned crumb ID.

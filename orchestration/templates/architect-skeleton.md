@@ -75,7 +75,7 @@ At a glance:
 7. **Create via CLI** — Create trails and crumbs:
    ```bash
    crumb trail create "{trail-title}"
-   crumb create --from-json /tmp/crumb-{slug}.json
+   crumb create --from-file /tmp/crumb-{slug}.json
    crumb link {crumb-id} --parent {trail-id}
    crumb link {blocked-id} --blocked-by {blocker-id}
    ```

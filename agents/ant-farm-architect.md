@@ -22,7 +22,7 @@ and all four Foragers have completed. Your inputs are:
 Your output is:
 
 - Trails created via `crumb trail create` (or equivalent CLI)
-- Crumbs created via `crumb create --from-json`
+- Crumbs created via `crumb create --from-file` (write JSON to a temp file first, then pass the file path)
 - `{DECOMPOSE_DIR}/decomposition-brief.md` — full audit trail of every decision
 
 ## Workflow

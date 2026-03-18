@@ -906,8 +906,13 @@ substantive analysis, NOT a restatement of the title.}
 - [ ] {Third independently testable criterion}
 CRUMB_DESC
 
-crumb create --from-json "{\"type\":\"bug\",\"priority\":\"P{combined-priority}\",\"title\":\"{root-cause-title}\",\"description\":\"$(cat /tmp/crumb-desc-$$.md)\",\"review_source\":\"{primary-review-type}\",\"acceptance_criteria\":[],\"scope\":{},\"links\":{}}"
-rm -f /tmp/crumb-desc-$$.md
+python3 -c "
+import json, pathlib
+desc = pathlib.Path('/tmp/crumb-desc-$$.md').read_text()
+print(json.dumps({'type': 'bug', 'priority': 'P{combined-priority}', 'title': '{root-cause-title}', 'description': desc, 'review_source': '{primary-review-type}', 'acceptance_criteria': [], 'scope': {}, 'links': {}}))
+" > /tmp/crumb-$$.json
+crumb create --from-file /tmp/crumb-$$.json
+rm -f /tmp/crumb-desc-$$.md /tmp/crumb-$$.json
 ```
 
 ### P3 Auto-Filing (Round 2+ Only)
@@ -935,9 +940,14 @@ In round 2+, Big Head auto-files P3 findings to the "Future Work" trail without 
    - [ ] {testable criterion}
    CRUMB_DESC
 
-   crumb create --from-json "{\"type\":\"bug\",\"priority\":\"P3\",\"title\":\"{root-cause-title}\",\"description\":\"$(cat /tmp/crumb-desc-$$.md)\",\"acceptance_criteria\":[],\"scope\":{},\"links\":{}}"
+   python3 -c "
+import json, pathlib
+desc = pathlib.Path('/tmp/crumb-desc-$$.md').read_text()
+print(json.dumps({'type': 'bug', 'priority': 'P3', 'title': '{root-cause-title}', 'description': desc, 'acceptance_criteria': [], 'scope': {}, 'links': {}}))
+" > /tmp/crumb-$$.json
+   crumb create --from-file /tmp/crumb-$$.json
    crumb link <new-crumb-id> --parent <future-work-trail-id>
-   rm -f /tmp/crumb-desc-$$.md
+   rm -f /tmp/crumb-desc-$$.md /tmp/crumb-$$.json
    ```
 
 3. In the consolidated summary, list P3 crumbs in a separate section:
