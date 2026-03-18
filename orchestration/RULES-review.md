@@ -30,6 +30,7 @@
             **3b-i.5. Validate review inputs** before proceeding:
             ```bash
             # REVIEW_ROUND: must be a positive integer
+            REVIEW_ROUND="$(printf '%s' "${REVIEW_ROUND}" | tr -d '[:space:]')"
             if ! [[ "${REVIEW_ROUND}" =~ ^[1-9][0-9]*$ ]]; then
               echo "ERROR: REVIEW_ROUND is missing or non-numeric (got: '${REVIEW_ROUND}'). Expected: integer >= 1." >&2
               exit 1
