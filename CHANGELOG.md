@@ -1,5 +1,34 @@
 # Changelog
 
+## 2026-03-18 — Session 20260318-000524 (Dirt Pusher to Crumb Gatherer Rename)
+
+### Summary
+
+Completed a full framework-wide rename of "Dirt Pusher" → "Crumb Gatherer" and "DMVDC" → "CMVCC" across 5 implementation tasks (AF-191–195) touching 27 files in 8 commits (~1h 20m). Round 1 review across 4 reviewers produced 2 P2s and 10 deferred P3s; both P2s were auto-fixed as AF-196 and AF-197. Round 2 found 0 issues. 10 P3 findings were filed to the backlog (AF-198–AF-207).
+
+### Implementation (Waves 1–2)
+
+- **AF-191**: refactor: rename checkpoint and skeleton files — `git mv` of `dirt-pusher-skeleton.md` → `crumb-gatherer-skeleton.md` and `checkpoints/dmvdc.md` → `checkpoints/cmvcc.md`; updated content in those files and in `common.md`, `wwd.md`, `cco.md` (`d0ce918`, `332d1ea`)
+- **AF-192**: refactor: update orchestration rules, glossary, and state templates — replaced DMVDC/Dirt Pusher across `RULES.md`, `RULES-review.md`, `queen-state.md`, `GLOSSARY.md`, `PLACEHOLDER_CONVENTIONS.md`; updated event keys, agent names, artifact globs (`d368792`)
+- **AF-193**: refactor: update orchestration template prose — replaced legacy terminology across 8 template files including `pantry.md`, `reviews.md`, `implementation.md`, and fix-team naming tables (`2361664`)
+- **AF-194**: refactor: update reference docs and agent definition files — replaced all occurrences across 4 reference files and 4 agent definition files (`4e00b3d`)
+- **AF-195**: refactor: update top-level docs, scripts, skills, and remove ghost files — updated `README.md`, `CONTRIBUTING.md`, `parse-progress-log.sh`, `skills/work.md`; removed 3 stale ghost files from `~/.claude/orchestration/` (`6edb529`)
+
+### Review Fixes (Round 1 P2)
+
+- **AF-196**: fix: strip whitespace from REVIEW_ROUND before regex validation — `tr -d '[:space:]'` added at `RULES-review.md:L33` (`c15cbdc`)
+- **AF-197**: fix: correct CCB model in README Hard Gates table from haiku to sonnet — `README.md:L81` updated to match `model-assignments.md:L14` (`44dc8ad`)
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 27 files, 5 tasks | 0 | 2 | 10 | PASS WITH ISSUES |
+| 2 | 2 fix tasks | 0 | 0 | 0 | PASS |
+
+12 root causes consolidated (21 raw findings). 2 P2s auto-fixed; 10 P3s deferred to backlog (AF-198–AF-207); 2 skipped as cross-session duplicates (→ AF-120, AF-146).
+
+
 ## 2026-03-18 — Session 20260317-203111 (Split-Instance Reviewer Support)
 
 ### Summary
