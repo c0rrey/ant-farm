@@ -11,7 +11,8 @@ After all Dirt Pushers complete, the Queen launches **the Nitpickers** — four 
 ### Model Assignments
 
 - **Big Head (consolidation)**: `opus` — needs judgment for cross-report deduplication, root-cause grouping, and priority calibration
-- **Nitpickers (all 4)**: `sonnet` — sufficient for code review and finding cataloging
+- **Nitpickers — Correctness, Edge Cases**: `opus` — higher-judgment reviews requiring deeper reasoning
+- **Nitpickers — Clarity, Drift**: `sonnet` — lower-judgment reviews sufficient for code review and finding cataloging
 
 ### Why Agent Teams (Not Sequential)
 

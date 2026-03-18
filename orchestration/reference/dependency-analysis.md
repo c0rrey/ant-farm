@@ -170,7 +170,8 @@ Legacy defaults retained for reference:
 | Build system changes | `python-pro` | Build scripts are Python |
 | CSS/HTML implementation | `nextjs-developer` or `javascript-pro` | Frontend expertise |
 | Build verification | `debugger` | Diagnostic and troubleshooting focus |
-| Nitpickers (all 4) | `code-reviewer` / `sonnet` | Code analysis focus |
+| Nitpickers — Correctness, Edge Cases | `code-reviewer` / `opus` | Higher-judgment reviews |
+| Nitpickers — Clarity, Drift | `code-reviewer` / `sonnet` | Lower-judgment reviews |
 | Big Head (consolidation) | `opus` | Cross-report judgment, dedup, priority calibration |
 | General implementation | Match specialist to primary file type | Best domain expertise |
 

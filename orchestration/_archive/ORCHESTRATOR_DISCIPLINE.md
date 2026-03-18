@@ -552,7 +552,8 @@ Recommended agent types by task category. Projects can override these in their C
 | Build system changes | `python-pro` | Build scripts are Python |
 | CSS/HTML implementation | `nextjs-developer` or `javascript-pro` | Frontend expertise |
 | Build verification | `debugger` | Diagnostic and troubleshooting focus |
-| Nitpickers (all 4) | `code-reviewer` / `sonnet` | Code analysis focus |
+| Nitpickers — Correctness, Edge Cases | `code-reviewer` / `opus` | Higher-judgment reviews |
+| Nitpickers — Clarity, Drift | `code-reviewer` / `sonnet` | Lower-judgment reviews |
 | Review lead (consolidation) | `opus` | Cross-report judgment, dedup, priority calibration |
 | General implementation | Match specialist to primary file type | Best domain expertise |
 

@@ -364,6 +364,33 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|TDV|pass|trails=<N>|crumbs=<N>|brief=${DECO
 
 ---
 
+**Step 5.5:** User approval — present the plan and await confirmation (HARD GATE — blocks Step 6).
+
+After TDV PASS, read `{DECOMPOSE_DIR}/decomposition-brief.md` and present a summary to the user:
+- Trail names, crumb counts, and wave structure
+- Key design decisions from the brief (dependency edges, agent types, file partitioning)
+- Any heuristic warnings from TDV
+
+Then ask the user for approval using `AskUserQuestion`:
+
+> "The decomposition is structurally verified. Review the plan above and confirm:
+> approve — proceed to handoff, or
+> revise — describe what to change (I'll re-spawn the Architect with your feedback)."
+
+**On approve**: Proceed to Step 6.
+
+**On revise**: Re-spawn the Architect with the user's feedback. After the Architect revises,
+re-run TDV. If TDV passes, return to Step 5.5 (present revised plan for approval). Maximum
+**2 revision cycles**. If the user is still unsatisfied after two revisions, proceed to Step 6
+with whatever the current state is and note the unresolved concerns in the progress log.
+
+```bash
+echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|USER_APPROVAL|approved" \
+  >> "${DECOMPOSE_DIR}/progress.log"
+```
+
+---
+
 **Step 6:** Handoff — copy artifacts, present results, and close the decomposition session.
 
 Copy the decomposition brief to the tracked `.crumbs/` directory and stage it:
@@ -436,7 +463,7 @@ Omitting `model` causes the agent to inherit the Planner's model, wasting tokens
 | Agent | subagent_type | Model | Rationale |
 |-------|--------------|-------|-----------|
 | Surveyor | `ant-farm-surveyor` | opus | User interaction + requirements synthesis require highest capability |
-| Forager (all 4) | `ant-farm-forager` | sonnet | Focused single-topic research; sonnet is sufficient |
+| Forager (×4, parallel) | `ant-farm-forager` | sonnet | Focused single-topic research; sonnet is sufficient |
 | Architect | `ant-farm-architect` | opus | Multi-source synthesis + design decisions shaping all downstream work |
 
 ---
