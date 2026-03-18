@@ -78,7 +78,7 @@ Nothing progresses until these pass.
 | **CCO** | Colony Cartography Office | Agent spawn | haiku |
 | **WWD** | Wandering Worker Detection | Next agent in wave | haiku |
 | **CMVCC** | Crumbs Moved vs Crumbs Claimed | Task closure | sonnet |
-| **CCB** | Colony Census Bureau | Presenting results to user | haiku |
+| **CCB** | Colony Census Bureau | Presenting results to user | sonnet |
 | **ESV** | Exec Summary Verification | Git push | haiku |
 
 All checkpoint artifacts are written to `<session-dir>/pc/` with timestamped filenames for full audit history.
