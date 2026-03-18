@@ -15,7 +15,7 @@
 | pending/completed/failed | {path} | {N} | {M} | {name} |
 
 ## Agent Registry
-| Agent Name | Task IDs | Files Assigned | Status | Commit Hash | DMVDC |
+| Agent Name | Task IDs | Files Assigned | Status | Commit Hash | CMVCC |
 |------------|----------|----------------|--------|-------------|--------------|
 | {name}     | {ids}    | {files}        | spawned/completed/errored | {hash} | PASS/PENDING/FAIL |
 
@@ -32,9 +32,9 @@
 |------|-------|------------|--------|---------|
 | Step 2 | Wave N impl prompts | CCO | pending/completed/failed | All PASS / {details} |
 | Step 3 | Wave N per-agent | WWD | pending/completed/failed | All PASS / {details} |
-| Step 3 | Wave N post | DMVDC | pending/completed/failed | All PASS / {details} |
+| Step 3 | Wave N post | CMVCC | pending/completed/failed | All PASS / {details} |
 | Step 3b | Round R review prompts | CCO | pending/completed/failed | All PASS / {details} |
-| Step 3b | Round R review post | DMVDC + CCB | pending/completed/failed | All PASS / {details} |
+| Step 3b | Round R review post | CMVCC + CCB | pending/completed/failed | All PASS / {details} |
 | Step 5c | Exec summary | ESV | pending/completed/failed | PASS / FAIL / {details} |
 
 ## Review Rounds

@@ -13,7 +13,7 @@
 
             **Team roster progression**:
             - **Round 1 (initial)**: base case 6 members — 4 Nitpickers (Clarity, Edge Cases, Correctness, Drift) + Big Head + Pest Control (mixed-model: Correctness + Edge Cases use `opus`; Clarity + Drift use `sonnet`). When split reviewer instances are present, member count increases (e.g., 8 members for 2 Clarity + 2 Drift splits). Member names and count come from `build-review-prompts.sh` return table.
-            - **After fix wave**: + N fix DPs + fix-pc-wwd + fix-pc-dmvdc (names: fix-dp-1..N, fix-pc-wwd, fix-pc-dmvdc; round suffixes for round 2+: fix-dp-r2-1, fix-pc-wwd-r2, fix-pc-dmvdc-r2)
+            - **After fix wave**: + N fix DPs + fix-pc-wwd + fix-pc-cmvcc (names: fix-dp-1..N, fix-pc-wwd, fix-pc-cmvcc; round suffixes for round 2+: fix-dp-r2-1, fix-pc-wwd-r2, fix-pc-cmvcc-r2)
             - **Peak**: up to 15 members in the base case (6 + 7 fix DPs + 2 fix PCs); higher with split instances. Only N+2 fix agents are active during the fix phase; the original reviewers are idle.
             - **Round 2+**: Clarity and Drift reviewers — including split instances (e.g., `clarity-1`, `clarity-2`, `drift-1`, `drift-2`) — remain idle; Correctness and Edge Cases are re-tasked via named-member SendMessage
 
@@ -76,7 +76,7 @@
             - Big Head MUST be a team member, NOT a separate Task agent
             - Pest Control MUST be a team member so Big Head can SendMessage to it
             - Templates: `nitpicker-skeleton.md`, `big-head-skeleton.md`
-            - After team completes, DMVDC and CCB have already run inside the team
+            - After team completes, CMVCC and CCB have already run inside the team
 
             **Constraint: one TeamCreate per session.** Claude Code supports only one `TeamCreate` call
             per session. The Nitpicker team uses this slot. Any agent that needs to communicate with
@@ -108,7 +108,7 @@
             - Announce (do NOT wait for user input):
               "**Auto-fix**: Round 1 review found X P1 and Y P2 issues (Z root causes, within 5-threshold). Spawning fix tasks automatically."
             - Proceed directly to fix workflow (below)
-            - After fixes complete + DMVDC passes, transition to round N+1 via SendMessage (see Fix Workflow below)
+            - After fixes complete + CMVCC passes, transition to round N+1 via SendMessage (see Fix Workflow below)
             - Update session state: increment review round, record fix commit range
             **Escalation (round 1, >5 root causes)**: If round == 1 AND total P1+P2 root causes > 5:
             - Present findings to user: "Round 1 review found Z root causes (>5 threshold). This suggests a systemic issue. Fix now or defer?"
@@ -146,12 +146,12 @@
               (round 2+: `fix-dp-r2-1..N`)
             - **fix-pc-wwd** (`model: "haiku"`, `team_name: "nitpicker-team"`): one per round; serves
               all fix DPs in the round via SendMessage
-            - **fix-pc-dmvdc** (`model: "sonnet"`, `team_name: "nitpicker-team"`): one per round;
+            - **fix-pc-cmvcc** (`model: "sonnet"`, `team_name: "nitpicker-team"`): one per round;
               serves all fix DPs in the round via SendMessage
 
             **Fix DP prompt structure**: minimal — crumb is the source of truth:
             ```
-            You are fix-dp-N, a fix Dirt Pusher in the Nitpicker team.
+            You are fix-dp-N, a fix Crumb Gatherer in the Nitpicker team.
             Your task crumb: {crumb-id}
             Run: crumb show <crumb-id>
             Implement the fix. Follow the acceptance criteria exactly.
@@ -161,7 +161,7 @@
             Then go idle and wait.
             ```
 
-            **Progress log (after fix agents spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_AGENTS_SPAWNED|round={N}|fix_dps={names}|fix_pcs=fix-pc-wwd,fix-pc-dmvdc|next_step=FIX_INNER_LOOP" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after fix agents spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_AGENTS_SPAWNED|round={N}|fix_dps={names}|fix_pcs=fix-pc-wwd,fix-pc-cmvcc|next_step=FIX_INNER_LOOP" >> ${SESSION_DIR}/progress.log`
 
             **Step 3c-iii. Fix inner loop** — fully asynchronous via SendMessage within the team:
             ```
@@ -171,10 +171,10 @@
                                                 |
                                      PASS ------+------ FAIL
                                       |                   |
-                           SendMessage(fix-pc-dmvdc)   SendMessage(fix-dp-N) with specifics
+                           SendMessage(fix-pc-cmvcc)   SendMessage(fix-dp-N) with specifics
                                       |                   |
-                                fix-pc-dmvdc          fix-dp-N iterates (max 2 retries total)
-                                runs DMVDC                |
+                                fix-pc-cmvcc          fix-dp-N iterates (max 2 retries total)
+                                runs CMVCC                |
                                 (sonnet)        if retry limit hit → SendMessage(Queen)
                                       |
                            PASS ------+------ FAIL
@@ -184,14 +184,14 @@
                                            if retry limit hit → SendMessage(Queen)
             ```
 
-            Retry limit: each fix DP has a maximum of 2 retries total across both WWD and DMVDC
+            Retry limit: each fix DP has a maximum of 2 retries total across both WWD and CMVCC
             failures. On the third failure, the DP sends a message to the Queen and goes idle.
             The Queen escalates to the user.
 
-            **Progress log (after all fix DPs verified by fix-pc-dmvdc):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_DMVDC_COMPLETE|round={N}|verified_dps={names}|commits={hashes}|next_step=ROUND_TRANSITION" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after all fix DPs verified by fix-pc-cmvcc):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_CMVCC_COMPLETE|round={N}|verified_dps={names}|commits={hashes}|next_step=ROUND_TRANSITION" >> ${SESSION_DIR}/progress.log`
 
             **Step 3c-iv. Round transition via SendMessage** — after all fix DPs complete and
-            fix-pc-dmvdc has issued PASS for each, the Queen sends messages to re-task the persistent
+            fix-pc-cmvcc has issued PASS for each, the Queen sends messages to re-task the persistent
             team members for round N+1. Model assignments do NOT change in round 2+: Correctness and
             Edge Cases remain `opus` (they were spawned with opus in round 1; SendMessage does not change model):
             1. **Re-task Correctness reviewer** (`opus` — unchanged): SendMessage to `correctness-reviewer` with review round N+1,

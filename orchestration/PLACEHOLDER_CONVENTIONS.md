@@ -101,7 +101,7 @@ mkdir -p "${SESSION_DIR}/"{task-metadata,previews,prompts}
 
 These placeholders are filled in by **`build-review-prompts.sh`** when it composes the final review prompts from skeleton templates. They use double curly braces to visually distinguish them from Queen-substituted Tier 1 placeholders and to prevent accidental substitution during earlier pipeline stages.
 
-**When to use**: Values that are only known at review-slot-filling time — after Dirt Pushers have committed and the Queen has generated the review cycle metadata — but that must not be filled in by the Queen during initial agent spawn.
+**When to use**: Values that are only known at review-slot-filling time — after Crumb Gatherers have committed and the Queen has generated the review cycle metadata — but that must not be filled in by the Queen during initial agent spawn.
 
 **Characteristics**:
 - ALL CAPS with underscores, wrapped in double curly braces: `{{VAR}}`
@@ -144,7 +144,7 @@ All files audited. All files use the Tiered convention correctly.
 | `pantry.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{SESSION_DIR}` | `{session-dir}` (review output paths, previews, prompts), `{id}`, `{type}`, `{path}`, `{timestamp}` | None | None | Yes (L5-8) | PASS |
 | `RULES.md` | `{REVIEW_TIMESTAMP}` (Step 3b-i, via `${TIMESTAMP}` shell var), `${SESSION_DIR}` (all gates) | None | `${SESSION_ID}` (L119), `${SESSION_DIR}` (L119-120), `${TIMESTAMP}` (Step 3b-i) | None | No (references other term defs) | PASS |
 | `checkpoints.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{SESSION_DIR}` (term def L4-6, used throughout) | `{checkpoint}`, `{path}`, `{N}`, `{M}`, `{before-commit}`, `{after-commit}`, `{commit}`, `{file}`, `{line}`, `{description}`, `{list}` (in examples) | None | None | Yes (L4-6) | PASS |
-| `dirt-pusher-skeleton.md` | `{TASK_TYPE}`, `{TASK_ID}`, `{TASK_SUFFIX}`, `{AGENT_TYPE}`, `{DATA_FILE_PATH}`, `{SUMMARY_OUTPUT_PATH}`, `{SESSION_DIR}` | None | None | None | Yes (L8-11) | PASS |
+| `crumb-gatherer-skeleton.md` | `{TASK_TYPE}`, `{TASK_ID}`, `{TASK_SUFFIX}`, `{AGENT_TYPE}`, `{DATA_FILE_PATH}`, `{SUMMARY_OUTPUT_PATH}`, `{SESSION_DIR}` | None | None | None | Yes (L8-11) | PASS |
 | `nitpicker-skeleton.md` | `{REVIEW_TYPE}`, `{DATA_FILE_PATH}`, `{REPORT_OUTPUT_PATH}` | None | None | None | Partial (L8-11, missing EPOCH/timestamp defs) | PASS |
 | `big-head-skeleton.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{TIMESTAMP}`, `{DATA_FILE_PATH}`, `{CONSOLIDATED_OUTPUT_PATH}`, `{SESSION_DIR}` | None | None | None | Yes (L8-12) | PASS |
 | `reviews.md` | None | `{session-dir}`, `{timestamp}`, `{first-commit}`, `{last-commit}`, `{N}`, `{M}`, `{review-type}`, `{reviewer}`, `{list}`, `{path}`, `{id}`, `{title}`, `{crumb-id}`, `{hash}`, `{filename}`, `{combined-priority}`, `{root-cause-title}`, `{primary-review-type}`, `{instance}`, and others (throughout); CLI examples using `<angle-bracket>` preserved as-is | `${SESSION_DIR}` (code blocks only) | `{{REVIEW_ROUND}}` — substituted by `build-review-prompts.sh` before Big Head brief delivery | No | PASS |
@@ -224,7 +224,7 @@ The orchestration system complies with the Tiered Placeholder Convention. All an
    - Consistent Tier 1 uppercase usage
    - Tier 2 lowercase used for output examples
 
-5. **Skeleton Templates (dirt-pusher, nitpicker, big-head)** — COMPLIANT
+5. **Skeleton Templates (crumb-gatherer, nitpicker, big-head)** — COMPLIANT
    - Term definitions blocks present
    - All Tier 1 placeholders used correctly
 

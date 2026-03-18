@@ -30,12 +30,12 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 - `{SESSION_DIR}/task-metadata/*.md` — Per-task scope, acceptance criteria (pre-digested by Scout)
 - `{SESSION_DIR}/previews/*.md` — Combined prompt previews (pre-digested by Pantry)
 - `{SESSION_DIR}/review-reports/*.md` — Individual reviewer reports and Big Head consolidated summary
-- Verdict tables from Pantry and Pest Control — CCO, WWD, DMVDC, CCB verdicts
+- Verdict tables from Pantry and Pest Control — CCO, WWD, CMVCC, CCB verdicts
 - Commit messages and git status/log/diff --stat output
 - Agent notifications (as they complete)
 
 **PERMITTED (Queen reads once per phase, for context only):**
-- `orchestration/templates/dirt-pusher-skeleton.md` — Once per implementation wave (skeleton structure; see [Glossary: wave](GLOSSARY.md#workflow-concepts))
+- `orchestration/templates/crumb-gatherer-skeleton.md` — Once per implementation wave (skeleton structure; see [Glossary: wave](GLOSSARY.md#workflow-concepts))
 - `orchestration/templates/nitpicker-skeleton.md` — Once per review cycle (skeleton structure)
 - `orchestration/templates/big-head-skeleton.md` — Once per review cycle (skeleton structure)
 - `orchestration/templates/scribe-skeleton.md` — Once per session (read to fill placeholders before spawning the Scribe at Step 5b)
@@ -85,7 +85,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 **Position Check (MANDATORY):**
 
             **Run this check before every major phase transition.** This is required after every wave
-            completion (WAVE_VERIFIED) and after every fix agent completion (FIX_DMVDC_COMPLETE).
+            completion (WAVE_VERIFIED) and after every fix agent completion (FIX_CMVCC_COMPLETE).
             It is also recommended at any Step boundary where context may have been refreshed.
 
             ```bash
@@ -142,19 +142,19 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             in Pantry's prompt. Pass preview file paths and SESSION_DIR to Pest Control
             (`ant-farm-pest-control`, `model: "haiku"`) for Colony Cartography Office (CCO); Pest Control reads `orchestration/templates/checkpoints/common.md` and `orchestration/templates/checkpoints/cco.md` itself.
             Only after all CCO PASS: spawn agents using skeleton
-            (→ orchestration/templates/dirt-pusher-skeleton.md, using Agent Type from Pantry verdict table, `model: "sonnet"` for all Dirt Pushers regardless of subagent_type).
-            **Wave pipelining**: When spawning wave N Dirt Pushers, include the wave N+1 Pantry
+            (→ orchestration/templates/crumb-gatherer-skeleton.md, using Agent Type from Pantry verdict table, `model: "sonnet"` for all Crumb Gatherers regardless of subagent_type).
+            **Wave pipelining**: When spawning wave N Crumb Gatherers, include the wave N+1 Pantry
             (`ant-farm-pantry-impl`, `model: "opus"`) in the SAME message so they launch concurrently.
             The Pantry reads from task-metadata (written by Scout) and has no dependency on wave N's output.
             This eliminates the idle gap between waves. The flow per wave boundary:
-            1. Wave N CCO PASS → spawn wave N Dirt Pushers + wave N+1 Pantry (in a single Task call to achieve concurrency)
+            1. Wave N CCO PASS → spawn wave N Crumb Gatherers + wave N+1 Pantry (in a single Task call to achieve concurrency)
             2. Wave N+1 Pantry returns → spawn wave N+1 CCO
-            3. Wave N Dirt Pushers finish → run WWD/DMVDC (Step 3)
-            4. Wave N+1 CCO PASS + wave N WWD + DMVDC both PASS → spawn wave N+1 Dirt Pushers + wave N+2 Pantry
-            For the final wave (no wave N+1), skip the Pantry — just spawn Dirt Pushers alone.
-            **Progress log (after each wave's Dirt Pushers are spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_SPAWNED|wave=<N>|spawned=<agent-ids>|previews_dir=${SESSION_DIR}/previews|next_step=STEP_3_VERIFY" >> ${SESSION_DIR}/progress.log`
+            3. Wave N Crumb Gatherers finish → run WWD/CMVCC (Step 3)
+            4. Wave N+1 CCO PASS + wave N WWD + CMVCC both PASS → spawn wave N+1 Crumb Gatherers + wave N+2 Pantry
+            For the final wave (no wave N+1), skip the Pantry — just spawn Crumb Gatherers alone.
+            **Progress log (after each wave's Crumb Gatherers are spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_SPAWNED|wave=<N>|spawned=<agent-ids>|previews_dir=${SESSION_DIR}/previews|next_step=STEP_3_VERIFY" >> ${SESSION_DIR}/progress.log`
 
-**Step 3:** Verify — Run WWD, then DMVDC, for each wave.
+**Step 3:** Verify — Run WWD, then CMVCC, for each wave.
 
             **WWD execution mode depends on how agents in the wave were spawned:**
             - **Serial mode** (agents spawned sequentially, one at a time): After each agent commits, spawn
@@ -162,18 +162,18 @@ The Queen's window is restricted to prevent context bloat, but certain files are
               gate — the next agent must not be spawned until WWD PASS is received for the previous one.
             - **Batch mode** (agents spawned in parallel in a single message): After ALL wave agents have
               committed, spawn one Pest Control (`model: "haiku"`) instance per committed task (can be
-              concurrent). Wait for ALL WWD reports before proceeding to DMVDC. This is a post-hoc batch
+              concurrent). Wait for ALL WWD reports before proceeding to CMVCC. This is a post-hoc batch
               check — per-agent serial gating is mechanically impossible when commits arrive nearly
               simultaneously.
             **Mode selection rule**: If you spawned agents in a single message (parallel wave), use batch
             mode. If you spawned agents individually in separate messages, use serial mode.
-            **Progress log (after all WWD reports PASS for the wave):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_WWD_PASS|wave=<N>|mode=<serial|batch>|tasks_checked=<ids>|next_step=STEP_3_DMVDC" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after all WWD reports PASS for the wave):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_WWD_PASS|wave=<N>|mode=<serial|batch>|tasks_checked=<ids>|next_step=STEP_3_CMVCC" >> ${SESSION_DIR}/progress.log`
 
-            After all WWD reports PASS, spawn Pest Control (`model: "sonnet"`) for Dirt Moved vs Dirt Claimed (DMVDC)
+            After all WWD reports PASS, spawn Pest Control (`model: "sonnet"`) for Crumbs Moved vs Crumbs Claimed (CMVCC)
             (pass task IDs, commit hashes, summary doc paths; Pest Control reads
-            `orchestration/templates/checkpoints/common.md` + `orchestration/templates/checkpoints/dmvdc.md` + task-metadata/ + git diffs itself).
-            Failed DMVDC → resume agent (max 2 retries).
-            **Progress log (after DMVDC PASS for each wave):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_VERIFIED|wave=<N>|dmvdc=pass|tasks_verified=<ids>|commits=<hashes>|next_step=REVIEW_3B" >> ${SESSION_DIR}/progress.log`
+            `orchestration/templates/checkpoints/common.md` + `orchestration/templates/checkpoints/cmvcc.md` + task-metadata/ + git diffs itself).
+            Failed CMVCC → resume agent (max 2 retries).
+            **Progress log (after CMVCC PASS for each wave):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_VERIFIED|wave=<N>|cmvcc=pass|tasks_verified=<ids>|commits=<hashes>|next_step=REVIEW_3B" >> ${SESSION_DIR}/progress.log`
             Note: For non-final waves, use `next_step=NEXT_WAVE` instead. The Position Check (see below) uses this value to confirm the correct next action.
 
 **Step 3b:** Review — Read `orchestration/RULES-review.md` now for the full Step 3b workflow.
@@ -184,9 +184,9 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 
             **Progress log (after fix Scout SSV PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_SCOUT_COMPLETE|round=<N>|ssv=pass|fix_crumbs=<crumb-ids>|next_step=FIX_AGENTS_SPAWN" >> ${SESSION_DIR}/progress.log`
 
-            **Progress log (after fix agents spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_AGENTS_SPAWNED|round=<N>|fix_dps=<names>|fix_pcs=fix-pc-wwd,fix-pc-dmvdc|next_step=FIX_INNER_LOOP" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after fix agents spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_AGENTS_SPAWNED|round=<N>|fix_dps=<names>|fix_pcs=fix-pc-wwd,fix-pc-cmvcc|next_step=FIX_INNER_LOOP" >> ${SESSION_DIR}/progress.log`
 
-            **Progress log (after all fix DPs verified by fix-pc-dmvdc):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_DMVDC_COMPLETE|round=<N>|verified_dps=<names>|commits=<hashes>|next_step=ROUND_TRANSITION" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after all fix DPs verified by fix-pc-cmvcc):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_CMVCC_COMPLETE|round=<N>|verified_dps=<names>|commits=<hashes>|next_step=ROUND_TRANSITION" >> ${SESSION_DIR}/progress.log`
 
             **Progress log (after round transition messages sent):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|ROUND_TRANSITION|from_round=<N>|to_round=<N+1>|fix_commits=<range>|next_step=REVIEW_3B" >> ${SESSION_DIR}/progress.log`
 
@@ -265,8 +265,8 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 | SSV PASS | Pantry spawn (and all downstream steps) | ${SESSION_DIR}/pc/pc-session-ssv-{timestamp}.md |
 | CCO PASS (impl) | Agent spawn | ${SESSION_DIR}/pc/*-cco-*.md |
 | CCO PASS (review) | Nitpicker team spawn | ${SESSION_DIR}/pc/pc-session-cco-review-{timestamp}.md |
-| WWD PASS | Serial mode: next agent spawn; Batch mode: DMVDC spawn (all wave agents checked before DMVDC) | ${SESSION_DIR}/pc/*-wwd-*.md |
-| DMVDC PASS | Task closure (crumb close) | ${SESSION_DIR}/pc/*-dmvdc-*.md |
+| WWD PASS | Serial mode: next agent spawn; Batch mode: CMVCC spawn (all wave agents checked before CMVCC) | ${SESSION_DIR}/pc/*-wwd-*.md |
+| CMVCC PASS | Task closure (crumb close) | ${SESSION_DIR}/pc/*-cmvcc-*.md |
 | CCB PASS | Presenting results | ${SESSION_DIR}/pc/pc-session-ccb-{timestamp}.md |
 | Reviews | Presenting findings to user (Step 3c) | ${SESSION_DIR}/review-reports/review-consolidated-{timestamp}.md |
 | ESV PASS | Git push (Step 6) | ${SESSION_DIR}/pc/pc-session-esv-{timestamp}.md |
@@ -283,17 +283,17 @@ Read `orchestration/reference/model-assignments.md` for the full Model Assignmen
 
 ## Concurrency Rules
 
-- Max 7 Dirt Pushers concurrent
-- Max 12 total agents (Dirt Pushers + support agents: Pantry, Pest Control, Scout)
+- Max 7 Crumb Gatherers concurrent
+- Max 12 total agents (Crumb Gatherers + support agents: Pantry, Pest Control, Scout)
 - No two agents edit the same file — queue conflicting tasks sequentially
 - Each agent runs `git pull --rebase` before committing
 - Only the Queen pushes to remote
 - Only the Queen updates README; the Scribe writes CHANGELOG.md (Queen commits it at Step 6)
-- Pipeline wave N Dirt Pushers with wave N+1 Pantry in a single message (see Step 2 wave pipelining)
+- Pipeline wave N Crumb Gatherers with wave N+1 Pantry in a single message (see Step 2 wave pipelining)
 
 ### Wave Management
 
-**Retry counting**: Retry spawns count against the concurrent agent limit. A failed-and-respawned Dirt Pusher occupies a slot.
+**Retry counting**: Retry spawns count against the concurrent agent limit. A failed-and-respawned Crumb Gatherer occupies a slot.
 
 **Mid-wave decision tree**:
 
@@ -331,7 +331,7 @@ Store SESSION_DIR in your context and pass it explicitly to every agent that nee
 | Workflow Phase | Read This File |
 |----------------|----------------|
 | Composing agent prompts (Step 2) | orchestration/templates/pantry.md |
-| Agent skeleton for spawning (Step 2) | orchestration/templates/dirt-pusher-skeleton.md |
+| Agent skeleton for spawning (Step 2) | orchestration/templates/crumb-gatherer-skeleton.md |
 | Review skeleton for team (Step 3b) | orchestration/templates/nitpicker-skeleton.md |
 | Big Head skeleton for consolidation (Step 3b) | orchestration/templates/big-head-skeleton.md |
 | Implementation details (read by the Pantry) | orchestration/templates/implementation.md |
@@ -348,14 +348,14 @@ Store SESSION_DIR in your context and pass it explicitly to every agent that nee
 
 | Situation | Max Retries | After Limit |
 |-----------|-------------|-------------|
-| Agent fails DMVDC | 2 | Escalate to user with full context |
+| Agent fails CMVCC | 2 | Escalate to user with full context |
 | CCB fails | 1 | Present to user with verification report attached |
 | Agent stuck (no commit within 15 turns) | 0 | Run stuck-agent diagnostic (see below); escalate to user |
-| Pantry CCO fails | 1 | Escalate to user; do not spawn Dirt Pushers without verified prompts |
+| Pantry CCO fails | 1 | Escalate to user; do not spawn Crumb Gatherers without verified prompts |
 | Scout fails or returns no tasks | 1 | Escalate to user; do not proceed to Step 2 without task list |
 | SSV FAIL -> re-Scout cycle | 1 | Escalate to user with SSV violations; do not re-run Scout a third time |
 | Fix DP stuck/crash (no commit in team) | 0 | Run stuck-agent diagnostic; file a crumb for the failed fix; escalate to user. Do NOT re-spawn without user approval |
-| Fix PC crash (fix-pc-wwd or fix-pc-dmvdc) | 1 | Spawn replacement into team (`team_name: "nitpicker-team"`); resume from last SendMessage |
+| Fix PC crash (fix-pc-wwd or fix-pc-cmvcc) | 1 | Spawn replacement into team (`team_name: "nitpicker-team"`); resume from last SendMessage |
 | Reviewer failure (round 2+, re-task via SendMessage fails) | 1 | Spawn fresh reviewer into team as replacement; re-send the round transition message |
 | Big Head crash (before crumb filing complete) | 1 | Spawn fresh Big Head into team with handoff brief describing which crumbs were filed and which remain; re-run CCB after |
 | CCB material spot-check fail | 1 | Shut down current Big Head; spawn fresh Big Head into team with handoff brief identifying failed crumbs; re-run full crumb review then re-run CCB |
@@ -378,7 +378,7 @@ Do not re-spawn the agent or attempt a fix without user approval after the stuck
 
 ### Wave Failure Threshold
 
-If more than 50% of agents in a single wave fail (DMVDC failure, stuck, or unrecoverable error), the Queen must:
+If more than 50% of agents in a single wave fail (CMVCC failure, stuck, or unrecoverable error), the Queen must:
 
 1. Stop spawning new agents for the remainder of the current wave.
 2. Collect failure summaries from all failed agents in the wave.
@@ -403,5 +403,5 @@ Project-specific overrides belong in the project's CLAUDE.md or QUALITY_PROCESS.
 
 - Token budget: finish with >75% remaining (1M context window)
 - File reads in the Queen: <10 for 40+ task sessions
-- Concurrent agents: typical 5-6 Dirt Pushers, max 12 total
+- Concurrent agents: typical 5-6 Crumb Gatherers, max 12 total
 - Commits per session: <20 (batch related work)
