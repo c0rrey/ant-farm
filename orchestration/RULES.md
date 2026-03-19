@@ -401,7 +401,7 @@ Project-specific overrides belong in the project's CLAUDE.md or QUALITY_PROCESS.
 
 ## Context Preservation Targets
 
-- Token budget: finish with >75% remaining (1M context window)
+- Token budget: finish with >50% remaining (1M context window)
 - File reads in the Queen: <10 for 40+ task sessions
 - Concurrent agents: typical 5-6 Crumb Gatherers, max 12 total
 - Commits per session: <20 (batch related work)

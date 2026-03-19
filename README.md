@@ -64,7 +64,7 @@ Four layers, each with a clear job.
 
 The Queen never reads source code, tests, configs, or implementation templates. It reads the Scout's briefing, agent notifications, commit messages, and verdict tables. That's it.
 
-Every other agent absorbs its own context cost so the Queen's window stays clean. The target: finish a 40+ task session with >75% of a 1M context window remaining.
+Every other agent absorbs its own context cost so the Queen's window stays clean. The target: finish a 40+ task session with >50% of a 1M context window remaining.
 
 If your orchestrator is spending tokens reading `utils.py`, it is not orchestrating.
 
