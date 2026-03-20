@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-03-20 — Session 20260320-141218 (setup.sh Hardening: Identity Check, Manifest Cleanup, Portability)
+
+### Summary
+
+Eight planned tasks and two review-driven fix tasks completed across three waves and two review rounds. Work focused on hardening `scripts/setup.sh`: a crumb identity sentinel and `--force` bypass (AF-51), `.local` override detection with RULES.md documentation (AF-52/AF-118), manifest-based orphan cleanup and `.af-bak.` backup pruning (AF-53), plus documentation accuracy fixes in `orchestration/PLACEHOLDER_CONVENTIONS.md` and `orchestration/templates/big-head-skeleton.md`. Round 1 review found 2 P2 issues (misleading "stubs" header, `mapfile` bash 3.2 incompatibility) that were auto-fixed; Round 2 verified both fixes clean with 0 findings. 7 commits total.
+
+### Implementation (Waves 1–3)
+
+- **AF-51**: feat: add crumb identity sentinel and `--force` flag — `crumb.py:2` sentinel, FORCE flag parsing, identity-check `elif` in Step 5 of `setup.sh` (`b7e3541`)
+- **AF-115 + AF-122**: fix: audit table corrections and line number removal — corrected placeholder name, added missing entry, removed stale line-number citations, deduplicated Compliance Status in `orchestration/PLACEHOLDER_CONVENTIONS.md` (`1bc50fe`)
+- **AF-116 + AF-123**: fix: quote shell paths and add mkdir prose handlers — mkdir-failure prose handlers for both bash blocks in `orchestration/templates/big-head-skeleton.md` (`8d54eea`)
+- **AF-52 + AF-118**: feat: add .local override detection and code-reviewer verification — inline `.local` detection in orchestration install loop, HTML comment + Queen Prohibition in `orchestration/RULES.md`, reference sentence in `orchestration/SETUP.md` (`fb14fa5`)
+- **AF-53**: feat: add manifest-based orphan cleanup and backup pruning — `INSTALLED_FILES` accumulator, manifest write, orphan cleanup, `.af-bak.` suffix migration, `BACKUP_KEEP=5` pruning in `scripts/setup.sh` (`e81d09d`)
+
+### Review Fixes (Round 1 auto-fix)
+
+- **AF-208**: fix: replace misleading 'stubs' section header with accurate description — `crumb.py:443` comment-only fix (`6b39315`)
+- **AF-209**: fix: replace mapfile with portable while-read loop — `scripts/setup.sh:629` bash 3.2 compatibility fix (`b0e8659`)
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 6 files, 8 tasks | 0 | 2 | 9 | PASS WITH ISSUES |
+| 2 | 2 fix commits | 0 | 0 | 0 | PASS — CLEAN |
+
+15 root causes consolidated. 4 cross-session deduplication skips applied (RC-1/AF-117, RC-8/AF-33, RC-9/AF-92, RC-11/AF-76). 9 P3 crumbs filed (AF-210–AF-218); 1 P2 drift crumb filed (AF-219: `docs/installation-guide.md` backup suffix mismatch).
+
+# Changelog
+
 ## 2026-03-18 — Session 20260318-000524 (Dirt Pusher to Crumb Gatherer Rename)
 
 ### Summary
