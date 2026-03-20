@@ -21,7 +21,6 @@ Run `./scripts/setup.sh` then `/ant-farm-init` to install orchestration triggers
 - `RULES.md` — Workflow steps, hard gates, concurrency rules (always loaded)
 - `templates/` — Agent prompts, checkpoints, reviews (read on demand)
 - `reference/` — Dependency analysis, known failures (read when needed)
-- `reference/crumb-cheatsheet.md` — Crumb CLI syntax, examples, and gotchas
 
 **Key rule**: After SSV PASS, the Queen auto-proceeds to Step 2. No user approval required for execution strategy.
 
