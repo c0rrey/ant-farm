@@ -699,7 +699,7 @@ def cmd_list(args: argparse.Namespace) -> None:
         ]
 
     if args.after:
-        # Compare ISO 8601 strings lexicographically; prepend date if needed
+        # Compare ISO 8601 strings lexicographically (created_at is stored as full ISO 8601)
         after_str = args.after
         results = [
             t
@@ -2286,7 +2286,7 @@ def cmd_init(args: argparse.Namespace) -> None:
 #: Pattern matching a slot placeholder, e.g. ``{{COMMIT_RANGE}}``.
 #: Slot names must start with an uppercase ASCII letter and contain only
 #: uppercase letters, digits, and underscores — matching the convention used
-#: in the orchestration templates and the shell ``fill_slot`` helper.
+#: in the orchestration templates and the ``crumb render-template`` subcommand.
 _SLOT_RE: re.Pattern[str] = re.compile(r"\{\{([A-Z][A-Z0-9_]*)\}\}")
 
 
@@ -2366,7 +2366,10 @@ def cmd_render_template(args: argparse.Namespace) -> None:
     if not template_path.is_file():
         die(f"template not found: {args.template}")
 
-    template_text = template_path.read_text(encoding="utf-8")
+    try:
+        template_text = template_path.read_text(encoding="utf-8")
+    except OSError as exc:
+        die(f"cannot read template {args.template}: {exc}")
 
     # Parse --slot KEY=VALUE pairs into a dict.
     slots: Dict[str, str] = {}

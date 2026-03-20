@@ -126,10 +126,11 @@ Single-brace `{UPPERCASE}` is already claimed by Tier 1 (Queen-substituted). Usi
 **Substitution mechanism**:
 
 ```bash
-# build-review-prompts.sh fills double-brace slots before delivering the brief:
-sed -i "s/{{REVIEW_ROUND}}/$REVIEW_ROUND/g" "$BRIEF_PATH"
-sed -i "s/{{COMMIT_RANGE}}/$COMMIT_RANGE/g" "$BRIEF_PATH"
-sed -i "s/{{CHANGED_FILES}}/$CHANGED_FILES/g" "$BRIEF_PATH"
+# crumb render-template fills double-brace slots before delivering the brief:
+crumb render-template "$TEMPLATE_PATH" \
+  --slot REVIEW_ROUND="$REVIEW_ROUND" \
+  --slot COMMIT_RANGE="$COMMIT_RANGE" \
+  --slot CHANGED_FILES="$CHANGED_FILES"
 ```
 
 ---
