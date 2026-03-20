@@ -34,7 +34,7 @@ These placeholders are filled in by the Queen agent **before spawning a subagent
 - `{AGENT_TYPE}` — subagent type for Task tool (e.g., `python-pro`, `general-purpose`)
 - `{DATA_FILE_PATH}` — full path to data file pre-written by Pantry
 - `{SUMMARY_OUTPUT_PATH}` — full path where agent should write summary doc (e.g., `{SESSION_DIR}/summaries/{TASK_SUFFIX}.md`)
-- `{REVIEW_TIMESTAMP}` — UTC timestamp in YYYYMMDD-HHmmss format, generated once at the start of Step 3b; used in review report filenames and the dummy reviewer output path to ensure all artifacts from the same review round share a consistent timestamp
+- `{TIMESTAMP}` — UTC timestamp in YYYYMMDD-HHmmss format, generated once at the start of Step 3b; used in review report filenames and the dummy reviewer output path to ensure all artifacts from the same review round share a consistent timestamp
 
 **Term Definition Block Template**:
 Every template that uses `{UPPERCASE}` placeholders MUST include this block at the top:
@@ -86,7 +86,7 @@ These placeholders represent **bash/shell variables** and appear ONLY in code bl
 **Examples**:
 - `${SESSION_ID}` — Session ID value for bash commands
 - `${SESSION_DIR}` — Session directory path for bash mkdir/mkdir operations
-- `${TIMESTAMP}` — Shell variable holding the `{REVIEW_TIMESTAMP}` value; assigned once at the start of Step 3b via `TIMESTAMP=$(date +%Y%m%d-%H%M%S)` and used in review artifact filenames
+- `${TIMESTAMP}` — Shell variable holding the `{TIMESTAMP}` value; assigned once at the start of Step 3b via `TIMESTAMP=$(date +%Y%m%d-%H%M%S)` and used in review artifact filenames
 
 **Usage pattern**:
 ```bash

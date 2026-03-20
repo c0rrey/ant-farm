@@ -145,7 +145,7 @@ New or changed agent files require a Claude Code restart to load.
 
 ### File Backups
 
-The setup script backs up any existing target file that differs from the source before overwriting. Backups use a timestamped `.bak` suffix (e.g., `CLAUDE.md.bak.20260313T142500`). Each run uses a single timestamp for all backups. Unchanged files are not backed up or rewritten.
+The setup script backs up any existing target file that differs from the source before overwriting. Backups use a timestamped `.af-bak` suffix (e.g., `CLAUDE.md.af-bak.20260313T142500`). Each run uses a single timestamp for all backups. Unchanged files are not backed up or rewritten.
 
 ## Backup Strategy
 
@@ -158,11 +158,11 @@ The setup process automatically creates timestamped backups of changed files. Un
 When setup.sh detects an ant-farm block in `~/.claude/CLAUDE.md`, it backs up the file before removing the block. If no block is present, no backup is created.
 
 ```
-~/.claude/CLAUDE.md.bak.20260217T214523
-~/.claude/CLAUDE.md.bak.20260217T215015
+~/.claude/CLAUDE.md.af-bak.20260217T214523
+~/.claude/CLAUDE.md.af-bak.20260217T215015
 ```
 
-Format: `<filename>.bak.<YYYYMMDDTHHMMSS>`
+Format: `<filename>.af-bak.<YYYYMMDDTHHMMSS>`
 
 **When**: Only when setup.sh removes an ant-farm block from `~/.claude/CLAUDE.md`.
 **Why**: If the block removal has an unintended side effect, you can restore the pre-removal state from the backup
@@ -171,10 +171,10 @@ Format: `<filename>.bak.<YYYYMMDDTHHMMSS>`
 
 ```bash
 # List available backups
-ls -la ~/.claude/CLAUDE.md.bak.*
+ls -la ~/.claude/CLAUDE.md.af-bak.*
 
 # Restore a specific backup
-cp ~/.claude/CLAUDE.md.bak.20260217T214523 ~/.claude/CLAUDE.md
+cp ~/.claude/CLAUDE.md.af-bak.20260217T214523 ~/.claude/CLAUDE.md
 ```
 
 ### Manual Backups
@@ -255,10 +255,10 @@ If you had a personal `~/.claude/CLAUDE.md` before installing ant-farm (older in
 
 ```bash
 # Find any backup
-ls -la ~/.claude/CLAUDE.md.bak.*
+ls -la ~/.claude/CLAUDE.md.af-bak.*
 
 # Restore an old backup
-cp ~/.claude/CLAUDE.md.bak.XXXXXXX ~/.claude/CLAUDE.md
+cp ~/.claude/CLAUDE.md.af-bak.XXXXXXX ~/.claude/CLAUDE.md
 ```
 
 If you never had a personal `~/.claude/CLAUDE.md`, no action is needed — the migration cleanup in Step 6 of setup.sh already removed the ant-farm sentinel block from the global file.
@@ -370,7 +370,7 @@ chmod 755 ~/.claude/agents/
 df -h ~
 
 # Clear old CLAUDE.md backups if needed
-rm ~/.claude/CLAUDE.md.bak.*
+rm ~/.claude/CLAUDE.md.af-bak.*
 ```
 
 ## Next Steps
