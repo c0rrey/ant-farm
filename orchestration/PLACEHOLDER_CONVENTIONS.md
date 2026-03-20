@@ -136,14 +136,14 @@ sed -i "s/{{CHANGED_FILES}}/$CHANGED_FILES/g" "$BRIEF_PATH"
 
 ## File-by-File Audit (Completed)
 
-All files audited. All files use the Tiered convention correctly.
+All files audited. All files use the Tiered convention correctly. When updating this table, run Patterns 1-5 (see Validation Rules) against the affected files to confirm tier assignments before editing rows.
 
 | File | Tier 1 Placeholders | Tier 2 Placeholders | Tier 3 Placeholders | Tier 4 Placeholders | Term Definition Block | Status |
 |------|---|---|---|---|---|---------|
 | `scout.md` | `{SESSION_DIR}` (L10,62,66,129,175,178), `{MODE}` (L11) | `{session-dir}` (L166-167), `{task-id}` (L81,254), `{task-suffix}` (L78), `{id}`, `{epic-id}`, `{title}`, `{N}`, `{M}`, `{name}`, `{task-list}`, `{task-A/B/C}` (L137-198) | None | None | No (uses examples inline) | PASS |
 | `pantry.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{SESSION_DIR}` | `{session-dir}` (review output paths, previews, prompts), `{id}`, `{type}`, `{path}`, `{timestamp}` | None | None | Yes (L5-8) | PASS |
-| `RULES.md` | `{REVIEW_TIMESTAMP}` (Step 3b-i, via `${TIMESTAMP}` shell var), `${SESSION_DIR}` (all gates) | None | `${SESSION_ID}` (L119), `${SESSION_DIR}` (L119-120), `${TIMESTAMP}` (Step 3b-i) | None | No (references other term defs) | PASS |
-| `checkpoints.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{SESSION_DIR}` (term def L4-6, used throughout) | `{checkpoint}`, `{path}`, `{N}`, `{M}`, `{before-commit}`, `{after-commit}`, `{commit}`, `{file}`, `{line}`, `{description}`, `{list}` (in examples) | None | None | Yes (L4-6) | PASS |
+| `RULES.md` | `{TIMESTAMP}` (Step 3b-i, via `${TIMESTAMP}` shell var), `{SESSION_DIR}` (all gates) | None | `${SESSION_ID}`, `${SESSION_DIR}`, `${TIMESTAMP}` (Step 3b-i) | None | No (references other term defs) | PASS |
+| `checkpoints.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{SESSION_DIR}` (term def near top, used throughout), `{SESSION_START_DATE}` (ESV) | `{checkpoint}`, `{path}`, `{N}`, `{M}`, `{before-commit}`, `{after-commit}`, `{commit}`, `{file}`, `{line}`, `{description}`, `{list}` (in examples) | None | None | Yes (term def near top) | PASS |
 | `crumb-gatherer-skeleton.md` | `{TASK_TYPE}`, `{TASK_ID}`, `{TASK_SUFFIX}`, `{AGENT_TYPE}`, `{DATA_FILE_PATH}`, `{SUMMARY_OUTPUT_PATH}`, `{SESSION_DIR}` | None | None | None | Yes (L8-11) | PASS |
 | `nitpicker-skeleton.md` | `{REVIEW_TYPE}`, `{DATA_FILE_PATH}`, `{REPORT_OUTPUT_PATH}` | None | None | None | Partial (L8-11, missing EPOCH/timestamp defs) | PASS |
 | `big-head-skeleton.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{TIMESTAMP}`, `{DATA_FILE_PATH}`, `{CONSOLIDATED_OUTPUT_PATH}`, `{SESSION_DIR}` | None | None | None | Yes (L8-12) | PASS |
@@ -250,14 +250,6 @@ The orchestration system complies with the Tiered Placeholder Convention. All an
 11. **RULES-review.md** — COMPLIANT (ant-farm-gkk)
     - Converted angle-bracket substitution placeholders in shell arguments, progress log strings, and path templates to Tier 2 `{lowercase-kebab}` syntax
     - CLI examples (`crumb show <crumb-id>`, `crumb update <crumb-id>`) preserved as-is
-
-### Convention Summary
-
-All four placeholder tiers are now consistently used:
-- Queen-provided context: `{UPPERCASE}` (`{SESSION_DIR}`, `{TASK_ID}`, `{TASK_SUFFIX}`)
-- Agent-derived or output examples: `{lowercase-kebab}` (`{session-dir}`, `{timestamp}`)
-- Shell variables: `${VAR}` syntax (`${SESSION_ID}`) — in bash code blocks only
-- Script-substituted review slots: `{{UPPERCASE}}` (`{{REVIEW_ROUND}}`) — filled by `build-review-prompts.sh`
 
 ---
 
