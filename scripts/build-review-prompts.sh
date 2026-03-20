@@ -43,7 +43,11 @@ set -euo pipefail
 # so that render-template (added by AF-223) is always available.
 # ---------------------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-CRUMB="python3 ${SCRIPT_DIR}/../crumb.py"
+if [ -f "${SCRIPT_DIR}/../crumb.py" ]; then
+    CRUMB="python3 ${SCRIPT_DIR}/../crumb.py"
+else
+    CRUMB="crumb"
+fi
 
 # ---------------------------------------------------------------------------
 # Argument validation
