@@ -397,6 +397,13 @@ if [ -d "$REPO_ROOT/orchestration" ]; then
             dst="${HOME}/.claude/orchestration/${rel}"
             backup_and_copy "$src_file" "$dst" || { warn "Failed to install orchestration file: $src_file"; continue; }
             orchestration_installed=$((orchestration_installed + 1))
+
+            # Detect .local override: if a .local variant exists at the destination,
+            # print a notice. setup.sh never creates, modifies, or deletes .local files.
+            local_dst="${dst%.*}.local.${dst##*.}"
+            if [ -f "$local_dst" ]; then
+                log "Notice: .local override active: $local_dst (overrides $dst)"
+            fi
         done < "$find_output"
         rm -f "$find_output"
 

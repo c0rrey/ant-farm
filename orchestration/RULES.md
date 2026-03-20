@@ -1,4 +1,5 @@
 # Orchestration Rules
+<!-- .local override: To customize, create RULES.local.md in the same directory. Your local file will not be overwritten by setup.sh. -->
 
 ## Path Reference Convention
 
@@ -13,6 +14,7 @@ accessible at `~/.claude/orchestration/templates/scout.md`. To translate repo pa
 
 ## Queen Prohibitions (read FIRST)
 
+- **PREFER RULES.local.md** — If `RULES.local.md` exists in the same directory as this file, read and follow it instead of (or in addition to) this file. Local overrides take precedence.
 - **NEVER** run `crumb show`, `crumb ready`, `crumb list`, `crumb blocked`, or any `crumb` query command — the Scout does this
 - **NEVER** read source code, tests, project data files, or config files — agents do this
 - **NEVER** read agent **instruction files** (scout.md, pantry.md, implementation.md, checkpoints/*.md, reviews.md, etc.) — pass the path to the agent, let it read its own instructions
