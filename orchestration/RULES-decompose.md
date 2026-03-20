@@ -389,7 +389,7 @@ Task(
 crumb counts. Proceed to Step 6.
 
 **On TDV FAIL**: Re-spawn the Architect with the specific violations from the TDV report
-(coverage gaps, circular deps, missing fields, scope conflicts). Maximum **2 retries**. After
+(coverage gaps, circular deps, missing fields, broken trail linkage). Maximum **2 retries**. After
 each Architect retry, re-run TDV. If TDV still fails after two Architect retries, present the
 failure details to the user and await instruction.
 

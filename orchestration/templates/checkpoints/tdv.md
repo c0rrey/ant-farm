@@ -5,9 +5,9 @@
 **When**: After Architect completes trail decomposition and writes crumbs to the crumb store, BEFORE handoff to the implementation wave
 **Model**: `haiku` (set comparisons, graph traversals, field existence checks — no judgment required)
 
-**Why**: The Architect produces a decomposition (trail + crumbs) that defines all downstream implementation work. Structural defects here — missing fields, circular dependencies, file conflicts within a wave, broken trail linkage — cannot be caught by the implementing agents and cascade into incorrect or conflicting work. A lightweight automated check immediately after decomposition catches defects at the cheapest possible point.
+**Why**: The Architect produces a decomposition (trail + crumbs) that defines all downstream implementation work. Structural defects here — missing fields, circular dependencies, broken trail linkage — cannot be caught by the implementing agents and cascade into incorrect or conflicting work. A lightweight automated check immediately after decomposition catches defects at the cheapest possible point.
 
-**Why haiku**: All five structural checks are set comparisons, graph traversals, and field presence validations with no ambiguity. The three heuristic warnings require pattern matching but no code comprehension. Haiku handles this class of verification faster and cheaper than sonnet.
+**Why haiku**: All four structural checks are set comparisons, graph traversals, and field presence validations with no ambiguity. The two heuristic warnings require pattern matching but no code comprehension. Haiku handles this class of verification faster and cheaper than sonnet.
 
 ### TDV Property Table
 
@@ -19,7 +19,7 @@
 | **When** | After Architect completes decomposition, before implementation wave |
 | **Blocks** | Handoff to implementation wave (FAIL blocks; PASS proceeds) |
 | **Max retries** | 2 (Architect retries); escalate to user after second failure |
-| **Checks** | 5 structural (blockers) + 3 heuristic (warnings only) |
+| **Checks** | 4 structural (blockers) + 2 heuristic (warnings only) |
 
 ```markdown
 **Pest Control verification - TDV (Trail Decomposition Verification)**
@@ -33,7 +33,7 @@ You are **Pest Control**, the verification subagent. Your role is to verify the 
 > `RULES-decompose.md`), substitute `{DECOMPOSE_DIR}` for `{SESSION_DIR}` in all output paths.
 > The Planner passes `DECOMPOSE_DIR` as the session directory value when filling this template.
 
-Read the trail and all associated crumbs first (run `crumb show {TRAIL_ID}` and `crumb trail status {TRAIL_ID}` to enumerate child crumb IDs, then `crumb show <crumb-id>` for each). Then run all five structural checks and three heuristic checks below.
+Read the trail and all associated crumbs first (run `crumb show {TRAIL_ID}` and `crumb trail status {TRAIL_ID}` to enumerate child crumb IDs, then `crumb show <crumb-id>` for each). Then run all four structural checks and two heuristic checks below.
 
 ## Check 1: Coverage — Spec Requirements Map to Crumb Acceptance Criteria
 
@@ -80,28 +80,7 @@ If `crumb show <id>` fails (ID not found, unreadable, or crumb command error):
 **PASS condition**: No circular chains exist and all referenced IDs resolve.
 **FAIL condition**: Any circular dependency or unresolvable ID reference found. List every violation.
 
-## Check 4: Scope Coherence — No Two Crumbs in the Same Provisional Wave Touch the Same File
-
-### Provisional Wave Computation Algorithm
-
-The decomposition does not explicitly label waves. Compute provisional waves as follows:
-
-1. Build a directed acyclic graph (DAG) where each crumb is a node and each `blocked_by` edge points from dependent → dependency.
-2. Assign each crumb a wave number equal to 1 + the maximum wave number of all its dependencies (crumbs with no dependencies are Wave 1).
-3. Repeat until all crumbs have a wave assignment.
-
-**Example**: Crumbs A, B (no deps) → Wave 1. Crumb C (blocked_by A) → Wave 2. Crumb D (blocked_by B, C) → Wave 3.
-
-Once wave assignments are computed:
-
-4. For each wave, collect all affected files listed in `scope.files` for every crumb in that wave.
-5. Check whether any file appears in two or more crumbs within the same wave.
-6. Report each conflict as: "Wave {N}: file `{path}` appears in crumbs `{crumb-id-1}` AND `{crumb-id-2}` — parallel edits would conflict."
-
-**PASS condition**: No file appears in more than one crumb within any single wave.
-**FAIL condition**: One or more files appear in multiple crumbs in the same wave. List every conflict.
-
-## Check 5: Trail Integrity — Every Crumb Has a Parent Trail, Every Trail Has at Least One Child
+## Check 4: Trail Integrity — Every Crumb Has a Parent Trail, Every Trail Has at Least One Child
 
 1. For each crumb, verify that `links.parent` references `{TRAIL_ID}` (the decomposed trail).
 2. Verify that the trail has at least one crumb listed as a child (i.e., the decomposition produced at least one crumb).
@@ -115,7 +94,7 @@ Once wave assignments are computed:
 
 ## Heuristic Warnings (Non-Blocking)
 
-The following three checks produce **WARN** verdicts only — they do not block handoff. Report them separately after the five structural checks. The Queen reviews and uses judgment to act or proceed.
+The following two checks produce **WARN** verdicts only — they do not block handoff. Report them separately after the four structural checks. The Queen reviews and uses judgment to act or proceed.
 
 ### Warning 1: Acceptance Criteria Quality
 
@@ -130,19 +109,11 @@ Flag any crumb where more than half of its acceptance criteria are vague. Report
 If any crumb's dependency chain (the longest path from it to a root crumb) exceeds 3 hops, flag it:
 "WARN — Crumb `{crumb-id}` has dependency depth {N} (chain: {crumb-id} → ... → root). Deep chains amplify cascade risk — consider whether intermediate dependencies can be collapsed."
 
-### Warning 3: Directory Overlap in the Same Wave
-
-Even when no single file conflicts exist (Check 4 PASS), two crumbs in the same wave that both touch files in the same directory may indicate logical coupling missed by the Architect.
-
-For each wave, identify crumbs whose `scope.files` share a common parent directory. Report as: "WARN — Wave {N}: crumbs `{crumb-id-1}` and `{crumb-id-2}` both touch files under `{directory}/`. Verify they do not have implicit coupling (e.g., shared imports, shared config, shared test fixtures)."
-
-Only flag directory overlaps where both crumbs each touch at least 2 files in the shared directory (single-file incidental overlap is not worth flagging).
-
 ---
 
 ## Verdict
 
-**PASS** — All 5 structural checks pass (heuristic warnings may be present). Report PASS to the Queen. The Queen will proceed to implementation handoff — do NOT begin handoff yourself.
+**PASS** — All 4 structural checks pass (heuristic warnings may be present). Report PASS to the Queen. The Queen will proceed to implementation handoff — do NOT begin handoff yourself.
 
 **FAIL: <list each failing structural check>** — One or more structural checks failed. Do NOT proceed to handoff. Report specific violations so the Architect can revise the decomposition.
 
@@ -159,9 +130,7 @@ Only flag directory overlaps where both crumbs each touch at least 2 files in th
 > Check 3 (Dependency Validity): FAIL
 > - Crumb `ant-farm-ghi`: `blocked_by` references `ant-farm-zzz` which does not exist.
 >
-> Check 4 (Scope Coherence): PASS
->
-> Check 5 (Trail Integrity): PASS
+> Check 4 (Trail Integrity): PASS
 >
 > Warnings:
 > - WARN — Crumb `ant-farm-abc`: 2 of 3 acceptance criteria are vague (e.g., "Works as expected").
