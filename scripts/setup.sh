@@ -16,7 +16,7 @@
 #   Step 6c: Write block to the repo's own CLAUDE.md (loaded by Claude Code
 #            at session start).
 #
-# Backs up any existing target file with a timestamped .bak suffix before
+# Backs up any existing target file with a timestamped .af-bak suffix before
 # overwriting. Idempotent: re-running updates files; each run generates at
 # most one backup per file (using a single TS for the whole run).
 #
@@ -29,6 +29,13 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TS="$(date +%Y%m%dT%H%M%S)"
 DRY_RUN=false
 FORCE=false
+
+# ---------------------------------------------------------------------------
+# Manifest tracking: collects every destination path installed this run.
+# Written to MANIFEST_PATH after all install steps complete.
+# ---------------------------------------------------------------------------
+MANIFEST_PATH="${HOME}/.claude/.ant-farm-manifest"
+INSTALLED_FILES=()
 
 # ---------------------------------------------------------------------------
 # Parse args
@@ -62,11 +69,12 @@ backup_and_copy() {
             if cmp -s "$src" "$dst"; then
                 log "[dry-run] unchanged: $dst"
             else
-                log "[dry-run] would backup + update: $dst -> ${dst}.bak.${TS}"
+                log "[dry-run] would backup + update: $dst -> ${dst}.af-bak.${TS}"
             fi
         else
             log "[dry-run] would install: $dst"
         fi
+        INSTALLED_FILES+=("$dst")
         return
     fi
 
@@ -74,17 +82,19 @@ backup_and_copy() {
 
     if [ -f "$dst" ]; then
         if ! cmp -s "$src" "$dst"; then
-            local bak="${dst}.bak.${TS}"
+            local bak="${dst}.af-bak.${TS}"
             cp "$dst" "$bak" || { echo "[ant-farm] ERROR: backup failed for $dst" >&2; return 1; }
             log "Backed up: $dst -> $bak"
         else
             log "Unchanged: $dst"
+            INSTALLED_FILES+=("$dst")
             return
         fi
     fi
 
     cp "$src" "$dst" || { echo "[ant-farm] ERROR: install failed for $dst" >&2; return 1; }
     log "Installed: $dst"
+    INSTALLED_FILES+=("$dst")
 }
 
 ANTFARM_START="<!-- ant-farm:start -->"
@@ -126,9 +136,10 @@ sync_claude_block() {
             if [ "$existing" = "$block" ]; then
                 log "[dry-run] unchanged: $dst (ant-farm block)"
             else
-                log "[dry-run] would update ant-farm block in: $dst -> ${dst}.bak.${TS}"
+                log "[dry-run] would update ant-farm block in: $dst -> ${dst}.af-bak.${TS}"
             fi
         fi
+        INSTALLED_FILES+=("$dst")
         return
     fi
 
@@ -138,12 +149,13 @@ sync_claude_block() {
         # No file yet — create with just the block
         printf '%s\n' "$block" > "$dst"
         log "Created: $dst (with ant-farm block)"
+        INSTALLED_FILES+=("$dst")
         return
     fi
 
     if ! grep -qF "$ANTFARM_START" "$dst"; then
         # File exists but no ant-farm block — back up then append
-        local bak="${dst}.bak.${TS}"
+        local bak="${dst}.af-bak.${TS}"
         cp "$dst" "$bak" || { echo "[ant-farm] ERROR: backup failed for $dst" >&2; return 1; }
         log "Backed up: $dst -> $bak"
         # Ensure trailing newline before appending
@@ -152,6 +164,7 @@ sync_claude_block() {
         fi
         printf '\n%s\n' "$block" >> "$dst"
         log "Appended ant-farm block to: $dst"
+        INSTALLED_FILES+=("$dst")
         return
     fi
 
@@ -166,11 +179,12 @@ sync_claude_block() {
     existing="$(extract_block "$dst")"
     if [ "$existing" = "$block" ]; then
         log "Unchanged: $dst (ant-farm block)"
+        INSTALLED_FILES+=("$dst")
         return
     fi
 
     # Block differs — back up then replace
-    local bak="${dst}.bak.${TS}"
+    local bak="${dst}.af-bak.${TS}"
     cp "$dst" "$bak" || { echo "[ant-farm] ERROR: backup failed for $dst" >&2; return 1; }
     log "Backed up: $dst -> $bak"
 
@@ -193,6 +207,7 @@ sync_claude_block() {
     ' "$dst" > "$tmpfile"; then
         mv "$tmpfile" "$dst"
         log "Updated ant-farm block in: $dst"
+        INSTALLED_FILES+=("$dst")
     else
         rm -f "$tmpfile" "$blockfile"
         echo "[ant-farm] ERROR: awk replacement failed for $dst — backup at $bak" >&2
@@ -207,7 +222,7 @@ sync_claude_block() {
 #   If the block is not present, does nothing.
 #   If the file ends up empty (or whitespace-only) after removal, it is left
 #   in place (not deleted) — per AC-4.
-#   Always backs up DST before modifying using ${dst}.bak.${TS} convention.
+#   Always backs up DST before modifying using ${dst}.af-bak.${TS} convention.
 #   Respects DRY_RUN.
 remove_claude_block() {
     local dst="$1"
@@ -232,12 +247,12 @@ remove_claude_block() {
     fi
 
     if [ "$DRY_RUN" = true ]; then
-        log "[dry-run] would remove ant-farm block from: $dst (backup: ${dst}.bak.${TS})"
+        log "[dry-run] would remove ant-farm block from: $dst (backup: ${dst}.af-bak.${TS})"
         return
     fi
 
     # Backup before modifying
-    local bak="${dst}.bak.${TS}"
+    local bak="${dst}.af-bak.${TS}"
     cp "$dst" "$bak" || { echo "[ant-farm] ERROR: backup failed for $dst" >&2; return 1; }
     log "Backed up: $dst -> $bak"
 
@@ -330,6 +345,22 @@ migrate_old_agents() {
         log "[dry-run] no old unprefixed agent files found — nothing to migrate."
     fi
 }
+
+# ---------------------------------------------------------------------------
+# Orphan detection: read previous manifest (if any) before installs begin.
+# After installs, files in OLD_MANIFEST_FILES but not in INSTALLED_FILES are
+# orphans and will be removed.
+# ---------------------------------------------------------------------------
+OLD_MANIFEST_FILES=()
+if [ -f "$MANIFEST_PATH" ]; then
+    while IFS= read -r line; do
+        # Skip the first line (install date header) and blank lines
+        [[ "$line" == "#"* ]] && continue
+        [[ -z "$line" ]] && continue
+        OLD_MANIFEST_FILES+=("$line")
+    done < "$MANIFEST_PATH"
+    log "Read previous manifest: ${#OLD_MANIFEST_FILES[@]} entries from $MANIFEST_PATH"
+fi
 
 log "Checking for old unprefixed agent files to migrate ..."
 migrate_old_agents
@@ -517,6 +548,100 @@ if [ ! -f "$BLOCK_SRC" ]; then
 else
     log "Installing ant-farm block → ${REPO_CLAUDE_DST} ..."
     sync_claude_block "$BLOCK_SRC" "$REPO_CLAUDE_DST"
+fi
+
+# ---------------------------------------------------------------------------
+# Post-install Step A: Orphan cleanup
+#   Files in the previous manifest that are not in this run's INSTALLED_FILES
+#   are orphans. Remove them (or report in dry-run).
+# ---------------------------------------------------------------------------
+if [ "${#OLD_MANIFEST_FILES[@]}" -gt 0 ]; then
+    log "Checking for orphaned files from previous install ..."
+    orphans_found=0
+    for old_path in "${OLD_MANIFEST_FILES[@]}"; do
+        # Check if old_path appears in current INSTALLED_FILES
+        found_in_current=false
+        for current_path in "${INSTALLED_FILES[@]}"; do
+            if [ "$current_path" = "$old_path" ]; then
+                found_in_current=true
+                break
+            fi
+        done
+
+        if [ "$found_in_current" = false ] && [ -f "$old_path" ]; then
+            orphans_found=$((orphans_found + 1))
+            if [ "$DRY_RUN" = true ]; then
+                log "[dry-run] would remove orphan: $old_path"
+            else
+                rm "$old_path" || { warn "Failed to remove orphan: $old_path — continuing"; continue; }
+                log "Removed orphan: $old_path"
+            fi
+        fi
+    done
+    if [ "$orphans_found" -eq 0 ]; then
+        log "No orphaned files found."
+    fi
+fi
+
+# ---------------------------------------------------------------------------
+# Post-install Step B: Write manifest
+#   Record every destination path installed this run, one per line.
+#   The manifest file itself is NOT included in the list.
+#   Skipped in dry-run mode.
+# ---------------------------------------------------------------------------
+if [ "$DRY_RUN" = false ]; then
+    {
+        printf '# ant-farm install manifest — %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+        for installed_path in "${INSTALLED_FILES[@]}"; do
+            printf '%s\n' "$installed_path"
+        done
+    } > "$MANIFEST_PATH"
+    log "Wrote manifest: $MANIFEST_PATH (${#INSTALLED_FILES[@]} entries)"
+else
+    log "[dry-run] would write manifest: $MANIFEST_PATH (${#INSTALLED_FILES[@]} would-be entries)"
+fi
+
+# ---------------------------------------------------------------------------
+# Post-install Step C: Backup pruning
+#   For each file tracked in INSTALLED_FILES, prune .af-bak.* backups to
+#   keep only the 5 most recent. Older backups are deleted (or reported in
+#   dry-run). Existing .bak.* files from pre-AF-53 runs are never touched.
+# ---------------------------------------------------------------------------
+BACKUP_KEEP=5
+log "Pruning old backups (keeping ${BACKUP_KEEP} most recent .af-bak.* per file) ..."
+pruned_total=0
+
+for base_path in "${INSTALLED_FILES[@]}"; do
+    # List all .af-bak.* backups for this base path, sorted newest-first.
+    # Pattern: <base_path>.af-bak.<TIMESTAMP>
+    # We glob for them, then sort in reverse order.
+    backups=()
+    shopt -s nullglob
+    for bak in "${base_path}".af-bak.*; do
+        backups+=("$bak")
+    done
+    shopt -u nullglob
+
+    # Sort backups newest-first (lexicographic reverse — timestamps are sortable)
+    # Use a temp array with process substitution
+    if [ "${#backups[@]}" -gt "$BACKUP_KEEP" ]; then
+        # Sort descending: newest first
+        mapfile -t sorted_backups < <(printf '%s\n' "${backups[@]}" | sort -r)
+        for (( i=BACKUP_KEEP; i<${#sorted_backups[@]}; i++ )); do
+            old_bak="${sorted_backups[$i]}"
+            pruned_total=$((pruned_total + 1))
+            if [ "$DRY_RUN" = true ]; then
+                log "[dry-run] would prune backup: $old_bak"
+            else
+                rm "$old_bak" || { warn "Failed to prune backup: $old_bak — continuing"; continue; }
+                log "Pruned backup: $old_bak"
+            fi
+        done
+    fi
+done
+
+if [ "$pruned_total" -eq 0 ]; then
+    log "No backups needed pruning."
 fi
 
 # ---------------------------------------------------------------------------
