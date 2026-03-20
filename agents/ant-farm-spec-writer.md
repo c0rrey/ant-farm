@@ -1,5 +1,5 @@
 ---
-name: ant-farm-surveyor
+name: ant-farm-spec-writer
 description: Requirements gathering agent that reads freeform feature requests and existing codebase context, asks targeted clarifying questions via AskUserQuestion, and writes a structured spec.md with testable acceptance criteria.
 tools: Read, Write, Glob, Grep, Bash, AskUserQuestion
 model: opus

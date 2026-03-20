@@ -1,5 +1,5 @@
 ---
-name: ant-farm-scout-organizer
+name: ant-farm-recon-planner
 description: Pre-flight recon agent for multi-agent orchestration. Discovers tasks via crumb CLI, analyzes dependencies, discovers available agent types, recommends the best agent per task, and proposes execution strategies with wave groupings.
 tools: Read, Write, Glob, Grep, Bash
 model: opus

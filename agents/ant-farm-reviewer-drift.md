@@ -1,5 +1,5 @@
 ---
-name: ant-farm-nitpicker-drift
+name: ant-farm-reviewer-drift
 description: Drift specialist on the Nitpicker review team. Finds stale cross-file references, incomplete propagation of changes, and broken assumptions across file boundaries. Produces file:line findings with calibrated severity.
 tools: Read, Write, Edit, Bash, Glob, Grep
 ---
@@ -107,7 +107,7 @@ orchestration/templates/claude-block.md:L42 [P1] Step 5 was renamed from "Commit
 
 **P2 example**:
 ```
-agents/ant-farm-big-head.md:L55 [P2] The data file schema now requires a "review_type" field (added in commit abc1234), but the template at pantry.md:L88 still writes "type" as the key name. Big Head will receive data files with a missing required field and silently fall back to a default behavior.
+agents/ant-farm-review-consolidator.md:L55 [P2] The data file schema now requires a "review_type" field (added in commit abc1234), but the template at pantry.md:L88 still writes "type" as the key name. The review consolidator will receive data files with a missing required field and silently fall back to a default behavior.
 ```
 
 **P3 example**:

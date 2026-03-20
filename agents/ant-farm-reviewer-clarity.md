@@ -1,5 +1,5 @@
 ---
-name: ant-farm-nitpicker-clarity
+name: ant-farm-reviewer-clarity
 description: Clarity specialist on the Nitpicker review team. Finds naming, documentation, and structural-organization issues that impede human comprehension. Produces file:line findings with calibrated severity.
 tools: Read, Write, Edit, Bash, Glob, Grep
 ---

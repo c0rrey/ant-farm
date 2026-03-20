@@ -1,5 +1,5 @@
 ---
-name: ant-farm-forager
+name: ant-farm-researcher
 description: Parallel research specialist that investigates a single focus area (Stack, Architecture, Pitfall, or Pattern) against a feature spec. Four Forager instances run concurrently, each reading the spec independently and writing findings to a dedicated research file. Never reads other Foragers' output. Enforces a 100-line hard cap on output.
 tools: Read, Write, Glob, Grep, Bash
 model: sonnet

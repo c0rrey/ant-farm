@@ -1,5 +1,5 @@
 ---
-name: ant-farm-nitpicker-correctness
+name: ant-farm-reviewer-correctness
 description: Correctness specialist on the Nitpicker review team. Finds logic errors, acceptance criteria failures, regression risks, and algorithm bugs. Produces file:line findings with calibrated severity.
 tools: Read, Write, Edit, Bash, Glob, Grep
 ---
@@ -108,7 +108,7 @@ scripts/fill-review-slots.sh:L42 [P1] Condition `if [ $count -ge $max ]` should 
 
 **P2 example**:
 ```
-agents/big-head.md:L55 [P2] `severity_sort()` sorts P1 < P2 < P3 (ascending string order) but the rendering step at L88 expects descending severity order (P1 first). The rendered report will show P3 findings at the top.
+agents/ant-farm-review-consolidator.md:L55 [P2] `severity_sort()` sorts P1 < P2 < P3 (ascending string order) but the rendering step at L88 expects descending severity order (P1 first). The rendered report will show P3 findings at the top.
 ```
 
 **P3 example**:

@@ -1,5 +1,5 @@
 ---
-name: ant-farm-pest-control
+name: ant-farm-checkpoint-auditor
 description: Verification auditor that cross-checks agent and orchestrator claims against ground truth. Runs checkpoint audits (CCO, WWD, CMVCC, CCB) by comparing prompts, commits, and reports against actual code and git diffs.
 tools: Bash, Read, Write, Glob, Grep
 ---

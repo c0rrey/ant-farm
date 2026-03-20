@@ -1,5 +1,5 @@
 ---
-name: ant-farm-technical-writer
+name: ant-farm-session-scribe
 description: Session Scribe that reads session artifacts and produces an exec summary and CHANGELOG entry. Synthesizes briefing, agent summaries, review reports, progress log, and git history into structured markdown outputs.
 tools: Bash, Read, Write, Glob, Grep
 ---

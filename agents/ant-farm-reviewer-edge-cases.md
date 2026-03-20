@@ -1,5 +1,5 @@
 ---
-name: ant-farm-nitpicker-edge-cases
+name: ant-farm-reviewer-edge-cases
 description: Edge Cases specialist on the Nitpicker review team. Finds missing input validation, error handling gaps, boundary conditions, and defensive-programming failures. Produces file:line findings with calibrated severity.
 tools: Read, Write, Edit, Bash, Glob, Grep
 ---
