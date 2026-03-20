@@ -625,8 +625,11 @@ for base_path in "${INSTALLED_FILES[@]}"; do
     # Sort backups newest-first (lexicographic reverse — timestamps are sortable)
     # Use a temp array with process substitution
     if [ "${#backups[@]}" -gt "$BACKUP_KEEP" ]; then
-        # Sort descending: newest first
-        mapfile -t sorted_backups < <(printf '%s\n' "${backups[@]}" | sort -r)
+        # Sort descending: newest first (portable — bash 3.2 compatible; no mapfile)
+        sorted_backups=()
+        while IFS= read -r bak_line; do
+            sorted_backups+=("$bak_line")
+        done < <(printf '%s\n' "${backups[@]}" | sort -r)
         for (( i=BACKUP_KEEP; i<${#sorted_backups[@]}; i++ )); do
             old_bak="${sorted_backups[$i]}"
             pruned_total=$((pruned_total + 1))
