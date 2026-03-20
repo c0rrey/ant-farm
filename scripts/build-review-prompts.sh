@@ -38,6 +38,14 @@
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
+# Locate crumb.py in the repo root (one level above scripts/).
+# Prefer the repo-local crumb.py over any globally installed 'crumb' binary
+# so that render-template (added by AF-223) is always available.
+# ---------------------------------------------------------------------------
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+CRUMB="python3 ${SCRIPT_DIR}/../crumb.py"
+
+# ---------------------------------------------------------------------------
 # Argument validation
 # ---------------------------------------------------------------------------
 
@@ -290,63 +298,21 @@ extract_focus_block() {
 }
 
 # ---------------------------------------------------------------------------
-# Helper: safe substitution for multiline values.
-# Uses a temp file + awk to avoid issues with special characters.
+# NOTE: fill_slot() has been removed.
+# Slot substitution is now delegated to: crumb render-template
 #
-# Data format: the replacement value is written to a temp file as raw text via
-# `printf '%s'` (no NUL terminator, no tab delimiter — plain newline-separated
-# text). awk reads the temp file line by line using getline and reassembles the
-# value with "\n" between lines, preserving multiline content exactly.
-#
-# Assumption: values must not contain literal NUL bytes (\x00). printf '%s'
-# and awk getline both treat NUL as a string terminator, so a value with an
-# embedded NUL would be silently truncated.
+# Usage: crumb render-template <template-file> --slot KEY=VALUE [--slot ...]
+# The command reads the template file, expands all {{KEY}} placeholders with
+# the provided values, validates that all slots are supplied and no extras are
+# given, then writes the rendered result to stdout.
 # ---------------------------------------------------------------------------
-fill_slot() {
-    local slot="$1"     # e.g. {{COMMIT_RANGE}}
-    local value="$2"    # the value to substitute
-    local file="$3"     # file to perform in-place substitution on
-
-    # Use a temp file for the replacement value to avoid sed special-char issues
-    local tmpval
-    tmpval="$(mktemp)"
-    # shellcheck disable=SC2064
-    trap "rm -f '$tmpval'" RETURN
-    printf '%s' "$value" > "$tmpval"
-
-    # Use awk for safe multiline substitution
-    # awk reads the replacement from the temp file, avoids regex escaping issues
-    awk -v slot="$slot" -v valfile="$tmpval" '
-    BEGIN {
-        # Read the full replacement value from file (newline-delimited, one line
-        # per getline call). Lines are rejoined with "\n" to reconstruct the
-        # original multiline value inside awk string variable.
-        val = ""
-        while ((getline line < valfile) > 0) {
-            if (val != "") val = val "\n"
-            val = val line
-        }
-        close(valfile)
-    }
-    {
-        # Replace all occurrences of slot in each line
-        # Use index() + substr() instead of sub() to avoid & and \ being
-        # treated as special characters in the replacement string
-        while ((pos = index($0, slot)) > 0) {
-            $0 = substr($0, 1, pos - 1) val substr($0, pos + length(slot))
-        }
-        print
-    }
-    ' "$file" > "${file}.tmp" && mv "${file}.tmp" "$file"
-
-    rm -f "$tmpval"
-}
 
 # ---------------------------------------------------------------------------
 # Helper: build a filled review prompt for one Nitpicker review type.
 #
 # Reads the master nitpicker-skeleton.md, extracts the agent-facing section,
-# converts placeholders, fills all values, and writes the final prompt.
+# converts placeholders, and delegates all slot substitution to
+# crumb render-template. Orchestration/partitioning logic remains in shell.
 # ---------------------------------------------------------------------------
 build_nitpicker_prompt() {
     local review_type="$1"
@@ -366,13 +332,16 @@ build_nitpicker_prompt() {
     local body
     body="$(extract_agent_section "$NITPICKER_SKELETON")"
 
-    # 2. Convert {UPPERCASE} -> {{UPPERCASE}} (mark as slots for fill_slot)
+    # 2. Convert {UPPERCASE} -> {{UPPERCASE}} (crumb render-template slot format)
     body="$(printf '%s\n' "$body" | sed 's/{\([A-Z][A-Z_0-9]*\)}/{{\1}}/g')"
 
-    # 3. Fill {{REVIEW_TYPE}} with actual type name
-    body="$(printf '%s\n' "$body" | sed "s/{{REVIEW_TYPE}}/${review_type}/g")"
-
-    # 4. Write header + body + Review Brief section with literal values
+    # 3. Build a composite template containing the template body and the
+    #    Review Brief section, with {{SLOT}} markers for all variable parts.
+    #    crumb render-template will expand all markers in a single pass.
+    local tmp_template
+    tmp_template="$(mktemp)"
+    # shellcheck disable=SC2064
+    trap "rm -f '$tmp_template'" RETURN
     {
         printf '<!-- Review prompt: %s | Built by build-review-prompts.sh -->\n' "$review_type"
         echo ""
@@ -381,41 +350,50 @@ build_nitpicker_prompt() {
         echo "---"
         echo "## Review Brief"
         echo ""
-        echo "**Commit range**: ${COMMIT_RANGE}"
+        echo "**Commit range**: {{COMMIT_RANGE}}"
         echo ""
-        echo "**Review round**: ${REVIEW_ROUND}"
+        echo "**Review round**: {{REVIEW_ROUND}}"
         echo ""
         echo "**Files to review**:"
-        echo "${type_files}"
+        echo "{{CHANGED_FILES}}"
         echo ""
         echo "## Focus"
         echo ""
         extract_focus_block "$review_type"
         echo ""
         echo "**Task IDs** (for correctness review — run \`crumb show <id>\` to retrieve acceptance criteria):"
-        echo "${TASK_IDS}"
+        echo "{{TASK_IDS}}"
         echo ""
-        echo "**Report output path**: ${report_output_path}"
+        echo "**Report output path**: {{REPORT_OUTPUT_PATH}}"
         echo ""
-        echo "**Timestamp**: ${TIMESTAMP}"
+        echo "**Timestamp**: {{TIMESTAMP}}"
         echo ""
         echo "Do NOT file crumbs — Big Head handles all crumb filing."
-    } > "$out_prompt" || {
-        echo "ERROR: Failed to write prompt file: $out_prompt" >&2
+    } > "$tmp_template" || {
+        echo "ERROR: Failed to write template file: $tmp_template" >&2
         exit 1
     }
 
-    # 5. Fill any remaining {{SLOT}} markers in the template body
-    #    (DATA_FILE_PATH and REPORT_OUTPUT_PATH appear in the nitpicker template body)
-    fill_slot "{{DATA_FILE_PATH}}"      "$data_file_path"        "$out_prompt"
-    fill_slot "{{REPORT_OUTPUT_PATH}}"  "$report_output_path"    "$out_prompt"
-    fill_slot "{{REVIEW_ROUND}}"        "$REVIEW_ROUND"          "$out_prompt"
-    fill_slot "{{COMMIT_RANGE}}"        "$COMMIT_RANGE"          "$out_prompt"
-    fill_slot "{{CHANGED_FILES}}"       "$type_files"            "$out_prompt"
-    fill_slot "{{TASK_IDS}}"            "$TASK_IDS"              "$out_prompt"
-    fill_slot "{{TIMESTAMP}}"           "$TIMESTAMP"             "$out_prompt"
+    # 4. Delegate all slot substitution to crumb render-template.
+    #    Slots: REVIEW_TYPE, DATA_FILE_PATH, REPORT_OUTPUT_PATH, REVIEW_ROUND,
+    #           COMMIT_RANGE, CHANGED_FILES, TASK_IDS, TIMESTAMP.
+    #    Values with newlines are passed as quoted shell arguments; Python's
+    #    argparse receives the full string including embedded newlines.
+    $CRUMB render-template "$tmp_template" \
+        --slot "REVIEW_TYPE=${review_type}" \
+        --slot "DATA_FILE_PATH=${data_file_path}" \
+        --slot "REPORT_OUTPUT_PATH=${report_output_path}" \
+        --slot "REVIEW_ROUND=${REVIEW_ROUND}" \
+        --slot "COMMIT_RANGE=${COMMIT_RANGE}" \
+        --slot "CHANGED_FILES=${type_files}" \
+        --slot "TASK_IDS=${TASK_IDS}" \
+        --slot "TIMESTAMP=${TIMESTAMP}" \
+        > "$out_prompt" || {
+        echo "ERROR: crumb render-template failed for ${review_type}" >&2
+        exit 1
+    }
 
-    # 6. Copy to preview
+    # 5. Copy to preview
     cp "$out_prompt" "$out_preview" || {
         echo "ERROR: Failed to write preview for ${review_type}: $out_preview" >&2
         exit 1
@@ -428,6 +406,9 @@ build_nitpicker_prompt() {
 
 # ---------------------------------------------------------------------------
 # Helper: build the filled Big Head consolidation brief.
+#
+# Delegates all slot substitution to crumb render-template.
+# Orchestration logic (expected_paths construction) remains in shell.
 # ---------------------------------------------------------------------------
 build_big_head_prompt() {
     local out_file="${SESSION_DIR}/prompts/review-big-head-consolidation.md"
@@ -435,10 +416,7 @@ build_big_head_prompt() {
 
     # Build the expected report paths list (round-appropriate)
     # Assumption: SESSION_DIR and TIMESTAMP must not contain tab characters.
-    # Each path is embedded in a markdown list line; a tab in the path would
-    # embed a literal tab in that line but would not corrupt awk substitution
-    # (fill_slot uses index()/substr(), not tab-delimited parsing). That said,
-    # tabs in paths are unconventional and could confuse downstream consumers.
+    # Each path is embedded in a markdown list line.
     local expected_paths=""
     for rt in "${ACTIVE_REVIEW_TYPES[@]}"; do
         expected_paths="${expected_paths}- ${SESSION_DIR}/review-reports/${rt}-review-${TIMESTAMP}.md\n"
@@ -454,10 +432,21 @@ build_big_head_prompt() {
     local body
     body="$(extract_agent_section "$BIG_HEAD_SKELETON")"
 
-    # 2. Convert {UPPERCASE} -> {{UPPERCASE}}
+    # 2. Convert {UPPERCASE} -> {{UPPERCASE}} (crumb render-template slot format)
     body="$(printf '%s\n' "$body" | sed 's/{\([A-Z][A-Z_]*\)}/{{\1}}/g')"
 
-    # 3. Write header + body + Consolidation Brief section with literal values
+    # 3. Build a composite template containing the template body and the
+    #    Consolidation Brief section, with {{SLOT}} markers for all variable
+    #    parts. crumb render-template will expand all markers in a single pass.
+    #
+    # NOTE: DATA_FILE_PATH is substituted with $out_file — the output file's
+    # own path. This self-referential substitution is safe because crumb
+    # render-template reads from a temp file and writes to stdout; $out_file
+    # is the render destination, not the source, so no read/write conflict.
+    local tmp_template
+    tmp_template="$(mktemp)"
+    # shellcheck disable=SC2064
+    trap "rm -f '$tmp_template'" RETURN
     {
         printf '<!-- Big Head prompt | Built by build-review-prompts.sh -->\n'
         echo ""
@@ -466,32 +455,31 @@ build_big_head_prompt() {
         echo "---"
         echo "## Consolidation Brief"
         echo ""
-        echo "**Review round**: ${REVIEW_ROUND}"
-        echo "**Data file**: ${out_file}"
-        echo "**Consolidated output**: ${consolidated_output}"
-        echo "**Timestamp**: ${TIMESTAMP}"
+        echo "**Review round**: {{REVIEW_ROUND}}"
+        echo "**Data file**: {{DATA_FILE_PATH}}"
+        echo "**Consolidated output**: {{CONSOLIDATED_OUTPUT_PATH}}"
+        echo "**Timestamp**: {{TIMESTAMP}}"
         echo ""
         echo "**Expected report paths** (all must exist before consolidation begins):"
-        echo "${expected_paths}"
-    } > "$out_file" || {
-        echo "ERROR: Failed to write Big Head brief: $out_file" >&2
+        echo "{{EXPECTED_REPORT_PATHS}}"
+    } > "$tmp_template" || {
+        echo "ERROR: Failed to write template file: $tmp_template" >&2
         exit 1
     }
 
-    # 4. Fill any remaining {{SLOT}} markers in the template body.
-    #
-    # ORDERING DEPENDENCY: The DATA_FILE_PATH fill_slot call MUST come after step 3
-    # writes the file (above). DATA_FILE_PATH is substituted WITH the output file's
-    # own path ($out_file) INSIDE that same file — a self-referential substitution.
-    # This is safe only because $out_file already exists when fill_slot runs here.
-    # If these fill_slot calls are moved before step 3, or if DATA_FILE_PATH is
-    # filled in a file that has not yet been written, the substitution will fail or
-    # silently produce an empty/stale result.
-    fill_slot "{{REVIEW_ROUND}}"              "$REVIEW_ROUND"          "$out_file"
-    fill_slot "{{TIMESTAMP}}"                 "$TIMESTAMP"             "$out_file"
-    fill_slot "{{DATA_FILE_PATH}}"            "$out_file"              "$out_file"
-    fill_slot "{{CONSOLIDATED_OUTPUT_PATH}}"  "$consolidated_output"   "$out_file"
-    fill_slot "{{EXPECTED_REPORT_PATHS}}"     "$expected_paths"        "$out_file"
+    # 4. Delegate all slot substitution to crumb render-template.
+    #    Slots: REVIEW_ROUND, DATA_FILE_PATH, CONSOLIDATED_OUTPUT_PATH,
+    #           TIMESTAMP, EXPECTED_REPORT_PATHS.
+    $CRUMB render-template "$tmp_template" \
+        --slot "REVIEW_ROUND=${REVIEW_ROUND}" \
+        --slot "DATA_FILE_PATH=${out_file}" \
+        --slot "CONSOLIDATED_OUTPUT_PATH=${consolidated_output}" \
+        --slot "TIMESTAMP=${TIMESTAMP}" \
+        --slot "EXPECTED_REPORT_PATHS=${expected_paths}" \
+        > "$out_file" || {
+        echo "ERROR: crumb render-template failed for big-head" >&2
+        exit 1
+    }
 
     echo "  Big Head brief: $out_file"
     echo "  Consolidated output will be: $consolidated_output"
@@ -551,11 +539,11 @@ fi
 
 # ---------------------------------------------------------------------------
 # Post-write placeholder scan: check all output files for unfilled slots.
-# Catches cases where fill_slot was skipped or a new template placeholder was
-# added without a corresponding fill_slot call.
+# Catches cases where a --slot argument was omitted from crumb render-template
+# or a new template placeholder was added without a corresponding --slot.
 # Patterns checked:
-#   {{UPPERCASE}} — double-brace template slots used by fill_slot; none should
-#     survive substitution in any output file
+#   {{UPPERCASE}} — double-brace template slots used by crumb render-template;
+#     none should survive substitution in any output file
 # ---------------------------------------------------------------------------
 
 echo "build-review-prompts.sh: scanning for unfilled placeholders..."
@@ -569,7 +557,7 @@ SCAN_FILES+=("${SESSION_DIR}/prompts/review-big-head-consolidation.md")
 PLACEHOLDER_FOUND=false
 for f in "${SCAN_FILES[@]}"; do
     # Check for unfilled {{UPPERCASE}} double-brace slots (applies to all output files).
-    # These are the mechanical fill_slot tokens — none should survive substitution.
+    # These are the crumb render-template slot tokens — none should survive substitution.
     # Note: angle-bracket path placeholders (<session-dir>, <timestamp>) are NOT
     # scanned here because both Nitpicker templates (e.g. <task-id>) and the Big Head
     # template (e.g. <P>, <title>, <new-crumb-id>) contain intentional angle-bracket
@@ -586,7 +574,7 @@ done
 
 if [ "$PLACEHOLDER_FOUND" = true ]; then
     echo "ERROR: One or more output files contain unfilled placeholders. Aborting." >&2
-    echo "Root cause: a fill_slot call is missing or a template placeholder was added without a corresponding substitution." >&2
+    echo "Root cause: a --slot argument is missing from the crumb render-template call, or a template placeholder was added without a corresponding --slot." >&2
     exit 1
 fi
 
