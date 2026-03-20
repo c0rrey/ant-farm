@@ -38,6 +38,7 @@ import argparse
 import fcntl
 import json
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -2279,6 +2280,107 @@ def cmd_init(args: argparse.Namespace) -> None:
 
 
 # ---------------------------------------------------------------------------
+# render-template subcommand — single-pass {{SLOT}} expansion
+# ---------------------------------------------------------------------------
+
+#: Pattern matching a slot placeholder, e.g. ``{{COMMIT_RANGE}}``.
+#: Slot names must start with an uppercase ASCII letter and contain only
+#: uppercase letters, digits, and underscores — matching the convention used
+#: in the orchestration templates and the shell ``fill_slot`` helper.
+_SLOT_RE: re.Pattern[str] = re.compile(r"\{\{([A-Z][A-Z0-9_]*)\}\}")
+
+
+def render_template(template: str, slots: Dict[str, str]) -> str:
+    """Expand ``{{SLOT_NAME}}`` placeholders in *template* with values from *slots*.
+
+    Performs a single-pass, left-to-right substitution using ``re.sub``.
+    Each slot placeholder in the template is replaced with the corresponding
+    string value from *slots*.  Replacement values are treated as plain text:
+    if a value itself contains ``{{OTHER}}``, that inner placeholder is NOT
+    expanded (single-pass guarantee).
+
+    Validation rules (checked before any substitution takes place):
+    - Every slot name found in the template must have a corresponding entry in
+      *slots* — missing slots raise :class:`SystemExit` (via :func:`die`).
+    - Every key in *slots* must appear at least once in the template — extra
+      slots that are never used raise :class:`SystemExit` (via :func:`die`).
+
+    Slots inside fenced code blocks (````` ``` ```) are expanded identically to
+    slots anywhere else in the template — there is no block-level exclusion.
+
+    Args:
+        template: Raw template text containing zero or more ``{{SLOT_NAME}}``
+            placeholders.
+        slots: Mapping of slot name to replacement value.  Keys must be
+            uppercase strings matching ``[A-Z][A-Z0-9_]*``.
+
+    Returns:
+        The rendered string with all placeholders replaced.
+
+    Raises:
+        SystemExit: If a template slot is missing from *slots*, or if *slots*
+            contains a key that does not appear in the template.
+    """
+    # Collect every distinct slot name present in the template.
+    template_slots: List[str] = list(dict.fromkeys(_SLOT_RE.findall(template)))
+
+    # Validate: every template slot must have a provided value.
+    for name in template_slots:
+        if name not in slots:
+            die(f"missing slot: {name}")
+
+    # Validate: every provided slot must appear in the template.
+    for name in slots:
+        if name not in template_slots:
+            die(f"extra slot: {name}")
+
+    # Single-pass substitution.  re.sub makes one left-to-right scan; the
+    # replacement callback returns a literal string (not re-parsed), so a
+    # value containing ``{{ANYTHING}}`` is emitted verbatim without further
+    # expansion.
+    def _replace(match: re.Match[str]) -> str:
+        return slots[match.group(1)]
+
+    return _SLOT_RE.sub(_replace, template)
+
+
+def cmd_render_template(args: argparse.Namespace) -> None:
+    """Render a template file by expanding ``{{SLOT_NAME}}`` placeholders.
+
+    Reads the template file at *args.template*, parses ``--slot KEY=VALUE``
+    arguments into a slot mapping, validates that all template slots are
+    provided and no extra slots are given, then writes the rendered output to
+    stdout.
+
+    Args:
+        args: Parsed arguments.
+            ``args.template`` (str): Path to the template file.
+            ``args.slot`` (List[str] | None): Zero or more ``KEY=VALUE``
+                strings from repeated ``--slot`` flags.
+
+    Raises:
+        SystemExit: If the template file does not exist, a slot is missing
+            or extra, or a ``--slot`` value is malformed (no ``=`` separator).
+    """
+    template_path = Path(args.template)
+    if not template_path.is_file():
+        die(f"template not found: {args.template}")
+
+    template_text = template_path.read_text(encoding="utf-8")
+
+    # Parse --slot KEY=VALUE pairs into a dict.
+    slots: Dict[str, str] = {}
+    for item in args.slot or []:
+        if "=" not in item:
+            die(f"invalid --slot value (expected KEY=VALUE): {item!r}")
+        key, _, value = item.partition("=")
+        slots[key] = value
+
+    rendered = render_template(template_text, slots)
+    sys.stdout.write(rendered)
+
+
+# ---------------------------------------------------------------------------
 # Prune subcommand — remove old session directories
 # ---------------------------------------------------------------------------
 
@@ -2433,6 +2535,7 @@ def build_parser() -> argparse.ArgumentParser:
             "  import      Bulk import from JSONL or migrate from Beads\n"
             "  doctor      Validate tasks.jsonl integrity\n"
             "  init        Bootstrap .crumbs/ directory structure\n"
+            "  render-template  Expand {{SLOT_NAME}} placeholders in a template file\n"
         ),
     )
     parser.set_defaults(func=None)
@@ -2590,6 +2693,25 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     p_init.set_defaults(func=cmd_init)
+
+    # --- render-template ---
+    p_render_template = sub.add_parser(
+        "render-template",
+        help="Render a template file by expanding {{SLOT_NAME}} placeholders",
+    )
+    p_render_template.add_argument(
+        "template",
+        metavar="TEMPLATE",
+        help="Path to the template file (must exist and be readable)",
+    )
+    p_render_template.add_argument(
+        "--slot",
+        metavar="KEY=VALUE",
+        action="append",
+        dest="slot",
+        help="Slot assignment; repeat for multiple slots (e.g. --slot FOO=bar --slot BAZ=qux)",
+    )
+    p_render_template.set_defaults(func=cmd_render_template)
 
     # --- prune ---
     p_prune = sub.add_parser(
