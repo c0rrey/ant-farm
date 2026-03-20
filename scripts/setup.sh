@@ -28,6 +28,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TS="$(date +%Y%m%dT%H%M%S)"
 DRY_RUN=false
+FORCE=false
 
 # ---------------------------------------------------------------------------
 # Parse args
@@ -35,6 +36,7 @@ DRY_RUN=false
 for arg in "$@"; do
     case "$arg" in
         --dry-run) DRY_RUN=true ;;
+        --force)   FORCE=true ;;
         *) echo "[ant-farm] ERROR: unknown argument: $arg" >&2; exit 1 ;;
     esac
 done
@@ -461,6 +463,10 @@ CRUMB_DST="${HOME}/.local/bin/crumb"
 
 if [ ! -f "$CRUMB_SRC" ]; then
     warn "crumb.py not found: $CRUMB_SRC — skipping crumb install"
+elif [ -f "$CRUMB_DST" ] && ! head -n 3 "$CRUMB_DST" | grep -qF '# ant-farm crumb CLI' && [ "$FORCE" = false ]; then
+    warn "~/.local/bin/crumb exists but was not installed by ant-farm (sentinel missing)."
+    warn "To overwrite it, re-run with --force."
+    warn "Skipping crumb install to avoid clobbering an unrelated tool."
 else
     log "Installing crumb → ${HOME}/.local/bin/crumb ..."
     backup_and_copy "$CRUMB_SRC" "$CRUMB_DST"

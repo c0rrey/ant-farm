@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# ant-farm crumb CLI
 """crumb.py — Lightweight JSONL task tracker CLI for ant-farm.
 
 Single-file Python CLI, stdlib only, minimum Python 3.8.
