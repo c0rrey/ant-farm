@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-03-20 — Session 171420 (crumb render-template: new subcommand, pipeline wiring, test coverage)
+
+### Summary
+
+Nine tasks completed across three implementation waves and a review fix pass. Work delivered the `crumb render-template` subcommand (AF-223), replaced the `fill_slot` shell function with a single `crumb render-template` call per prompt (AF-224), added structural test coverage for cross-references, frontmatter, checkpoints, GLOSSARY, and template slot coverage (AF-221, AF-222), and removed the stale `orchestration/_archive/` directory references (AF-220). Round 1 review found 1 P1 (CRUMB path resolution breaks in installed context) and 3 P2s (stale docs, missing OSError handling, misleading comment), all auto-fixed as AF-248–AF-251; Round 2 verified all fixes clean with 0 new findings. 8 commits total.
+
+### Implementation (Waves 1–3)
+
+- **AF-220**: chore: remove `orchestration/_archive/` gitignore entry and all references across RULES.md, scout.md, SETUP.md, PLACEHOLDER_CONVENTIONS.md, setup.sh, CONTRIBUTING.md, docs/installation-guide.md (`4ff5335`)
+- **AF-223**: feat: add `render_template()` pure function and `cmd_render_template()` CLI handler to `crumb.py`; add `tests/test_render_template.py` (31 tests, all 6 ACs) (`e230860`)
+- **AF-221**: feat: add `tests/test_orchestration.py` with 21 structural tests for subagent cross-references, frontmatter validity, checkpoint completeness, and GLOSSARY coverage (`b3dee1b`)
+- **AF-224**: refactor: replace `fill_slot()` in `build-review-prompts.sh` with single `crumb render-template` call per prompt; all 18 shell tests pass unchanged (`c551975`)
+- **AF-222**: feat: extend `tests/test_orchestration.py` with `test_template_slot_coverage` and `test_skill_file_mapping`; 23 tests total (`c9da5ab`)
+
+### Review Fixes (Round 1)
+
+- **AF-248**: fix: add context-aware CRUMB path fallback (repo-local → installed) in `scripts/build-review-prompts.sh:46`; add path-resolution tests (`297857b`, `d6dc2bc`)
+- **AF-249, AF-250, AF-251**: fix: update stale fill_slot refs in `PLACEHOLDER_CONVENTIONS.md` and `crumb.py:2289`; add OSError handling in `cmd_render_template`; fix misleading comment at `crumb.py:702` (`bebabff`)
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 13 files, 5 tasks | 1 | 3 | 9 | PASS WITH ISSUES |
+| 2 | fix commits, 4 tasks | 0 | 0 | 0 | PASS CLEAN |
+
+13 root causes consolidated (5 findings merged into 3 groups). All P1/P2 auto-fixed; 9 P3 findings filed as crumbs for future sessions.
+
 ## 2026-03-20 — Session 20260320-141218 (setup.sh Hardening: Identity Check, Manifest Cleanup, Portability)
 
 ### Summary
