@@ -527,6 +527,49 @@ run_test "preflight_team_size_exactly_15_passes" '
 '
 
 # ---------------------------------------------------------------------------
+# Test 14: CRUMB path resolution — no crumb.py (installed) → "crumb";
+#          crumb.py present (repo) → "python3 <path>/crumb.py"
+# ---------------------------------------------------------------------------
+run_test "crumb_path_resolution_both_contexts" '
+    tmp="$(mktemp -d)"
+    mkdir -p "$tmp/scripts"
+    detect="$tmp/scripts/detect.sh"
+
+    # Write a minimal driver that mirrors the CRUMB-detection block in
+    # build-review-prompts.sh.  Use escaped $ so the literals land in
+    # the file correctly after eval expands the outer single-quoted body.
+    printf "%s\n" \
+        "#!/usr/bin/env bash" \
+        "SCRIPT_DIR=\"\$(cd \"\$(dirname \"\$0\")\" && pwd)\"" \
+        "if [ -f \"\${SCRIPT_DIR}/../crumb.py\" ]; then" \
+        "    CRUMB=\"python3 \${SCRIPT_DIR}/../crumb.py\"" \
+        "else" \
+        "    CRUMB=\"crumb\"" \
+        "fi" \
+        "echo \"\$CRUMB\"" \
+        > "$detect"
+    chmod +x "$detect"
+
+    # Case 1: no crumb.py adjacent → installed context → CRUMB = "crumb"
+    result="$(bash "$detect")"
+    if [ "$result" != "crumb" ]; then
+        echo "ASSERTION FAILED: installed context: want CRUMB=crumb, got: $result" >&2
+        rm -rf "$tmp"; exit 1
+    fi
+
+    # Case 2: crumb.py exists adjacent to scripts/ → repo context → CRUMB = "python3 ..."
+    touch "$tmp/crumb.py"
+    result="$(bash "$detect")"
+    expected="python3 $tmp/scripts/../crumb.py"
+    if [ "$result" != "$expected" ]; then
+        echo "ASSERTION FAILED: repo context: want $expected, got: $result" >&2
+        rm -rf "$tmp"; exit 1
+    fi
+
+    rm -rf "$tmp"
+'
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 echo ""
