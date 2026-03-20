@@ -49,7 +49,8 @@ Your workflow:
      **Recovery**: Check reviewer logs. Once all expected reports are present, re-spawn Big Head consolidation.
      EOF
      ```
-   - After writing the failure artifact, return the error to the Queen as specified in the brief
+   - If the Bash block exits with code 1 (directory creation failed before the artifact could be written), use the SendMessage tool to notify the Queen immediately: "Big Head FAILED: could not create output directory for failure artifact. Filesystem issue — manual intervention required." Then end your turn.
+   - After writing the failure artifact (Bash exit code 0), return the error to the Queen as specified in the brief
    - Do NOT proceed to read reports or perform consolidation
 2. Read all expected reports
 3. Collect all findings into a single list
@@ -72,7 +73,8 @@ Your workflow:
      exit 1
    fi
    ```
-   If the bash block above exits with code 1, stop immediately. Do NOT proceed to consolidation or crumb filing. Use the SendMessage tool to notify the Queen: "Big Head FAILED: crumb list infrastructure error during cross-session dedup. Crumb filing aborted to prevent duplicates. Consolidated output written to {CONSOLIDATED_OUTPUT_PATH}. Please check crumb status and re-spawn Big Head when ready." Then end your turn.
+   If the bash block above exits with code 1 due to the mkdir guard (directory creation failed before the failure artifact could be written), use the SendMessage tool to notify the Queen immediately: "Big Head FAILED: could not create output directory for failure artifact during cross-session dedup. Filesystem issue — manual intervention required." Then end your turn.
+   If the bash block above exits with code 1 due to `crumb list` failure (the `if !` condition), stop immediately. Do NOT proceed to consolidation or crumb filing. Use the SendMessage tool to notify the Queen: "Big Head FAILED: crumb list infrastructure error during cross-session dedup. Crumb filing aborted to prevent duplicates. Consolidated output written to {CONSOLIDATED_OUTPUT_PATH}. Please check crumb status and re-spawn Big Head when ready." Then end your turn.
    For each root cause group, compare against existing crumb titles (from `/tmp/open-crumbs-$$.txt`):
    - **Exact title match** (case-insensitive): Do NOT file. Log in the summary: "Dedup: RC-N matches existing crumb <ID> — skipped."
    - **Similar title** (same root cause, different wording): Run `crumb search "<key phrases>"` to confirm. If the existing crumb covers the same root cause, do NOT file. Log the match.
