@@ -105,14 +105,14 @@
             - Ask user: "Review loop has not converged after 4 rounds. Continue or abort?"
             - Await user decision before taking any further action
             **Only if current round < 4**: determine fix action:
-            **Auto-fix (round 1, ≤5 root causes)**: If round == 1 AND total P1+P2 root causes ≤ 5:
+            **Auto-fix (round 1, ≤10 root causes)**: If round == 1 AND total P1+P2 root causes ≤ 10:
             - Announce (do NOT wait for user input):
-              "**Auto-fix**: Round 1 review found X P1 and Y P2 issues (Z root causes, within 5-threshold). Spawning fix tasks automatically."
+              "**Auto-fix**: Round 1 review found X P1 and Y P2 issues (Z root causes, within 10-threshold). Spawning fix tasks automatically."
             - Proceed directly to fix workflow (below)
             - After fixes complete + CMVCC passes, transition to round N+1 via SendMessage (see Fix Workflow below)
             - Update session state: increment review round, record fix commit range
-            **Escalation (round 1, >5 root causes)**: If round == 1 AND total P1+P2 root causes > 5:
-            - Present findings to user: "Round 1 review found Z root causes (>5 threshold). This suggests a systemic issue. Fix now or defer?"
+            **Escalation (round 1, >10 root causes)**: If round == 1 AND total P1+P2 root causes > 10:
+            - Present findings to user: "Round 1 review found Z root causes (>10 threshold). This suggests a systemic issue. Fix now or defer?"
             - Await user decision (same as round 2+ behavior below)
             **User prompt (round 2+)**: If round >= 2:
             - Present findings to user: "Reviews found X P1 and Y P2 issues. Fix now or defer?"

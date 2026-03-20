@@ -219,9 +219,9 @@ Per RULES-review.md Step 3c — triage is root-cause-based, not raw-issue-count-
 **If zero P1 and zero P2 findings:** Proceed directly to Step 4 (documentation — README and CLAUDE.md only).
 The Scribe authors the session CHANGELOG at Step 5b.
 
-**Auto-fix (round 1, <=5 root causes):** Spawn fix tasks automatically without user prompt. After fixes, re-run reviews at round N+1.
+**Auto-fix (round 1, <=10 root causes):** Spawn fix tasks automatically without user prompt. After fixes, re-run reviews at round N+1.
 
-**Escalation (round 1, >5 root causes):** Present findings to user. Await "fix now" or "defer" decision.
+**Escalation (round 1, >10 root causes):** Present findings to user. Await "fix now" or "defer" decision.
 
 **Round 2+:** Present findings to user. Await "fix now" or "defer" decision.
 

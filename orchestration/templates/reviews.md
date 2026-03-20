@@ -1057,8 +1057,8 @@ No user prompt needed — the loop simply ends.
 ### If P1 or P2 issues found:
 
 The Queen determines the fix action based on RULES.md Step 3c decision tree:
-- **Auto-fix** (round 1, ≤5 root causes): proceed directly to Fix Workflow below
-- **Escalation** (round 1, >5 root causes): present to user, await decision
+- **Auto-fix** (round 1, ≤10 root causes): proceed directly to Fix Workflow below
+- **Escalation** (round 1, >10 root causes): present to user, await decision
 - **User prompt** (round 2+): present to user, "Fix now or defer?"
 - **Defer**: P1/P2 crumbs stay open; document deferred items for the Scribe (Step 5b CHANGELOG); proceed to Step 4
 
