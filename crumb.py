@@ -440,7 +440,7 @@ def require_tasks_jsonl() -> Path:
 
 
 # ---------------------------------------------------------------------------
-# Subcommand stubs — placeholders for downstream tasks
+# Private helper utilities — used by subcommand handlers below
 # ---------------------------------------------------------------------------
 
 
