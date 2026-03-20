@@ -170,7 +170,7 @@ The orchestration framework runs from `~/.claude/`, not from the repo. Changes i
 
 `scripts/setup.sh` installs:
 - `agents/*.md` to `~/.claude/agents/`
-- `orchestration/` to `~/.claude/orchestration/` (excluding `_archive/` — existing files in the target that are not in the source are preserved)
+- `orchestration/` to `~/.claude/orchestration/` (existing files in the target that are not in the source are preserved)
 - `scripts/build-review-prompts.sh` to `~/.claude/orchestration/scripts/`
 - `skills/*.md` to `~/.claude/skills/ant-farm-<name>/SKILL.md`
 - `crumb.py` to `~/.local/bin/crumb`

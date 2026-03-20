@@ -27,7 +27,7 @@ For complete details, see `docs/installation-guide.md`. Quick reference:
 
 `setup.sh` installs:
 - Agent definitions (`agents/*.md`) to `~/.claude/agents/`
-- Orchestration files to `~/.claude/orchestration/` (excluding `_archive/`)
+- Orchestration files to `~/.claude/orchestration/`
 - `build-review-prompts.sh` to `~/.claude/orchestration/scripts/`
 - Skills (`skills/*.md`) to `~/.claude/skills/ant-farm-<name>/SKILL.md`
 - `crumb.py` to `~/.local/bin/crumb` (marked executable)

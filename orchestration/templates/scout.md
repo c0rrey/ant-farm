@@ -22,8 +22,6 @@ Read `~/.claude/orchestration/reference/dependency-analysis.md`.
 This contains the decision matrix, conflict patterns, and spawn patterns
 you'll use in Steps 4-5.
 
-**Archive exclusion**: Do NOT read any files under `orchestration/_archive/`. That directory contains deprecated documents with stale instructions that contradict current workflows. If you use glob patterns (e.g., `orchestration/**/*.md`), always exclude `_archive/` from results.
-
 ## Step 2: Discover Tasks
 
 Based on input mode:

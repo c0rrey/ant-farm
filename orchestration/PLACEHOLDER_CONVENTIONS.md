@@ -165,35 +165,35 @@ To ensure compliance with these conventions, apply these grep patterns:
 
 ### Pattern 1: Find all Tier 1 placeholders
 ```bash
-grep -rE '\{[A-Z][A-Z_]*\}' orchestration/ --exclude-dir=_archive
+grep -rE '\{[A-Z][A-Z_]*\}' orchestration/
 ```
 
 Expected matches: `{TASK_ID}`, `{SESSION_DIR}`, `{TASK_SUFFIX}`, etc. These should all appear in templates meant for Queen substitution or in term definition blocks.
 
 ### Pattern 2: Find all Tier 2 placeholders
 ```bash
-grep -rE '\{[a-z][a-z\-]*\}' orchestration/ --exclude-dir=_archive
+grep -rE '\{[a-z][a-z\-]*\}' orchestration/
 ```
 
 Expected matches: `{session-dir}`, `{timestamp}`, `{N}`, `{M}`, `{list}`, etc. These should appear in agent-facing instructions, examples, or output format specs.
 
 ### Pattern 3: Find all Tier 3 placeholders (shell variables)
 ```bash
-grep -rE '\$\{[A-Z][A-Z_]*\}' orchestration/ --exclude-dir=_archive
+grep -rE '\$\{[A-Z][A-Z_]*\}' orchestration/
 ```
 
 Expected matches: `${SESSION_ID}`, `${SESSION_DIR}`. These should ONLY appear in bash code blocks (between ` ``` ` fences).
 
 ### Pattern 4: Detect invalid mixed casing
 ```bash
-grep -rE '\{[A-Z]+[a-z_\-]+\}|\{[a-z\-]*[A-Z]+\}' orchestration/ --exclude-dir=_archive
+grep -rE '\{[A-Z]+[a-z_\-]+\}|\{[a-z\-]*[A-Z]+\}' orchestration/
 ```
 
 This pattern finds mixed-case placeholders like `{MyVar}` or `{my_VAR}`, which should not exist. Any matches indicate violations.
 
 ### Pattern 5: Find all Tier 4 placeholders (script-substituted double-brace)
 ```bash
-grep -rE '\{\{[A-Z][A-Z_]*\}\}' orchestration/ --exclude-dir=_archive
+grep -rE '\{\{[A-Z][A-Z_]*\}\}' orchestration/
 ```
 
 Expected matches: `{{REVIEW_ROUND}}`, `{{COMMIT_RANGE}}`, `{{CHANGED_FILES}}`, `{{TASK_IDS}}`. These should only appear in review skeleton templates (`reviews.md`, `big-head-skeleton.md`, `nitpicker-skeleton.md`) and are substituted exclusively by `build-review-prompts.sh` before prompt delivery. Any double-brace placeholder that survives to a delivered agent prompt indicates a substitution failure.

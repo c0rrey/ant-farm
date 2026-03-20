@@ -53,7 +53,6 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 - `orchestration/templates/reviews.md` — Review protocol (read by build-review-prompts.sh)
 - `orchestration/reference/dependency-analysis.md` — Used by Scout for conflict analysis
 - `orchestration/reference/known-failures.md` — Reference material; for post-mortem only
-- `orchestration/_archive/*` — Deprecated documents; stale instructions that contradict current workflows. **No agent should read these.**
 - Source code files, tests, project configs, application data files
 - Raw `crumb show`, `crumb ready`, `crumb blocked`, `crumb list` output (let the Scout digest this)
 

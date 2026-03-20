@@ -3,7 +3,7 @@
 #
 # Copies:
 #   agents/*.md         → ~/.claude/agents/
-#   orchestration/      → ~/.claude/orchestration/  (non-_archive files)
+#   orchestration/      → ~/.claude/orchestration/
 #   scripts/build-review-prompts.sh → ~/.claude/orchestration/scripts/
 #   skills/*.md         → ~/.claude/skills/ant-farm-<name>/SKILL.md
 #   crumb.py            → ~/.local/bin/crumb
@@ -399,7 +399,7 @@ fi
 
 # ---------------------------------------------------------------------------
 # Step 2: Install orchestration/ → ~/.claude/orchestration/
-#   Copies all files under orchestration/ excluding _archive/.
+#   Copies all files under orchestration/.
 #   Preserves any user-created files already in ~/.claude/orchestration/.
 # ---------------------------------------------------------------------------
 log "Installing orchestration files → ~/.claude/orchestration/ ..."
@@ -410,7 +410,7 @@ if [ -d "$REPO_ROOT/orchestration" ]; then
         mkdir -p "${HOME}/.claude/orchestration/"
     fi
 
-    # Walk the orchestration tree, skip _archive/
+    # Walk the orchestration tree
     find_output=$(mktemp)
     if ! find "$REPO_ROOT/orchestration" -type f -print0 > "$find_output" 2>&1; then
         warn "find failed while walking orchestration/: $(cat "$find_output")"
@@ -419,11 +419,6 @@ if [ -d "$REPO_ROOT/orchestration" ]; then
         while IFS= read -r -d '' src_file; do
             # Compute path relative to orchestration/
             rel="${src_file#"$REPO_ROOT/orchestration/"}"
-
-            # Skip anything under _archive/
-            case "$rel" in
-                _archive/*) continue ;;
-            esac
 
             dst="${HOME}/.claude/orchestration/${rel}"
             backup_and_copy "$src_file" "$dst" || { warn "Failed to install orchestration file: $src_file"; continue; }

@@ -34,7 +34,7 @@ To preview what would change without writing anything:
 The script performs these steps:
 
 1. **Agent definitions** -- copies `agents/*.md` to `~/.claude/agents/`
-2. **Orchestration files** -- copies `orchestration/` to `~/.claude/orchestration/` (excluding `_archive/`)
+2. **Orchestration files** -- copies `orchestration/` to `~/.claude/orchestration/`
 3. **Review script** -- copies `scripts/build-review-prompts.sh` to `~/.claude/orchestration/scripts/` and marks it executable
 4. **Skills** -- copies `skills/*.md` to `~/.claude/skills/ant-farm-<name>/SKILL.md`
 5. **Crumb CLI** -- copies `crumb.py` to `~/.local/bin/crumb` and marks it executable
@@ -115,7 +115,7 @@ You can also create or update this file at any time by running the `/ant-farm-in
 
 - **Source**: `{repo-root}/orchestration/`
 - **Target**: `~/.claude/orchestration/`
-- **Behavior**: File-by-file copy (adds/updates files from source, preserves user-created files in target). Files under `_archive/` are excluded.
+- **Behavior**: File-by-file copy (adds/updates files from source, preserves user-created files in target).
 - **Contents**: RULES.md, templates/, reference/, SETUP.md, etc.
 
 Files deleted from the repo's `orchestration/` directory will **not** be automatically removed from `~/.claude/orchestration/`. This preserves any custom files adopters have placed in the target. If you need to remove a stale file from the target, delete it manually from `~/.claude/orchestration/`.
