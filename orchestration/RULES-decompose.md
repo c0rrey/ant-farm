@@ -330,10 +330,10 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SPEC_QUALITY_GATE|pass|spec=${DECOMPOSE_DIR
 Do NOT spawn them sequentially — they are designed for parallel execution.
 
 ```
-Task(subagent_type="ant-farm-researcher", model="sonnet", prompt="<Stack forager prompt>")
+Task(subagent_type="ant-farm-researcher", model="sonnet", prompt="<Stack Researcher prompt>")
 Task(subagent_type="ant-farm-researcher", model="sonnet", prompt="<architecture Researcher prompt>")
-Task(subagent_type="ant-farm-researcher", model="sonnet", prompt="<Pitfall forager prompt>")
-Task(subagent_type="ant-farm-researcher", model="sonnet", prompt="<Pattern forager prompt>")
+Task(subagent_type="ant-farm-researcher", model="sonnet", prompt="<Pitfall Researcher prompt>")
+Task(subagent_type="ant-farm-researcher", model="sonnet", prompt="<Pattern Researcher prompt>")
 ```
 
 Fill each prompt from `orchestration/templates/forager-skeleton.md`. Pass the same `{SPEC_PATH}`
