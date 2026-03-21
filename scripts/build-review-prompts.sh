@@ -38,15 +38,37 @@
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
-# Locate crumb.py in the repo root (one level above scripts/).
-# Prefer the repo-local crumb.py over any globally installed 'crumb' binary
-# so that render-template (added by AF-223) is always available.
+# Locate crumb binary — context-aware fallback (AF-248).
+#
+# Resolution order:
+#   1. Repo-local crumb.py: ${SCRIPT_DIR}/../crumb.py
+#      Used when running from the repo scripts/ directory. Preferred because
+#      it guarantees render-template is available.
+#   2. PATH-installed crumb: ~/.local/bin/crumb (via $HOME resolution)
+#      Used when running from the installed location (~/.claude/orchestration/scripts/).
+#      setup.sh installs crumb.py to ~/.local/bin/crumb (confirmed: setup.sh:L509).
+#   3. Plain 'crumb' on PATH (last resort).
+#
+# A startup validation below confirms the resolved binary supports render-template.
 # ---------------------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 if [ -f "${SCRIPT_DIR}/../crumb.py" ]; then
     CRUMB="python3 ${SCRIPT_DIR}/../crumb.py"
+elif [ -f "${HOME}/.local/bin/crumb" ]; then
+    CRUMB="${HOME}/.local/bin/crumb"
 else
     CRUMB="crumb"
+fi
+
+# ---------------------------------------------------------------------------
+# Startup validation: confirm resolved CRUMB supports render-template.
+# Catches stale installs or missing PATH entries before the first $CRUMB call.
+# ---------------------------------------------------------------------------
+if ! $CRUMB render-template --help >/dev/null 2>&1; then
+    echo "ERROR: crumb binary does not support 'render-template' subcommand." >&2
+    echo "  Resolved CRUMB='${CRUMB}'" >&2
+    echo "  Run ./scripts/setup.sh to install the current crumb.py to ~/.local/bin/crumb." >&2
+    exit 1
 fi
 
 # ---------------------------------------------------------------------------
