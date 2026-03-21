@@ -209,14 +209,27 @@ suggestions — not requirements.
 
 **Vague criteria prohibition:**
 These phrases are banned in acceptance criteria:
-- "should work correctly"
+- "works correctly" (including "should work correctly")
 - "as expected"
 - "behaves normally"
 - "is handled appropriately"
 - "works as designed"
+- "well-structured"
+- "properly handles"
 - "user-friendly"
 - "performant" (without a number)
 - "reasonable" (without a definition)
+
+**Banned-phrase enforcement**: After drafting acceptance criteria (but before
+writing spec.md), scan every AC for the above phrases. If any are found:
+- Do NOT silently rewrite them.
+- Use `AskUserQuestion` to present the vague criterion and ask the user to
+  rephrase it as a concrete, testable pass/fail statement.
+- Only proceed to Step 5 once all ACs pass this check.
+
+**Skip rule**: If all acceptance criteria are already concrete and testable
+(none of the banned phrases appear), proceed directly to Step 5 — do NOT
+ask an additional question round.
 
 ---
 

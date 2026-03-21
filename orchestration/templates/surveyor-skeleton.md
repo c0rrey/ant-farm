@@ -76,12 +76,18 @@ separate from the requirements. Suggestions are NOT requirements.
 ### Vague criteria prohibition
 
 These phrases are BANNED in acceptance criteria:
-- "should work correctly", "as expected", "behaves normally"
+- "works correctly" (including "should work correctly"), "as expected", "behaves normally"
 - "is handled appropriately", "works as designed"
+- "well-structured", "properly handles"
 - "user-friendly", "performant" (without a number), "reasonable" (without a definition)
 
 Every acceptance criterion must be independently testable: a QA engineer who
 has never seen this codebase must be able to determine PASS or FAIL.
+
+If a drafted AC contains any banned phrase, use `AskUserQuestion` to show the
+vague criterion and ask the user to rephrase it as a concrete, testable
+pass/fail statement. Do NOT silently rewrite it. If all ACs are already
+concrete and testable, proceed without asking an additional question round.
 
 ---
 

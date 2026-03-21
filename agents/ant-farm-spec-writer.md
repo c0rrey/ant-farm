@@ -43,3 +43,19 @@ Read that file and follow it exactly. The steps at a glance:
 
 The template defines all exact steps, quality gates, question prohibitions, and
 output format requirements.
+
+## Banned-Phrase AC Filter
+
+Before finalizing spec.md, scan every acceptance criterion for these banned phrases:
+- 'works correctly', 'as expected', 'appropriate', 'well-structured', 'properly handles'
+- (Also banned: 'behaves normally', 'is handled appropriately', 'works as designed',
+  'user-friendly', 'performant' without a number, 'reasonable' without a definition)
+
+If any banned phrase is found in a drafted AC:
+- Do NOT silently rewrite it.
+- Use `AskUserQuestion` to present the vague criterion and ask the user to rephrase
+  it as a concrete, testable pass/fail statement.
+- Only finalize spec.md once all ACs pass this check.
+
+If all ACs are already concrete and testable, proceed without an additional question
+round — do NOT ask users to rephrase criteria that are already specific.
