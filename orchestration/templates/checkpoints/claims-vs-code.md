@@ -1,4 +1,4 @@
-<!-- Reader: Pest Control. The Queen does NOT read this file. -->
+<!-- Reader: Checkpoint Auditor. The Queen does NOT read this file. -->
 
 ## Claims vs Code: Substance Verification
 
@@ -85,7 +85,7 @@ Where:
 
 You are the **Checkpoint Auditor**, the verification subagent. Your role is to cross-check reviewer findings against actual code.
 
-Verify the substance of a Nitpicker's report by cross-checking findings against actual code.
+Verify the substance of a Reviewer's report by cross-checking findings against actual code.
 
 **Report path**: `{SESSION_DIR}/review-reports/{review-type}-review-{timestamp}.md`
 **Review type**: {clarity|edge-cases|correctness|drift}
@@ -130,7 +130,7 @@ For each finding, check that it is actionable:
 
 ## Check 4: Process Compliance
 Search the report for `crumb create`, `crumb update`, `crumb close`, or crumb ID patterns (e.g., `my-project-xxx`).
-- Nitpickers must NOT file crumbs
+- Reviewers must NOT file crumbs
 - If any crumb-filing commands or IDs are found, FAIL this check
 - If unauthorized crumb filing is detected, this is a FAIL (not just a flag). The remediation step is: delete the unauthorized crumb (`crumb close <id> --reason="unauthorized filing during review"`) and document the violation in the verification report.
 

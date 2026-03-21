@@ -1,4 +1,4 @@
-<!-- Reader: Pest Control. The Queen does NOT read this file. -->
+<!-- Reader: Checkpoint Auditor. The Queen does NOT read this file. -->
 
 ## Pre-Spawn Check: Pre-Spawn Prompt Audit
 

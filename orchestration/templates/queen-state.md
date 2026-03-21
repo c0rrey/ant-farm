@@ -24,7 +24,7 @@
 |------|--------|-------|---------|
 | 1    | pending/completed/failed | {task-ids} | All PASS / {details} |
 
-## Pest Control
+## Checkpoint Auditor
 
 <!-- One row per RULES.md hard gate. Add rows for each wave (N=1,2,...) and review round (R=1,2,...). -->
 

@@ -6,7 +6,7 @@
 
 ---
 
-Consolidate the Nitpicker reports into a unified summary.
+Consolidate the Reviewer reports into a unified summary.
 
 **Review round**: {REVIEW_ROUND}
 **Input guard**: If {REVIEW_ROUND} is blank or non-numeric, halt immediately and return: "BIG HEAD ABORTED: REVIEW_ROUND is invalid. Expected a positive integer; got: '{REVIEW_ROUND}'." Do NOT read any reports or proceed.
@@ -15,7 +15,7 @@ Consolidate the Nitpicker reports into a unified summary.
 - Round 2+ typical: correctness, edge-cases only
 
 Step 0: Read your consolidation brief from {DATA_FILE_PATH}
-(Format: markdown. Sections: Report Paths, Deduplication Protocol, Crumb Filing Instructions, Consolidated Output Path, Pest Control Coordination Note, Review Round, P3 Auto-Filing Instructions (round 2+ only).)
+(Format: markdown. Sections: Report Paths, Deduplication Protocol, Crumb Filing Instructions, Consolidated Output Path, Checkpoint Auditor Coordination Note, Review Round, P3 Auto-Filing Instructions (round 2+ only).)
 
 **Failure Artifact Convention** (applies to ALL failure conditions in this workflow):
 When any step reaches a FAIL condition, write a brief failure artifact to the expected output path before returning an error. Standard format:
@@ -26,7 +26,7 @@ When any step reaches a FAIL condition, write a brief failure artifact to the ex
 **Reason**: <what went wrong>
 **Recovery**: <what to do next>
 ```
-This ensures downstream consumers (Queen, Pest Control) have a written record of the failure at the path they expect — even if the output is a FAILED file rather than a consolidated summary.
+This ensures downstream consumers (Queen, Checkpoint Auditor) have a written record of the failure at the path they expect — even if the output is a FAILED file rather than a consolidated summary.
 
 Your workflow:
 1. Verify all expected report files exist (count determined by the consolidation brief's `expected_paths` list) — follow the missing-report handling protocol in your consolidation brief (Step 0a)
@@ -42,10 +42,10 @@ Your workflow:
      # filesystem path appears in their place.
      mkdir -p "$(dirname "{CONSOLIDATED_OUTPUT_PATH}")" || { echo "ERROR: failed to create output directory for {CONSOLIDATED_OUTPUT_PATH}. Aborting."; exit 1; }
      cat > "{CONSOLIDATED_OUTPUT_PATH}" << 'EOF'
-     # Big Head Consolidation — BLOCKED: Missing Nitpicker Reports
+     # Review Consolidator — BLOCKED: Missing Reviewer Reports
      **Status**: FAILED — prerequisite gate timeout
      **Timestamp**: <current ISO 8601 timestamp>
-     **Reason**: Not all expected Nitpicker reports arrived within the timeout specified in the consolidation brief. <list missing reports>
+     **Reason**: Not all expected Reviewer reports arrived within the timeout specified in the consolidation brief. <list missing reports>
      **Recovery**: Check reviewer logs. Once all expected reports are present, re-spawn Big Head consolidation.
      EOF
      ```
@@ -86,8 +86,8 @@ Your workflow:
    ```
 8. Write consolidated summary to {CONSOLIDATED_OUTPUT_PATH}
 9. Send consolidated report path to the Checkpoint Auditor (SendMessage): "Consolidated report ready at {CONSOLIDATED_OUTPUT_PATH}. Please run claims-vs-code and review-integrity checkpoints and reply with verdict."
-   - Do NOT file any crumbs before receiving Pest Control's reply
-10. **End your turn** after sending to Pest Control. Do NOT sleep or poll — doing so blocks incoming messages. Pest Control's reply arrives as a new conversation turn. When it arrives, act on the verdict — follow the turn-based retry protocol in reviews.md (Big Head Consolidation Protocol > Step 4: Checkpoint Gate):
+   - Do NOT file any crumbs before receiving the Checkpoint Auditor's reply
+10. **End your turn** after sending to the Checkpoint Auditor. Do NOT sleep or poll — doing so blocks incoming messages. The Checkpoint Auditor's reply arrives as a new conversation turn. When it arrives, act on the verdict — follow the turn-based retry protocol in reviews.md (Review Consolidator Protocol > Step 4: Checkpoint Gate):
     - If no reply after 2 subsequent turns, retry once; if still no reply after 2 more turns, escalate to Queen
     - **PASS**: File ONE crumb per root cause (skip any marked as duplicates in step 7). For each crumb, write a description to a temp file, then create:
       ```bash

@@ -1,4 +1,4 @@
-<!-- Reader: Pest Control. The Queen does NOT read this file. -->
+<!-- Reader: Checkpoint Auditor. The Queen does NOT read this file. -->
 
 ## Session Complete: Pre-Push Session Output Audit
 
@@ -85,7 +85,7 @@ If `crumb show <id>` fails (task not found, unreadable, or crumb command error):
 1. Read the exec summary and verify that all 5 required sections are present:
    - **At a Glance** — summary table with key metrics
    - **Work Completed** — per-task outcome list
-   - **Review Findings** — Nitpicker findings summary (may be "None" if no review ran)
+   - **Review Findings** — Reviewer findings summary (may be "None" if no review ran)
    - **Open Issues** — list of open crumbs from this session (may be "None")
    - **Observations** — process notes, patterns, or handoff context
 

@@ -1,4 +1,4 @@
-<!-- Reader: Pest Control. The Queen does NOT read this file. -->
+<!-- Reader: Checkpoint Auditor. The Queen does NOT read this file. -->
 # Verification Checkpoints
 
 **Term definitions (canonical across all orchestration templates):**
@@ -15,7 +15,7 @@ For the full extraction algorithm, see `~/.claude/orchestration/reference/depend
 - `{SESSION_DIR}` — session artifact directory path (e.g., `.crumbs/sessions/_session-abc123`)
 - `{checkpoint}` — lowercase checkpoint name used in artifact filenames (e.g., `pre-spawn-check`, `scope-verify`, `claims-vs-code`, `review-integrity`, `pre-spawn-check-review`, `claims-vs-code-review`)
 
-## Pest Control Overview
+## Checkpoint Auditor Overview
 
 All checkpoint verifications (startup-check, pre-spawn-check, scope-verify, claims-vs-code, review-integrity, session-complete) are executed by the **Checkpoint Auditor**, a dedicated verification subagent that cross-checks orchestrator and agent work against ground truth.
 
@@ -48,7 +48,7 @@ All checkpoints write to `{SESSION_DIR}/pc/`.
 
 **Timestamp format:** `YYYYMMDD-HHmmss` (UTC)
 
-**Directory creation**: the Queen creates `{SESSION_DIR}/pc/` at session start (Step 0 in RULES.md). Agents and Pest Control can write immediately without creating directories.
+**Directory creation**: the Queen creates `{SESSION_DIR}/pc/` at session start (Step 0 in RULES.md). Agents and the Checkpoint Auditor can write immediately without creating directories.
 
 **The Queen's responsibility**: the Queen MUST include `**Summary output path**` in Crumb Gatherer prompt context. For review prompts, include the session-scoped review report paths and all participating trail IDs (for context). Reviewers write to `{SESSION_DIR}/review-reports/`, not per-trail directories.
 
