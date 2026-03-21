@@ -1,5 +1,43 @@
 # Changelog
 
+## 2026-03-21 — Session 20260321-102858 (Installer, crumb.py, and orchestration docs quality sweep)
+
+### Summary
+
+Eighteen tasks completed across 5 implementation waves and a review fix wave, targeting three active epics: AF-T53 (installer plumbing), AF-T54 (crumb.py quality), and AF-T55 (orchestration docs). Work wired MCP registration into the install/uninstall flow, hardened MCP server error handling, cleaned up crumb.py temp-file safety and --from-json semantics, and resolved a broad set of documentation drift and naming issues across orchestration templates and test files. Round 1 review found 0 P1 and 4 P2 consolidated issues; all 4 auto-fixed. Round 2 terminated clean. 469 tests pass. 18 commits total.
+
+### Implementation (Waves 1–5)
+
+- **AF-317**: fix: wire registerMcp/unregisterMcp into installer flow — sequential MCP registration in `npm/bin/install.js`; 8 new tests (`16352ce`)
+- **AF-320**: fix: guard empty stdout and filter SystemExit in MCP server — empty-output guard in `_run_cmd_json`, tightened `_run_doctor` exit-code filter, 5 new tests (`9a64172`)
+- **AF-321**: fix: clean up .jsonl.tmp on any write_tasks failure and guard --from-json changed flag — bare-except cleanup and per-field comparison in `crumb.py`; 5 new tests (`65e7856`)
+- **AF-248**: fix: add context-aware CRUMB fallback and startup validation in build-review-prompts.sh — three-tier resolution + `render-template --help` gate + smoke-test script (`4a23405`)
+- **AF-324**: fix: correct checkpoint count to 7, add TDV row, fix step refs and CONTRIBUTING line range — GLOSSARY.md and CONTRIBUTING.md (`246e696`)
+- **AF-318**: fix: add RULES-lite.md to install manifest and fix JSDoc step numbering — `npm/install-manifest.json` entry; 10-step JSDoc in `install.js` (`08a2d92`)
+- **AF-323**: fix: correct test naming, remove dead import, rename vague constant — `test_queries.py`, `test_crud.py`, `test_cli.py` (`01824c4`)
+- **AF-250**: fix: align cmd_render_template OSError message with acceptance criteria — `crumb.py` L2550 message format (`8533f0a`)
+- **AF-325**: fix: correct progress log labels and role names in RULES-lite and RULES-decompose — `STEP_1_SELECT`, `STEP_3_IMPLEMENT`, canonical role names (`3dcc053`)
+- **AF-319**: fix: progress event map, JSDoc, test helper rename, hook warnings, trimEnd symmetry — `progress-reader.js`, `manifest.js`, `install.test.js`, `install.js`, `claude-md.js` (`8e109a1`)
+- **AF-249**: docs: replace stale fill_slot reference with crumb render-template — `review-consolidator-wiring.md` L111 (`ef0aa71`)
+- **AF-326**: docs: fix path convention in pantry.md and add Crumb Gatherer cross-ref in scout.md (`841d552`)
+- **AF-251**: no-op — stale comment at `crumb.py:702` already cleaned by earlier wave; closed without commit
+- **AF-322**: refactor: fix PEP 8 naming and add config counter validation note — `crumb.py` (`d9ad5f1`)
+
+### Review Fixes (Round 1)
+
+- **AF-327**: fix: renumber RULES.md Steps 5b/5c/6 to 5/6/7, matching GLOSSARY.md — RULES.md + 8 propagation files (`bfd34ec`)
+- **AF-328**: fix: guard _run_doctor against empty cmd_doctor output — `mcp_server.py` + new test (`080c5b4`)
+- **AF-329**: fix: rename skippedAbsPaths to skippedRelPaths in uninstall test — `npm/test/uninstall.test.js` (`5a6ba87`)
+- **AF-330**: refactor: rename d to session_dir in _make_session_dir — `tests/test_cli.py` (`71ddd06`)
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 32 files, 14 tasks | 0 | 4 | 17 | PASS WITH ISSUES |
+| 2 | 4 fix commits | 0 | 0 | 0 | PASS |
+
+21 root causes consolidated (5 skipped via cross-session dedup). 4 P2s auto-fixed; 17 P3s filed as AF-331 through AF-347. 1 drift observation filed as AF-348 (TOTAL_STEPS constant).
 
 
 ## 2026-03-20 — Session 20260320-193617 (Complete rename: metaphor names and checkpoint acronyms to canonical descriptive names)
