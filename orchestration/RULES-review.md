@@ -217,8 +217,8 @@
             Review Consolidator's SendMessage. If zero P1/P2 → proceed to Step 4. If P1/P2 remain and round < 4
             → repeat fix workflow. If round >= 4 → escalate to user.
 
-            **Progress log (after triage decision — fix path):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_TRIAGED|round={N}|p1={count}|p2={count}|decision={auto_fix|fix_now}|root_causes={count}|next_step=FIX_SCOUT" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after triage decision — fix path):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_TRIAGED|round=<N>|p1=<count>|p2=<count>|decision=<auto_fix|fix_now>|root_causes=<count>|next_step=FIX_SCOUT" >> ${SESSION_DIR}/progress.log`
 
-            **Progress log (after triage decision — non-fix path):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_TRIAGED|round={N}|p1={count}|p2={count}|decision={defer|terminated}|root_causes={count}|next_step=STEP_4_DOCS" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after triage decision — non-fix path):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_TRIAGED|round=<N>|p1=<count>|p2=<count>|decision=<defer|terminated>|root_causes=<count>|next_step=STEP_4_DOCS" >> ${SESSION_DIR}/progress.log`
 
 
