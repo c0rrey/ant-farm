@@ -1473,6 +1473,7 @@ def cmd_search(args: argparse.Namespace) -> None:
 
     Args:
         args: Parsed arguments; args.query is the search string.
+              args.json_output controls JSON vs human-readable output.
     """
     path = require_tasks_jsonl()
     tasks = read_tasks(path)
@@ -1485,6 +1486,11 @@ def cmd_search(args: argparse.Namespace) -> None:
         if query_lower in (t.get("title") or "").lower()
         or query_lower in (t.get("description") or "").lower()
     ]
+
+    # --- JSON output branch ---
+    if getattr(args, "json_output", False):
+        print(json.dumps([_crumb_to_json_obj(t) for t in results], indent=2))
+        return
 
     for t in results:
         tid = t.get("id", "?")
@@ -2820,6 +2826,12 @@ def build_parser() -> argparse.ArgumentParser:
     # --- search ---
     p_search = sub.add_parser("search", help="Full-text search titles and descriptions")
     p_search.add_argument("query", metavar="QUERY")
+    p_search.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="Output a JSON array of matching crumb objects instead of human-readable text.",
+    )
     p_search.set_defaults(func=cmd_search)
 
     # --- trail ---

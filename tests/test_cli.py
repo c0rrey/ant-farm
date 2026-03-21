@@ -478,6 +478,90 @@ class TestCLIIntegration:
             "Output must not be JSON when --json flag is absent."
         )
 
+    def test_search_json_returns_valid_json_array(self, tmp_path: Path) -> None:
+        """``crumb search QUERY --json`` exits 0 and outputs a JSON array.
+
+        Acceptance criterion: well-formed JSON array on stdout containing only
+        crumbs whose title or description matches the query.
+        """
+        _make_crumbs_env(tmp_path)
+        _run(["create", "--title", "Alpha task"], cwd=tmp_path)
+        _run(["create", "--title", "Beta task"], cwd=tmp_path)
+        _run(["create", "--title", "Unrelated"], cwd=tmp_path)
+
+        result = _run(["search", "task", "--json"], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected exit code 0.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        parsed = json.loads(result.stdout)
+        assert isinstance(parsed, list), (
+            f"Expected a JSON array, got {type(parsed).__name__}."
+        )
+        assert len(parsed) == 2, (
+            f"Expected 2 matching crumbs, got {len(parsed)}."
+        )
+
+    def test_search_json_empty_results_returns_empty_array(self, tmp_path: Path) -> None:
+        """``crumb search NOMATCHES --json`` exits 0 and outputs an empty JSON array.
+
+        Acceptance criterion: no matches returns ``[]`` rather than no output.
+        """
+        _make_crumbs_env(tmp_path)
+        _run(["create", "--title", "Something"], cwd=tmp_path)
+
+        result = _run(["search", "xyzzy_no_match", "--json"], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected exit code 0.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        parsed = json.loads(result.stdout)
+        assert isinstance(parsed, list), (
+            f"Expected a JSON array, got {type(parsed).__name__}."
+        )
+        assert len(parsed) == 0, (
+            f"Expected empty array for no matches, got {len(parsed)} items."
+        )
+
+    def test_search_json_contains_required_fields(self, tmp_path: Path) -> None:
+        """``crumb search QUERY --json`` objects contain all required schema fields."""
+        _make_crumbs_env(tmp_path)
+        _run(["create", "--title", "Fieldcheck crumb"], cwd=tmp_path)
+
+        result = _run(["search", "fieldcheck", "--json"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        parsed = json.loads(result.stdout)
+        assert len(parsed) == 1, f"Expected 1 result, got {len(parsed)}."
+        for field in ("id", "title", "type", "status", "priority",
+                      "description", "acceptance_criteria", "scope", "links", "notes"):
+            assert field in parsed[0], (
+                f"Required field '{field}' missing from 'crumb search --json' output."
+            )
+
+    def test_search_without_json_is_human_readable(self, tmp_path: Path) -> None:
+        """``crumb search QUERY`` without --json produces human-readable output.
+
+        Acceptance criterion: human-readable format is unchanged when --json is absent.
+        """
+        _make_crumbs_env(tmp_path)
+        _run(["create", "--title", "Human search task"], cwd=tmp_path)
+
+        result = _run(["search", "human"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        output = result.stdout.strip()
+        assert output, "Expected non-empty output for a matching search."
+        # Human-readable output: first token should be the ID (e.g. "AF-1")
+        first_token = output.splitlines()[0].split()[0]
+        assert first_token.startswith("AF-"), (
+            f"Expected human-readable ID in first column, got {first_token!r}."
+        )
+        # Definitely not a JSON array
+        assert not output.startswith("["), (
+            "Human-readable output must not start with '[' (JSON array)."
+        )
+
 
 # ---------------------------------------------------------------------------
 # Prune integration helpers
