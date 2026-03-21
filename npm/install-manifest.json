@@ -1,0 +1,174 @@
+{
+  "files": [
+    {
+      "src": "agents/ant-farm-checkpoint-auditor.md",
+      "dst": "agents/ant-farm-checkpoint-auditor.md",
+      "description": "Checkpoint Auditor agent definition"
+    },
+    {
+      "src": "agents/ant-farm-prompt-composer.md",
+      "dst": "agents/ant-farm-prompt-composer.md",
+      "description": "Prompt Composer agent definition"
+    },
+    {
+      "src": "agents/ant-farm-recon-planner.md",
+      "dst": "agents/ant-farm-recon-planner.md",
+      "description": "Recon Planner agent definition"
+    },
+    {
+      "src": "agents/ant-farm-researcher.md",
+      "dst": "agents/ant-farm-researcher.md",
+      "description": "Researcher agent definition"
+    },
+    {
+      "src": "agents/ant-farm-review-consolidator.md",
+      "dst": "agents/ant-farm-review-consolidator.md",
+      "description": "Review Consolidator agent definition"
+    },
+    {
+      "src": "agents/ant-farm-reviewer-clarity.md",
+      "dst": "agents/ant-farm-reviewer-clarity.md",
+      "description": "Reviewer (Clarity) agent definition"
+    },
+    {
+      "src": "agents/ant-farm-reviewer-correctness.md",
+      "dst": "agents/ant-farm-reviewer-correctness.md",
+      "description": "Reviewer (Correctness) agent definition"
+    },
+    {
+      "src": "agents/ant-farm-reviewer-drift.md",
+      "dst": "agents/ant-farm-reviewer-drift.md",
+      "description": "Reviewer (Drift) agent definition"
+    },
+    {
+      "src": "agents/ant-farm-reviewer-edge-cases.md",
+      "dst": "agents/ant-farm-reviewer-edge-cases.md",
+      "description": "Reviewer (Edge Cases) agent definition"
+    },
+    {
+      "src": "agents/ant-farm-session-scribe.md",
+      "dst": "agents/ant-farm-session-scribe.md",
+      "description": "Session Scribe agent definition"
+    },
+    {
+      "src": "agents/ant-farm-spec-writer.md",
+      "dst": "agents/ant-farm-spec-writer.md",
+      "description": "Spec Writer agent definition"
+    },
+    {
+      "src": "agents/ant-farm-task-decomposer.md",
+      "dst": "agents/ant-farm-task-decomposer.md",
+      "description": "Task Decomposer agent definition"
+    },
+    {
+      "src": "orchestration/RULES.md",
+      "dst": "orchestration/RULES.md",
+      "description": "Queen workflow rules"
+    },
+    {
+      "src": "orchestration/templates/checkpoints/claims-vs-code.md",
+      "dst": "orchestration/templates/checkpoints/claims-vs-code.md",
+      "description": "Claims-vs-code checkpoint template"
+    },
+    {
+      "src": "orchestration/templates/checkpoints/common.md",
+      "dst": "orchestration/templates/checkpoints/common.md",
+      "description": "Common checkpoint template"
+    },
+    {
+      "src": "orchestration/templates/checkpoints/pre-spawn-check.md",
+      "dst": "orchestration/templates/checkpoints/pre-spawn-check.md",
+      "description": "Pre-spawn-check checkpoint template"
+    },
+    {
+      "src": "orchestration/templates/checkpoints/review-integrity.md",
+      "dst": "orchestration/templates/checkpoints/review-integrity.md",
+      "description": "Review-integrity checkpoint template"
+    },
+    {
+      "src": "orchestration/templates/checkpoints/scope-verify.md",
+      "dst": "orchestration/templates/checkpoints/scope-verify.md",
+      "description": "Scope-verify checkpoint template"
+    },
+    {
+      "src": "orchestration/templates/checkpoints/session-complete.md",
+      "dst": "orchestration/templates/checkpoints/session-complete.md",
+      "description": "Session-complete checkpoint template"
+    },
+    {
+      "src": "orchestration/templates/checkpoints/startup-check.md",
+      "dst": "orchestration/templates/checkpoints/startup-check.md",
+      "description": "Startup-check checkpoint template"
+    },
+    {
+      "src": "orchestration/templates/checkpoints/tdv.md",
+      "dst": "orchestration/templates/checkpoints/tdv.md",
+      "description": "TDV checkpoint template"
+    },
+    {
+      "src": "orchestration/templates/claude-block.md",
+      "dst": "orchestration/templates/claude-block.md",
+      "description": "Claude block template"
+    },
+    {
+      "src": "orchestration/templates/decomposition.md",
+      "dst": "orchestration/templates/decomposition.md",
+      "description": "Decomposition template"
+    },
+    {
+      "src": "orchestration/templates/implementation.md",
+      "dst": "orchestration/templates/implementation.md",
+      "description": "Implementation template"
+    },
+    {
+      "src": "orchestration/templates/pantry.md",
+      "dst": "orchestration/templates/pantry.md",
+      "description": "Pantry (Prompt Composer) template"
+    },
+    {
+      "src": "orchestration/templates/review-focus-areas.md",
+      "dst": "orchestration/templates/review-focus-areas.md",
+      "description": "Review focus areas template"
+    },
+    {
+      "src": "orchestration/templates/reviews.md",
+      "dst": "orchestration/templates/reviews.md",
+      "description": "Reviews template"
+    },
+    {
+      "src": "orchestration/templates/scribe-skeleton.md",
+      "dst": "orchestration/templates/scribe-skeleton.md",
+      "description": "Scribe skeleton template"
+    },
+    {
+      "src": "orchestration/templates/scout.md",
+      "dst": "orchestration/templates/scout.md",
+      "description": "Scout template"
+    },
+    {
+      "src": "skills/init.md",
+      "dst": "skills/ant-farm-init/SKILL.md",
+      "description": "ant-farm-init skill"
+    },
+    {
+      "src": "skills/plan.md",
+      "dst": "skills/ant-farm-plan/SKILL.md",
+      "description": "ant-farm-plan skill"
+    },
+    {
+      "src": "skills/quick.md",
+      "dst": "skills/ant-farm-quick/SKILL.md",
+      "description": "ant-farm-quick skill"
+    },
+    {
+      "src": "skills/status.md",
+      "dst": "skills/ant-farm-status/SKILL.md",
+      "description": "ant-farm-status skill"
+    },
+    {
+      "src": "skills/work.md",
+      "dst": "skills/ant-farm-work/SKILL.md",
+      "description": "ant-farm-work skill"
+    }
+  ]
+}

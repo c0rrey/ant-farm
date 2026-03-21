@@ -1,0 +1,28 @@
+{
+  "name": "ant-farm-cc",
+  "version": "0.1.0",
+  "description": "Install ant-farm orchestration framework files to Claude Code (~/.claude/)",
+  "keywords": [
+    "claude",
+    "claude-code",
+    "ant-farm",
+    "orchestration",
+    "ai-agents"
+  ],
+  "homepage": "https://github.com/ant-farm/ant-farm",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "bin": {
+    "ant-farm-cc": "bin/install.js"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "install-manifest.json"
+  ],
+  "scripts": {
+    "install-local": "node bin/install.js"
+  }
+}
