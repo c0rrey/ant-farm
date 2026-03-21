@@ -58,7 +58,7 @@ Four layers, each with a clear job.
 
 **3. Specialist agents.** Claude Code agent definitions in `agents/` cover recon, prompt composition, implementation, review, consolidation, verification, and documentation.
 
-**4. Verification layer.** The Checkpoint Auditor runs six checkpoint types (startup-check, pre-spawn-check, scope-verify, claims-vs-code, review-integrity, session-complete) that mechanically block progression. It operates both as a standalone checkpoint runner and as a member of the Reviewer team.
+**4. Verification layer.** The Checkpoint Auditor runs seven checkpoint types (startup-check, pre-spawn-check, scope-verify, claims-vs-code, review-integrity, session-complete, tdv) that mechanically block progression. It operates both as a standalone checkpoint runner and as a member of the Reviewer team.
 
 ### The Queen's Information Diet
 
@@ -80,6 +80,7 @@ Nothing progresses until these pass.
 | **claims-vs-code** | CMVCC (Crumbs Moved vs Crumbs Claimed) | Task closure | sonnet |
 | **review-integrity** | CCB (Colony Census Bureau) | Presenting results to user | sonnet |
 | **session-complete** | ESV (Exec Summary Verification) | Git push | haiku |
+| **tdv** | TDV (Trail Decomposition Verification) | Handoff to implementation wave | haiku |
 
 All checkpoint artifacts are written to `<session-dir>/pc/` with timestamped filenames for full audit history.
 
@@ -274,7 +275,7 @@ Agent definitions live in `agents/` and are installed to `~/.claude/agents/` by 
 |-------|-------------|
 | `ant-farm-recon-planner` | Pre-flight recon: task discovery, dependency analysis, execution strategy |
 | `ant-farm-prompt-composer` | Prompt composer: builds task briefs and combined previews |
-| `ant-farm-checkpoint-auditor` | Verification auditor: runs all six checkpoints |
+| `ant-farm-checkpoint-auditor` | Verification auditor: runs all seven checkpoints |
 | `ant-farm-reviewer-clarity` | Clarity reviewer: readability, naming, documentation |
 | `ant-farm-reviewer-edge-cases` | Edge cases reviewer: input validation, error handling, boundary conditions |
 | `ant-farm-reviewer-correctness` | Correctness reviewer: acceptance criteria, logic errors, regressions |
