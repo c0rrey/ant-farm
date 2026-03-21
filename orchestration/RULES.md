@@ -416,12 +416,17 @@ Do not re-spawn the agent or attempt a fix without user approval after the stuck
 
 ### Wave Failure Threshold
 
-If more than 50% of agents in a single wave fail (claims-vs-code failure, stuck, or unrecoverable error), the Queen must:
+If more than 50% of agents in a single wave fail (after all applicable retries are exhausted), the Queen must:
 
 1. Stop spawning new agents for the remainder of the current wave.
 2. Collect failure summaries from all failed agents in the wave.
 3. Notify the user immediately: list each failed task ID, the failure type, and retry count consumed.
 4. Await explicit user instruction before continuing — options include: re-run the failed subset, abort the session, or manually resolve blockers and resume.
+
+**When an agent counts as "failed" for threshold purposes:**
+- **claims-vs-code failure**: After 2 retries exhausted (see Retry Limits table). An agent still within its retry budget is not yet counted.
+- **Stuck agent** (no commit within 15 turns): Immediately (0 retries). Stuck agents count toward the threshold as soon as the stuck-agent diagnostic completes.
+- **Unrecoverable error** (crash, tool failure): Immediately. No retry applies.
 
 A wave is defined as a set of agents spawned concurrently in a single Step 2 batch. Failures from earlier waves do not carry over into the threshold calculation for a new wave.
 
