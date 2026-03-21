@@ -23,6 +23,7 @@
     "install-manifest.json"
   ],
   "scripts": {
-    "install-local": "node bin/install.js"
+    "install-local": "node bin/install.js",
+    "test": "node --test test/*.test.js"
   }
 }
