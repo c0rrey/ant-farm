@@ -245,6 +245,24 @@ Session summary: {session-dir}/session-summary.md
 
 ---
 
+## Section 2: Review Mode Preconditions
+
+When the Pantry is invoked for review brief composition, validate all inputs before composing briefs.
+These checks mirror the authoritative validation in `RULES-review.md` 3b-i.5 and ensure invalid inputs
+never pass through silently.
+
+### Precondition Checks
+
+1. **Commit range format**: Must be non-empty and match `<ref>..<ref>` format (e.g., `abc1234..HEAD`).
+   - If empty or malformed: halt and return `ERROR: commit range is missing or malformed (got: '{value}'). Expected format: <commit-hash>..<commit-hash|HEAD>.`
+2. **File list completeness**: The changed-files list must contain at least one file path.
+   - If empty (after whitespace stripping): halt and return `ERROR: changed-files list is empty. Verify the commit range contains actual changes before invoking the Pantry.`
+3. **Task IDs present**: At least one task ID must be provided.
+   - If empty: halt and return `ERROR: task IDs list is empty. Round 1 requires all task IDs; round 2+ requires fix task IDs.`
+
+On any precondition failure, do NOT compose review briefs. Return the error to the Queen immediately.
+
+---
 
 ## Section 3: Error Handling
 

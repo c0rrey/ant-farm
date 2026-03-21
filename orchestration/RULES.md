@@ -217,6 +217,9 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             Note: For non-final waves, use `next_step=NEXT_WAVE` instead. The Position Check (see below) uses this value to confirm the correct next action.
 
 **Step 3b:** Review — Read `orchestration/RULES-review.md` now for the full Step 3b workflow.
+            **Prerequisite**: Before composing review briefs, validate commit range format and file list completeness
+            per RULES-review.md 3b-i.5. Invalid inputs (empty file list, malformed commit range) must produce a
+            clear error — never pass through silently to reviewers.
 
             **Progress log (after reviewer team completes round 1):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_COMPLETE|round=<N>|team=complete|report=${SESSION_DIR}/review-reports/review-consolidated-${TIMESTAMP}.md|next_step=STEP_3C_TRIAGE" >> ${SESSION_DIR}/progress.log`
 
