@@ -378,6 +378,7 @@ Store SESSION_DIR in your context and pass it explicitly to every agent that nee
 | Implementation details (read by the Pantry) | orchestration/templates/implementation.md |
 | Checkpoint details (read by Checkpoint Auditor) | orchestration/templates/checkpoints/ (common.md + specific checkpoint file) |
 | Review details (read by build-review-prompts.sh) | orchestration/templates/reviews.md |
+| Focus area definitions for reviewer prompts (read by build-review-prompts.sh) | orchestration/templates/review-focus-areas.md |
 | Pre-flight recon (Step 1) | orchestration/templates/scout.md |
 | Conflict patterns (read by the Scout) | orchestration/reference/dependency-analysis.md |
 | Diagnosing a failure or post-mortem | orchestration/reference/known-failures.md |

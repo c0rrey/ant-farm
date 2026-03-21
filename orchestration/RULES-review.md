@@ -59,6 +59,8 @@
               "$HOME/.claude/orchestration/templates/reviewer-skeleton.md" \
               "$HOME/.claude/orchestration/templates/review-consolidator-skeleton.md"
             ```
+            **Required dependency**: `review-focus-areas.md` must be present alongside `reviewer-skeleton.md`
+            (same directory). The script derives its path from the skeleton location. If absent, the script exits 1.
             Note: `{changed-files}` and `{task-IDs}` accept an `@filepath` prefix to read multiline
             values from a file (e.g., `@/tmp/changed-files.txt`). Use this to avoid shell quoting
             issues when the list contains many entries or paths with spaces.
