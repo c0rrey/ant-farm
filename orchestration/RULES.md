@@ -309,7 +309,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 | Reviews | Presenting findings to user (Step 3c) | ${SESSION_DIR}/review-reports/review-consolidated-<timestamp>.md |
 | session-complete PASS | Git push (Step 7) | ${SESSION_DIR}/pc/pc-session-complete-<timestamp>.md |
 
-> **Note (Reviews gate):** Reviews are mandatory after ALL implementation completes (round 1). If findings require a fix cycle, reviews re-run with reduced scope — correctness and edge-cases only (round 2+).
+> **Note (Reviews gate):** Reviews are mandatory after ALL implementation completes (round 1). If findings require a fix cycle, reviews re-run with reduced scope — Correctness and Edge Cases only; Clarity and Drift are dropped (round 2+).
 
 ## Agent Types
 
