@@ -48,7 +48,7 @@ At runtime, orchestration files are accessible at `~/.claude/orchestration/`. To
 **Step 0:** Session setup — generate SESSION_ID and SESSION_DIR, create directories.
 
 ```bash
-SESSION_ID=$(date +%Y%m%d-%H%M%S)
+SESSION_ID="$(date +%Y%m%d-%H%M%S)-$(head -c4 /dev/urandom | xxd -p)"
 SESSION_DIR=".crumbs/sessions/_session-${SESSION_ID}"
 mkdir -p "${SESSION_DIR}"/{prompts,pc,summaries}
 crumb prune >/dev/null || true
