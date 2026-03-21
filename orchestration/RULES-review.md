@@ -2,9 +2,9 @@
 
 > Continuation of the workflow defined in `orchestration/RULES.md`. The Queen reads this file when Step 3b is reached (after all implementation waves are verified).
 
-**Step 3b:** Review — fill review slots and spawn Nitpickers.
+**Step 3b:** Review — fill review slots and spawn Reviewers.
 
-            **Team persistence**: The Nitpicker team persists across the full review-fix-review loop.
+            **Team persistence**: The Reviewer team persists across the full review-fix-review loop.
             The team is NOT torn down after round 1 consolidation. Fix agents spawn into the same team
             (round 1 or later) and Correctness + Edge Cases reviewers are re-tasked in-place via
             SendMessage for round 2+. Team shutdown happens only at convergence (0 P1/P2) or the round 4
@@ -12,8 +12,8 @@
             team-based round 2+ reviews.
 
             **Team roster progression**:
-            - **Round 1 (initial)**: base case 6 members — 4 Nitpickers (Clarity, Edge Cases, Correctness, Drift) + Big Head + Pest Control (mixed-model: Correctness + Edge Cases use `opus`; Clarity + Drift use `sonnet`). When split reviewer instances are present, member count increases (e.g., 8 members for 2 Clarity + 2 Drift splits). Member names and count come from `build-review-prompts.sh` return table.
-            - **After fix wave**: + N fix DPs + fix-pc-wwd + fix-pc-cmvcc (names: fix-dp-1..N, fix-pc-wwd, fix-pc-cmvcc; round suffixes for round 2+: fix-dp-r2-1, fix-pc-wwd-r2, fix-pc-cmvcc-r2)
+            - **Round 1 (initial)**: base case 6 members — 4 Reviewers (Clarity, Edge Cases, Correctness, Drift) + Review Consolidator + Checkpoint Auditor (mixed-model: Correctness + Edge Cases use `opus`; Clarity + Drift use `sonnet`). When split reviewer instances are present, member count increases (e.g., 8 members for 2 Clarity + 2 Drift splits). Member names and count come from `build-review-prompts.sh` return table.
+            - **After fix wave**: + N fix DPs + fix-pc-scope-verify + fix-pc-claims-vs-code (names: fix-dp-1..N, fix-pc-scope-verify, fix-pc-claims-vs-code; round suffixes for round 2+: fix-dp-r2-1, fix-pc-scope-verify-r2, fix-pc-claims-vs-code-r2)
             - **Peak**: up to 15 members in the base case (6 + 7 fix DPs + 2 fix PCs); higher with split instances. Only N+2 fix agents are active during the fix phase; the original reviewers are idle.
             - **Round 2+**: Clarity and Drift reviewers — including split instances (e.g., `clarity-1`, `clarity-2`, `drift-1`, `drift-2`) — remain idle; Correctness and Edge Cases are re-tasked via named-member SendMessage
 
@@ -93,7 +93,7 @@
             1. Read the consolidated review summary (Review Consolidator sends crumb list to Queen via SendMessage — see review-consolidator-skeleton.md step 12)
             2. Check finding counts: P1, P2, P3
             **Termination check**: If zero P1 and zero P2 findings:
-            - Round 2+: P3s already auto-filed by Big Head to "Future Work" epic
+            - Round 2+: P3s already auto-filed by Review Consolidator to "Future Work" epic
             - Round 1: P3s filed via "Handle P3 Issues" flow in reviews.md
             - Update session state: `Termination: terminated (round N: 0 P1/P2)`
             - Shutdown is authorized at this point — but do NOT send `shutdown_request` yet. Proceed to Step 4 first; send `shutdown_request` to team members during session teardown (Step 6 cleanup).
@@ -152,7 +152,7 @@
 
             **Fix DP prompt structure**: minimal — crumb is the source of truth:
             ```
-            You are fix-dp-N, a fix Crumb Gatherer in the Nitpicker team.
+            You are fix-dp-N, a fix Crumb Gatherer in the Reviewer team.
             Your task crumb: {crumb-id}
             Run: crumb show <crumb-id>
             Implement the fix. Follow the acceptance criteria exactly.
@@ -192,7 +192,7 @@
             **Progress log (after all fix DPs verified by fix-pc-claims-vs-code):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_CLAIMS_VS_CODE_COMPLETE|round={N}|verified_dps={names}|commits={hashes}|next_step=ROUND_TRANSITION" >> ${SESSION_DIR}/progress.log`
 
             **Step 3c-iv. Round transition via SendMessage** — after all fix DPs complete and
-            fix-pc-cmvcc has issued PASS for each, the Queen sends messages to re-task the persistent
+            fix-pc-claims-vs-code has issued PASS for each, the Queen sends messages to re-task the persistent
             team members for round N+1. Model assignments do NOT change in round 2+: Correctness and
             Edge Cases remain `opus` (they were spawned with opus in round 1; SendMessage does not change model):
             1. **Re-task Correctness reviewer** (`opus` — unchanged): SendMessage to `correctness-reviewer` with review round N+1,
