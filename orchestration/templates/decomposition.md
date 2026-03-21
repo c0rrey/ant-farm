@@ -274,7 +274,8 @@ Write the JSON to a temporary file and create the crumb:
 
 ```bash
 # Write payload to temp file
-cat > /tmp/crumb-session-store.json << 'EOF'
+_CRUMB_TMP="$(mktemp /tmp/crumb-XXXXXX.json)"
+cat > "$_CRUMB_TMP" << 'EOF'
 {
   "title": "Add session store with TTL expiry",
   ...
@@ -282,7 +283,8 @@ cat > /tmp/crumb-session-store.json << 'EOF'
 EOF
 
 # Create the crumb
-crumb create --from-file /tmp/crumb-session-store.json
+crumb create --from-file "$_CRUMB_TMP"
+rm -f "$_CRUMB_TMP"
 ```
 
 Record the returned crumb ID.

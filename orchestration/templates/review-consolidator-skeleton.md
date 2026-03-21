@@ -62,8 +62,10 @@ Your workflow:
 6. For each merge, document WHY findings share a root cause
 7. **Cross-session dedup**: Before writing the summary or filing crumbs, check for existing open crumbs that already cover your root causes:
    ```bash
-   if ! crumb list --open --short > /tmp/open-crumbs-$$.txt 2>/dev/null; then
+   _CRUMB_LIST_TMP="$(mktemp /tmp/open-crumbs-XXXXXX.txt)"
+   if ! crumb list --open --short > "$_CRUMB_LIST_TMP" 2>/dev/null; then
      echo "ERROR: crumb list failed (file error or crumb error). Aborting crumb filing to prevent duplicates."
+     rm -f "$_CRUMB_LIST_TMP"
      [[ "{CONSOLIDATED_OUTPUT_PATH}" == *"{"* ]] && { echo "ERROR: CONSOLIDATED_OUTPUT_PATH not substituted — build-review-prompts.sh failed to replace the placeholder. Aborting."; exit 1; }
      mkdir -p "$(dirname "{CONSOLIDATED_OUTPUT_PATH}")" || { echo "ERROR: failed to create output directory for {CONSOLIDATED_OUTPUT_PATH}. Aborting."; exit 1; }
      cat > "{CONSOLIDATED_OUTPUT_PATH}" << 'EOF'
@@ -79,14 +81,14 @@ Your workflow:
    If the bash block above exits with code 1 due to the mkdir guard (directory creation failed before the failure artifact could be written), use the SendMessage tool to notify the Queen immediately: "Review Consolidator FAILED: could not create output directory for failure artifact during cross-session dedup. Filesystem issue — manual intervention required." Then end your turn.
    If the bash block above exits with code 1 due to `crumb list` failure (the `if !` condition), stop immediately. Do NOT proceed to consolidation or crumb filing. Use the SendMessage tool to notify the Queen: "Review Consolidator FAILED: crumb list infrastructure error during cross-session dedup. Crumb filing aborted to prevent duplicates. Consolidated output written to {CONSOLIDATED_OUTPUT_PATH}. Please check crumb status and re-spawn Review Consolidator when ready." Then end your turn.
    <!-- NOTE: {CONSOLIDATED_OUTPUT_PATH} in the SendMessage text above is a template placeholder substituted by build-review-prompts.sh at build time — a real filesystem path appears in its place when Review Consolidator receives this prompt. Consistent with the bash-block comment above. -->
-   For each root cause group, compare against existing crumb titles (from `/tmp/open-crumbs-$$.txt`):
+   For each root cause group, compare against existing crumb titles (from `"$_CRUMB_LIST_TMP"`):
    - **Exact title match** (case-insensitive): Do NOT file. Log in the summary: "Dedup: RC-N matches existing crumb <ID> — skipped."
    - **Similar title** (same root cause, different wording): Run `crumb search "<key phrases>"` to confirm. If the existing crumb covers the same root cause, do NOT file. Log the match.
    - **No match found**: Mark for filing.
    When uncertain whether a match is truly the same root cause, err on the side of filing (a human can merge later; a missed filing is harder to recover).
    After completing the dedup comparison, clean up the temp file:
    ```bash
-   rm -f /tmp/open-crumbs-$$.txt
+   rm -f "$_CRUMB_LIST_TMP"
    ```
 8. Write consolidated summary to {CONSOLIDATED_OUTPUT_PATH}
 9. Send consolidated report path to the Checkpoint Auditor (SendMessage): "Consolidated report ready at {CONSOLIDATED_OUTPUT_PATH}. Please run claims-vs-code and review-integrity checkpoints and reply with verdict."
@@ -97,7 +99,8 @@ Your workflow:
     - If no reply after 2 subsequent turns (from any teammate), retry once; if still no reply after 2 more turns, escalate to Queen
     - **PASS**: File ONE crumb per root cause (skip any marked as duplicates in the cross-session dedup step (step 7)). For each crumb, write a description to a temp file, then create:
       ```bash
-      cat > /tmp/crumb-desc-$$.md << 'CRUMB_DESC'
+      _DESC_TMP="$(mktemp /tmp/crumb-desc-XXXXXX.md)"
+      cat > "$_DESC_TMP" << 'CRUMB_DESC'
       ## Root Cause
       <What is specifically wrong — cite the code path, pattern, or design flaw.
       Reference file:line locations where the issue originates. This must be
@@ -120,13 +123,14 @@ Your workflow:
       - [ ] <Third independently testable criterion>
       CRUMB_DESC
 
+      _CRUMB_JSON_TMP="$(mktemp /tmp/crumb-XXXXXX.json)"
       python3 -c "
 import json, pathlib
-desc = pathlib.Path('/tmp/crumb-desc-$$.md').read_text()
+desc = pathlib.Path('$_DESC_TMP').read_text()
 print(json.dumps({'type': 'bug', 'priority': 'P<severity>', 'title': '<title>', 'description': desc, 'acceptance_criteria': [], 'scope': {}, 'links': {}}))
-" > /tmp/crumb-$$.json
-      crumb create --from-file /tmp/crumb-$$.json
-      rm -f /tmp/crumb-desc-$$.md /tmp/crumb-$$.json
+" > "$_CRUMB_JSON_TMP"
+      crumb create --from-file "$_CRUMB_JSON_TMP"
+      rm -f "$_DESC_TMP" "$_CRUMB_JSON_TMP"
       ```
     - **FAIL**: Escalate to Queen with specifics (which findings failed, why); file crumbs ONLY for validated findings
     - **TIMEOUT/UNAVAILABLE**: Escalate to Queen with consolidated report path; do NOT file crumbs
@@ -134,7 +138,8 @@ print(json.dumps({'type': 'bug', 'priority': 'P<severity>', 'title': '<title>', 
     - Find or create the trail: `crumb trail list | grep -i "future work"` or `crumb trail create --title "Future Work" --description "Low-priority polish and improvements from review sessions"`
     - For each P3 (skip any marked as duplicates in the cross-session dedup step (step 7)):
       ```bash
-      cat > /tmp/crumb-desc-$$.md << 'CRUMB_DESC'
+      _DESC_TMP="$(mktemp /tmp/crumb-desc-XXXXXX.md)"
+      cat > "$_DESC_TMP" << 'CRUMB_DESC'
       ## Root Cause
       <What is wrong — file:line refs to the primary location.>
 
@@ -145,14 +150,15 @@ print(json.dumps({'type': 'bug', 'priority': 'P<severity>', 'title': '<title>', 
       - [ ] <testable criterion>
       CRUMB_DESC
 
+      _CRUMB_JSON_TMP="$(mktemp /tmp/crumb-XXXXXX.json)"
       python3 -c "
 import json, pathlib
-desc = pathlib.Path('/tmp/crumb-desc-$$.md').read_text()
+desc = pathlib.Path('$_DESC_TMP').read_text()
 print(json.dumps({'type': 'bug', 'priority': 'P3', 'title': '<title>', 'description': desc, 'acceptance_criteria': [], 'scope': {}, 'links': {}}))
-" > /tmp/crumb-$$.json
-      crumb create --from-file /tmp/crumb-$$.json
+" > "$_CRUMB_JSON_TMP"
+      crumb create --from-file "$_CRUMB_JSON_TMP"
       crumb link <new-crumb-id> --parent <trail-id>
-      rm -f /tmp/crumb-desc-$$.md /tmp/crumb-$$.json
+      rm -f "$_DESC_TMP" "$_CRUMB_JSON_TMP"
       ```
     - Mark P3s as "auto-filed, no action required" in the consolidated summary
     - Do NOT include P3 findings in the fix-or-defer prompt to the Queen
