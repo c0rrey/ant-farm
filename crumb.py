@@ -682,11 +682,11 @@ def _crumb_to_json_obj(crumb: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         Ordered dict suitable for ``json.dumps``.
     """
-    _REQUIRED: List[str] = [
+    required_fields: List[str] = [
         "id", "title", "type", "status", "priority",
         "description", "acceptance_criteria", "scope", "links", "notes",
     ]
-    obj: Dict[str, Any] = {field: crumb.get(field) for field in _REQUIRED}
+    obj: Dict[str, Any] = {field: crumb.get(field) for field in required_fields}
     # Append any extra keys stored on the record (created_at, updated_at, etc.)
     for key, value in crumb.items():
         if key not in obj:
@@ -988,6 +988,9 @@ def cmd_create(args: argparse.Namespace) -> None:
                 except ValueError:
                     pass  # non-numeric suffix (e.g. T-prefixed trail): leave counter alone
         else:
+            # NOTE (maintainers): next_crumb_id is the only counter validated here.
+            # If new config counter fields are added (e.g. next_trail_id variants),
+            # they must be explicitly advanced in this branch or IDs will collide.
             next_id = int(config.get("next_crumb_id", 1))
             crumb_id = f"{prefix}-{next_id}"
             # Advance counter even if this ID somehow already exists
@@ -1269,13 +1272,13 @@ def _get_blocked_by(crumb: Dict[str, Any]) -> List[str]:
 
     links_raw = crumb.get("links") or {}
     links_dict: Dict[str, Any] = links_raw if isinstance(links_raw, dict) else {}
-    links_level: List[str] = links_dict.get("blocked_by") or []
-    if not isinstance(links_level, list):
-        links_level = [links_level] if links_level else []
+    links_blocked_by: List[str] = links_dict.get("blocked_by") or []
+    if not isinstance(links_blocked_by, list):
+        links_blocked_by = [links_blocked_by] if links_blocked_by else []
 
     # Merge both locations, deduplicated, preserving order
     merged: List[str] = []
-    for bid in top_level + links_level:
+    for bid in top_level + links_blocked_by:
         if bid not in merged:
             merged.append(bid)
     return merged
