@@ -392,8 +392,9 @@ Read `{DECOMPOSE_DIR}/spec.md` (permitted) and summarize:
 - The feature scope and goals from the spec
 - Key requirements and acceptance criteria
 - If research ran: high-level findings from each Researcher focus area (stack, architecture, pitfalls, patterns).
-  Do NOT read the research files yourself — summarize from the Researcher file names and any notes
-  you recorded during the research complete gate check.
+  Do NOT read the research files yourself — summarize from the Researcher file names and any
+  `FORAGER_TRUNCATED` or `WARN` entries written to `{DECOMPOSE_DIR}/progress.log` during the
+  research complete gate check.
 
 Then ask the user for approval using `AskUserQuestion`:
 
