@@ -669,10 +669,12 @@ fi
 # ---------------------------------------------------------------------------
 # Step 8: Preflight checks
 # ---------------------------------------------------------------------------
+# code-reviewer.md is a Claude Code built-in agent, not installed by this script.
 if [ ! -f "${HOME}/.claude/agents/code-reviewer.md" ]; then
     warn "~/.claude/agents/code-reviewer.md is missing."
     warn "Reviewer team members will fail to spawn without it."
-    warn "Copy it manually to ~/.claude/agents/code-reviewer.md before starting a review session."
+    warn "This file is a Claude Code built-in agent — obtain it from ~/.claude/agents/code-reviewer.md"
+    warn "on a working Claude Code installation, or check the Claude Code documentation / re-run 'claude init'."
 fi
 
 # ---------------------------------------------------------------------------
