@@ -13,8 +13,8 @@
 
             **Team roster progression**:
             - **Round 1 (initial)**: base case 6 members — 4 Reviewers (Clarity, Edge Cases, Correctness, Drift) + Review Consolidator + Checkpoint Auditor (mixed-model: Correctness + Edge Cases use `opus`; Clarity + Drift use `sonnet`). When split reviewer instances are present, member count increases (e.g., 8 members for 2 Clarity + 2 Drift splits). Member names and count come from `build-review-prompts.sh` return table.
-            - **After fix wave**: + N fix DPs + fix-pc-scope-verify + fix-pc-claims-vs-code (names: fix-dp-1..N, fix-pc-scope-verify, fix-pc-claims-vs-code; round suffixes for round 2+: fix-dp-r2-1, fix-pc-scope-verify-r2, fix-pc-claims-vs-code-r2)
-            - **Peak**: up to 15 members in the base case (6 + 7 fix DPs + 2 fix PCs); higher with split instances. Only N+2 fix agents are active during the fix phase; the original reviewers are idle.
+            - **After fix wave**: + N fix CGs + fix-pc-scope-verify + fix-pc-claims-vs-code (names: fix-cg-1..N, fix-pc-scope-verify, fix-pc-claims-vs-code; round suffixes for round 2+: fix-cg-r2-1, fix-pc-scope-verify-r2, fix-pc-claims-vs-code-r2)
+            - **Peak**: up to 15 members in the base case (6 + 7 fix CGs + 2 fix PCs); higher with split instances. Only N+2 fix agents are active during the fix phase; the original reviewers are idle.
             - **Round 2+**: Clarity and Drift reviewers — including split instances (e.g., `clarity-1`, `clarity-2`, `drift-1`, `drift-2`) — remain idle; Correctness and Edge Cases are re-tasked via named-member SendMessage
 
             **3b-i. Gather inputs** from the Queen's state file:
@@ -81,7 +81,7 @@
 
             **Constraint: one TeamCreate per session.** Claude Code supports only one `TeamCreate` call
             per session. The reviewer team uses this slot. Any agent that needs to communicate with
-            another agent (e.g., Checkpoint Auditor receiving a message from Review Consolidator, fix PCs messaging fix DPs)
+            another agent (e.g., Checkpoint Auditor receiving a message from Review Consolidator, fix PCs messaging fix CGs)
             MUST be added as a team member — it cannot be spawned separately as a Task agent and then
             contacted via SendMessage from inside the team. Fix agents spawn into the persistent reviewer
             team using the Task tool with `team_name: "reviewer-team"`. Do NOT add a second TeamCreate
@@ -143,16 +143,16 @@
             **Step 3c-ii. Spawn fix agents into team** — Prompt Composer and pre-spawn-check are skipped for fix agents
             (the Review Consolidator crumb IS the brief; crumb content passed review-integrity; startup-check independently verified the
             strategy). Spawn fix agents into the team in a single message:
-            - **N fix DPs** (`model: "sonnet"`, `team_name: "reviewer-team"`): names `fix-dp-1..N`
-              (round 2+: `fix-dp-r2-1..N`)
+            - **N fix CGs** (`model: "sonnet"`, `team_name: "reviewer-team"`): names `fix-cg-1..N`
+              (round 2+: `fix-cg-r2-1..N`)
             - **fix-pc-scope-verify** (`model: "haiku"`, `team_name: "reviewer-team"`): one per round; serves
-              all fix DPs in the round via SendMessage
+              all fix CGs in the round via SendMessage
             - **fix-pc-claims-vs-code** (`model: "sonnet"`, `team_name: "reviewer-team"`): one per round;
-              serves all fix DPs in the round via SendMessage
+              serves all fix CGs in the round via SendMessage
 
-            **Fix DP prompt structure**: minimal — crumb is the source of truth:
+            **Fix CG prompt structure**: minimal — crumb is the source of truth:
             ```
-            You are fix-dp-N, a fix Crumb Gatherer in the Reviewer team.
+            You are fix-cg-N, a fix Crumb Gatherer in the Reviewer team.
             Your task crumb: {crumb-id}
             Run: crumb show <crumb-id>
             Implement the fix. Follow the acceptance criteria exactly.
@@ -162,36 +162,36 @@
             Then go idle and wait.
             ```
 
-            **Progress log (after fix agents spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_AGENTS_SPAWNED|round={N}|fix_dps={names}|fix_pcs=fix-pc-scope-verify,fix-pc-claims-vs-code|next_step=FIX_INNER_LOOP" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after fix agents spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_AGENTS_SPAWNED|round={N}|fix_cgs={names}|fix_pcs=fix-pc-scope-verify,fix-pc-claims-vs-code|next_step=FIX_INNER_LOOP" >> ${SESSION_DIR}/progress.log`
 
             **Step 3c-iii. Fix inner loop** — fully asynchronous via SendMessage within the team:
             ```
-            fix-dp-N  -->  [commit]  -->  SendMessage(fix-pc-scope-verify)
+            fix-cg-N  -->  [commit]  -->  SendMessage(fix-pc-scope-verify)
                                                 |
                                           fix-pc-scope-verify runs scope-verify check (haiku)
                                                 |
                                      PASS ------+------ FAIL
                                       |                   |
-                           SendMessage(fix-pc-claims-vs-code)   SendMessage(fix-dp-N) with specifics
+                           SendMessage(fix-pc-claims-vs-code)   SendMessage(fix-cg-N) with specifics
                                       |                   |
-                                fix-pc-claims-vs-code fix-dp-N iterates (max 2 retries total)
+                                fix-pc-claims-vs-code fix-cg-N iterates (max 2 retries total)
                                 runs claims-vs-code       |
                                 (sonnet)        if retry limit hit → SendMessage(Queen)
                                       |
                            PASS ------+------ FAIL
                             |                  |
-                        fix-dp-N           SendMessage(fix-dp-N) with specifics
-                        goes idle          fix-dp-N iterates (max 2 retries total)
+                        fix-cg-N           SendMessage(fix-cg-N) with specifics
+                        goes idle          fix-cg-N iterates (max 2 retries total)
                                            if retry limit hit → SendMessage(Queen)
             ```
 
-            Retry limit: each fix DP has a maximum of 2 retries total across both scope-verify and claims-vs-code
-            failures. On the third failure, the DP sends a message to the Queen and goes idle.
+            Retry limit: each fix CG has a maximum of 2 retries total across both scope-verify and claims-vs-code
+            failures. On the third failure, the CG sends a message to the Queen and goes idle.
             The Queen escalates to the user.
 
-            **Progress log (after all fix DPs verified by fix-pc-claims-vs-code):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_CLAIMS_VS_CODE_COMPLETE|round={N}|verified_dps={names}|commits={hashes}|next_step=ROUND_TRANSITION" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after all fix CGs verified by fix-pc-claims-vs-code):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_CLAIMS_VS_CODE_COMPLETE|round={N}|verified_cgs={names}|commits={hashes}|next_step=ROUND_TRANSITION" >> ${SESSION_DIR}/progress.log`
 
-            **Step 3c-iv. Round transition via SendMessage** — after all fix DPs complete and
+            **Step 3c-iv. Round transition via SendMessage** — after all fix CGs complete and
             fix-pc-claims-vs-code has issued PASS for each, the Queen sends messages to re-task the persistent
             team members for round N+1. Model assignments do NOT change in round 2+: Correctness and
             Edge Cases remain `opus` (they were spawned with opus in round 1; SendMessage does not change model):

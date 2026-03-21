@@ -185,9 +185,9 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 
             **Progress log (after fix Scout startup-check PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_SCOUT_COMPLETE|round=<N>|startup_check=pass|fix_crumbs=<crumb-ids>|next_step=FIX_AGENTS_SPAWN" >> ${SESSION_DIR}/progress.log`
 
-            **Progress log (after fix agents spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_AGENTS_SPAWNED|round=<N>|fix_dps=<names>|fix_pcs=fix-pc-scope-verify,fix-pc-claims-vs-code|next_step=FIX_INNER_LOOP" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after fix agents spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_AGENTS_SPAWNED|round=<N>|fix_cgs=<names>|fix_pcs=fix-pc-scope-verify,fix-pc-claims-vs-code|next_step=FIX_INNER_LOOP" >> ${SESSION_DIR}/progress.log`
 
-            **Progress log (after all fix DPs verified by fix-pc-claims-vs-code):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_CLAIMS_VS_CODE_COMPLETE|round=<N>|verified_dps=<names>|commits=<hashes>|next_step=ROUND_TRANSITION" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after all fix CGs verified by fix-pc-claims-vs-code):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_CLAIMS_VS_CODE_COMPLETE|round=<N>|verified_cgs=<names>|commits=<hashes>|next_step=ROUND_TRANSITION" >> ${SESSION_DIR}/progress.log`
 
             **Progress log (after round transition messages sent):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|ROUND_TRANSITION|from_round=<N>|to_round=<N+1>|fix_commits=<range>|next_step=REVIEW_3B" >> ${SESSION_DIR}/progress.log`
 
@@ -353,7 +353,7 @@ Store SESSION_DIR in your context and pass it explicitly to every agent that nee
 | Prompt Composer pre-spawn-check fails | 1 | Escalate to user; do not spawn Crumb Gatherers without verified prompts |
 | Scout fails or returns no tasks | 1 | Escalate to user; do not proceed to Step 2 without task list |
 | startup-check FAIL -> re-Scout cycle | 1 | Escalate to user with startup-check violations; do not re-run Scout a third time |
-| Fix DP stuck/crash (no commit in team) | 0 | Run stuck-agent diagnostic; file a crumb for the failed fix; escalate to user. Do NOT re-spawn without user approval |
+| Fix CG stuck/crash (no commit in team) | 0 | Run stuck-agent diagnostic; file a crumb for the failed fix; escalate to user. Do NOT re-spawn without user approval |
 | Fix PC crash (fix-pc-scope-verify or fix-pc-claims-vs-code) | 1 | Spawn replacement into team (`team_name: "reviewer-team"`); resume from last SendMessage |
 | Reviewer failure (round 2+, re-task via SendMessage fails) | 1 | Spawn fresh reviewer into team as replacement; re-send the round transition message |
 | Review Consolidator crash (before crumb filing complete) | 1 | Spawn fresh Review Consolidator into team with handoff brief describing which crumbs were filed and which remain; re-run review-integrity after |
