@@ -66,11 +66,11 @@ Base case (no splits) — 6 members:
 
 ~~~markdown
 Create a team with these members. Reviewers work in parallel.
-Big Head waits for all expected reports (count from consolidation brief's expected_paths), then consolidates.
-Pest Control is a team member so Big Head can SendMessage to it directly for checkpoint validation.
+Review Consolidator waits for all expected reports (count from consolidation brief's expected_paths), then consolidates.
+Checkpoint Auditor is a team member so Review Consolidator can SendMessage to it directly for checkpoint validation.
 
-Nitpickers produce REPORTS ONLY — do NOT file crumbs (`crumb create`).
-Big Head consolidates all reports, groups findings by root cause, and files crumbs.
+Reviewers produce REPORTS ONLY — do NOT file crumbs (`crumb create`).
+Review Consolidator consolidates all reports, groups findings by root cause, and files crumbs.
 
 Review scope: commits {first-commit} through {last-commit} ({N} commits total, across trails: {trail-list})
 Files to review: {deduplicated list of ALL files changed across all trails}
@@ -88,11 +88,11 @@ Split instance example (2 Clarity + 2 Drift splits) — 8 members:
 
 ~~~markdown
 Create a team with these members. Reviewers work in parallel.
-Big Head waits for all expected reports (count from consolidation brief's expected_paths), then consolidates.
-Pest Control is a team member so Big Head can SendMessage to it directly for checkpoint validation.
+Review Consolidator waits for all expected reports (count from consolidation brief's expected_paths), then consolidates.
+Checkpoint Auditor is a team member so Review Consolidator can SendMessage to it directly for checkpoint validation.
 
-Nitpickers produce REPORTS ONLY — do NOT file crumbs (`crumb create`).
-Big Head consolidates all reports, groups findings by root cause, and files crumbs.
+Reviewers produce REPORTS ONLY — do NOT file crumbs (`crumb create`).
+Review Consolidator consolidates all reports, groups findings by root cause, and files crumbs.
 
 Review scope: commits {first-commit} through {last-commit} ({N} commits total, across trails: {trail-list})
 Files to review: {deduplicated list of ALL files changed across all trails}
@@ -482,11 +482,11 @@ List every in-scope file with its review status. Files with no findings MUST sti
 {1-2 sentence summary}
 ```
 
-## Big Head Consolidation Protocol
+## Review Consolidator Consolidation Protocol
 
 **Model:** `opus`
 
-After all Nitpicker reports are complete (count determined by the consolidation brief's `expected_paths` list; typically 4 in round 1, 2 in round 2+, but may vary if split reviewer instances are used), Big Head (a member of the same team) consolidates:
+After all Reviewer reports are complete (count determined by the consolidation brief's `expected_paths` list; typically 4 in round 1, 2 in round 2+, but may vary if split reviewer instances are used), Review Consolidator (a member of the same team) consolidates:
 
 ### Step Numbering Cross-Reference
 
@@ -496,19 +496,19 @@ reviews.md and big-head-skeleton.md (Review Consolidator template) use different
 |----------------|--------------------------|-------------|
 | Step 0 | Step 1 | Verify all expected report files exist (prerequisite gate) |
 | Step 0a | Step 1 (continued) | Polling loop and timeout handling for missing reports |
-| Step 1 | Step 2 | Read all expected Nitpicker reports |
+| Step 1 | Step 2 | Read all expected Reviewer reports |
 | Step 2 | Steps 3–6 | Merge findings, deduplicate, group by root cause, document merge rationale |
 | Step 2.5 | Step 7 | Cross-session dedup against existing open crumbs |
 | Step 3 | Step 8 | Write consolidated summary to output path |
-| Step 4 | Steps 9–10 | SendMessage to Pest Control, await verdict, file crumbs on PASS |
+| Step 4 | Steps 9–10 | SendMessage to Checkpoint Auditor, await verdict, file crumbs on PASS |
 | (round 2+ only) | Step 11 | P3 auto-filing to Future Work trail |
 | (all rounds) | Step 12 | Send crumb list handoff message to Queen |
 
 ### Verification Pipeline Design Rationale
 
-The Big Head consolidation process includes two distinct verification layers that work together:
+The Review Consolidator consolidation process includes two distinct verification layers that work together:
 
-1. **Big Head Step 0 (Prerequisite Gate)**: A mandatory check performed by Big Head BEFORE reading any reports. This gate ensures all expected reports exist (count from the consolidation brief's `expected_paths` list) before consolidation logic begins. This prevents wasted effort on reading partial report sets or proceeding with missing data.
+1. **Review Consolidator Step 0 (Prerequisite Gate)**: A mandatory check performed by Review Consolidator BEFORE reading any reports. This gate ensures all expected reports exist (count from the consolidation brief's `expected_paths` list) before consolidation logic begins. This prevents wasted effort on reading partial report sets or proceeding with missing data.
 
 2. **Checkpoint Auditor review-integrity Check 0 (Independent Audit)**: A separate, independent check performed AFTER Review Consolidator consolidation is complete (see checkpoints/review-integrity.md). This audit verifies the same round-appropriate reports but runs in a different context — it confirms that consolidation did not proceed in a degraded state (e.g., no reviewer failures during the review phase).
 
@@ -1112,7 +1112,7 @@ Implement the fix. Follow the acceptance criteria exactly.
 
 After committing:
 1. Record your commit hash in your task crumb: crumb update <crumb-id> --note="commit: <hash>"
-2. SendMessage to fix-pc-wwd: "Fix committed. Crumb: {crumb-id}. Commit: {hash}. Files changed: {list}."
+2. SendMessage to fix-pc-scope-verify: "Fix committed. Crumb: {crumb-id}. Commit: {hash}. Files changed: {list}."
 Then go idle and wait.
 ```
 
@@ -1157,13 +1157,13 @@ P1 and P2 fixes run in waves as follows:
 Wave 1: [P1 fix-dp tasks] + [P2 fix-dp tasks]    (concurrent, no file overlap)
 ```
 
-Unlike the old TDD workflow, P1 fixes do not require a separate test-writing wave in the persistent team design. The crumb's acceptance criteria serve as the verification specification; fix-pc-cmvcc enforces them.
+Unlike the old TDD workflow, P1 fixes do not require a separate test-writing wave in the persistent team design. The crumb's acceptance criteria serve as the verification specification; fix-pc-claims-vs-code enforces them.
 
-Spawn fix-pc-wwd and fix-pc-cmvcc once per round (they serve all fix CGs in that round via SendMessage). Do not re-spawn them per CG.
+Spawn fix-pc-scope-verify and fix-pc-claims-vs-code once per round (they serve all fix CGs in that round via SendMessage). Do not re-spawn them per CG.
 
 #### Round Transition via SendMessage
 
-After all fix CGs complete and fix-pc-cmvcc has issued PASS for each:
+After all fix CGs complete and fix-pc-claims-vs-code has issued PASS for each:
 
 1. **Re-task Correctness reviewer**: SendMessage to `correctness` with:
    - Review round: N+1
