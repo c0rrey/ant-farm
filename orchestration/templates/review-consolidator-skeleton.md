@@ -40,6 +40,7 @@ Your workflow:
      # /path/to/session/consolidated.md) before this prompt reaches Review Consolidator.
      # By the time Review Consolidator executes this block, the braces are gone and a real
      # filesystem path appears in their place.
+     [[ "{CONSOLIDATED_OUTPUT_PATH}" == *"{"* ]] && { echo "ERROR: CONSOLIDATED_OUTPUT_PATH not substituted — build-review-prompts.sh failed to replace the placeholder. Aborting."; exit 1; }
      mkdir -p "$(dirname "{CONSOLIDATED_OUTPUT_PATH}")" || { echo "ERROR: failed to create output directory for {CONSOLIDATED_OUTPUT_PATH}. Aborting."; exit 1; }
      cat > "{CONSOLIDATED_OUTPUT_PATH}" << 'EOF'
      # Review Consolidator — BLOCKED: Missing Reviewer Reports
@@ -63,6 +64,7 @@ Your workflow:
    ```bash
    if ! crumb list --open --short > /tmp/open-crumbs-$$.txt 2>/dev/null; then
      echo "ERROR: crumb list failed (file error or crumb error). Aborting crumb filing to prevent duplicates."
+     [[ "{CONSOLIDATED_OUTPUT_PATH}" == *"{"* ]] && { echo "ERROR: CONSOLIDATED_OUTPUT_PATH not substituted — build-review-prompts.sh failed to replace the placeholder. Aborting."; exit 1; }
      mkdir -p "$(dirname "{CONSOLIDATED_OUTPUT_PATH}")" || { echo "ERROR: failed to create output directory for {CONSOLIDATED_OUTPUT_PATH}. Aborting."; exit 1; }
      cat > "{CONSOLIDATED_OUTPUT_PATH}" << 'EOF'
      # Review Consolidator Consolidation — BLOCKED: Cross-Session Dedup Infrastructure Error
