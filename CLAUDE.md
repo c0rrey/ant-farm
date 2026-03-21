@@ -24,6 +24,18 @@ Run `./scripts/setup.sh` then `/ant-farm-init` to install orchestration triggers
 
 **Key rule**: After startup-check PASS, the Queen auto-proceeds to Step 2. No user approval required for execution strategy.
 
+## Lite Mode ("ant-farm-quick")
+
+**Trigger**: When the user invokes `/ant-farm-quick` or `/ant-farm-quick <crumb-id>`.
+
+**CRITICAL — read before doing ANYTHING:**
+- Read `~/.claude/skills/quick.md` FIRST and ALONE — no parallel tool calls. Then follow it.
+- Do NOT trigger this for "let's get to work" — that phrase triggers full mode only.
+
+**Process**: Read `~/.claude/skills/quick.md` and follow the workflow. The skill validates the crumb (or prompts for one), then reads `~/.claude/orchestration/RULES-lite.md` and executes the lite mode pipeline.
+
+**Key rule**: Lite mode is opt-in. Full mode (`/ant-farm-work`) remains the default for multi-crumb sessions.
+
 ## Landing the Plane (Session Completion)
 
 (Corresponds to RULES.md Step 6.)
