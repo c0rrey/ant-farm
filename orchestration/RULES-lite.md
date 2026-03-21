@@ -111,9 +111,10 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_SPAWNED|wave=1|mode=lite|task=${TASK_I
 # Each entry must be a quoted string with optional line range, e.g. "src/foo.py:10-50"
 SCOPE_JSON=$(python3 -c "
 import json, sys
-files = sys.argv[1:]
-print(json.dumps({'crumb_id': '${TASK_ID}', 'allowed_files': files}))
-" ${AFFECTED_FILES_LIST})
+crumb_id = sys.argv[1]
+files = sys.argv[2:]
+print(json.dumps({'crumb_id': crumb_id, 'allowed_files': files}))
+" "${TASK_ID}" ${AFFECTED_FILES_LIST}) || { echo "ERROR: scope JSON generation failed" >&2; exit 1; }
 
 # Write atomically: temp file in same directory, then rename
 python3 -c "

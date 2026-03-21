@@ -946,11 +946,15 @@ substantive analysis, NOT a restatement of the title.}
 - [ ] {Third independently testable criterion}
 CRUMB_DESC
 
+CRUMB_TITLE="{root-cause-title}"
+CRUMB_PRIORITY="P{combined-priority}"
+CRUMB_REVIEW_SOURCE="{primary-review-type}"
 python3 -c "
-import json, pathlib
-desc = pathlib.Path('/tmp/crumb-desc-$$.md').read_text()
-print(json.dumps({'type': 'bug', 'priority': 'P{combined-priority}', 'title': '{root-cause-title}', 'description': desc, 'review_source': '{primary-review-type}', 'acceptance_criteria': [], 'scope': {}, 'links': {}}))
-" > /tmp/crumb-$$.json
+import json, pathlib, sys
+title, priority, review_source = sys.argv[1], sys.argv[2], sys.argv[3]
+desc = pathlib.Path(sys.argv[4]).read_text()
+print(json.dumps({'type': 'bug', 'priority': priority, 'title': title, 'description': desc, 'review_source': review_source, 'acceptance_criteria': [], 'scope': {}, 'links': {}}))
+" "$CRUMB_TITLE" "$CRUMB_PRIORITY" "$CRUMB_REVIEW_SOURCE" "/tmp/crumb-desc-$$.md" > /tmp/crumb-$$.json || { echo "ERROR: JSON generation failed" >&2; exit 1; }
 crumb create --from-file /tmp/crumb-$$.json
 rm -f /tmp/crumb-desc-$$.md /tmp/crumb-$$.json
 ```

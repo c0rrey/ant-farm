@@ -123,12 +123,15 @@ Your workflow:
       - [ ] <Third independently testable criterion>
       CRUMB_DESC
 
+      _CRUMB_TITLE="<title>"
+      _CRUMB_PRIORITY="P<severity>"
       _CRUMB_JSON_TMP="$(mktemp /tmp/crumb-XXXXXX.json)"
       python3 -c "
-import json, pathlib
-desc = pathlib.Path('$_DESC_TMP').read_text()
-print(json.dumps({'type': 'bug', 'priority': 'P<severity>', 'title': '<title>', 'description': desc, 'acceptance_criteria': [], 'scope': {}, 'links': {}}))
-" > "$_CRUMB_JSON_TMP"
+import json, pathlib, sys
+title, priority = sys.argv[1], sys.argv[2]
+desc = pathlib.Path(sys.argv[3]).read_text()
+print(json.dumps({'type': 'bug', 'priority': priority, 'title': title, 'description': desc, 'acceptance_criteria': [], 'scope': {}, 'links': {}}))
+" "$_CRUMB_TITLE" "$_CRUMB_PRIORITY" "$_DESC_TMP" > "$_CRUMB_JSON_TMP" || { echo "ERROR: JSON generation failed" >&2; exit 1; }
       crumb create --from-file "$_CRUMB_JSON_TMP"
       rm -f "$_DESC_TMP" "$_CRUMB_JSON_TMP"
       ```
@@ -150,12 +153,14 @@ print(json.dumps({'type': 'bug', 'priority': 'P<severity>', 'title': '<title>', 
       - [ ] <testable criterion>
       CRUMB_DESC
 
+      _CRUMB_TITLE="<title>"
       _CRUMB_JSON_TMP="$(mktemp /tmp/crumb-XXXXXX.json)"
       python3 -c "
-import json, pathlib
-desc = pathlib.Path('$_DESC_TMP').read_text()
-print(json.dumps({'type': 'bug', 'priority': 'P3', 'title': '<title>', 'description': desc, 'acceptance_criteria': [], 'scope': {}, 'links': {}}))
-" > "$_CRUMB_JSON_TMP"
+import json, pathlib, sys
+title = sys.argv[1]
+desc = pathlib.Path(sys.argv[2]).read_text()
+print(json.dumps({'type': 'bug', 'priority': 'P3', 'title': title, 'description': desc, 'acceptance_criteria': [], 'scope': {}, 'links': {}}))
+" "$_CRUMB_TITLE" "$_DESC_TMP" > "$_CRUMB_JSON_TMP" || { echo "ERROR: JSON generation failed" >&2; exit 1; }
       crumb create --from-file "$_CRUMB_JSON_TMP"
       crumb link <new-crumb-id> --parent <trail-id>
       rm -f "$_DESC_TMP" "$_CRUMB_JSON_TMP"
