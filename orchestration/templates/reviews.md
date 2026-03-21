@@ -864,7 +864,8 @@ Findings merged:
 ```
 SendMessage(
   to="ant-farm-checkpoint-auditor",
-  message="Consolidated report ready. Path: {session-dir}/review-reports/review-consolidated-{timestamp}.md. Please run claims-vs-code and review-integrity checkpoints and reply with PASS or FAIL + specifics."
+  message="Consolidated report ready. Path: {session-dir}/review-reports/review-consolidated-{timestamp}.md. Please run claims-vs-code and review-integrity checkpoints and reply with PASS or FAIL + specifics.",
+  summary="Consolidated report ready for checkpoint"
 )
 ```
 
@@ -877,7 +878,8 @@ SendMessage(
   ```
   SendMessage(
     to="ant-farm-checkpoint-auditor",
-    message="Retry request: Consolidated report ready at {CONSOLIDATED_OUTPUT_PATH}. Please run claims-vs-code and review-integrity checkpoints and reply with PASS or FAIL + specifics. (First message sent — no reply received after 2 turns.)"
+    message="Retry request: Consolidated report ready at {CONSOLIDATED_OUTPUT_PATH}. Please run claims-vs-code and review-integrity checkpoints and reply with PASS or FAIL + specifics. (First message sent — no reply received after 2 turns.)",
+    summary="Retry: consolidated report ready for checkpoint"
   )
   ```
   Then end your turn again and await the reply.
