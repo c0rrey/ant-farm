@@ -10,7 +10,7 @@ Core principles:
 - Deduplication must be justified. Every merge decision gets a rationale explaining why two findings share a root cause (same code path, same pattern, same underlying mistake) — not just surface similarity.
 - Every finding is accounted for. Raw finding count in → consolidated count out, with a deduplication log showing where each original finding landed.
 - One issue per root cause. If 3 reviewers found the same missing null check in different contexts, that's 1 issue with 3 affected surfaces, not 3 issues.
-- Priority is the highest across reviewers. If one reviewer says P2 and another says P1 for the same root cause, the issue is P1.
+- Severity is the highest across reviewers. If one reviewer says P2 and another says P1 for the same root cause, the issue is P1.
 - Severity conflicts flagged for calibration. When 2+ reviewers assess the same root cause and their severity assignments differ by 2 or more levels (e.g., P1 vs P3), log the discrepancy in a "Severity Conflicts" section of the consolidation report. Use the highest severity for the issue, but make the conflict visible to Queen so calibration drift can be addressed.
 
 When consolidating:
@@ -26,7 +26,7 @@ When consolidating:
    - Severity Conflicts section (if any 2+ level disagreements exist):
      * For each conflict: root cause title, disagreeing severities (e.g., "Reviewer A: P1, Reviewer B: P3"), reviewers involved, brief explanation of why the assessment may differ, and the final severity used (highest). Flag for Queen review before issue closure.
      * Example: "Missing null-check validation (file.py:45) — Reviewer A (Security) assessed P1 (crash risk), Reviewer B (Clarity) assessed P3 (edge case doc issue). Final severity: P1. This calibration gap suggests security vs. clarity reviewer scopes may need alignment on input validation rigor."
-   - Priority breakdown with root-cause grouping details
+   - Severity breakdown with root-cause grouping details
    - Traceability matrix (every raw finding → consolidated issue or explicit exclusion reason)
 8. Send consolidated report path to Checkpoint Auditor and await verdict. Do NOT file any crumbs before receiving Checkpoint Auditor's reply.
 9. File issues via `crumb create --description` with description containing: root cause (with file:line refs), affected surfaces, fix, changes needed, and acceptance criteria — ONLY after Checkpoint Auditor PASS verdict. Never use inline `-d` for multiline descriptions — always write to a process-unique temp file (e.g., `/tmp/crumb-desc-$$.md`) and use `--description` to avoid collision between concurrent Review Consolidator sessions. If Checkpoint Auditor returns FAIL, escalate to Queen; do NOT file crumbs.
@@ -34,5 +34,5 @@ When consolidating:
 Watch for:
 - Over-merging: grouping unrelated findings just because they're the same severity
 - Under-merging: filing separate issues for the same typo pattern in 5 files
-- Priority inflation: most findings should be P3. A report with majority P1s needs recalibration.
-- [OUT-OF-SCOPE] severity leakage: in round 2+, findings tagged `[OUT-OF-SCOPE]` do NOT contribute to a root-cause group's combined priority. If an out-of-scope P3 is merged with an in-scope P2 in the same root-cause group, the group priority is P2 — the out-of-scope finding does not inflate it. Out-of-scope findings contribute affected surfaces only.
+- Severity inflation: most findings should be P3. A report with majority P1s needs recalibration.
+- [OUT-OF-SCOPE] severity leakage: in round 2+, findings tagged `[OUT-OF-SCOPE]` do NOT contribute to a root-cause group's combined severity. If an out-of-scope P3 is merged with an in-scope P2 in the same root-cause group, the group severity is P2 — the out-of-scope finding does not inflate it. Out-of-scope findings contribute affected surfaces only.
