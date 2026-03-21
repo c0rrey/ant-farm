@@ -42,7 +42,7 @@ misapplying Queen patterns to decomposition sessions.
 | Workflow file | `orchestration/RULES-decompose.md` (this file) | `orchestration/RULES.md` |
 | Read permissions | `spec.md` and `decomposition-brief.md` only | `queen-state.md`, task files, git diffs |
 | State tracking | Step number + per-agent retry count (in context only) | `queen-state.md` written to disk |
-| Primary agents | Surveyor, Forager x4, Architect | Scout, Pantry, Pest Control, Nitpicker |
+| Primary agents | Surveyor, Forager x4, Architect | Scout, Pantry, Checkpoint Auditor, Nitpicker |
 | Context budget target | 15–20% of context window | Not separately specified |
 | `crumb` CLI usage | Prohibited — only the Architect calls `crumb` | Queen calls `crumb` directly |
 
@@ -439,7 +439,7 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|DECOMPOSE_COMPLETE|handoff=done" \
 | Spec quality gate | After Step 2 (Surveyor) | Step 3 (Forager spawn) | Re-spawn Surveyor with violations; max 1 retry; escalate to user |
 | Research complete | After Step 3 (all Foragers) | Step 3.5 (User approval) | Re-spawn failed Forager(s); max 1 retry each; escalate to user |
 | User approval | Step 3.5 | Step 4 (Architect spawn) | User revises spec; max 2 revision cycles; proceed with current state |
-| TDV PASS | After Step 5 (Pest Control TDV) | Step 6 (Handoff) | Re-spawn Architect with violations; max 2 retries; escalate to user |
+| TDV PASS | After Step 5 (Checkpoint Auditor TDV) | Step 6 (Handoff) | Re-spawn Architect with violations; max 2 retries; escalate to user |
 
 ---
 
