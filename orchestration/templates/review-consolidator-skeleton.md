@@ -78,6 +78,7 @@ Your workflow:
    ```
    If the bash block above exits with code 1 due to the mkdir guard (directory creation failed before the failure artifact could be written), use the SendMessage tool to notify the Queen immediately: "Review Consolidator FAILED: could not create output directory for failure artifact during cross-session dedup. Filesystem issue — manual intervention required." Then end your turn.
    If the bash block above exits with code 1 due to `crumb list` failure (the `if !` condition), stop immediately. Do NOT proceed to consolidation or crumb filing. Use the SendMessage tool to notify the Queen: "Review Consolidator FAILED: crumb list infrastructure error during cross-session dedup. Crumb filing aborted to prevent duplicates. Consolidated output written to {CONSOLIDATED_OUTPUT_PATH}. Please check crumb status and re-spawn Review Consolidator when ready." Then end your turn.
+   <!-- NOTE: {CONSOLIDATED_OUTPUT_PATH} in the SendMessage text above is a template placeholder substituted by build-review-prompts.sh at build time — a real filesystem path appears in its place when Review Consolidator receives this prompt. Consistent with the bash-block comment above. -->
    For each root cause group, compare against existing crumb titles (from `/tmp/open-crumbs-$$.txt`):
    - **Exact title match** (case-insensitive): Do NOT file. Log in the summary: "Dedup: RC-N matches existing crumb <ID> — skipped."
    - **Similar title** (same root cause, different wording): Run `crumb search "<key phrases>"` to confirm. If the existing crumb covers the same root cause, do NOT file. Log the match.
@@ -122,7 +123,7 @@ Your workflow:
       python3 -c "
 import json, pathlib
 desc = pathlib.Path('/tmp/crumb-desc-$$.md').read_text()
-print(json.dumps({'type': 'bug', 'priority': 'P<P>', 'title': '<title>', 'description': desc, 'acceptance_criteria': [], 'scope': {}, 'links': {}}))
+print(json.dumps({'type': 'bug', 'priority': 'P<severity>', 'title': '<title>', 'description': desc, 'acceptance_criteria': [], 'scope': {}, 'links': {}}))
 " > /tmp/crumb-$$.json
       crumb create --from-file /tmp/crumb-$$.json
       rm -f /tmp/crumb-desc-$$.md /tmp/crumb-$$.json
