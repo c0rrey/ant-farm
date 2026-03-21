@@ -459,6 +459,25 @@ test('DryRunCollector: printReport does not throw', () => {
 });
 
 // ===========================================================================
+// Test: install-manifest.json entry verification
+// ===========================================================================
+
+test('install-manifest.json includes orchestration/RULES-lite.md entry', async () => {
+  // PACKAGE_ROOT is npm/ — one level below the repo root where install-manifest.json lives.
+  const packageRoot = path.resolve(__dirname, '..');
+  const manifest = await readInstallManifest(packageRoot);
+
+  const rulesLiteEntry = manifest.files.find(
+    (f) => f.src === 'orchestration/RULES-lite.md' && f.dst === 'orchestration/RULES-lite.md'
+  );
+
+  assert.ok(
+    rulesLiteEntry,
+    'install-manifest.json must include an entry with src and dst equal to orchestration/RULES-lite.md'
+  );
+});
+
+// ===========================================================================
 // Test: registerMcp called during install flow
 // ===========================================================================
 

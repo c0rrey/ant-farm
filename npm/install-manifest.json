@@ -66,6 +66,11 @@
       "description": "Queen workflow rules"
     },
     {
+      "src": "orchestration/RULES-lite.md",
+      "dst": "orchestration/RULES-lite.md",
+      "description": "Queen lite-mode workflow rules"
+    },
+    {
       "src": "orchestration/templates/checkpoints/claims-vs-code.md",
       "dst": "orchestration/templates/checkpoints/claims-vs-code.md",
       "description": "Claims-vs-code checkpoint template"

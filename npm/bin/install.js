@@ -15,9 +15,11 @@
  *   3. Writes a .ant-farm-install-in-progress sentinel
  *   4. Reads file list from install-manifest.json (no hardcoded paths)
  *   5. Copies each file to ~/.claude/, backing up any existing files first
- *   6. Injects the ant-farm block into ~/.claude/CLAUDE.md (idempotent)
- *   7. Writes ~/.claude/.ant-farm-manifest.json with paths, checksums, version
- *   8. Removes the in-progress sentinel
+ *   6. Registers ant-farm hooks in ~/.claude/settings.json (idempotent)
+ *   7. Registers ant-farm MCP server in ~/.claude/settings.json (idempotent)
+ *   8. Injects the ant-farm block into ~/.claude/CLAUDE.md (idempotent)
+ *   9. Writes ~/.claude/.ant-farm-manifest.json with paths, checksums, version
+ *  10. Removes the in-progress sentinel
  */
 
 const path = require('path');
@@ -166,7 +168,7 @@ async function runInstallMode(dryRun) {
   const collector = dryRun ? new DryRunCollector() : null;
 
   // -------------------------------------------------------------------------
-  // Step 1: Check for partial-install sentinel from a previous run
+  // Step 2: Check for partial-install sentinel from a previous run
   // -------------------------------------------------------------------------
   const sentinelExists = await pathExists(SENTINEL_PATH);
   if (sentinelExists) {
@@ -177,7 +179,7 @@ async function runInstallMode(dryRun) {
   }
 
   // -------------------------------------------------------------------------
-  // Step 2: Write in-progress sentinel (skip in dry-run — no writes)
+  // Step 3: Write in-progress sentinel (skip in dry-run — no writes)
   // -------------------------------------------------------------------------
   if (!dryRun) {
     await writeSentinel(
@@ -187,7 +189,7 @@ async function runInstallMode(dryRun) {
   }
 
   // -------------------------------------------------------------------------
-  // Step 3: Read install manifest
+  // Step 4: Read install manifest
   // -------------------------------------------------------------------------
   let manifest;
   try {
@@ -207,7 +209,7 @@ async function runInstallMode(dryRun) {
   console.log('');
 
   // -------------------------------------------------------------------------
-  // Step 4: Copy each file to ~/.claude/, backing up existing files first
+  // Step 5: Copy each file to ~/.claude/, backing up existing files first
   // -------------------------------------------------------------------------
   const installedFiles = [];
   const errors = [];
@@ -261,7 +263,7 @@ async function runInstallMode(dryRun) {
   }
 
   // -------------------------------------------------------------------------
-  // Step 4b: Register ant-farm hooks in Claude Code settings.json
+  // Step 6: Register ant-farm hooks in Claude Code settings.json
   // -------------------------------------------------------------------------
   {
     let hookWarnings = [];
@@ -278,7 +280,9 @@ async function runInstallMode(dryRun) {
     }
   }
 
-  // Register the ant-farm crumb MCP server entry in Claude Code settings.json.
+  // -------------------------------------------------------------------------
+  // Step 7: Register ant-farm MCP server in Claude Code settings.json
+  // -------------------------------------------------------------------------
   {
     let mcpWarnings = [];
     try {
@@ -295,7 +299,7 @@ async function runInstallMode(dryRun) {
   }
 
   // -------------------------------------------------------------------------
-  // Step 5: Inject CLAUDE.md sentinel block
+  // Step 8: Inject CLAUDE.md sentinel block
   // -------------------------------------------------------------------------
   const claudeBlockExists = await pathExists(CLAUDE_BLOCK_SRC);
   if (!claudeBlockExists) {
@@ -319,7 +323,7 @@ async function runInstallMode(dryRun) {
   }
 
   // -------------------------------------------------------------------------
-  // Step 6: Write ~/.claude/.ant-farm-manifest.json LAST
+  // Step 9: Write ~/.claude/.ant-farm-manifest.json LAST
   // -------------------------------------------------------------------------
   let manifestPath;
   try {
@@ -331,7 +335,7 @@ async function runInstallMode(dryRun) {
   }
 
   // -------------------------------------------------------------------------
-  // Step 7: Remove in-progress sentinel
+  // Step 10: Remove in-progress sentinel
   // -------------------------------------------------------------------------
   await removeSentinel(SENTINEL_PATH);
 
