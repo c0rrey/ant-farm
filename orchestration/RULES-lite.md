@@ -50,7 +50,7 @@ At runtime, orchestration files are accessible at `~/.claude/orchestration/`. To
 ```bash
 SESSION_ID="$(date +%Y%m%d-%H%M%S)-$(head -c4 /dev/urandom | xxd -p)"
 SESSION_DIR=".crumbs/sessions/_session-${SESSION_ID}"
-mkdir -p "${SESSION_DIR}"/{prompts,pc,summaries}
+mkdir -p "${SESSION_DIR}"/{prompts,pc,summaries,signals}
 crumb prune >/dev/null || true
 ```
 

@@ -4,7 +4,7 @@ At session start (Step 0), generate a session ID and create the session artifact
 
     SESSION_ID="$(date +%Y%m%d-%H%M%S)-$(head -c4 /dev/urandom | xxd -p)"
     SESSION_DIR=".crumbs/sessions/_session-${SESSION_ID}"
-    mkdir -p "${SESSION_DIR}"/{task-metadata,previews,prompts,pc,summaries}
+    mkdir -p "${SESSION_DIR}"/{task-metadata,previews,prompts,pc,summaries,signals}
     crumb prune >/dev/null || true
 
 Note: `review-reports/` is created lazily at Step 3b-iii — it does not exist until reviews run.
@@ -14,12 +14,13 @@ Scout receives it as "Session directory: <SESSION_DIR>".
 Pantry receives it as "Session directory: <SESSION_DIR>".
 Pest Control receives it as "Session directory: <SESSION_DIR>" (when writing checkpoint artifacts).
 
-All session-scoped artifacts go here (6 subdirectories total; `review-reports/` is lazy-created):
+All session-scoped artifacts go here (7 subdirectories total; `review-reports/` is lazy-created):
 - `task-metadata/` — per-task scope files written by Scout
 - `previews/` — combined prompt previews written by Pantry
 - `prompts/` — full task and review prompt files written by Pantry
 - `pc/` — Pest Control checkpoint artifact files
 - `summaries/` — Crumb Gatherer summary docs
+- `signals/` — sentinel files written by background subagents to signal completion
 - `review-reports/` — Nitpicker and Big Head reports (created lazily at Step 3b-iii via `mkdir -p`, not at Step 0)
 
 Root-level artifacts in `${SESSION_DIR}`:
