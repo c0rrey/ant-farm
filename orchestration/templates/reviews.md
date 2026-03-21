@@ -39,7 +39,7 @@ After the transition gate passes, the Queen launches **the Nitpickers** using **
 - **Nitpickers — Correctness, Edge Cases**: `opus` — higher-judgment reviews requiring deeper reasoning
 - **Nitpickers — Clarity, Drift**: `sonnet` — lower-judgment reviews sufficient for code review and finding cataloging
 - **Big Head**: `opus` — consolidation requires high-judgment dedup and root-cause grouping
-- **Checkpoint Auditor (team member)**: `sonnet` — runs claims-vs-code (judgment-heavy) inside the team; sonnet needed for substance verification
+- **Checkpoint Auditor (team member)**: `sonnet` — runs claims-vs-code (pattern-matching) inside the team; sonnet sufficient for substance verification
 
 ### Review Type Canonical Names
 
