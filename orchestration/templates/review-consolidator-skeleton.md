@@ -9,7 +9,7 @@
 Consolidate the Reviewer reports into a unified summary.
 
 **Review round**: {REVIEW_ROUND}
-**Input guard**: If {REVIEW_ROUND} is blank or non-numeric, halt immediately and return: "BIG HEAD ABORTED: REVIEW_ROUND is invalid. Expected a positive integer; got: '{REVIEW_ROUND}'." Do NOT read any reports or proceed.
+**Input guard**: If {REVIEW_ROUND} is blank or non-numeric, halt immediately and return: "REVIEW_CONSOLIDATOR ABORTED: REVIEW_ROUND is invalid. Expected a positive integer; got: '{REVIEW_ROUND}'." Do NOT read any reports or proceed.
 - Expected reports: read the `expected_paths` list in your consolidation brief (Step 0) — the count varies based on how many reviewers were spawned. Do NOT assume a fixed number.
 - Round 1 typical: clarity, edge-cases, correctness, drift (but split instances of a type may produce additional paths)
 - Round 2+ typical: correctness, edge-cases only
@@ -32,13 +32,13 @@ Your workflow:
 1. Verify all expected report files exist (count determined by the consolidation brief's `expected_paths` list) — follow the missing-report handling protocol in your consolidation brief (Step 0a)
    - The brief is authoritative for this step: it specifies the polling timeout, error return format, and failure conditions
    - **Single-invocation constraint**: The polling bash block in the brief (the `while` loop with `sleep`) MUST be executed in a single Bash tool call. Do NOT attempt to poll by calling Bash repeatedly across multiple turns — the shell state does not persist between turns and you cannot `sleep` across turns. Submit the entire polling block as one Bash tool invocation and wait for its result.
-   - **Timeout note**: The polling timeout is determined by the consolidation brief (the `while` loop parameters in Step 0a are authoritative — the value here is approximate). This allows reviewers to finish writing their reports before Big Head proceeds. If your reviewers are consistently timing out, the Queen should re-spawn Big Head rather than increasing the timeout — a longer timeout blocks the Queen's context with an idle agent.
+   - **Timeout note**: The polling timeout is determined by the consolidation brief (the `while` loop parameters in Step 0a are authoritative — the value here is approximate). This allows reviewers to finish writing their reports before Review Consolidator proceeds. If your reviewers are consistently timing out, the Queen should re-spawn Review Consolidator rather than increasing the timeout — a longer timeout blocks the Queen's context with an idle agent.
    - **On timeout (REPORTS_FOUND=0)**: Before returning the error to the Queen, write a failure artifact using this bash block:
      ```bash
      # NOTE: {CONSOLIDATED_OUTPUT_PATH} is a template placeholder (pre-substitution form).
      # build-review-prompts.sh replaces it with a literal path (e.g.
-     # /path/to/session/consolidated.md) before this prompt reaches Big Head.
-     # By the time Big Head executes this block, the braces are gone and a real
+     # /path/to/session/consolidated.md) before this prompt reaches Review Consolidator.
+     # By the time Review Consolidator executes this block, the braces are gone and a real
      # filesystem path appears in their place.
      mkdir -p "$(dirname "{CONSOLIDATED_OUTPUT_PATH}")" || { echo "ERROR: failed to create output directory for {CONSOLIDATED_OUTPUT_PATH}. Aborting."; exit 1; }
      cat > "{CONSOLIDATED_OUTPUT_PATH}" << 'EOF'
@@ -46,10 +46,10 @@ Your workflow:
      **Status**: FAILED — prerequisite gate timeout
      **Timestamp**: <current ISO 8601 timestamp>
      **Reason**: Not all expected Reviewer reports arrived within the timeout specified in the consolidation brief. <list missing reports>
-     **Recovery**: Check reviewer logs. Once all expected reports are present, re-spawn Big Head consolidation.
+     **Recovery**: Check reviewer logs. Once all expected reports are present, re-spawn Review Consolidator consolidation.
      EOF
      ```
-   - If the Bash block exits with code 1 (directory creation failed before the artifact could be written), use the SendMessage tool to notify the Queen immediately: "Big Head FAILED: could not create output directory for failure artifact. Filesystem issue — manual intervention required." Then end your turn.
+   - If the Bash block exits with code 1 (directory creation failed before the artifact could be written), use the SendMessage tool to notify the Queen immediately: "Review Consolidator FAILED: could not create output directory for failure artifact. Filesystem issue — manual intervention required." Then end your turn.
    - After writing the failure artifact (Bash exit code 0), return the error to the Queen as specified in the brief
    - Do NOT proceed to read reports or perform consolidation
 2. Read all expected reports
@@ -65,17 +65,17 @@ Your workflow:
      echo "ERROR: crumb list failed (file error or crumb error). Aborting crumb filing to prevent duplicates."
      mkdir -p "$(dirname "{CONSOLIDATED_OUTPUT_PATH}")" || { echo "ERROR: failed to create output directory for {CONSOLIDATED_OUTPUT_PATH}. Aborting."; exit 1; }
      cat > "{CONSOLIDATED_OUTPUT_PATH}" << 'EOF'
-     # Big Head Consolidation — BLOCKED: Cross-Session Dedup Infrastructure Error
+     # Review Consolidator Consolidation — BLOCKED: Cross-Session Dedup Infrastructure Error
      **Status**: FAILED — crumb list infrastructure error
      **Timestamp**: <current ISO 8601 timestamp>
      **Reason**: `crumb list --open` failed. Crumb filing aborted to prevent duplicate filing. This is likely a file access or crumb CLI issue.
-     **Recovery**: Retry after the issue clears. If the issue persists, run `crumb doctor` and re-spawn Big Head.
+     **Recovery**: Retry after the issue clears. If the issue persists, run `crumb doctor` and re-spawn Review Consolidator.
      EOF
      exit 1
    fi
    ```
-   If the bash block above exits with code 1 due to the mkdir guard (directory creation failed before the failure artifact could be written), use the SendMessage tool to notify the Queen immediately: "Big Head FAILED: could not create output directory for failure artifact during cross-session dedup. Filesystem issue — manual intervention required." Then end your turn.
-   If the bash block above exits with code 1 due to `crumb list` failure (the `if !` condition), stop immediately. Do NOT proceed to consolidation or crumb filing. Use the SendMessage tool to notify the Queen: "Big Head FAILED: crumb list infrastructure error during cross-session dedup. Crumb filing aborted to prevent duplicates. Consolidated output written to {CONSOLIDATED_OUTPUT_PATH}. Please check crumb status and re-spawn Big Head when ready." Then end your turn.
+   If the bash block above exits with code 1 due to the mkdir guard (directory creation failed before the failure artifact could be written), use the SendMessage tool to notify the Queen immediately: "Review Consolidator FAILED: could not create output directory for failure artifact during cross-session dedup. Filesystem issue — manual intervention required." Then end your turn.
+   If the bash block above exits with code 1 due to `crumb list` failure (the `if !` condition), stop immediately. Do NOT proceed to consolidation or crumb filing. Use the SendMessage tool to notify the Queen: "Review Consolidator FAILED: crumb list infrastructure error during cross-session dedup. Crumb filing aborted to prevent duplicates. Consolidated output written to {CONSOLIDATED_OUTPUT_PATH}. Please check crumb status and re-spawn Review Consolidator when ready." Then end your turn.
    For each root cause group, compare against existing crumb titles (from `/tmp/open-crumbs-$$.txt`):
    - **Exact title match** (case-insensitive): Do NOT file. Log in the summary: "Dedup: RC-N matches existing crumb <ID> — skipped."
    - **Similar title** (same root cause, different wording): Run `crumb search "<key phrases>"` to confirm. If the existing crumb covers the same root cause, do NOT file. Log the match.
