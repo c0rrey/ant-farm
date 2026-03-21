@@ -872,7 +872,7 @@ SendMessage(
 **Turn-based retry protocol:**
 - After sending the SendMessage, **end your turn**. Do not sleep or poll.
 - The Checkpoint Auditor's reply arrives as a new conversation turn. Process it when it arrives.
-- If the Checkpoint Auditor has not replied after 2 subsequent turns of processing other work, send one retry message:
+- If the Checkpoint Auditor has not replied after receiving 2 incoming messages from any teammate that are not the expected Checkpoint Auditor reply (i.e., 2 non-Checkpoint-Auditor messages arrive before you receive a verdict), send one retry message:
   ```
   SendMessage(
     to="ant-farm-checkpoint-auditor",
@@ -880,7 +880,7 @@ SendMessage(
   )
   ```
   Then end your turn again and await the reply.
-- If still no response after 2 more turns following the retry, **escalate to the Queen immediately**:
+- If still no response after 2 more non-Checkpoint-Auditor incoming messages following the retry, **escalate to the Queen immediately**:
   ```bash
   cat > "{CONSOLIDATED_OUTPUT_PATH%.md}-pc-timeout.md" << 'EOF'
   # Review Consolidator Consolidation — BLOCKED: Checkpoint Auditor Timeout
