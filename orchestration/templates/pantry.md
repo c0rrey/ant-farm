@@ -155,6 +155,20 @@ Do NOT fix adjacent issues you notice.
    c. Append the task brief content below it
    d. Write to `{session-dir}/previews/task-{TASK_SUFFIX}-preview.md`
    e. **Immediately after writing**: verify the file exists by reading it back. If the read fails or returns empty, halt and report: `PREVIEW FAILED: {TASK_ID} — preview file not written to {path}`
+   f. **Write scope sidecar** — Write `.ant-farm-scope.json` to the project root (the current working directory, NOT `{session-dir}`). This file is read at runtime by the ant-farm-scope-advisor hook to enforce file scope for the spawned agent.
+
+      Use this exact JSON format:
+      ```json
+      {
+        "crumb_id": "{TASK_ID}",
+        "allowed_files": ["{file1}", "{file2}", ...]
+      }
+      ```
+      Where `allowed_files` is the list of affected files from the task brief's `## Context` section (the `**Affected files**` field). Include the file paths exactly as written in the task brief — with `:line-range` suffixes if present. The scope-reader strips line ranges when comparing paths; keep them for documentation.
+
+      **Overwrite on each task**: the sidecar always reflects the most recently spawned agent's scope. Earlier sidecars from the same wave are overwritten; this is expected. Agents spawned concurrently within the same wave share a process-level project directory — the sidecar covers the last task written. The hook's advisory is informational-only (never blocking), so minor overlap between concurrent agents is acceptable.
+
+      **Skip if files list is empty**: if `allowed_files` would be empty (no files extracted), do not write the sidecar for this task.
 
 **Write each preview file immediately after constructing it** — do not batch all previews and write at the end.
 

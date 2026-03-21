@@ -28,6 +28,7 @@ const { copyWithBackup, writeSentinel, removeSentinel, pathExists } = require('.
 const { DryRunCollector } = require('../lib/dry-run');
 const { syncClaudeMdBlock } = require('../lib/claude-md');
 const { runUninstall } = require('../lib/uninstall');
+const { registerHooks, unregisterHooks } = require('../lib/hooks-registration');
 
 // The package root is the npm/ directory (one level up from bin/)
 const PACKAGE_ROOT = path.resolve(__dirname, '..');
@@ -109,6 +110,15 @@ async function runUninstallMode(dryRun) {
   } catch (err) {
     console.error(`ERROR: ${err.message}`);
     process.exit(1);
+  }
+
+  // Unregister ant-farm hooks from Claude Code settings.json.
+  try {
+    await unregisterHooks({ dryRun, collector });
+  } catch (err) {
+    // Non-fatal: warn but continue so the rest of uninstall proceeds.
+    result.warnings.push(`Failed to unregister hooks from settings.json: ${err.message}`);
+    console.warn(`  WARNING: Failed to unregister hooks from settings.json: ${err.message}`);
   }
 
   const { removed, skipped, warnings } = result;
@@ -238,6 +248,24 @@ async function runInstallMode(dryRun) {
     }
     if (!dryRun) await removeSentinel(SENTINEL_PATH);
     process.exit(1);
+  }
+
+  // -------------------------------------------------------------------------
+  // Step 4b: Register ant-farm hooks in Claude Code settings.json
+  // -------------------------------------------------------------------------
+  {
+    let hookWarnings = [];
+    try {
+      const result = await registerHooks({ dryRun, collector });
+      hookWarnings = result.warnings;
+    } catch (err) {
+      // Non-fatal: warn but continue so file installs are not rolled back.
+      console.warn(`WARNING: Failed to register hooks in settings.json: ${err.message}`);
+      console.warn('  You can register hooks manually. See README for details.');
+    }
+    for (const w of hookWarnings) {
+      console.warn(`WARNING: ${w}`);
+    }
   }
 
   // -------------------------------------------------------------------------

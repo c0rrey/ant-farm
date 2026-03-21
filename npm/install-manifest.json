@@ -169,6 +169,31 @@
       "src": "skills/work.md",
       "dst": "skills/ant-farm-work/SKILL.md",
       "description": "ant-farm-work skill"
+    },
+    {
+      "src": "hooks/ant-farm-statusline.js",
+      "dst": "hooks/ant-farm-statusline.js",
+      "description": "ant-farm statusLine hook script"
+    },
+    {
+      "src": "hooks/ant-farm-scope-advisor.js",
+      "dst": "hooks/ant-farm-scope-advisor.js",
+      "description": "ant-farm PreToolUse scope advisor hook script"
+    },
+    {
+      "src": "hooks/lib/progress-reader.js",
+      "dst": "hooks/lib/progress-reader.js",
+      "description": "ant-farm hook library: progress log reader"
+    },
+    {
+      "src": "hooks/lib/debug-log.js",
+      "dst": "hooks/lib/debug-log.js",
+      "description": "ant-farm hook library: debug logger"
+    },
+    {
+      "src": "hooks/lib/scope-reader.js",
+      "dst": "hooks/lib/scope-reader.js",
+      "description": "ant-farm hook library: scope sidecar reader"
     }
   ]
 }
