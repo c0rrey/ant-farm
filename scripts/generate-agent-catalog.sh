@@ -70,15 +70,17 @@ for filepath in "$AGENTS_DIR"/*.md; do
   if echo "$description" | grep -qi "orchestrat\|spawn\|decomposit\|recon\|consolidat\|Scribe\|gather\|review specialist.*team\|parallel research"; then
     agent_type="orchestration"
   fi
-  # Scout, Surveyor, Architect, Pantry, Big Head, Technical Writer are orchestration roles.
-  # Nitpicker specialists are review agents (run as parallel reviewers, not coordinators).
-  # Pest Control is review (auditor, not a spawner).
+  # Scout (recon-planner), Spec Writer (spec-writer), Task Decomposer (task-decomposer),
+  # Pantry (prompt-composer), Review Consolidator (review-consolidator), Session Scribe (session-scribe),
+  # and Researcher (researcher) are orchestration roles.
+  # Reviewer specialists are review agents (run as parallel reviewers, not coordinators).
+  # Checkpoint Auditor is review (auditor, not a spawner).
   # Override by name for precision:
   case "$name" in
-    ant-farm-scout-organizer|ant-farm-surveyor|ant-farm-architect|ant-farm-pantry-impl|ant-farm-big-head|ant-farm-technical-writer|ant-farm-forager)
+    ant-farm-recon-planner|ant-farm-spec-writer|ant-farm-task-decomposer|ant-farm-prompt-composer|ant-farm-review-consolidator|ant-farm-session-scribe|ant-farm-researcher)
       agent_type="orchestration"
       ;;
-    ant-farm-nitpicker-clarity|ant-farm-nitpicker-edge-cases|ant-farm-nitpicker-correctness|ant-farm-nitpicker-drift|ant-farm-pest-control)
+    ant-farm-reviewer-clarity|ant-farm-reviewer-edge-cases|ant-farm-reviewer-correctness|ant-farm-reviewer-drift|ant-farm-checkpoint-auditor)
       agent_type="review"
       ;;
   esac

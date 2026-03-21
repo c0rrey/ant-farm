@@ -294,17 +294,31 @@ fi
 #   Confirmed files are removed; unrecognised files are left with a warning.
 # ---------------------------------------------------------------------------
 
-# Old unprefixed basenames (pre-AF-47) mapped to their new prefixed names.
+# Old unprefixed basenames (pre-AF-47) and middle-generation prefixed names (pre-Wave-1)
+# mapped to their new descriptive names.
 # Format: "old-basename new-prefixed-basename" (space-separated pairs)
 AGENT_MIGRATIONS=(
-    "scout-organizer.md ant-farm-scout-organizer.md"
-    "pantry-impl.md ant-farm-pantry-impl.md"
-    "pest-control.md ant-farm-pest-control.md"
+    "scout-organizer.md ant-farm-recon-planner.md"
+    "pantry-impl.md ant-farm-prompt-composer.md"
+    "pest-control.md ant-farm-checkpoint-auditor.md"
     "nitpicker.md ant-farm-nitpicker.md"
-    "big-head.md ant-farm-big-head.md"
-    "architect.md ant-farm-architect.md"
-    "forager.md ant-farm-forager.md"
-    "surveyor.md ant-farm-surveyor.md"
+    "big-head.md ant-farm-review-consolidator.md"
+    "architect.md ant-farm-task-decomposer.md"
+    "forager.md ant-farm-researcher.md"
+    "surveyor.md ant-farm-spec-writer.md"
+    "technical-writer.md ant-farm-session-scribe.md"
+    "ant-farm-scout-organizer.md ant-farm-recon-planner.md"
+    "ant-farm-pantry-impl.md ant-farm-prompt-composer.md"
+    "ant-farm-pest-control.md ant-farm-checkpoint-auditor.md"
+    "ant-farm-big-head.md ant-farm-review-consolidator.md"
+    "ant-farm-architect.md ant-farm-task-decomposer.md"
+    "ant-farm-forager.md ant-farm-researcher.md"
+    "ant-farm-surveyor.md ant-farm-spec-writer.md"
+    "ant-farm-technical-writer.md ant-farm-session-scribe.md"
+    "ant-farm-nitpicker-clarity.md ant-farm-reviewer-clarity.md"
+    "ant-farm-nitpicker-edge-cases.md ant-farm-reviewer-edge-cases.md"
+    "ant-farm-nitpicker-correctness.md ant-farm-reviewer-correctness.md"
+    "ant-farm-nitpicker-drift.md ant-farm-reviewer-drift.md"
 )
 
 # migrate_old_agents

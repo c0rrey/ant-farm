@@ -43,26 +43,26 @@ Claude Code loads agent files once at startup. Adding or editing an agent file r
 
 ### One-TeamCreate-per-session constraint
 
-Claude Code supports only one `TeamCreate` call per session. The Nitpicker review team (Step 3b-iv) uses this slot for the entire session.
+Claude Code supports only one `TeamCreate` call per session. The Reviewer team (Step 3b-iv) uses this slot for the entire session.
 
-**Implication for new agents**: If your new agent needs to receive messages from another agent via `SendMessage` (as Pest Control does from Big Head), it MUST be added as a member of the Nitpicker team — it cannot be spawned as a separate Task agent and reached via `SendMessage` from inside the team. Adding a second `TeamCreate` call will fail at runtime.
+**Implication for new agents**: If your new agent needs to receive messages from another agent via `SendMessage` (as Checkpoint Auditor does from Review Consolidator), it MUST be added as a member of the Reviewer team — it cannot be spawned as a separate Task agent and reached via `SendMessage` from inside the team. Adding a second `TeamCreate` call will fail at runtime.
 
 If the agent does not require intra-team messaging, it can be spawned as a regular Task agent and is not subject to this constraint.
 
 ## Adding a New Checkpoint
 
-Checkpoints are verification gates run by Pest Control. Checkpoint definitions live in `orchestration/templates/checkpoints/` — one file per checkpoint type, plus a shared `common.md` preamble.
+Checkpoints are verification gates run by the Checkpoint Auditor. Checkpoint definitions live in `orchestration/templates/checkpoints/` — one file per checkpoint type, plus a shared `common.md` preamble.
 
 ### Where checkpoints are defined
 
-`orchestration/templates/checkpoints/` contains a shared preamble (`common.md`) and one file per checkpoint type (e.g., `cco.md`, `wwd.md`). Pest Control reads `common.md` plus the specific checkpoint file at spawn time.
+`orchestration/templates/checkpoints/` contains a shared preamble (`common.md`) and one file per checkpoint type (e.g., `pre-spawn-check.md`, `scope-verify.md`). The Checkpoint Auditor reads `common.md` plus the specific checkpoint file at spawn time.
 
 ### How to add a new checkpoint
 
 1. **Create a new checkpoint file** in `orchestration/templates/checkpoints/` (e.g., `ncp.md`):
    - Add a new H2 section (e.g., `## New Checkpoint Name (NCP): Description`)
    - Include: when it runs, what model to use, the verification prompt template, verdict thresholds (PASS/WARN/FAIL), and artifact naming convention
-   - Follow the existing pattern: each checkpoint has a `When`, `Model`, `Agent type`, `Why` preamble followed by a fenced markdown block containing the actual Pest Control prompt
+   - Follow the existing pattern: each checkpoint has a `When`, `Model`, `Agent type`, `Why` preamble followed by a fenced markdown block containing the actual Checkpoint Auditor prompt
 
 2. **Add verdict thresholds** to `orchestration/templates/checkpoints/common.md`:
    - Add a row to the "Checkpoint-Specific Thresholds" table
@@ -91,18 +91,18 @@ Templates live in `orchestration/templates/`. Each template has a specific reade
 | `scout.md` | Scout (self-read) | Pre-flight recon instructions |
 | `pantry.md` | Pantry (self-read) | Prompt composition instructions |
 | `implementation.md` | Pantry | Agent prompt template with 6 mandatory steps |
-| `checkpoints/` | Pest Control | Per-checkpoint definitions (common.md + one per type) |
+| `checkpoints/` | Checkpoint Auditor | Per-checkpoint definitions (common.md + one per type) |
 | `reviews.md` | `build-review-prompts.sh` | Review protocol, report format |
 | `crumb-gatherer-skeleton.md` | Queen | Minimal agent spawn template |
 | `nitpicker-skeleton.md` | Queen, `build-review-prompts.sh` | Review agent spawn template |
-| `big-head-skeleton.md` | Queen, `build-review-prompts.sh` | Consolidation agent spawn template |
+| `big-head-skeleton.md` | Queen, `build-review-prompts.sh` | Review Consolidator spawn template |
 | `queen-state.md` | Queen | Session state file schema |
-| `scribe-skeleton.md` | Queen | Scribe spawn template |
-| `review-focus-areas.md` | `build-review-prompts.sh` | Per-type focus blocks for Nitpicker prompts |
-| `surveyor.md` | Surveyor (self-read) | Requirements gathering instructions |
-| `surveyor-skeleton.md` | Planner | Surveyor spawn template |
-| `forager.md` | Forager (self-read) | Parallel research instructions |
-| `forager-skeleton.md` | Planner | Forager spawn template |
+| `scribe-skeleton.md` | Queen | Session Scribe spawn template |
+| `review-focus-areas.md` | `build-review-prompts.sh` | Per-type focus blocks for Reviewer prompts |
+| `surveyor.md` | Spec Writer (self-read) | Requirements gathering instructions |
+| `surveyor-skeleton.md` | Planner | Spec Writer spawn template |
+| `forager.md` | Researcher (self-read) | Parallel research instructions |
+| `forager-skeleton.md` | Planner | Researcher spawn template |
 | `decomposition.md` | Architect | Decomposition workflow instructions |
 | `architect-skeleton.md` | Planner | Architect spawn template |
 | `SESSION_PLAN_TEMPLATE.md` | User (optional) | Session planning template for new projects |
@@ -119,8 +119,8 @@ Common placeholders:
 
 ### What to watch when editing templates
 
-- **`implementation.md`** defines the 6 mandatory steps that every Crumb Gatherer must follow. If you change a step, update the corresponding CCO check in `checkpoints/cco.md` (Check 4 verifies all 6 steps are present).
-- **`reviews.md`** defines review types and report format. Changes here must stay in sync with `build-review-prompts.sh` (which reads `reviews.md` to build review prompts) and the CCB checks in `checkpoints/ccb.md` (which verify report structure).
+- **`implementation.md`** defines the 6 mandatory steps that every Crumb Gatherer must follow. If you change a step, update the corresponding pre-spawn-check rule in `checkpoints/pre-spawn-check.md` (Check 4 verifies all 6 steps are present).
+- **`reviews.md`** defines review types and report format. Changes here must stay in sync with `build-review-prompts.sh` (which reads `reviews.md` to build review prompts) and the review-integrity checks in `checkpoints/review-integrity.md` (which verify report structure).
 - **`nitpicker-skeleton.md`** and **`big-head-skeleton.md`** are read by `build-review-prompts.sh` to produce filled prompt files. If you change their structure, verify the script still parses them correctly.
 - **`crumb-gatherer-skeleton.md`** is what the Queen uses to spawn agents. If you add fields, the Pantry's task briefs must include the corresponding data.
 
@@ -142,7 +142,7 @@ Common placeholders:
    ```
 
 4. **Verify the workflow reaches the gate you modified.** For example:
-   - Changed `checkpoints/cco.md` CCO checks? Verify the CCO report in `{SESSION_DIR}/pc/` reflects the new check.
+   - Changed `checkpoints/pre-spawn-check.md` pre-spawn-check rules? Verify the pre-spawn-check report in `{SESSION_DIR}/pc/` reflects the new check.
    - Changed `implementation.md`? Verify the Crumb Gatherer's summary doc follows the updated steps.
    - Changed `reviews.md`? Verify the review previews in `{SESSION_DIR}/previews/` contain the expected content.
 
@@ -205,9 +205,9 @@ Changes to one file often require updates to others. This table lists the critic
 
 | If you change... | Also update... |
 |------------------|----------------|
-| The 6 mandatory steps | `checkpoints/cco.md` CCO Check 4 (verifies all 6 steps present) |
-| Summary doc format | `checkpoints/cmvcc.md` CMVCC Check 1-4 (reads summary docs) |
-| Scope boundary format | `checkpoints/cco.md` CCO Check 5, `checkpoints/wwd.md` (compares scope to diff) |
+| The 6 mandatory steps | `checkpoints/pre-spawn-check.md` pre-spawn-check Check 4 (verifies all 6 steps present) |
+| Summary doc format | `checkpoints/claims-vs-code.md` claims-vs-code Check 1-4 (reads summary docs) |
+| Scope boundary format | `checkpoints/pre-spawn-check.md` Check 5, `checkpoints/scope-verify.md` (compares scope to diff) |
 
 ### checkpoints/ dependencies
 
@@ -216,7 +216,7 @@ Changes to one file often require updates to others. This table lists the critic
 | A checkpoint's verdict thresholds | `RULES.md` Hard Gates table (describes blocking behavior) |
 | A checkpoint's model assignment | `RULES.md` Model Assignments table |
 | Artifact naming convention | Any template or script that references `{SESSION_DIR}/pc/` paths |
-| CCB report-count check | `reviews.md` (must match expected report count per round) |
+| review-integrity report-count check | `reviews.md` (must match expected report count per round) |
 
 ### reviews.md dependencies
 
@@ -224,7 +224,7 @@ Changes to one file often require updates to others. This table lists the critic
 |------------------|----------------|
 | Review types or report format | `build-review-prompts.sh` (reads reviews.md to build review prompts) |
 | Report output paths | `build-review-prompts.sh` `{{REPORT_OUTPUT_PATH}}` slot logic |
-| Number of review types per round | `checkpoints/ccb.md` CCB Check 0 (verifies expected report count) |
+| Number of review types per round | `checkpoints/review-integrity.md` review-integrity Check 0 (verifies expected report count) |
 | Review types per round | `RULES.md` Step 3b (specifies round 1: 4 types, round 2+: 2 types) |
 
 ### Skeleton template dependencies

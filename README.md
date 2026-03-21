@@ -29,23 +29,23 @@ Planning Workflow                    Execution Workflow
 
   Surveyor                             Scout (recon)
      |                                    |
-  Foragers (4x parallel research)      SSV gate
+  Researchers (4x parallel)            startup-check gate
      |                                    |
   User approval gate                   Pantry (prompt composition)
      |                                    |
-  Architect (decomposition)            CCO gate (prompt audit)
+  Task Decomposer (decomposition)      pre-spawn-check gate (prompt audit)
      |                                    |
   TDV gate                             Crumb Gatherers (up to 7 parallel)
      |                                    |
-  .crumbs/tasks.jsonl                  WWD + CMVCC gates (scope + substance)
+  .crumbs/tasks.jsonl                  scope-verify + claims-vs-code gates (scope + substance)
                                           |
-         ────────────────────────►     Nitpickers (4+ parallel review) + Big Head
+         ────────────────────────►     Reviewers (4+ parallel review) + Review Consolidator
                                           |
-                                       CCB gate (consolidation audit)
+                                       review-integrity gate (consolidation audit)
                                           |
-                                       Scribe (exec summary + CHANGELOG)
+                                       Session Scribe (exec summary + CHANGELOG)
                                           |
-                                       ESV gate → git push
+                                       session-complete gate → git push
 ```
 
 ## Architecture
@@ -58,7 +58,7 @@ Four layers, each with a clear job.
 
 **3. Specialist agents.** Claude Code agent definitions in `agents/` cover recon, prompt composition, implementation, review, consolidation, verification, and documentation.
 
-**4. Verification layer.** Pest Control runs six checkpoint types (SSV, CCO, WWD, CMVCC, CCB, ESV) that mechanically block progression. It operates both as a standalone checkpoint runner and as a member of the Nitpicker review team.
+**4. Verification layer.** The Checkpoint Auditor runs six checkpoint types (startup-check, pre-spawn-check, scope-verify, claims-vs-code, review-integrity, session-complete) that mechanically block progression. It operates both as a standalone checkpoint runner and as a member of the Reviewer team.
 
 ### The Queen's Information Diet
 
@@ -72,14 +72,14 @@ If your orchestrator is spending tokens reading `utils.py`, it is not orchestrat
 
 Nothing progresses until these pass.
 
-| Gate | Full Name | What it blocks | Model |
-|------|-----------|---------------|-------|
-| **SSV** | Scout Strategy Verification | Pantry spawn | haiku |
-| **CCO** | Colony Cartography Office | Agent spawn | haiku |
-| **WWD** | Wandering Worker Detection | Next agent in wave | haiku |
-| **CMVCC** | Crumbs Moved vs Crumbs Claimed | Task closure | sonnet |
-| **CCB** | Colony Census Bureau | Presenting results to user | sonnet |
-| **ESV** | Exec Summary Verification | Git push | haiku |
+| Gate | Historical Acronym | What it blocks | Model |
+|------|--------------------|---------------|-------|
+| **startup-check** | SSV (Scout Strategy Verification) | Pantry spawn | haiku |
+| **pre-spawn-check** | CCO (Colony Cartography Office) | Agent spawn | haiku |
+| **scope-verify** | WWD (Wandering Worker Detection) | Next agent in wave | haiku |
+| **claims-vs-code** | CMVCC (Crumbs Moved vs Crumbs Claimed) | Task closure | sonnet |
+| **review-integrity** | CCB (Colony Census Bureau) | Presenting results to user | sonnet |
+| **session-complete** | ESV (Exec Summary Verification) | Git push | haiku |
 
 All checkpoint artifacts are written to `<session-dir>/pc/` with timestamped filenames for full audit history.
 
@@ -128,22 +128,22 @@ Then tell Claude Code:
 Let's get to work on: ant-farm-XXXX
 ```
 
-The Queen spawns the Scout for recon, verifies the strategy via SSV, and auto-proceeds to spawn implementation agents. You don't approve the strategy. The checkpoint does.
+The Queen spawns the Scout for recon, verifies the strategy via startup-check, and auto-proceeds to spawn implementation agents. You don't approve the strategy. The checkpoint does.
 
 ## Project Structure
 
 ```
 ant-farm/
 ├── agents/                  # Custom Claude Code agent definitions (.md files)
-│   ├── ant-farm-scout-organizer.md
-│   ├── ant-farm-pantry-impl.md
-│   ├── ant-farm-pest-control.md
-│   ├── ant-farm-nitpicker-{clarity,edge-cases,correctness,drift}.md
-│   ├── ant-farm-big-head.md
-│   ├── ant-farm-architect.md
-│   ├── ant-farm-forager.md
-│   ├── ant-farm-surveyor.md
-│   └── ant-farm-technical-writer.md
+│   ├── ant-farm-recon-planner.md
+│   ├── ant-farm-prompt-composer.md
+│   ├── ant-farm-checkpoint-auditor.md
+│   ├── ant-farm-reviewer-{clarity,edge-cases,correctness,drift}.md
+│   ├── ant-farm-review-consolidator.md
+│   ├── ant-farm-task-decomposer.md
+│   ├── ant-farm-researcher.md
+│   ├── ant-farm-spec-writer.md
+│   └── ant-farm-session-scribe.md
 ├── orchestration/
 │   ├── RULES.md             # Queen's execution workflow steps and gates
 │   ├── RULES-decompose.md   # Planner's decomposition workflow
@@ -155,7 +155,7 @@ ant-farm/
 │   │   ├── scout.md, pantry.md, implementation.md, reviews.md
 │   │   ├── checkpoints/     # Per-checkpoint definitions (common.md + one file per checkpoint)
 │   │   │   ├── common.md   # Shared preamble (term definitions, verdict thresholds)
-│   │   │   ├── cco.md, wwd.md, cmvcc.md, ccb.md, ssv.md, esv.md, tdv.md
+│   │   │   ├── pre-spawn-check.md, scope-verify.md, claims-vs-code.md, review-integrity.md, startup-check.md, session-complete.md, tdv.md
 │   │   ├── crumb-gatherer-skeleton.md, nitpicker-skeleton.md, big-head-skeleton.md
 │   │   ├── scribe-skeleton.md, surveyor-skeleton.md, forager-skeleton.md
 │   │   ├── decomposition.md, architect-skeleton.md
@@ -197,11 +197,11 @@ The Queen spawns the Scout, an opus subagent that:
 6. Proposes 2-3 execution strategies with wave groupings
 7. Writes `{session-dir}/briefing.md`
 
-After SSV PASS, the Queen auto-proceeds. Strategy approval is mechanical, not conversational.
+After startup-check PASS, the Queen auto-proceeds. Strategy approval is mechanical, not conversational.
 
 ### Step 2: Spawn Implementation Agents
 
-The Queen delegates prompt composition to the Pantry, which reads templates, extracts per-task context, and writes combined prompt previews to disk. Pest Control audits the previews against the CCO checkpoint. Only agents with PASS verdicts are spawned.
+The Queen delegates prompt composition to the Pantry, which reads templates, extracts per-task context, and writes combined prompt previews to disk. The Checkpoint Auditor audits the previews against the pre-spawn-check checkpoint. Only agents with PASS verdicts are spawned.
 
 ```
 Queen                          Pantry                    Pest Control
@@ -214,8 +214,8 @@ Queen                          Pantry                    Pest Control
   │                              │(agent dies, context freed)│
   │                                                          │
   ├──spawn─────────────────────────────────────────────────► │
-  │  "audit previews against CCO"                            │
-  │                                                          ├─read checkpoints/common.md + cco.md
+  │  "audit previews against pre-spawn-check"                │
+  │                                                          ├─read checkpoints/common.md + pre-spawn-check.md
   │                                                          ├─audit each preview
   │  ◄──return verdict table─────────────────────────────────┤
   │                                                          │
@@ -237,14 +237,14 @@ Agents are constrained by scope boundaries: they may only edit the files and lin
 
 After each wave, Pest Control runs:
 
-- **WWD** (scope verification): files changed in the commit match expected scope. No scope creep.
-- **CMVCC** (substance verification): git diff matches summary claims, acceptance criteria are genuinely met, design approaches are substantively distinct.
+- **scope-verify** (scope verification): files changed in the commit match expected scope. No scope creep.
+- **claims-vs-code** (substance verification): git diff matches summary claims, acceptance criteria are genuinely met, design approaches are substantively distinct.
 
-Failed CMVCC means the agent is resumed with specific gaps, re-verified, and escalated to you after 2 retries.
+Failed claims-vs-code means the agent is resumed with specific gaps, re-verified, and escalated to you after 2 retries.
 
 ### Step 3b: Quality Review
 
-After all implementation and CMVCC checks pass, the Queen enters a mandatory review phase with a Nitpicker team (4+ parallel reviewers + Big Head + Pest Control):
+After all implementation and claims-vs-code checks pass, the Queen enters a mandatory review phase with a Reviewer team (4+ parallel reviewers + Review Consolidator + Checkpoint Auditor):
 
 | Review | Severity Focus | Model |
 |--------|---------------|-------|
@@ -255,15 +255,15 @@ After all implementation and CMVCC checks pass, the Queen enters a mandatory rev
 
 When the changed-file count exceeds `REVIEW_SPLIT_THRESHOLD` (default 8), Clarity and Drift are split into multiple instances (e.g., `clarity-1`, `clarity-2`) with partitioned file subsets. Correctness and Edge Cases always receive the full file list.
 
-Big Head reads all reports, merges duplicates by root cause, and files one issue per root cause. Pest Control runs CMVCC + CCB inside the team before results return to the Queen.
+Review Consolidator reads all reports, merges duplicates by root cause, and files one issue per root cause. Checkpoint Auditor runs claims-vs-code + review-integrity inside the team before results return to the Queen.
 
 If P1/P2 issues are found, the system enters a review/fix/re-review loop until convergence, deferral, or the round cap.
 
 ### Steps 4-6: Document and Land
 
 - **Step 4**: Update documentation if needed
-- **Step 5b**: Scribe writes exec summary and CHANGELOG entry
-- **Step 5c**: ESV checkpoint verifies exec summary integrity
+- **Step 5b**: Session Scribe writes exec summary and CHANGELOG entry
+- **Step 5c**: session-complete checkpoint verifies exec summary integrity
 - **Step 6**: `git pull --rebase && git push`. Work is not complete until push succeeds.
 
 ## Custom Agents
@@ -272,18 +272,18 @@ Agent definitions live in `agents/` and are installed to `~/.claude/agents/` by 
 
 | Agent | What it does |
 |-------|-------------|
-| `ant-farm-scout-organizer` | Pre-flight recon: task discovery, dependency analysis, execution strategy |
-| `ant-farm-pantry-impl` | Prompt composer: builds task briefs and combined previews |
-| `ant-farm-pest-control` | Verification auditor: runs all six checkpoints |
-| `ant-farm-nitpicker-clarity` | Clarity reviewer: readability, naming, documentation |
-| `ant-farm-nitpicker-edge-cases` | Edge cases reviewer: input validation, error handling, boundary conditions |
-| `ant-farm-nitpicker-correctness` | Correctness reviewer: acceptance criteria, logic errors, regressions |
-| `ant-farm-nitpicker-drift` | Drift reviewer: stale cross-file references, broken assumptions |
-| `ant-farm-big-head` | Consolidation: merges and deduplicates findings across Nitpickers |
-| `ant-farm-architect` | Spec decomposition: creates trails, crumbs, and dependencies |
-| `ant-farm-forager` | Parallel research: investigates one focus area against a spec |
-| `ant-farm-surveyor` | Requirements gathering: structured specs with acceptance criteria |
-| `ant-farm-technical-writer` | Session Scribe: exec summaries and CHANGELOG entries |
+| `ant-farm-recon-planner` | Pre-flight recon: task discovery, dependency analysis, execution strategy |
+| `ant-farm-prompt-composer` | Prompt composer: builds task briefs and combined previews |
+| `ant-farm-checkpoint-auditor` | Verification auditor: runs all six checkpoints |
+| `ant-farm-reviewer-clarity` | Clarity reviewer: readability, naming, documentation |
+| `ant-farm-reviewer-edge-cases` | Edge cases reviewer: input validation, error handling, boundary conditions |
+| `ant-farm-reviewer-correctness` | Correctness reviewer: acceptance criteria, logic errors, regressions |
+| `ant-farm-reviewer-drift` | Drift reviewer: stale cross-file references, broken assumptions |
+| `ant-farm-review-consolidator` | Consolidation: merges and deduplicates findings across Reviewers |
+| `ant-farm-task-decomposer` | Spec decomposition: creates trails, crumbs, and dependencies |
+| `ant-farm-researcher` | Parallel research: investigates one focus area against a spec |
+| `ant-farm-spec-writer` | Requirements gathering: structured specs with acceptance criteria |
+| `ant-farm-session-scribe` | Session Scribe: exec summaries and CHANGELOG entries |
 
 ## Priority Calibration
 
@@ -297,8 +297,8 @@ Agent definitions live in `agents/` and are installed to `~/.claude/agents/` by 
 
 | Situation | Max retries | After limit |
 |-----------|-------------|-------------|
-| Agent fails CMVCC | 2 | Escalate to user |
-| CCB fails | 1 | Present to user with verification report |
+| Agent fails claims-vs-code | 2 | Escalate to user |
+| review-integrity fails | 1 | Present to user with verification report |
 | Agent stuck (no commit in 15 turns) | 0 | Check status, escalate |
 | Total retries per session | 5 | Pause all spawns, triage with user |
 
@@ -306,9 +306,9 @@ Agent definitions live in `agents/` and are installed to `~/.claude/agents/` by 
 
 Documented in `orchestration/reference/known-failures.md`. Two incidents shaped the system more than anything else.
 
-**Agents skipped the hard parts.** During Epic 3, agents bypassed mandatory design and correctness review steps. They claimed "4 approaches considered" without actually considering them. CMVCC now verifies substance, not just completion claims. It reads the git diff and checks whether the summary matches reality.
+**Agents skipped the hard parts.** During Epic 3, agents bypassed mandatory design and correctness review steps. They claimed "4 approaches considered" without actually considering them. claims-vs-code now verifies substance, not just completion claims. It reads the git diff and checks whether the summary matches reality.
 
-**Three agents trampled the same file.** During Epic 74g, three agents worked on the same file without line-level boundaries. Each one "helpfully" fixed adjacent issues and introduced conflicts. This produced WWD (scope verification), enhanced CCO (requiring line-number specificity in prompts), anti-scope-creep template language, and pre-flight conflict risk assessment in the Scout.
+**Three agents trampled the same file.** During Epic 74g, three agents worked on the same file without line-level boundaries. Each one "helpfully" fixed adjacent issues and introduced conflicts. This produced scope-verify (scope verification), enhanced pre-spawn-check (requiring line-number specificity in prompts), anti-scope-creep template language, and pre-flight conflict risk assessment in the Scout.
 
 Most orchestration problems are trust problems wearing a concurrency costume.
 
@@ -339,20 +339,20 @@ All file paths in this document use repo-root relative format. At runtime, agent
 | `orchestration/SETUP.md` | User | How to wire orchestration into a new project |
 | `orchestration/GLOSSARY.md` | Reference | Term definitions used across orchestration docs |
 | `orchestration/templates/implementation.md` | The Pantry | Agent prompt template with 6 mandatory steps |
-| `orchestration/templates/checkpoints/` | Pest Control | Per-checkpoint definitions (common.md preamble + one file per checkpoint type) |
-| `orchestration/templates/reviews.md` | `build-review-prompts.sh` | Review protocol, 4 review types, Big Head consolidation |
+| `orchestration/templates/checkpoints/` | Checkpoint Auditor | Per-checkpoint definitions (common.md preamble + one file per checkpoint type) |
+| `orchestration/templates/reviews.md` | `build-review-prompts.sh` | Review protocol, 4 review types, Review Consolidator consolidation |
 | `orchestration/templates/pantry.md` | The Pantry | Pantry's own instructions |
 | `orchestration/templates/scout.md` | The Scout | Pre-flight recon instructions |
-| `orchestration/templates/surveyor.md` | The Surveyor | Requirements gathering instructions |
-| `orchestration/templates/forager.md` | The Forager | Parallel research instructions |
-| `orchestration/templates/decomposition.md` | The Architect | Decomposition workflow instructions |
+| `orchestration/templates/surveyor.md` | The Spec Writer | Requirements gathering instructions |
+| `orchestration/templates/forager.md` | The Researcher | Parallel research instructions |
+| `orchestration/templates/decomposition.md` | The Task Decomposer | Decomposition workflow instructions |
 | `orchestration/templates/crumb-gatherer-skeleton.md` | The Queen | Minimal agent spawn template |
 | `orchestration/templates/nitpicker-skeleton.md` | The Queen | Minimal review agent spawn template |
-| `orchestration/templates/big-head-skeleton.md` | The Queen | Big Head consolidation spawn template |
-| `orchestration/templates/scribe-skeleton.md` | The Queen | Scribe spawn template |
-| `orchestration/templates/surveyor-skeleton.md` | The Planner | Surveyor spawn template |
-| `orchestration/templates/forager-skeleton.md` | The Planner | Forager spawn template |
-| `orchestration/templates/architect-skeleton.md` | The Planner | Architect spawn template |
+| `orchestration/templates/big-head-skeleton.md` | The Queen | Review Consolidator spawn template |
+| `orchestration/templates/scribe-skeleton.md` | The Queen | Session Scribe spawn template |
+| `orchestration/templates/surveyor-skeleton.md` | The Planner | Spec Writer spawn template |
+| `orchestration/templates/forager-skeleton.md` | The Planner | Researcher spawn template |
+| `orchestration/templates/architect-skeleton.md` | The Planner | Task Decomposer spawn template |
 | `orchestration/templates/queen-state.md` | The Queen | Session state template |
 | `orchestration/templates/SESSION_PLAN_TEMPLATE.md` | User | Session planning template |
 | `orchestration/reference/dependency-analysis.md` | The Scout | Pre-flight conflict analysis |
