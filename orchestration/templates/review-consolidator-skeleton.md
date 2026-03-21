@@ -88,8 +88,10 @@ Your workflow:
 8. Write consolidated summary to {CONSOLIDATED_OUTPUT_PATH}
 9. Send consolidated report path to the Checkpoint Auditor (SendMessage): "Consolidated report ready at {CONSOLIDATED_OUTPUT_PATH}. Please run claims-vs-code and review-integrity checkpoints and reply with verdict."
    - Do NOT file any crumbs before receiving the Checkpoint Auditor's reply
-10. **End your turn** after sending to the Checkpoint Auditor. Do NOT sleep or poll — doing so blocks incoming messages. The Checkpoint Auditor's reply arrives as a new conversation turn. When it arrives, act on the verdict — follow the turn-based retry protocol in reviews.md (Review Consolidator Protocol > Step 4: Checkpoint Gate):
-    - If no reply after 2 subsequent turns, retry once; if still no reply after 2 more turns, escalate to Queen
+10. **End your turn now** — do NOT sleep or poll. The Checkpoint Auditor's reply arrives as a new conversation turn. Do not proceed to step 10a until you receive that reply.
+
+10a. **When the Checkpoint Auditor replies** — act on the verdict (follow the turn-based retry protocol in reviews.md, Review Consolidator Protocol > Step 4: Checkpoint Gate):
+    - If no reply after 2 subsequent turns (from any teammate), retry once; if still no reply after 2 more turns, escalate to Queen
     - **PASS**: File ONE crumb per root cause (skip any marked as duplicates in step 7). For each crumb, write a description to a temp file, then create:
       ```bash
       cat > /tmp/crumb-desc-$$.md << 'CRUMB_DESC'
