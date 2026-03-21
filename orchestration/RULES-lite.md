@@ -1,0 +1,199 @@
+# Orchestration Rules — Lite Mode
+<!-- .local override: To customize, create RULES-lite.local.md in the same directory. Your local file will not be overwritten by setup.sh. -->
+
+## What Is Lite Mode
+
+Lite mode is a single-crumb execution path designed for small, isolated changes where the full pipeline overhead (Scout wave analysis, Pantry pre-digestion, Nitpicker review team) is unnecessary. It preserves the quality gates that matter for any change — prompt auditing (pre-spawn-check / CCO), substance verification (claims-vs-code / CMVCC), atomic commits, and crumb tracking — while eliminating the multi-agent orchestration scaffolding.
+
+**Use lite mode when:**
+- Exactly one crumb is being worked
+- The task scope is self-contained (no file conflicts with other in-flight work)
+- The change is low-risk and the crumb's acceptance criteria are already well-specified
+
+**Do NOT use lite mode when:**
+- Multiple crumbs are being worked concurrently
+- Tasks share files (conflict analysis requires the Scout)
+- The change needs peer review (use full-mode RULES.md instead)
+
+## What Lite Mode Does NOT Include
+
+The following full-mode components are intentionally absent:
+
+| Omitted component | Reason |
+|-------------------|--------|
+| Scout (recon planner) | No wave analysis needed for a single crumb |
+| startup-check (SSV) | startup-check verifies Scout wave groupings — no Scout, no startup-check |
+| Pantry (prompt composer) | The Queen passes the task brief directly; no pre-digestion step |
+| Nitpicker review team | Peer review is replaced by a mandatory self-review step |
+| review-integrity (CCB) | review-integrity verifies the Nitpicker team's output — no team, no check |
+| session-complete (ESV) | session-complete verifies the Scribe's exec summary — lite mode has no Scribe |
+| Scribe (session scribe) | Lite mode omits the exec summary; session narrative is the commit message |
+
+## Path Reference Convention
+
+All file paths in this document use **repo-root relative** format: `orchestration/templates/checkpoints/pre-spawn-check.md`.
+
+At runtime, orchestration files are accessible at `~/.claude/orchestration/`. To translate:
+- Replace `orchestration/` with `~/.claude/orchestration/`
+
+## Queen Prohibitions
+
+- **NEVER** read source code, tests, project data files, or config files — the implementer agent does this
+- **NEVER** read agent instruction files (implementation.md, checkpoints/*.md, etc.) — pass the path to the agent
+- **NEVER** skip the pre-spawn-check (CCO) gate — even a single-agent spawn must be audited
+- **NEVER** skip the claims-vs-code (CMVCC) gate — the self-review step does not replace CMVCC
+
+## Workflow: Lite Mode Execution
+
+**Step 0:** Session setup — generate SESSION_ID and SESSION_DIR, create directories.
+
+```bash
+SESSION_ID=$(date +%Y%m%d-%H%M%S)
+SESSION_DIR=".crumbs/sessions/_session-${SESSION_ID}"
+mkdir -p "${SESSION_DIR}"/{prompts,pc,summaries}
+crumb prune >/dev/null || true
+```
+
+Store SESSION_DIR in context and pass it to every agent that needs to write artifacts.
+
+**Progress log:**
+```
+echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SESSION_INIT|complete|mode=lite|session_dir=${SESSION_DIR}|next_step=STEP_1_COMPOSE" >> ${SESSION_DIR}/progress.log
+```
+
+**Step 1:** Task selection — identify the single crumb to work. Run `crumb show <TASK_ID>` to read the task's title, description, acceptance criteria, and affected files. Store the task ID and acceptance criteria in context.
+
+> **Note**: In lite mode the Queen reads the crumb directly. There is no Scout subagent. The Queen's context budget is protected by the single-crumb scope — there is no wave analysis or briefing doc to read.
+
+**Step 2:** Compose and audit the implementer prompt — write the task brief for the implementer agent, then spawn the Checkpoint Auditor (CCO / pre-spawn-check) to audit it before spawning.
+
+The task brief MUST include:
+- Real task ID (e.g., `my-project-abc`)
+- Real file paths with line ranges (e.g., `src/parser.py:L42-87`)
+- Root cause text (copied from the crumb description)
+- All 6 mandatory implementer steps (claim, design, implement, review, commit, summary doc)
+- Explicit scope boundaries (which files to read and which are off-limits)
+- `git pull --rebase` before commit instruction
+- `Session directory: ${SESSION_DIR}` so the implementer writes artifacts to the correct path
+
+The implementer reads the task file(s) directly — there is no Pantry pre-digestion step. Pass the crumb's acceptance criteria and affected file list verbatim in the prompt.
+
+Spawn Checkpoint Auditor for pre-spawn-check (CCO):
+
+```
+Task(
+  subagent_type="ant-farm-checkpoint-auditor",
+  model="haiku",
+  prompt="pre-spawn-check (lite mode — single Crumb Gatherer prompt).
+          Session directory: ${SESSION_DIR}.
+          Read orchestration/templates/checkpoints/common.md and
+          orchestration/templates/checkpoints/pre-spawn-check.md for full instructions.
+          <prompt>{paste the composed implementer prompt here}</prompt>"
+)
+```
+
+**On pre-spawn-check PASS:** Proceed to Step 3.
+**On pre-spawn-check FAIL:** Fix the specific gaps in the prompt, then re-run pre-spawn-check. Do NOT spawn the implementer until PASS. Maximum 1 retry; on second FAIL escalate to user.
+
+**Progress log (after pre-spawn-check PASS):**
+```
+echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_SPAWNED|wave=1|mode=lite|task=${TASK_ID}|pre_spawn_check=pass|next_step=STEP_3_VERIFY" >> ${SESSION_DIR}/progress.log
+```
+
+**Step 3:** Implementation — spawn the implementer agent (Crumb Gatherer).
+
+```
+Task(
+  subagent_type="ant-farm-general-purpose",   # or the agent type matching the task
+  model="sonnet",
+  prompt="{the composed implementer prompt from Step 2}"
+)
+```
+
+The implementer executes the standard 6 mandatory steps:
+1. **Claim**: `crumb show <TASK_ID>` + `crumb update <TASK_ID> --status=in_progress`
+2. **Design**: 4+ genuinely distinct approaches with tradeoffs; document chosen approach before coding
+3. **Implement**: Write clean, minimal code satisfying the acceptance criteria
+4. **Self-review** (MANDATORY): Re-read every changed file. For each file, verify the acceptance criteria are met. Document the review in the summary doc with file-specific notes — generic "looks clean" language fails claims-vs-code Check 4. This self-review step replaces the Nitpicker team; it must be substantive.
+5. **Commit**: `git pull --rebase && git add <changed-files> && git commit -m "<type>: <description> (<TASK_ID>)"`
+6. **Summary doc**: Write to `${SESSION_DIR}/summaries/<TASK_SUFFIX>.md` with all required sections (approaches considered, selected approach, implementation description, correctness review per-file, build/test validation, acceptance criteria checklist)
+
+**Step 4:** Verify — spawn the Checkpoint Auditor for claims-vs-code (CMVCC).
+
+```
+Task(
+  subagent_type="ant-farm-checkpoint-auditor",
+  model="sonnet",
+  prompt="claims-vs-code checkpoint (lite mode).
+          Task ID: ${TASK_ID}.
+          Summary doc: ${SESSION_DIR}/summaries/${TASK_SUFFIX}.md.
+          Session directory: ${SESSION_DIR}.
+          Read orchestration/templates/checkpoints/common.md and
+          orchestration/templates/checkpoints/claims-vs-code.md for full instructions."
+)
+```
+
+**On claims-vs-code PASS:** Proceed to Step 5.
+**On claims-vs-code PARTIAL or FAIL:** Resume the implementer agent with the specific gaps (max 2 retries). If it fails after 2 retries, escalate to user.
+
+**Progress log (after claims-vs-code PASS):**
+```
+echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_VERIFIED|wave=1|mode=lite|claims_vs_code=pass|tasks_verified=${TASK_ID}|commits=<hash>|next_step=STEP_5_CLOSE" >> ${SESSION_DIR}/progress.log
+```
+
+**Step 5:** Close — update crumb status and push.
+
+```bash
+crumb close <TASK_ID>
+git pull --rebase
+git push
+git status   # MUST show "up to date with origin"
+```
+
+**Progress log (after git push succeeds):**
+```
+echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SESSION_COMPLETE|mode=lite|task=${TASK_ID}|pushed=true|next_step=DONE" >> ${SESSION_DIR}/progress.log
+```
+
+## Hard Gates
+
+| Gate | Blocks | Artifact |
+|------|--------|----------|
+| pre-spawn-check (CCO) PASS | Implementer spawn | `${SESSION_DIR}/pc/pc-session-pre-spawn-check-impl-{timestamp}.md` |
+| claims-vs-code (CMVCC) PASS | Crumb close and push | `${SESSION_DIR}/pc/pc-{TASK_SUFFIX}-claims-vs-code-{timestamp}.md` |
+
+## Progress Log Format
+
+All lite-mode entries include `mode=lite` as a pipe-delimited field. This field is parseable by `scripts/parse-progress-log.sh` because the script reads the step_key field (field 2) to determine workflow position — the `mode=lite` field (in the rest fields, field 3+) is carried through as metadata and appears in resume plan output under "Details."
+
+**Full entry format:**
+```
+{ISO8601_TIMESTAMP}|{STEP_KEY}|{field=value}|...|mode=lite|{field=value}|...
+```
+
+**Lite-mode step keys and their progress.log entries:**
+
+| Step | step_key | Example entry |
+|------|----------|---------------|
+| Session setup | `SESSION_INIT` | `2026-01-01T00:00:00Z\|SESSION_INIT\|complete\|mode=lite\|session_dir=.crumbs/sessions/_session-abc\|next_step=STEP_1_COMPOSE` |
+| Implementer spawned | `WAVE_SPAWNED` | `2026-01-01T00:01:00Z\|WAVE_SPAWNED\|wave=1\|mode=lite\|task=my-project-abc\|pre_spawn_check=pass\|next_step=STEP_3_VERIFY` |
+| claims-vs-code PASS | `WAVE_VERIFIED` | `2026-01-01T00:05:00Z\|WAVE_VERIFIED\|wave=1\|mode=lite\|claims_vs_code=pass\|tasks_verified=my-project-abc\|commits=a1b2c3d\|next_step=STEP_5_CLOSE` |
+| Session complete | `SESSION_COMPLETE` | `2026-01-01T00:06:00Z\|SESSION_COMPLETE\|mode=lite\|task=my-project-abc\|pushed=true\|next_step=DONE` |
+
+> **Compatibility note**: Lite-mode step keys (`SESSION_INIT`, `WAVE_SPAWNED`, `WAVE_VERIFIED`, `SESSION_COMPLETE`) are a subset of the full-mode step keys defined in `scripts/parse-progress-log.sh`. The `mode=lite` field in the rest fields does not affect step_key parsing — it is metadata for human inspection and resume plan output.
+
+## Retry Limits
+
+| Situation | Max Retries | After Limit |
+|-----------|-------------|-------------|
+| pre-spawn-check FAIL | 1 | Escalate to user |
+| claims-vs-code PARTIAL or FAIL | 2 | Escalate to user with full context |
+
+## Template Lookup
+
+| Workflow Phase | Read This File |
+|----------------|----------------|
+| Task brief audit (Step 2) | `orchestration/templates/checkpoints/common.md` + `orchestration/templates/checkpoints/pre-spawn-check.md` |
+| Substance verification (Step 4) | `orchestration/templates/checkpoints/common.md` + `orchestration/templates/checkpoints/claims-vs-code.md` |
+| Implementer agent type reference | `orchestration/reference/agent-types.md` |
+| crumb CLI quick reference | `orchestration/reference/crumb-cheatsheet.md` |

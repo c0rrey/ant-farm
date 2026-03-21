@@ -108,6 +108,39 @@ crumb create --title="Test orchestration" --type=task --priority=3
 # 4. Auto-proceeds to spawn agents after SSV PASS
 ```
 
+## Lite Mode (Single-Crumb Execution)
+
+For single, isolated tasks where full-pipeline overhead (Scout, Pantry, Nitpicker) is unnecessary, use **lite mode** defined in `orchestration/RULES-lite.md`.
+
+**When to use lite mode:**
+- Exactly one crumb is being worked
+- The task scope is self-contained (no file conflicts with other in-flight work)
+- The change is low-risk and acceptance criteria are already well-specified
+
+**How to trigger:**
+```
+# In Claude Code, say: "Let's work on <task-id> in lite mode"
+# Claude Code will read RULES-lite.md instead of RULES.md
+```
+
+**What is different in lite mode:**
+- No Scout subagent or startup-check (SSV) gate
+- No Pantry pre-digestion — Queen composes the task brief directly from `crumb show` output
+- No Nitpicker review team or review-integrity (CCB) gate
+- No Scribe or session-complete (ESV) gate
+- Implementer reads task files directly (the implementer's prompt includes the crumb data verbatim)
+- Mandatory self-review step: implementer verifies its own changes against acceptance criteria before committing
+
+**What remains the same in lite mode:**
+- pre-spawn-check (CCO) gate before the implementer spawns
+- claims-vs-code (CMVCC) gate after the implementer completes
+- Atomic commit with `git pull --rebase`
+- Crumb tracking (claim at start, close at end)
+- Progress log with `mode=lite` field
+- 6 mandatory implementer steps (claim, design, implement, review, commit, summary doc)
+
+See `orchestration/RULES-lite.md` for the complete lite mode workflow.
+
 ## Recipe Card
 
 Copy-paste this into new project CLAUDE.md:

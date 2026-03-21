@@ -252,6 +252,18 @@ Changes to one file often require updates to others. This table lists the critic
 | Template lookup table | Verify all referenced file paths exist |
 | Concurrency limits | No cross-file deps, but document in CHANGELOG |
 
+### RULES-lite.md dependencies
+
+`orchestration/RULES-lite.md` is the lite mode workflow (single-crumb execution path). It is a standalone document — it does not inherit from RULES.md and should not be treated as a patch on top of it.
+
+| If you change... | Also update... |
+|------------------|----------------|
+| pre-spawn-check (CCO) gate rules | Ensure RULES-lite.md Step 2 still references the correct checkpoint files |
+| claims-vs-code (CMVCC) gate rules | Ensure RULES-lite.md Step 4 still references the correct checkpoint files |
+| Progress log step key names | `scripts/parse-progress-log.sh` STEP_KEYS array (lite mode reuses full-mode step keys) |
+| When lite mode is appropriate | Update the "Use lite mode when" section in RULES-lite.md and the Lite Mode section in SETUP.md |
+| Lite mode glossary terms | `orchestration/GLOSSARY.md` (lite mode and self-review entries) |
+
 ### Quick checklist for any change
 
 1. Identify which file you changed and check the tables above
