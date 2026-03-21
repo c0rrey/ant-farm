@@ -3,7 +3,7 @@
 
 ## Transition Gate Checklist
 
-**When**: After all Crumb Gatherers from Step 3 complete across ALL trails, BEFORE launching the Nitpickers.
+**When**: After all Crumb Gatherers from Step 3 complete across ALL trails, BEFORE launching the Reviewers.
 
 Verify all 4 criteria before proceeding to team launch. These checks span ALL trails worked in this session:
 
@@ -24,9 +24,9 @@ Directory creation is handled by the Queen in RULES.md Step 3b-iii. All active r
 
 ## Agent Teams Protocol
 
-After the transition gate passes, the Queen launches **the Nitpickers** using **TeamCreate** (NOT the Task tool) — reviewers plus **Big Head** (the consolidator) plus **Pest Control** (checkpoint validator), all as members of the same team. Reviewers produce **reports only** and do NOT file crumbs. Big Head consolidates all findings, deduplicates by root cause, and files crumbs.
+After the transition gate passes, the Queen launches **the Reviewers** using **TeamCreate** (NOT the Task tool) — reviewers plus **Review Consolidator** (the consolidator) plus **Checkpoint Auditor** (checkpoint validator), all as members of the same team. Reviewers produce **reports only** and do NOT file crumbs. Review Consolidator consolidates all findings, deduplicates by root cause, and files crumbs.
 
-**CRITICAL**: Reviews MUST use Agent Teams (TeamCreate + SendMessage), NOT plain Task tool subagents. The team structure enables cross-pollination between reviewers. **Big Head MUST be spawned as a team member** (not a separate Task agent) so it can receive messages from reviewers and coordinate within the team.
+**CRITICAL**: Reviews MUST use Agent Teams (TeamCreate + SendMessage), NOT plain Task tool subagents. The team structure enables cross-pollination between reviewers. **Review Consolidator MUST be spawned as a team member** (not a separate Task agent) so it can receive messages from reviewers and coordinate within the team.
 
 ### Why Agent Teams (Not Sequential)
 
@@ -36,9 +36,9 @@ After the transition gate passes, the Queen launches **the Nitpickers** using **
 
 ### Model Assignments
 
-- **Nitpickers — Correctness, Edge Cases**: `opus` — higher-judgment reviews requiring deeper reasoning
-- **Nitpickers — Clarity, Drift**: `sonnet` — lower-judgment reviews sufficient for code review and finding cataloging
-- **Big Head**: `opus` — consolidation requires high-judgment dedup and root-cause grouping
+- **Reviewers — Correctness, Edge Cases**: `opus` — higher-judgment reviews requiring deeper reasoning
+- **Reviewers — Clarity, Drift**: `sonnet` — lower-judgment reviews sufficient for code review and finding cataloging
+- **Review Consolidator**: `opus` — consolidation requires high-judgment dedup and root-cause grouping
 - **Checkpoint Auditor (team member)**: `sonnet` — runs claims-vs-code (pattern-matching) inside the team; sonnet sufficient for substance verification
 
 ### Review Type Canonical Names
@@ -58,7 +58,7 @@ The short name is the authoritative identifier. Any template using a review type
 
 **Pre-spawn requirement**: Before creating the reviewers, run **pre-spawn-check** on all review prompts. See `templates/checkpoints/pre-spawn-check.md`.
 
-**Round 1**: the Queen creates the Nitpicker team with a **variable member count** determined by `build-review-prompts.sh`'s return table. Base case is 6 members (4 reviewers + Big Head + Pest Control); when split reviewer instances occur the count increases (e.g., 8 members when 2 Clarity + 2 Drift splits are produced). Do NOT hardcode 6 members — build the list from the return table.
+**Round 1**: the Queen creates the Reviewer team with a **variable member count** determined by `build-review-prompts.sh`'s return table. Base case is 6 members (4 reviewers + Review Consolidator + Checkpoint Auditor); when split reviewer instances occur the count increases (e.g., 8 members when 2 Clarity + 2 Drift splits are produced). Do NOT hardcode 6 members — build the list from the return table.
 
 **Split instance naming**: When `build-review-prompts.sh` splits a reviewer type across multiple instances, each instance is named `{review-type}-{N}` (e.g., `clarity-1`, `clarity-2`, `drift-1`, `drift-2`). The base-case single-instance names (`clarity-reviewer`, `drift-reviewer`) apply only when no split occurred. SendMessage to these members must use these exact names — never broadcast.
 
@@ -108,7 +108,7 @@ Task IDs for acceptance criteria: {list of all task IDs worked this session}
 8. Checkpoint Auditor (checkpoint validator) — receives consolidated report path from Review Consolidator via SendMessage; runs claims-vs-code and review-integrity checkpoints and replies with verdict
 ~~~
 
-**Round 2+**: the Nitpicker team is **persistent** — do NOT create a new team. Re-task the existing Correctness and Edge Cases reviewers via named-member SendMessage (see Round Transition via SendMessage section). Big Head and Pest Control remain in the team and are re-tasked the same way. The team has at minimum 4 active members (Correctness + Edge Cases + Big Head + Pest Control); Clarity and Drift reviewers — including all split instances (e.g., `clarity-1`, `clarity-2`, `drift-1`, `drift-2`) — remain idle and are NOT re-tasked.
+**Round 2+**: the Reviewer team is **persistent** — do NOT create a new team. Re-task the existing Correctness and Edge Cases reviewers via named-member SendMessage (see Round Transition via SendMessage section). Review Consolidator and Checkpoint Auditor remain in the team and are re-tasked the same way. The team has at minimum 4 active members (Correctness + Edge Cases + Review Consolidator + Checkpoint Auditor); Clarity and Drift reviewers — including all split instances (e.g., `clarity-1`, `clarity-2`, `drift-1`, `drift-2`) — remain idle and are NOT re-tasked.
 
 Re-tasking message fields for each reviewer (named-member SendMessage — no broadcast):
 
@@ -136,7 +136,7 @@ re-tasked — they remain idle. Do NOT send them messages in round 2+.
 
 **Key difference from Team Protocol**: Reviewers are spawned as individual Task agents (not team members). Coordination happens via shared files instead of SendMessage.
 
-**Output**: Both paths produce the same 4 review reports (clarity, edge-cases, correctness, drift) and Big Head consolidated summary.
+**Output**: Both paths produce the same 4 review reports (clarity, edge-cases, correctness, drift) and Review Consolidator consolidated summary.
 
 #### Fallback Workflow
 
@@ -153,7 +153,7 @@ re-tasked — they remain idle. Do NOT send them messages in round 2+.
    - Reviewers work independently
    - Skip "Cross-Review Messages" section in report (messaging not available in fallback mode)
 
-3. **Spawn Big Head (after all 4 reviews complete)**:
+3. **Spawn Review Consolidator (after all 4 reviews complete)**:
    - Spawn as Task agent (model: opus)
    - Input: paths to all 4 review reports (copy from the reports directory)
    - Use review-consolidator-skeleton.md template for the Review Consolidator (same as team mode)
@@ -167,8 +167,8 @@ re-tasked — they remain idle. Do NOT send them messages in round 2+.
 #### Trade-offs of Fallback Mode
 
 - **No parallel review execution**: Sequential or batched spawning is slower than team parallelism
-- **No cross-reviewer messaging**: Reviewers cannot flag overlaps or share context (Big Head deduplication handles this)
-- **Same consolidation logic**: Big Head still performs full deduplication, root-cause grouping, and crumb filing
+- **No cross-reviewer messaging**: Reviewers cannot flag overlaps or share context (Review Consolidator deduplication handles this)
+- **Same consolidation logic**: Review Consolidator still performs full deduplication, root-cause grouping, and crumb filing
 - **Same output quality**: Final reports and consolidated summary are identical to Team Protocol
 
 #### When to Prefer Team Protocol Over Fallback
@@ -178,15 +178,15 @@ re-tasked — they remain idle. Do NOT send them messages in round 2+.
 
 ### Messaging Guidelines
 
-**Nitpickers SHOULD message when:**
+**Reviewers SHOULD message when:**
 - They find something that crosses into another reviewer's domain (e.g., clarity reviewer spots a potential edge case)
 - They want to flag "I'm covering X, skip it" to avoid duplicate analysis
 - They discover context that would help another reviewer (e.g., "this function is only called from one place")
 
-**Nitpickers should NOT message:**
+**Reviewers should NOT message:**
 - Status updates ("I'm 50% done")
 - General observations that don't help other reviewers
-- Questions that should go to Big Head
+- Questions that should go to Review Consolidator
 
 ## Round-Aware Review Protocol
 
@@ -197,7 +197,7 @@ The review pipeline supports multiple rounds. The Queen passes `Review round: {N
 - **Reviewers**: 4 (Clarity, Edge Cases, Correctness, Drift)
 - **Scope**: All session commits (`{first-session-commit}..HEAD`)
 - **Findings**: All severities reported and presented to user
-- **Team size**: 6 base case (4 reviewers + Big Head + Pest Control); more when split reviewer instances are present (count from `build-review-prompts.sh` return table)
+- **Team size**: 6 base case (4 reviewers + Review Consolidator + Checkpoint Auditor); more when split reviewer instances are present (count from `build-review-prompts.sh` return table)
 
 This is the existing protocol — no changes to round 1 behavior.
 
@@ -205,19 +205,19 @@ This is the existing protocol — no changes to round 1 behavior.
 
 - **Reviewers**: 2 (Correctness, Edge Cases only — Clarity and Drift are dropped)
 - **Scope**: Fix commits only (`{first-fix-commit}..HEAD`)
-- **Team size**: 4 (2 reviewers + Big Head + Pest Control)
+- **Team size**: 4 (2 reviewers + Review Consolidator + Checkpoint Auditor)
 - **In-scope findings**: All severities reported
 - **Out-of-scope findings**: Only reportable if they would cause:
   - **Runtime failure**: an agent, tool call, or workflow step would crash or error
   - **Silently wrong results**: an agent would succeed but produce incorrect output (e.g., stale cross-references pointing the Queen to the wrong section)
 - **Not reportable out-of-scope**: naming conventions, style preferences, documentation gaps, improvement opportunities, hypothetical edge cases requiring unusual conditions
-- **P3 handling**: Big Head auto-files P3s to "Future Work" trail (no user prompt)
+- **P3 handling**: Review Consolidator auto-files P3s to "Future Work" trail (no user prompt)
 
 ### Termination Rule
 
 The review loop terminates when a round produces **zero P1 or P2 findings**. At termination:
 
-1. Big Head auto-files any P3 findings to "Future Work" trail (round 2+ only)
+1. Review Consolidator auto-files any P3 findings to "Future Work" trail (round 2+ only)
 2. In round 1, P3s are filed via the existing "Handle P3 Issues" flow in the Queen's Step 3c below
 3. Queen proceeds directly to RULES.md Step 4 (documentation — README and CLAUDE.md only)
    - Note: CHANGELOG is authored by the Scribe at Step 5, not here
@@ -233,7 +233,7 @@ Correctness and Edge Cases reviewers receive this additional scope constraint in
 >
 > **Out-of-scope findings**: If you notice something outside the fix commits that would cause a runtime failure, incorrect agent behavior, or silently wrong results (e.g., stale cross-references pointing to wrong sections), report it. Do NOT report naming conventions, style preferences, documentation gaps, or improvement opportunities outside the fix scope.
 
-The `[OUT-OF-SCOPE]` tag is for labeling only — it helps Big Head and human readers distinguish fix-scope findings from incidental discoveries. Big Head treats all findings identically for dedup and root-cause grouping regardless of tag.
+The `[OUT-OF-SCOPE]` tag is for labeling only — it helps Review Consolidator and human readers distinguish fix-scope findings from incidental discoveries. Review Consolidator treats all findings identically for dedup and root-cause grouping regardless of tag.
 
 ## Review 1: Clarity (P3)
 
@@ -259,10 +259,10 @@ Group findings into preliminary root causes where possible.
 
 ## Report (MANDATORY)
 Write your report to `{session-dir}/review-reports/clarity-review-{timestamp}.md` using the format below. (the Queen provides the exact filename in your prompt.)
-Do NOT file crumbs — Big Head handles all crumb filing.
+Do NOT file crumbs — Review Consolidator handles all crumb filing.
 
 If you find something that looks like an edge case or correctness bug, message the
-relevant Nitpicker so they can investigate in depth.
+relevant Reviewer so they can investigate in depth.
 
 Review these files:
 {list of files changed in session}
@@ -293,7 +293,7 @@ Group findings into preliminary root causes where possible.
 
 ## Report (MANDATORY)
 Write your report to `{session-dir}/review-reports/edge-cases-review-{timestamp}.md` using the format below. (the Queen provides the exact filename in your prompt.)
-Do NOT file crumbs — Big Head handles all crumb filing.
+Do NOT file crumbs — Review Consolidator handles all crumb filing.
 
 Pay special attention to:
 - Functions that read/write files
@@ -333,7 +333,7 @@ Group findings into preliminary root causes where possible.
 
 ## Report (MANDATORY)
 Write your report to `{session-dir}/review-reports/correctness-review-{timestamp}.md` using the format below. (the Queen provides the exact filename in your prompt.)
-Do NOT file crumbs — Big Head handles all crumb filing.
+Do NOT file crumbs — Review Consolidator handles all crumb filing.
 
 Review these files and their acceptance criteria:
 {list of files and their original task requirements}
@@ -379,7 +379,7 @@ Group findings into preliminary root causes where possible.
 
 ## Report (MANDATORY)
 Write your report to `{session-dir}/review-reports/drift-review-{timestamp}.md` using the format below. (the Queen provides the exact filename in your prompt.)
-Do NOT file crumbs — Big Head handles all crumb filing.
+Do NOT file crumbs — Review Consolidator handles all crumb filing.
 
 For each change in scope, check:
 - Old value still present elsewhere in scoped files
@@ -407,7 +407,7 @@ If a review finds 0 issues:
 - Or work quality was genuinely excellent
 - Have user spot-check to calibrate
 
-## Nitpicker Report Format (All Reviewers)
+## Reviewer Report Format (All Reviewers)
 
 Every reviewer MUST write their report to `{session-dir}/review-reports/{review-type}-review-{timestamp}.md` using this format. The Queen generates the timestamp once per review cycle and provides the exact output path in each reviewer's prompt.
 
@@ -556,7 +556,7 @@ If any report file is missing after the initial check, do NOT wait indefinitely.
 
 > **Template source note**: The curly-brace values (`{session-dir}`, `{timestamp}`) in
 > the code block below are **template placeholders**. `build-review-prompts.sh` substitutes
-> them with real paths before this brief is delivered to Big Head. When Big Head runs this
+> them with real paths before this brief is delivered to Review Consolidator. When Review Consolidator runs this
 > block, every `{session-dir}` and `{timestamp}` token will already be replaced with the
 > actual session directory and timestamp strings. The angle-bracket guard below (`case "$_path" in *'<'*|*'>'*`)
 > is checking the **substituted** paths — a failure there means substitution was incomplete upstream.
@@ -588,7 +588,7 @@ esac
 # 60 seconds (30 iterations × 2s): enough for a slow reviewer to write its
 # report under typical load; short enough to return a clear error rather than
 # block the Queen indefinitely. If reviewers consistently time out, the Queen
-# should re-spawn Big Head rather than increasing this timeout.
+# should re-spawn Review Consolidator rather than increasing this timeout.
 POLL_TIMEOUT_SECS=60
 # 2 seconds: balances responsiveness against unnecessary busy-polling.
 POLL_INTERVAL_SECS=2
@@ -682,31 +682,31 @@ done
 if [ $REPORTS_FOUND -eq 0 ]; then
   echo "TIMEOUT: Not all expected reports arrived within ${POLL_TIMEOUT_SECS}s"
   cat > "{CONSOLIDATED_OUTPUT_PATH}" << 'EOF'
-# Big Head Consolidation — BLOCKED: Missing Nitpicker Reports
+# Review Consolidator Consolidation — BLOCKED: Missing Reviewer Reports
 **Status**: FAILED — prerequisite gate timeout
 **Timestamp**: {current ISO 8601 timestamp}
-**Reason**: Not all expected Nitpicker reports arrived within the polling timeout. Check the list of missing reports above.
-**Recovery**: Check reviewer logs. Once all expected reports are present, re-spawn Big Head consolidation.
+**Reason**: Not all expected Reviewer reports arrived within the polling timeout. Check the list of missing reports above.
+**Recovery**: Check reviewer logs. Once all expected reports are present, re-spawn Review Consolidator consolidation.
 EOF
   exit 1
 fi
 ```
 
-**Script responsibility**: `fill-review-slots.sh` substitutes `{{REVIEW_ROUND}}` with the actual round integer before delivering this brief to Big Head. The `if [ "$REVIEW_ROUND" -eq 1 ]; then ... fi` blocks execute in shell — they do not depend on LLM interpretation. Round 2+ behavior is reliable regardless of whether an LLM reads the template.
+**Script responsibility**: `fill-review-slots.sh` substitutes `{{REVIEW_ROUND}}` with the actual round integer before delivering this brief to Review Consolidator. The `if [ "$REVIEW_ROUND" -eq 1 ]; then ... fi` blocks execute in shell — they do not depend on LLM interpretation. Round 2+ behavior is reliable regardless of whether an LLM reads the template.
 
 **Error return (if timeout exceeded):**
 
 If timeout is reached and any reports are still missing, IMMEDIATELY return an error to the Queen:
 
 ```markdown
-# Big Head Consolidation - BLOCKED: Missing Nitpicker Reports
+# Review Consolidator Consolidation - BLOCKED: Missing Reviewer Reports
 
 **Status**: FAILED (timeout after 60 seconds)
 **Timestamp**: {current ISO 8601 timestamp}
 
 ## Missing Reports
 
-The following expected Nitpicker report files were not found:
+The following expected Reviewer report files were not found:
 - Clarity review report (clarity-review-{timestamp}.md) — MISSING
 - Edge cases review report (edge-cases-review-{timestamp}.md) — MISSING [or: FOUND at {path}]
 - Correctness review report (correctness-review-{timestamp}.md) — MISSING [or: FOUND at {path}]
@@ -714,17 +714,17 @@ The following expected Nitpicker report files were not found:
 
 ## Remediation
 
-Big Head cannot proceed with consolidation without all expected reports present. The prerequisite gate (Step 0) FAILED.
+Review Consolidator cannot proceed with consolidation without all expected reports present. The prerequisite gate (Step 0) FAILED.
 
 **Action required from Queen:**
 1. Check review agent logs for errors or crashes
-2. Verify all Nitpicker team members completed their reviews
+2. Verify all Reviewer team members completed their reviews
 3. Confirm reports were written to: `{session-dir}/review-reports/`
-4. Once all expected reports are confirmed present, re-spawn Big Head consolidation
+4. Once all expected reports are confirmed present, re-spawn Review Consolidator consolidation
 
 **Re-spawn instruction:**
 ~~~
-Spawn Big Head again with all expected report paths provided in the consolidation prompt.
+Spawn Review Consolidator again with all expected report paths provided in the consolidation prompt.
 ~~~
 
 **Do not proceed** with partial or missing review data.
@@ -732,7 +732,7 @@ Spawn Big Head again with all expected report paths provided in the consolidatio
 
 Once the error is returned:
 - Return the error message and STOP (do not continue to Steps 1-4)
-- The Queen receives this error and must decide: retry with fresh Nitpicker spawn, or abort session
+- The Queen receives this error and must decide: retry with fresh Reviewer spawn, or abort session
 
 ### Step 1: Read All Reports
 
@@ -762,7 +762,7 @@ Round 2+ typical paths (may include additional paths for split reviewer instance
    - For split-instance merges, note which split instance each finding came from (e.g., "from clarity-1" vs "from clarity-2")
 
 ```markdown
-## Root-Cause Grouping (Big Head Consolidation)
+## Root-Cause Grouping (Review Consolidator Consolidation)
 
 For each group of related findings across all reviews:
 - **Root cause**: {what's systematically wrong}
@@ -784,17 +784,17 @@ Before writing the consolidated summary or filing any crumbs, check for open cru
 if ! crumb list --open --short > /tmp/open-crumbs-$$.txt 2>&1; then
   echo "ERROR: crumb list failed (file error or crumb error). Aborting crumb filing to prevent duplicates."
   cat > "{CONSOLIDATED_OUTPUT_PATH}" << 'EOF'
-  # Big Head Consolidation — BLOCKED: Cross-Session Dedup Infrastructure Error
+  # Review Consolidator Consolidation — BLOCKED: Cross-Session Dedup Infrastructure Error
   **Status**: FAILED — crumb list infrastructure error
   **Timestamp**: {current ISO 8601 timestamp}
   **Reason**: `crumb list --open` failed. Crumb filing aborted to prevent duplicate filing. This is likely a file access or crumb CLI issue.
-  **Recovery**: Retry after the issue clears. If the issue persists, run `crumb doctor` and re-spawn Big Head.
+  **Recovery**: Retry after the issue clears. If the issue persists, run `crumb doctor` and re-spawn Review Consolidator.
   EOF
   exit 1
 fi
 ```
 
-If the bash block above exits with code 1, stop immediately. Do NOT proceed to consolidation or crumb filing. Use the SendMessage tool to notify the Queen: "Big Head FAILED: crumb list infrastructure error during cross-session dedup. Crumb filing aborted to prevent duplicates. Consolidated output written to {CONSOLIDATED_OUTPUT_PATH}. Please check crumb status and re-spawn Big Head when ready." Then end your turn.
+If the bash block above exits with code 1, stop immediately. Do NOT proceed to consolidation or crumb filing. Use the SendMessage tool to notify the Queen: "Review Consolidator FAILED: crumb list infrastructure error during cross-session dedup. Crumb filing aborted to prevent duplicates. Consolidated output written to {CONSOLIDATED_OUTPUT_PATH}. Please check crumb status and re-spawn Review Consolidator when ready." Then end your turn.
 
 For each root cause group, compare against existing crumb titles (from `/tmp/open-crumbs-$$.txt`):
 
@@ -855,11 +855,11 @@ Findings merged:
 {overall quality assessment}
 ```
 
-### Step 4: Checkpoint Gate — Await Pest Control Validation Before Filing Crumbs
+### Step 4: Checkpoint Gate — Await Checkpoint Auditor Validation Before Filing Crumbs
 
-**Do NOT file any crumbs yet.** After writing the consolidated summary (Step 3), notify Pest Control and wait for its verdict before calling `crumb create`.
+**Do NOT file any crumbs yet.** After writing the consolidated summary (Step 3), notify Checkpoint Auditor and wait for its verdict before calling `crumb create`.
 
-**Notification to Pest Control (SendMessage):**
+**Notification to Checkpoint Auditor (SendMessage):**
 ```
 SendMessage(
   to="ant-farm-checkpoint-auditor",
@@ -867,7 +867,7 @@ SendMessage(
 )
 ```
 
-**End your turn immediately after sending to Pest Control. Pest Control's reply will arrive as a new teammate message on your next turn. Do NOT use sleep or poll — waiting blocks incoming messages.**
+**End your turn immediately after sending to Checkpoint Auditor. Checkpoint Auditor's reply will arrive as a new teammate message on your next turn. Do NOT use sleep or poll — waiting blocks incoming messages.**
 
 **Turn-based retry protocol:**
 - After sending the SendMessage, **end your turn**. Do not sleep or poll.
@@ -883,30 +883,30 @@ SendMessage(
 - If still no response after 2 more turns following the retry, **escalate to the Queen immediately**:
   ```bash
   cat > "{CONSOLIDATED_OUTPUT_PATH%.md}-pc-timeout.md" << 'EOF'
-  # Big Head Consolidation — BLOCKED: Pest Control Timeout
-  **Status**: FAILED — Pest Control checkpoint unavailable
+  # Review Consolidator Consolidation — BLOCKED: Checkpoint Auditor Timeout
+  **Status**: FAILED — Checkpoint Auditor checkpoint unavailable
   **Timestamp**: {current ISO 8601 timestamp}
-  **Reason**: Pest Control did not respond after 2 attempts (4 turns total). Consolidated report was written but checkpoints could not be validated.
-  **Recovery**: Re-spawn Pest Control manually and provide the consolidated report path, or accept consolidated findings without checkpoint validation.
+  **Reason**: Checkpoint Auditor did not respond after 2 attempts (4 turns total). Consolidated report was written but checkpoints could not be validated.
+  **Recovery**: Re-spawn Checkpoint Auditor manually and provide the consolidated report path, or accept consolidated findings without checkpoint validation.
   EOF
   ```
   Then send to Queen:
   ```
-  Big Head checkpoint escalation to Queen:
-  - Pest Control verdict: UNAVAILABLE (no response after 2 attempts, 4 turns total)
+  Review Consolidator checkpoint escalation to Queen:
+  - Checkpoint Auditor verdict: UNAVAILABLE (no response after 2 attempts, 4 turns total)
   - Consolidated report path: {CONSOLIDATED_OUTPUT_PATH}
   - Timeout failure artifact: {CONSOLIDATED_OUTPUT_PATH%.md}-pc-timeout.md
-  - Action required: PC checkpoint could not be completed. User must decide: re-spawn Pest Control
+  - Action required: PC checkpoint could not be completed. User must decide: re-spawn Checkpoint Auditor
     manually, or accept consolidated findings without checkpoint validation.
   ```
-  Do NOT file any crumbs when escalating due to Pest Control timeout.
+  Do NOT file any crumbs when escalating due to Checkpoint Auditor timeout.
 
 - **PASS**: File ONE crumb per root cause. See crumb filing instructions below.
-- **FAIL**: Big Head MUST escalate to the Queen with specifics. File crumbs ONLY for findings that passed. Do NOT file crumbs for flagged findings. Use this escalation format:
+- **FAIL**: Review Consolidator MUST escalate to the Queen with specifics. File crumbs ONLY for findings that passed. Do NOT file crumbs for flagged findings. Use this escalation format:
 
 ```
-Big Head checkpoint escalation to Queen:
-- Pest Control verdict: FAIL
+Review Consolidator checkpoint escalation to Queen:
+- Checkpoint Auditor verdict: FAIL
 - Findings that failed validation: {list with reasons per finding}
 - Findings that passed: {list}
 - Crumbs filed for validated findings: {ids or "none"}
@@ -954,7 +954,7 @@ rm -f /tmp/crumb-desc-$$.md /tmp/crumb-$$.json
 
 ### P3 Auto-Filing (Round 2+ Only)
 
-In round 2+, Big Head auto-files P3 findings to the "Future Work" trail without user involvement:
+In round 2+, Review Consolidator auto-files P3 findings to the "Future Work" trail without user involvement:
 
 1. Find or create the "Future Work" trail:
    ```bash
@@ -997,34 +997,34 @@ print(json.dumps({'type': 'bug', 'priority': 'P3', 'title': '{root-cause-title}'
 
 4. Do NOT include P3 findings in the fix-or-defer prompt to the Queen. They appear only in the consolidated summary for the record.
 
-**Round 1**: P3s are NOT auto-filed by Big Head. They follow the existing "Handle P3 Issues" flow in the Queen's Step 3c below.
+**Round 1**: P3s are NOT auto-filed by Review Consolidator. They follow the existing "Handle P3 Issues" flow in the Queen's Step 3c below.
 
 ## The Queen's Checklists
 
-### Nitpicker Checklist (verify before launching team)
+### Reviewer Checklist (verify before launching team)
 
 Before launching the review agent team, confirm:
 - [ ] Review round number passed to Pantry (`Review round: {N}`)
-- [ ] Round 1: All 4 Nitpicker prompts include review scope; Round 2+: 2 prompts (Correctness, Edge Cases)
-- [ ] Each Nitpicker has focus areas specific to their review type
+- [ ] Round 1: All 4 Reviewer prompts include review scope; Round 2+: 2 prompts (Correctness, Edge Cases)
+- [ ] Each Reviewer has focus areas specific to their review type
 - [ ] Round 2+ reviewers include out-of-scope finding bar instructions from the Round 2+ Reviewer Instructions section
 - [ ] Catalog phase instructions included (find all, group preliminarily)
-- [ ] Report format instructions included (use standard Nitpicker report format)
-- [ ] Each prompt says "Do NOT file crumbs — Big Head handles all crumb filing"
+- [ ] Report format instructions included (use standard Reviewer report format)
+- [ ] Each prompt says "Do NOT file crumbs — Review Consolidator handles all crumb filing"
 - [ ] Messaging guidelines included (what to share, what not to share)
 - [ ] Reports write to `{session-dir}/review-reports/{review-type}-review-{timestamp}.md`
-- [ ] Round 1: Team has 6 members (4 Nitpickers + Big Head + Pest Control); Round 2+: persistent team re-tasked via SendMessage (NOT a new TeamCreate) — Correctness + Edge Cases + Big Head + Pest Control active; Clarity + Drift idle
-- [ ] Round 2+: Big Head prompt includes review round number and P3 auto-filing instructions
+- [ ] Round 1: Team has 6 members (4 Reviewers + Review Consolidator + Checkpoint Auditor); Round 2+: persistent team re-tasked via SendMessage (NOT a new TeamCreate) — Correctness + Edge Cases + Review Consolidator + Checkpoint Auditor active; Clarity + Drift idle
+- [ ] Round 2+: Review Consolidator prompt includes review round number and P3 auto-filing instructions
 
-### Big Head Consolidation Checklist (after all Nitpickers finish)
+### Review Consolidator Consolidation Checklist (after all Reviewers finish)
 
-Before filing crumbs, confirm Big Head has:
+Before filing crumbs, confirm Review Consolidator has:
 - [ ] Read all reports listed in consolidation brief's `expected_paths` (count varies; typically 4 in round 1, 2 in round 2+, more if split instances present)
 - [ ] Merged duplicate findings across reviews
 - [ ] Grouped all findings by root cause (not per-occurrence)
 - [ ] Written consolidated summary to `{session-dir}/review-reports/review-consolidated-{timestamp}.md`
-- [ ] Sent consolidated report path to Pest Control via SendMessage
-- [ ] Received Pest Control verdict (PASS or FAIL + specifics)
+- [ ] Sent consolidated report path to Checkpoint Auditor via SendMessage
+- [ ] Received Checkpoint Auditor verdict (PASS or FAIL + specifics)
 - [ ] On PASS: filed ONE crumb per root cause with all affected surfaces listed
 - [ ] Round 2+ on PASS: P3 crumbs auto-filed to "Future Work" trail (not presented to user)
 - [ ] On FAIL: escalated failed findings to Queen; filed crumbs only for validated findings
@@ -1046,7 +1046,7 @@ The Queen reads the Review Consolidator's consolidated summary and follows the p
 
 If the consolidated summary shows zero P1 and zero P2 findings, the review loop has converged:
 
-1. **Round 2+**: Big Head has already auto-filed any P3 findings to "Future Work" trail — no action needed
+1. **Round 2+**: Review Consolidator has already auto-filed any P3 findings to "Future Work" trail — no action needed
 2. **Round 1**: P3 findings follow the existing "Handle P3 Issues" flow below — the Queen files them to Future Work
 3. Queen updates session state: `Termination: terminated (round N: 0 P1/P2)`
 4. Proceed to RULES.md Step 4 (Documentation — update README and CLAUDE.md only)
@@ -1087,7 +1087,7 @@ Fix agents receive the crumb ID directly as their source of truth.
 
 #### Fix Team Member Naming
 
-Fix agents spawn into the Nitpicker team with the following naming convention:
+Fix agents spawn into the Reviewer team with the following naming convention:
 
 | Role | Round 1 name | Round 2+ name |
 |---|---|---|
@@ -1102,7 +1102,7 @@ Round suffix (`-r2`, `-r3`, etc.) increments with each review round to avoid nam
 Fix Crumb Gatherers receive a lean prompt. The crumb is the source of truth — the CG does not need a full brief composed by the Queen.
 
 ```
-You are fix-dp-N, a fix Crumb Gatherer in the Nitpicker team.
+You are fix-dp-N, a fix Crumb Gatherer in the Reviewer team.
 
 Your task crumb: {crumb-id}
 Run: crumb show <crumb-id>
@@ -1199,7 +1199,7 @@ After all fix agents complete and SendMessage round-transition messages are sent
 
 ### Handle P3 Issues (Queen's Step 3c)
 
-> **Round 1 only.** In round 2+, P3s are auto-filed by Big Head during consolidation (see "P3 Auto-Filing" above). This section applies only when round 1 terminates with P3 findings.
+> **Round 1 only.** In round 2+, P3s are auto-filed by Review Consolidator during consolidation (see "P3 Auto-Filing" above). This section applies only when round 1 terminates with P3 findings.
 
 **Create "Future Work" trail if needed**:
 ```bash
