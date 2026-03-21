@@ -104,6 +104,30 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             no subsequent WAVE_SPAWNED entry is present, the next action MUST be Step 3b (Review).
             Skipping Step 3b is a critical workflow violation.
 
+            **next_step value convention**: Progress log entries use descriptive step identifiers
+            rather than the shorthand abbreviations from the original AF-140 task table. Descriptive
+            names are self-documenting and match the step labels in this file. Valid values:
+
+            | next_step value | Meaning |
+            |-----------------|---------|
+            | `STEP_1_SCOUT` | About to run Step 1 (Scout recon) |
+            | `STEP_2_PANTRY` | About to run Step 2 (Pantry / Prompt Composer) |
+            | `STEP_3_VERIFY` | About to run Step 3 scope-verify for the current wave |
+            | `STEP_3_CLAIMS_VS_CODE` | About to run claims-vs-code for the current wave |
+            | `REVIEW_3B` | About to run Step 3b (review team) — final wave complete |
+            | `NEXT_WAVE` | About to spawn the next wave (non-final wave complete) |
+            | `STEP_3C_TRIAGE` | About to triage review findings (Step 3c) |
+            | `FIX_SCOUT` | About to spawn fix Scout for a fix round |
+            | `FIX_AGENTS_SPAWN` | About to spawn fix Crumb Gatherers |
+            | `FIX_INNER_LOOP` | Fix agents spawned; waiting for inner verify loop |
+            | `ROUND_TRANSITION` | About to transition to the next review round |
+            | `STEP_4_DOCS` | About to run Step 4 (doc/CHANGELOG update) |
+            | `STEP_4B_XREF` | About to run Step 4b (cross-reference / issue status check) |
+            | `STEP_5_SCRIBE` | About to run Step 5 (Scribe exec summary) |
+            | `STEP_6_ESV` | About to run Step 6 (session-complete checkpoint) |
+            | `STEP_7_PUSH` | About to run Step 7 (git push) |
+            | `DONE` | Session complete; no further steps |
+
 **Step 1:** Recon — Read `{SESSION_DIR}/briefing.md` written by the Scout's previous run, or spawn the Scout
             (`ant-farm-recon-planner` subagent, `model: "opus"`) if this is the first session. Include in Scout's prompt:
             (1) `Session directory: <value of SESSION_DIR>`,
