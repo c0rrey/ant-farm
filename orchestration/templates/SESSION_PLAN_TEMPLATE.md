@@ -196,21 +196,21 @@ After all implementation agents complete:
 
 ### Review Wave (Parallel TeamCreate)
 
-Reviews run as a single parallel Nitpicker team spawned via TeamCreate (per RULES-review.md Step 3b).
+Reviews run as a single parallel Reviewer team spawned via TeamCreate (per RULES-review.md Step 3b).
 
 **Round 1 team composition (6 members):**
-- 4 Nitpicker reviewers (Clarity, Edge Cases, Correctness, Drift) — run concurrently
-- 1 Big Head (deduplication, root-cause grouping, issue filing)
+- 4 Reviewers (Clarity, Edge Cases, Correctness, Drift) — run concurrently
+- 1 Review Consolidator (deduplication, root-cause grouping, issue filing)
 - 1 Checkpoint Auditor (review-integrity verification — added as team member so the Review Consolidator can SendMessage to it)
 
 **Round 2+ team composition (4 members):**
-- 2 Nitpicker reviewers (Correctness + Edge Cases only)
-- 1 Big Head
-- 1 Pest Control
+- 2 Reviewers (Correctness + Edge Cases only)
+- 1 Review Consolidator
+- 1 Checkpoint Auditor
 
 **Pre-spawn gate:** pre-spawn-check must PASS before the reviewer team is spawned.
 
-**Output:** Big Head consolidated summary written to `${SESSION_DIR}/review-reports/review-consolidated-{timestamp}.md`
+**Output:** Review Consolidator consolidated summary written to `${SESSION_DIR}/review-reports/review-consolidated-{timestamp}.md`
 
 ### Review Follow-Up Decision
 
