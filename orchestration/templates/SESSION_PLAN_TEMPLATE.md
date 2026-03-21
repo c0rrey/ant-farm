@@ -150,7 +150,6 @@ spawn(
     description='xxx-001: Task description',
     tasks=['xxx-001'],
     files=['build.py'],
-    background=True,
 )
 
 spawn(
@@ -158,7 +157,6 @@ spawn(
     description='xxx-003: Task description',
     tasks=['xxx-003'],
     files=['site.yaml'],
-    background=True,
 )
 
 # ... more agents
@@ -184,7 +182,6 @@ spawn(
     description='xxx-002, xxx-005: Batched build.py tasks',
     tasks=['xxx-002', 'xxx-005'],
     files=['build.py'],
-    background=True,
 )
 ```
 
