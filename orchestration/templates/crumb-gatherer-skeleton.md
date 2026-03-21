@@ -45,3 +45,12 @@ Execute these 6 steps in order:
 
 SCOPE: Only edit files listed in the task context. Document adjacent issues, don't fix them.
 Do NOT push to remote. Do NOT modify CHANGELOG/README/CLAUDE.md.
+
+**Sentinel (final action)**: As your absolute last action, write your verdict summary:
+```bash
+echo "VERDICT: {PASS|FAIL}
+COMMIT: {commit-hash|none}
+FILES: {comma-separated changed files}
+SUMMARY: {one-line task description}" > "{SESSION_DIR}/signals/{TASK_SUFFIX}.done"
+```
+This file signals completion to the Queen. Do NOT skip this step.

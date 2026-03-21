@@ -359,7 +359,7 @@ At session start (Step 0), run:
 
     SESSION_ID="$(date +%Y%m%d-%H%M%S)-$(head -c4 /dev/urandom | xxd -p)"
     SESSION_DIR=".crumbs/sessions/_session-${SESSION_ID}"
-    mkdir -p "${SESSION_DIR}"/{task-metadata,previews,prompts,pc,summaries}
+    mkdir -p "${SESSION_DIR}"/{task-metadata,previews,prompts,pc,summaries,signals}
     crumb prune 2>/dev/null || echo "WARNING: crumb prune failed (non-blocking) — continuing session setup"
 
 Store SESSION_DIR in your context and pass it explicitly to every agent that needs to write artifacts.
@@ -378,6 +378,27 @@ Store SESSION_DIR in your context and pass it explicitly to every agent that nee
 - Updating docs per-agent — batch all doc updates in Step 4
 - Verbose agent prompts — be concise, agents read their own task details from their task brief
 - Running individual checkpoints per agent — spawn one Checkpoint Auditor with the full batch
+- Using TaskOutput or Read on background agent output files — poll for sentinel files instead (see below)
+
+## Sentinel-File Completion Protocol
+
+When the Queen spawns background subagents (`run_in_background: true`), do NOT use TaskOutput or Read
+on the agent's output file. TaskOutput returns the full JSONL session transcript, flooding the Queen's
+context with thousands of tokens of hook events and tool results.
+
+**Protocol**: Background agents write a sentinel file as their absolute last action:
+```bash
+echo "VERDICT: {PASS|FAIL}
+COMMIT: {hash|none}
+FILES: {changed-file-list}
+SUMMARY: {one-line-description}" > "${SESSION_DIR}/signals/{TASK_SUFFIX}.done"
+```
+
+**Queen polling**: Poll for sentinel files using Bash, not TaskOutput:
+1. **Activity check**: `stat -f '%m' "${SESSION_DIR}/signals/"` (macOS) or `stat -c '%Y' "${SESSION_DIR}/signals/"` (Linux) — directory mtime changes when agents write
+2. **Completion check**: `ls "${SESSION_DIR}/signals/"*.done 2>/dev/null` — list completed agents
+3. **Read verdict**: `cat "${SESSION_DIR}/signals/{TASK_SUFFIX}.done"` — compact verdict without JSONL
+4. **Crash detection**: If no directory activity for >5 minutes and no `.done` file, the agent likely crashed. Escalate or respawn.
 
 ## Template Lookup
 

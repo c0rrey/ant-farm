@@ -118,3 +118,18 @@ All checkpoints use the following verdict states:
 - FAIL: Any check fails. Blocks git push. Re-spawn Scribe with specific violations (max 1 retry). Second failure escalates to user.
 
 ---
+
+## Sentinel File Write (Background Agents)
+
+When running as a background agent (`run_in_background: true`), write a sentinel file as your absolute
+last action after completing all checkpoint work and writing the checkpoint artifact:
+
+```bash
+echo "VERDICT: {PASS|WARN|PARTIAL|FAIL}
+CHECKPOINT: {checkpoint-name}
+ARTIFACT: {path-to-checkpoint-artifact}
+SUMMARY: {one-line verdict description}" > "${SESSION_DIR}/signals/{checkpoint-name}.done"
+```
+
+This signals completion to the Queen without requiring TaskOutput. The Queen polls for `.done` files
+in `${SESSION_DIR}/signals/`. If you are running as a foreground agent (the common case), skip this step.
