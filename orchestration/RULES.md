@@ -357,6 +357,11 @@ At session start (Step 0), run:
 
 Store SESSION_DIR in your context and pass it explicitly to every agent that needs to write artifacts.
 
+**Session directory prefixes**: `crumb prune` manages directories matching any of these prefixes under `.crumbs/sessions/`:
+- `_session-` — standard work sessions (the default; used by the Queen workflow)
+- `_decompose-` — decomposition/planning sessions (used by `/ant-farm-plan`)
+- `_review-` — reserved for future use (currently unused by any workflow)
+
 ## Anti-Patterns
 
 - Reading every agent's output files — trust summaries and commit messages
