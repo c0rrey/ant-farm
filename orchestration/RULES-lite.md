@@ -58,7 +58,7 @@ Store SESSION_DIR in context and pass it to every agent that needs to write arti
 
 **Progress log:**
 ```
-echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SESSION_INIT|complete|mode=lite|session_dir=${SESSION_DIR}|next_step=STEP_1_COMPOSE" >> ${SESSION_DIR}/progress.log
+echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SESSION_INIT|complete|mode=lite|session_dir=${SESSION_DIR}|next_step=STEP_1_SELECT" >> ${SESSION_DIR}/progress.log
 ```
 
 **Step 1:** Task selection — identify the single crumb to work. Run `crumb show <TASK_ID>` to read the task's title, description, acceptance criteria, and affected files. Store the task ID and acceptance criteria in context.
@@ -97,7 +97,7 @@ Task(
 
 **Progress log (after pre-spawn-check PASS):**
 ```
-echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_SPAWNED|wave=1|mode=lite|task=${TASK_ID}|pre_spawn_check=pass|next_step=STEP_3_VERIFY" >> ${SESSION_DIR}/progress.log
+echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_SPAWNED|wave=1|mode=lite|task=${TASK_ID}|pre_spawn_check=pass|next_step=STEP_3_IMPLEMENT" >> ${SESSION_DIR}/progress.log
 ```
 
 **Step 3:** Implementation — write the scope sidecar, then spawn the implementer agent (Crumb Gatherer).
@@ -202,8 +202,8 @@ All lite-mode entries include `mode=lite` as a pipe-delimited field. This field 
 
 | Step | step_key | Example entry |
 |------|----------|---------------|
-| Session setup | `SESSION_INIT` | `2026-01-01T00:00:00Z\|SESSION_INIT\|complete\|mode=lite\|session_dir=.crumbs/sessions/_session-abc\|next_step=STEP_1_COMPOSE` |
-| Implementer spawned | `WAVE_SPAWNED` | `2026-01-01T00:01:00Z\|WAVE_SPAWNED\|wave=1\|mode=lite\|task=my-project-abc\|pre_spawn_check=pass\|next_step=STEP_3_VERIFY` |
+| Session setup | `SESSION_INIT` | `2026-01-01T00:00:00Z\|SESSION_INIT\|complete\|mode=lite\|session_dir=.crumbs/sessions/_session-abc\|next_step=STEP_1_SELECT` |
+| Implementer spawned | `WAVE_SPAWNED` | `2026-01-01T00:01:00Z\|WAVE_SPAWNED\|wave=1\|mode=lite\|task=my-project-abc\|pre_spawn_check=pass\|next_step=STEP_3_IMPLEMENT` |
 | claims-vs-code PASS | `WAVE_VERIFIED` | `2026-01-01T00:05:00Z\|WAVE_VERIFIED\|wave=1\|mode=lite\|claims_vs_code=pass\|tasks_verified=my-project-abc\|commits=a1b2c3d\|next_step=STEP_5_CLOSE` |
 | Session complete | `SESSION_COMPLETE` | `2026-01-01T00:06:00Z\|SESSION_COMPLETE\|mode=lite\|task=my-project-abc\|pushed=true\|next_step=DONE` |
 

@@ -42,7 +42,7 @@ misapplying Queen patterns to decomposition sessions.
 | Workflow file | `orchestration/RULES-decompose.md` (this file) | `orchestration/RULES.md` |
 | Read permissions | `spec.md` and `decomposition-brief.md` only | `queen-state.md`, task files, git diffs |
 | State tracking | Step number + per-agent retry count (in context only) | `queen-state.md` written to disk |
-| Primary agents | Surveyor, Forager x4, Architect | Scout, Pantry, Checkpoint Auditor, Nitpicker |
+| Primary agents | Spec Writer, Researcher x4, Task Decomposer | Scout, Pantry, Checkpoint Auditor, Nitpicker |
 | Context budget target | 15–20% of context window | Not separately specified |
 | `crumb` CLI usage | Prohibited — only the Architect calls `crumb` | Queen calls `crumb` directly |
 
@@ -166,6 +166,10 @@ find "${CODEBASE_ROOT}" -maxdepth 2 \
 ```
 
 **Heuristic**: 5 or more non-config files → **brownfield**. Fewer than 5 → **greenfield**.
+<!-- Threshold rationale: 5 was chosen as the minimum that distinguishes a project with a real
+     established code structure (e.g., at least one module, one entry point, one test, one config
+     adapter, and one utility) from a near-empty scaffold. Values below 5 are consistent with a
+     freshly-initialised repo and receive greenfield treatment. -->
 Record the result as `CODEBASE_MODE=brownfield|greenfield` in your context and pass it to the
 Surveyor in its spawn prompt. The Architect uses this to decide whether to reference existing file
 paths or propose new ones.
