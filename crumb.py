@@ -873,8 +873,30 @@ def cmd_create(args: argparse.Namespace) -> None:
     to a JSON file. Auto-assigns an ID from config if not provided in
     the JSON payload.
 
+    When ``--json`` is given, outputs the newly created crumb as a JSON
+    object to stdout instead of the human-readable "created <ID>" message.
+    The object has the schema documented in :func:`_crumb_to_json_obj`.
+
+    Example JSON output::
+
+        {
+            "id": "AF-1",
+            "title": "My task",
+            "type": "task",
+            "status": "open",
+            "priority": "P2",
+            "description": null,
+            "acceptance_criteria": null,
+            "scope": null,
+            "links": null,
+            "notes": null,
+            "created_at": "2026-01-01T00:00:00Z",
+            "updated_at": "2026-01-01T00:00:00Z"
+        }
+
     Args:
         args: Parsed arguments from the create subparser.
+              args.json_output controls JSON vs human-readable output.
     """
     with FileLock():
         path = tasks_path()
@@ -1005,6 +1027,11 @@ def cmd_create(args: argparse.Namespace) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         write_tasks(path, tasks)
 
+    # --- JSON output branch ---
+    if getattr(args, "json_output", False):
+        print(json.dumps(_crumb_to_json_obj(record), indent=2))
+        return
+
     print(f"created {crumb_id}")
 
 
@@ -1015,8 +1042,36 @@ def cmd_update(args: argparse.Namespace) -> None:
     Attempting to set status to a value that requires a special transition
     (e.g. closed -> in_progress) exits 1 with guidance.
 
+    When ``--json`` is given, outputs the updated crumb as a JSON object to
+    stdout instead of the human-readable "updated <ID>" message.  The object
+    includes a ``"success": true`` field in addition to the full crumb record
+    fields from :func:`_crumb_to_json_obj`.
+
+    Example JSON output::
+
+        {
+            "success": true,
+            "id": "AF-1",
+            "title": "My task",
+            "type": "task",
+            "status": "in_progress",
+            "priority": "P2",
+            "description": null,
+            "acceptance_criteria": null,
+            "scope": null,
+            "links": null,
+            "notes": null,
+            "created_at": "2026-01-01T00:00:00Z",
+            "updated_at": "2026-03-21T12:00:00Z"
+        }
+
+    When no changes are made and ``--json`` is given, outputs::
+
+        {"success": false, "message": "no changes"}
+
     Args:
         args: Parsed arguments; args.id is the target crumb ID.
+              args.json_output controls JSON vs human-readable output.
     """
     with FileLock():
         path = require_tasks_jsonl()
@@ -1096,11 +1151,21 @@ def cmd_update(args: argparse.Namespace) -> None:
             changed = True
 
         if not changed:
-            print(f"no changes to {args.id}")
+            if getattr(args, "json_output", False):
+                print(json.dumps({"success": False, "message": "no changes"}, indent=2))
+            else:
+                print(f"no changes to {args.id}")
             return
 
         crumb["updated_at"] = now_iso()
         write_tasks(path, tasks)
+
+    # --- JSON output branch ---
+    if getattr(args, "json_output", False):
+        obj = {"success": True}
+        obj.update(_crumb_to_json_obj(crumb))
+        print(json.dumps(obj, indent=2))
+        return
 
     print(f"updated {args.id}")
 
@@ -2125,8 +2190,25 @@ def cmd_doctor(args: argparse.Namespace) -> None:
     Exit code: 0 if no errors (warnings alone do not set exit code 1);
                1 if any errors are found.
 
+    When ``--json`` is given, outputs a JSON diagnostic report to stdout
+    instead of printing to stderr.  The report has the following schema::
+
+        {
+            "ok": true,
+            "error_count": 0,
+            "warning_count": 0,
+            "errors": [],
+            "warnings": [],
+            "fixes_applied": []
+        }
+
+    ``ok`` is ``true`` when ``error_count`` is 0.  Exit code semantics are
+    unchanged: exit 1 when errors are present, exit 0 for warnings-only or
+    clean results.
+
     Args:
         args: Parsed arguments; args.fix enables auto-repair.
+              args.json_output controls JSON vs human-readable output.
     """
     path = require_tasks_jsonl()
 
@@ -2240,9 +2322,10 @@ def cmd_doctor(args: argparse.Namespace) -> None:
         # --- Apply --fix writes ---
         if getattr(args, "fix", False) and fixes_applied:
             write_tasks(path, valid_records)
-            for msg in fixes_applied:
-                print(f"fixed: {msg}")
-            if malformed_lines:
+            if not getattr(args, "json_output", False):
+                for msg in fixes_applied:
+                    print(f"fixed: {msg}")
+            if malformed_lines and not getattr(args, "json_output", False):
                 print(
                     f"note: {len(malformed_lines)} malformed line(s) were removed "
                     f"from tasks.jsonl (lines: {malformed_lines})",
@@ -2250,6 +2333,20 @@ def cmd_doctor(args: argparse.Namespace) -> None:
                 )
 
     # --- Report ---
+    if getattr(args, "json_output", False):
+        report = {
+            "ok": len(errors) == 0,
+            "error_count": len(errors),
+            "warning_count": len(warnings),
+            "errors": errors,
+            "warnings": warnings,
+            "fixes_applied": fixes_applied,
+        }
+        print(json.dumps(report, indent=2))
+        if errors:
+            sys.exit(1)
+        return
+
     for msg in errors:
         print(f"error: {msg}", file=sys.stderr)
     for msg in warnings:
@@ -2658,6 +2755,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_create.add_argument("--priority", choices=VALID_PRIORITIES)
     p_create.add_argument("--type", dest="crumb_type", choices=["task", "bug", "feature"])
     p_create.add_argument("--description", metavar="TEXT")
+    p_create.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="Output the created crumb as a JSON object instead of a confirmation message.",
+    )
     p_create.set_defaults(func=cmd_create)
 
     # --- update ---
@@ -2670,6 +2773,15 @@ def build_parser() -> argparse.ArgumentParser:
     p_update.add_argument("--description", metavar="TEXT")
     p_update.add_argument("--from-json", dest="from_json", metavar="JSON",
                           help="Merge a JSON object into the crumb (partial update)")
+    p_update.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help=(
+            "Output the updated crumb as a JSON object (with a 'success' field) "
+            "instead of a confirmation message."
+        ),
+    )
     p_update.set_defaults(func=cmd_update)
 
     # --- close ---
@@ -2758,6 +2870,15 @@ def build_parser() -> argparse.ArgumentParser:
         "--fix",
         action="store_true",
         help="Remove dangling blocked_by references automatically",
+    )
+    p_doctor.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help=(
+            "Output a JSON diagnostic report instead of printing to stderr. "
+            "Schema: {ok, error_count, warning_count, errors, warnings, fixes_applied}."
+        ),
     )
     p_doctor.set_defaults(func=cmd_doctor)
 

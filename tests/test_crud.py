@@ -52,21 +52,23 @@ def _make_create_args(**kwargs: Any) -> argparse.Namespace:
         "priority": None,
         "crumb_type": None,
         "description": None,
+        "json_output": False,
     }
     defaults.update(kwargs)
     return argparse.Namespace(**defaults)
 
 
-def _make_show_args(crumb_id: str) -> argparse.Namespace:
+def _make_show_args(crumb_id: str, json_output: bool = False) -> argparse.Namespace:
     """Build an argparse.Namespace for cmd_show.
 
     Args:
         crumb_id: The ID to look up.
+        json_output: Whether to request JSON output mode.
 
     Returns:
-        Namespace with ``id`` set.
+        Namespace with ``id`` and ``json_output`` set.
     """
-    return argparse.Namespace(id=crumb_id)
+    return argparse.Namespace(id=crumb_id, json_output=json_output)
 
 
 def _make_update_args(**kwargs: Any) -> argparse.Namespace:
@@ -86,6 +88,7 @@ def _make_update_args(**kwargs: Any) -> argparse.Namespace:
         "priority": None,
         "description": None,
         "from_json": None,
+        "json_output": False,
     }
     defaults.update(kwargs)
     return argparse.Namespace(**defaults)
@@ -364,6 +367,68 @@ class TestCreate:
         with pytest.raises(SystemExit):
             cmd_create(args)
 
+    def test_create_json_output_returns_valid_json_object(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_create --json prints a JSON object with the created crumb."""
+        args = _make_create_args(title="JSON create test", json_output=True)
+        cmd_create(args)
+
+        captured = capsys.readouterr()
+        parsed = json.loads(captured.out)
+        assert isinstance(parsed, dict), "Expected a JSON object"
+
+    def test_create_json_output_contains_required_fields(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_create --json output includes all required schema fields."""
+        args = _make_create_args(title="Field check", json_output=True)
+        cmd_create(args)
+
+        captured = capsys.readouterr()
+        parsed = json.loads(captured.out)
+        for field in ("id", "title", "type", "status", "priority",
+                      "description", "acceptance_criteria", "scope", "links", "notes"):
+            assert field in parsed, f"Required field '{field}' missing from create --json output"
+
+    def test_create_json_output_id_matches_created_record(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_create --json output 'id' field matches the record written to tasks.jsonl."""
+        from crumb import read_tasks
+        args = _make_create_args(title="ID match", json_output=True)
+        cmd_create(args)
+
+        captured = capsys.readouterr()
+        parsed = json.loads(captured.out)
+
+        tasks_file = crumbs_env / "tasks.jsonl"
+        tasks = read_tasks(tasks_file)
+        assert parsed["id"] == tasks[0]["id"]
+
+    def test_create_json_output_no_human_text(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_create --json does not print human-readable 'created <ID>' text."""
+        args = _make_create_args(title="Silent create", json_output=True)
+        cmd_create(args)
+
+        captured = capsys.readouterr()
+        # The human-readable confirmation is "created AF-1"; the JSON output also
+        # contains "created_at" as a field name, so check for the specific phrase.
+        assert "created AF-" not in captured.out
+
+    def test_create_without_json_still_human_readable(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_create without --json still prints human-readable output unchanged."""
+        args = _make_create_args(title="Human output", json_output=False)
+        cmd_create(args)
+
+        captured = capsys.readouterr()
+        assert "created AF-1" in captured.out
+        assert not captured.out.startswith("{"), "Output must not be JSON when --json absent"
+
 
 # ---------------------------------------------------------------------------
 # TestShow
@@ -602,6 +667,75 @@ class TestUpdate:
 
         captured = capsys.readouterr()
         assert "no changes" in captured.out
+
+    def test_update_json_output_returns_valid_json_object(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_update --json prints a JSON object with the updated crumb."""
+        _seed_task(crumbs_env, id="AF-1", status="open")
+        cmd_update(_make_update_args(id="AF-1", status="in_progress", json_output=True))
+
+        captured = capsys.readouterr()
+        parsed = json.loads(captured.out)
+        assert isinstance(parsed, dict), "Expected a JSON object"
+
+    def test_update_json_output_success_field_true(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_update --json output includes 'success: true' on a successful update."""
+        _seed_task(crumbs_env, id="AF-1", status="open")
+        cmd_update(_make_update_args(id="AF-1", status="in_progress", json_output=True))
+
+        captured = capsys.readouterr()
+        parsed = json.loads(captured.out)
+        assert parsed.get("success") is True
+
+    def test_update_json_output_contains_updated_status(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_update --json output reflects the updated field value."""
+        _seed_task(crumbs_env, id="AF-1", status="open")
+        cmd_update(_make_update_args(id="AF-1", status="in_progress", json_output=True))
+
+        captured = capsys.readouterr()
+        parsed = json.loads(captured.out)
+        assert parsed.get("status") == "in_progress"
+
+    def test_update_json_output_no_changes_success_false(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_update --json with no changes returns success=false and a message."""
+        _seed_task(crumbs_env, id="AF-1", status="open")
+        cmd_update(_make_update_args(id="AF-1", status="open", json_output=True))
+
+        captured = capsys.readouterr()
+        parsed = json.loads(captured.out)
+        assert parsed.get("success") is False
+        assert "message" in parsed
+
+    def test_update_without_json_still_human_readable(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_update without --json still prints human-readable output unchanged."""
+        _seed_task(crumbs_env, id="AF-1", status="open")
+        cmd_update(_make_update_args(id="AF-1", status="in_progress", json_output=False))
+
+        captured = capsys.readouterr()
+        assert "updated AF-1" in captured.out
+        assert not captured.out.startswith("{"), "Output must not be JSON when --json absent"
+
+    def test_update_json_output_contains_required_fields(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_update --json output includes all required crumb schema fields plus 'success'."""
+        _seed_task(crumbs_env, id="AF-1", status="open")
+        cmd_update(_make_update_args(id="AF-1", status="in_progress", json_output=True))
+
+        captured = capsys.readouterr()
+        parsed = json.loads(captured.out)
+        for field in ("success", "id", "title", "type", "status", "priority",
+                      "description", "acceptance_criteria", "scope", "links", "notes"):
+            assert field in parsed, f"Required field '{field}' missing from update --json output"
 
 
 # ---------------------------------------------------------------------------

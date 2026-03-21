@@ -336,6 +336,148 @@ class TestCLIIntegration:
                 f"Required field '{field}' missing from 'crumb show --json' output."
             )
 
+    def test_create_json_returns_valid_json_object(self, tmp_path: Path) -> None:
+        """``crumb create --title T --json`` exits 0 and outputs a JSON object.
+
+        Acceptance criterion 3: newly created crumb returned as JSON object.
+        """
+        _make_crumbs_env(tmp_path)
+
+        result = _run(["create", "--title", "JSON create", "--json"], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected exit code 0.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        parsed = json.loads(result.stdout)
+        assert isinstance(parsed, dict), (
+            f"Expected a JSON object (dict), got {type(parsed).__name__}."
+        )
+
+    def test_create_json_contains_required_fields(self, tmp_path: Path) -> None:
+        """``crumb create --json`` output contains all required schema fields."""
+        _make_crumbs_env(tmp_path)
+
+        result = _run(["create", "--title", "Field check", "--json"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        parsed = json.loads(result.stdout)
+        for field in ("id", "title", "type", "status", "priority",
+                      "description", "acceptance_criteria", "scope", "links", "notes"):
+            assert field in parsed, (
+                f"Required field '{field}' missing from 'crumb create --json' output."
+            )
+
+    def test_create_without_json_unchanged_human_output(self, tmp_path: Path) -> None:
+        """``crumb create`` without --json still prints human-readable 'created <ID>'."""
+        _make_crumbs_env(tmp_path)
+
+        result = _run(["create", "--title", "Human create"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        assert "created" in result.stdout.lower(), (
+            "Expected human-readable 'created ...' output when --json absent."
+        )
+        assert not result.stdout.strip().startswith("{"), (
+            "Output must not be JSON when --json flag is absent."
+        )
+
+    def test_update_json_returns_success_true_and_updated_record(
+        self, tmp_path: Path
+    ) -> None:
+        """``crumb update <id> --status=in_progress --json`` returns success=true and record.
+
+        Acceptance criterion 1: JSON object with updated crumb record and success field.
+        """
+        _make_crumbs_env(tmp_path)
+        create_result = _run(["create", "--title", "Update me"], cwd=tmp_path)
+        task_id = create_result.stdout.strip().splitlines()[0].split()[-1]
+
+        result = _run(["update", task_id, "--status=in_progress", "--json"], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected exit code 0.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        parsed = json.loads(result.stdout)
+        assert isinstance(parsed, dict), "Expected a JSON object"
+        assert parsed.get("success") is True
+        assert parsed.get("status") == "in_progress"
+        assert parsed.get("id") == task_id
+
+    def test_update_json_contains_required_fields(self, tmp_path: Path) -> None:
+        """``crumb update --json`` output contains success + all required crumb fields."""
+        _make_crumbs_env(tmp_path)
+        create_result = _run(["create", "--title", "Field check update"], cwd=tmp_path)
+        task_id = create_result.stdout.strip().splitlines()[0].split()[-1]
+
+        result = _run(["update", task_id, "--status=in_progress", "--json"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        parsed = json.loads(result.stdout)
+        for field in ("success", "id", "title", "type", "status", "priority",
+                      "description", "acceptance_criteria", "scope", "links", "notes"):
+            assert field in parsed, (
+                f"Required field '{field}' missing from 'crumb update --json' output."
+            )
+
+    def test_update_without_json_unchanged_human_output(self, tmp_path: Path) -> None:
+        """``crumb update`` without --json still prints human-readable 'updated <ID>'."""
+        _make_crumbs_env(tmp_path)
+        create_result = _run(["create", "--title", "Human update"], cwd=tmp_path)
+        task_id = create_result.stdout.strip().splitlines()[0].split()[-1]
+
+        result = _run(["update", task_id, "--status=in_progress"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        assert "updated" in result.stdout.lower(), (
+            "Expected human-readable 'updated ...' output when --json absent."
+        )
+        assert not result.stdout.strip().startswith("{"), (
+            "Output must not be JSON when --json flag is absent."
+        )
+
+    def test_doctor_json_returns_diagnostic_report(self, tmp_path: Path) -> None:
+        """``crumb doctor --json`` exits 0 and outputs a JSON diagnostic report.
+
+        Acceptance criterion 4: JSON object with diagnostic results.
+        """
+        _make_crumbs_env(tmp_path)
+        _run(["create", "--title", "Healthy task"], cwd=tmp_path)
+
+        result = _run(["doctor", "--json"], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected exit code 0.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        parsed = json.loads(result.stdout)
+        assert isinstance(parsed, dict), "Expected a JSON object"
+
+    def test_doctor_json_contains_required_fields(self, tmp_path: Path) -> None:
+        """``crumb doctor --json`` output contains all required diagnostic schema fields."""
+        _make_crumbs_env(tmp_path)
+        _run(["create", "--title", "Clean task"], cwd=tmp_path)
+
+        result = _run(["doctor", "--json"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        parsed = json.loads(result.stdout)
+        for field in ("ok", "error_count", "warning_count", "errors", "warnings", "fixes_applied"):
+            assert field in parsed, (
+                f"Required field '{field}' missing from 'crumb doctor --json' output."
+            )
+
+    def test_doctor_without_json_unchanged_human_output(self, tmp_path: Path) -> None:
+        """``crumb doctor`` without --json still prints human-readable output."""
+        _make_crumbs_env(tmp_path)
+        # Create a trail so doctor finds no issues (orphan warning is still OK to have)
+        _run(["create", "--title", "Healthy"], cwd=tmp_path)
+
+        result = _run(["doctor"], cwd=tmp_path)
+
+        # Should be human-readable — not a JSON object
+        assert not result.stdout.strip().startswith("{"), (
+            "Output must not be JSON when --json flag is absent."
+        )
+
 
 # ---------------------------------------------------------------------------
 # Prune integration helpers

@@ -26,9 +26,17 @@ from crumb import (
 # ---------------------------------------------------------------------------
 
 
-def _make_doctor_args(fix: bool = False) -> argparse.Namespace:
-    """Return a minimal Namespace that mimics what argparse produces for 'doctor'."""
-    return argparse.Namespace(fix=fix)
+def _make_doctor_args(fix: bool = False, json_output: bool = False) -> argparse.Namespace:
+    """Return a minimal Namespace that mimics what argparse produces for 'doctor'.
+
+    Args:
+        fix: Whether to enable auto-repair mode.
+        json_output: Whether to request JSON output mode.
+
+    Returns:
+        Namespace with ``fix`` and ``json_output`` set.
+    """
+    return argparse.Namespace(fix=fix, json_output=json_output)
 
 
 def _write_tasks(crumbs_dir: Path, records: List[Dict[str, Any]]) -> None:
@@ -394,3 +402,110 @@ class TestDoctor:
         # Malformed-line warning goes to stderr
         assert "malformed" in captured.err.lower()
         assert "removed" in captured.err.lower()
+
+    # --- --json output mode ---
+
+    def test_doctor_json_clean_state_returns_ok_true(
+        self,
+        crumbs_env: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """cmd_doctor --json on a clean file prints a JSON object with ok=true."""
+        _write_tasks(crumbs_env, [
+            {"id": "AF-T1", "type": "trail", "title": "T", "status": "open", "priority": "P2"},
+        ])
+
+        cmd_doctor(_make_doctor_args(json_output=True))
+
+        captured = capsys.readouterr()
+        parsed = json.loads(captured.out)
+        assert isinstance(parsed, dict), "Expected a JSON object"
+        assert parsed["ok"] is True
+
+    def test_doctor_json_output_contains_required_fields(
+        self,
+        crumbs_env: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """cmd_doctor --json output contains all required schema fields."""
+        _write_tasks(crumbs_env, [
+            {"id": "AF-T1", "type": "trail", "title": "T", "status": "open", "priority": "P2"},
+        ])
+
+        cmd_doctor(_make_doctor_args(json_output=True))
+
+        captured = capsys.readouterr()
+        parsed = json.loads(captured.out)
+        for field in ("ok", "error_count", "warning_count", "errors", "warnings", "fixes_applied"):
+            assert field in parsed, f"Required field '{field}' missing from doctor --json output"
+
+    def test_doctor_json_with_errors_ok_false_and_exits_1(
+        self,
+        crumbs_env: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """cmd_doctor --json with errors sets ok=false and exits 1."""
+        _write_tasks(crumbs_env, [
+            {"id": "AF-1", "type": "task", "title": "One", "status": "open", "priority": "P2"},
+            {"id": "AF-1", "type": "task", "title": "Duplicate", "status": "open", "priority": "P2"},
+        ])
+
+        with pytest.raises(SystemExit) as exc_info:
+            cmd_doctor(_make_doctor_args(json_output=True))
+
+        assert exc_info.value.code == 1
+        captured = capsys.readouterr()
+        parsed = json.loads(captured.out)
+        assert parsed["ok"] is False
+        assert parsed["error_count"] > 0
+        assert len(parsed["errors"]) > 0
+
+    def test_doctor_json_with_warnings_ok_true(
+        self,
+        crumbs_env: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """cmd_doctor --json with warnings-only sets ok=true (warnings don't set exit 1)."""
+        _write_tasks(crumbs_env, [
+            {"id": "AF-1", "type": "task", "title": "Orphan", "status": "open", "priority": "P2"},
+        ])
+
+        # Orphan crumb produces a warning, not an error — should not raise SystemExit
+        cmd_doctor(_make_doctor_args(json_output=True))
+
+        captured = capsys.readouterr()
+        parsed = json.loads(captured.out)
+        assert parsed["ok"] is True
+        assert parsed["warning_count"] > 0
+        assert len(parsed["warnings"]) > 0
+
+    def test_doctor_json_no_stderr_output(
+        self,
+        crumbs_env: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """cmd_doctor --json does not write error/warning messages to stderr."""
+        _write_tasks(crumbs_env, [
+            {"id": "AF-1", "type": "task", "title": "Orphan", "status": "open", "priority": "P2"},
+        ])
+
+        cmd_doctor(_make_doctor_args(json_output=True))
+
+        captured = capsys.readouterr()
+        assert captured.err == "", "Expected no stderr output when --json is given"
+
+    def test_doctor_without_json_still_human_readable(
+        self,
+        crumbs_env: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """cmd_doctor without --json still prints human-readable output unchanged."""
+        _write_tasks(crumbs_env, [
+            {"id": "AF-T1", "type": "trail", "title": "T", "status": "open", "priority": "P2"},
+        ])
+
+        cmd_doctor(_make_doctor_args(json_output=False))
+
+        captured = capsys.readouterr()
+        assert "No issues found" in captured.out
+        assert not captured.out.startswith("{"), "Output must not be JSON when --json absent"
