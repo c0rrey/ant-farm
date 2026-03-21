@@ -10,14 +10,14 @@ The agent-facing text starts below the `---` separator. Do NOT include this inst
 Read term definitions from `orchestration/reference/terms.md` for `{TASK_ID}`, `{TASK_SUFFIX}`, and `{SESSION_DIR}`. Scribe-specific placeholders used in this template:
 - `{SESSION_ID}` — short session identifier (e.g., `abc123` — the hex suffix of the session dir)
 - `{COMMIT_RANGE}` — git range for the session (e.g., `abc1234..HEAD`)
-- `{OPEN_BEAD_IDS}` — space-separated list of crumb IDs still open from the session (e.g., `ant-farm-9oa ant-farm-x3b`)
+- `{OPEN_CRUMB_IDS}` — space-separated list of crumb IDs still open from the session (e.g., `ant-farm-9oa ant-farm-x3b`)
 - `{CHANGELOG_PATH}` — absolute or repo-relative path to CHANGELOG.md (e.g., `CHANGELOG.md`)
 
 Placeholders:
 - {SESSION_DIR}: full path to session artifact directory
 - {SESSION_ID}: short hex session identifier
 - {COMMIT_RANGE}: git commit range covering the session
-- {OPEN_BEAD_IDS}: space-separated open crumb IDs (pass empty string if none)
+- {OPEN_CRUMB_IDS}: space-separated open crumb IDs (pass empty string if none)
 - {CHANGELOG_PATH}: path to the project CHANGELOG.md
 
 ## Template (send everything below this line)
@@ -43,13 +43,13 @@ Read the following sources. Take notes as you go — you will synthesize them in
 | Progress log | `{SESSION_DIR}/progress.log` | Timeline of milestones; use first and last timestamps to derive duration |
 | Files changed | `git diff --stat {COMMIT_RANGE}` | Which files actually changed |
 | Commit messages | `git log --oneline {COMMIT_RANGE}` | What was committed |
-| Open crumbs | For each ID in `{OPEN_BEAD_IDS}`, run `crumb show <id>` | Context on what remains open |
+| Open crumbs | For each ID in `{OPEN_CRUMB_IDS}`, run `crumb show <id>` | Context on what remains open |
 
 **Duration calculation**: Read the first line and last line of `{SESSION_DIR}/progress.log`. Each line has the format `YYYY-MM-DDTHH:MM:SS|STEP_KEY|...`. Subtract first timestamp from last timestamp to get elapsed time. Express as `~Xh Ym` (round to nearest 5 minutes).
 
 **Fallback — zero agent summaries**: If the `{SESSION_DIR}/summaries/*.md` glob returns no files, note "No agent summaries available." in your working notes and derive Work Completed entirely from `git log --oneline {COMMIT_RANGE}` and the briefing.md task list. Do not leave the Work Completed section blank; reconstruct what you can from commits and briefing context.
 
-If `{OPEN_BEAD_IDS}` is empty, skip the `crumb show` calls and write "None" in the Open Issues section.
+If `{OPEN_CRUMB_IDS}` is empty, skip the `crumb show` calls and write "None" in the Open Issues section.
 
 ### Step 2 — Write exec summary
 
@@ -96,12 +96,12 @@ Write `{SESSION_DIR}/exec-summary.md` with exactly the following structure. Do n
 
 **Filling in the metrics table**: Count actual items from your notes.
 - "Tasks completed" = tasks that appear in summaries/*.md with a commit hash recorded.
-- "Tasks opened (not completed)" = tasks in briefing.md not present in summaries/, or crumbs in {OPEN_BEAD_IDS}.
+- "Tasks opened (not completed)" = tasks in briefing.md not present in summaries/, or crumbs in {OPEN_CRUMB_IDS}.
 - "Files changed" = count of distinct file paths in `git diff --stat` output.
 - "Commits" = count of lines in `git log --oneline` output.
 - "Review rounds" = count of round rows in review-consolidated-*.md files.
 - "P1/P2 findings fixed" = count of P1/P2 findings with "auto-fix" or "fixed" decision.
-- "Open issues remaining" = count of IDs in {OPEN_BEAD_IDS}.
+- "Open issues remaining" = count of IDs in {OPEN_CRUMB_IDS}.
 
 **If a section has no content**: Write a single line stating "None this session." — do not omit the section heading.
 
