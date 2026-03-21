@@ -61,7 +61,7 @@ Your workflow:
 6. For each merge, document WHY findings share a root cause
 7. **Cross-session dedup**: Before writing the summary or filing crumbs, check for existing open crumbs that already cover your root causes:
    ```bash
-   if ! crumb list --open --short > /tmp/open-crumbs-$$.txt 2>&1; then
+   if ! crumb list --open --short > /tmp/open-crumbs-$$.txt 2>/dev/null; then
      echo "ERROR: crumb list failed (file error or crumb error). Aborting crumb filing to prevent duplicates."
      mkdir -p "$(dirname "{CONSOLIDATED_OUTPUT_PATH}")" || { echo "ERROR: failed to create output directory for {CONSOLIDATED_OUTPUT_PATH}. Aborting."; exit 1; }
      cat > "{CONSOLIDATED_OUTPUT_PATH}" << 'EOF'
