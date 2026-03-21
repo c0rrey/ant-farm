@@ -426,7 +426,7 @@ if [ -d "$REPO_ROOT/orchestration" ]; then
 
     # Walk the orchestration tree
     find_output=$(mktemp)
-    if ! find "$REPO_ROOT/orchestration" -type f -print0 > "$find_output" 2>&1; then
+    if ! find "$REPO_ROOT/orchestration" -type f -print0 > "$find_output" 2>/dev/null; then
         warn "find failed while walking orchestration/: $(cat "$find_output")"
         rm -f "$find_output"
     else
