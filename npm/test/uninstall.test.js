@@ -181,9 +181,9 @@ test('partial uninstall: skips files not on disk, removes those that are', async
     const result = await runUninstall(claudeDir);
 
     // The manually-deleted file should appear in skipped
-    const skippedAbsPaths = result.skipped.map(p => path.relative(claudeDir, p));
+    const skippedRelPaths = result.skipped.map(p => path.relative(claudeDir, p));
     assert.ok(
-      skippedAbsPaths.includes(deletedRel),
+      skippedRelPaths.includes(deletedRel),
       'Pre-deleted file should appear in skipped list'
     );
 
