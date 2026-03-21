@@ -7,7 +7,7 @@ keeping task metadata and conflict analysis out of the Queen's context window.
 
 ## Term Definitions
 
-Read term definitions from `orchestration/reference/terms.md` for canonical definitions of `{TASK_ID}`, `{TASK_SUFFIX}`, and `{SESSION_DIR}`. For detailed extraction rules and examples, see `~/.claude/orchestration/reference/dependency-analysis.md` (Term Definitions section).
+Read term definitions from `~/.claude/orchestration/reference/terms.md` for canonical definitions of `{TASK_ID}`, `{TASK_SUFFIX}`, and `{SESSION_DIR}`. For detailed extraction rules and examples, see `~/.claude/orchestration/reference/dependency-analysis.md` (Term Definitions section).
 
 ---
 
@@ -47,7 +47,7 @@ Then (skip for `ready` mode — tasks are already unblocked):
 
 ## Step 2.5: Discover Available Agents
 
-Read `orchestration/agent-catalog.md` once to get the full agent list.
+Read `~/.claude/orchestration/agent-catalog.md` once to get the full agent list.
 Extract `Agent Name`, `Description`, and `File Path` columns from the catalog table.
 **Also track the file path for each agent** — you will use these paths only on tie-breaking (Step 3, below).
 
