@@ -100,7 +100,32 @@ Task(
 echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_SPAWNED|wave=1|mode=lite|task=${TASK_ID}|pre_spawn_check=pass|next_step=STEP_3_VERIFY" >> ${SESSION_DIR}/progress.log
 ```
 
-**Step 3:** Implementation — spawn the implementer agent (Crumb Gatherer).
+**Step 3:** Implementation — write the scope sidecar, then spawn the implementer agent (Crumb Gatherer).
+
+**Write .ant-farm-scope.json atomically (temp file + rename) before spawning:**
+
+```bash
+# Build the allowed_files JSON array from the crumb's affected files list
+# Each entry must be a quoted string with optional line range, e.g. "src/foo.py:10-50"
+SCOPE_JSON=$(python3 -c "
+import json, sys
+files = sys.argv[1:]
+print(json.dumps({'crumb_id': '${TASK_ID}', 'allowed_files': files}))
+" ${AFFECTED_FILES_LIST})
+
+# Write atomically: temp file in same directory, then rename
+python3 -c "
+import json, os, sys
+data = json.loads(sys.argv[1])
+tmp = '.ant-farm-scope.json.tmp'
+with open(tmp, 'w') as f:
+    json.dump(data, f, indent=2)
+    f.write('\n')
+os.replace(tmp, '.ant-farm-scope.json')
+" "${SCOPE_JSON}"
+```
+
+> **AFFECTED_FILES_LIST** is the space-separated list of `file:line-range` strings from the crumb's `Scope.files` field (populated in Step 1 when you ran `crumb show`). Construct this list from the crumb's affected files before running the snippet above.
 
 ```
 Task(
@@ -141,10 +166,12 @@ Task(
 echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_VERIFIED|wave=1|mode=lite|claims_vs_code=pass|tasks_verified=${TASK_ID}|commits=<hash>|next_step=STEP_5_CLOSE" >> ${SESSION_DIR}/progress.log
 ```
 
-**Step 5:** Close — update crumb status and push.
+**Step 5:** Close — update crumb status, clean up sidecar, and push.
 
 ```bash
+crumb update <TASK_ID> --status=closed
 crumb close <TASK_ID>
+rm -f .ant-farm-scope.json
 git pull --rebase
 git push
 git status   # MUST show "up to date with origin"

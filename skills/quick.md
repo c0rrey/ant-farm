@@ -125,7 +125,9 @@ Read `~/.claude/orchestration/RULES-lite.md` FIRST and ALONE — no parallel too
 
 Pass `TASK_ID` explicitly into the RULES-lite.md workflow at Step 1 (Task selection — skip the selection sub-step since TASK_ID is already determined).
 
-All orchestration rules from `~/.claude/orchestration/RULES-lite.md` apply without exception: pre-spawn-check gate, claims-vs-code gate, retry limits, and progress log format.
+**Carry the affected files list into RULES-lite.md Step 3:** When you ran `crumb show <TASK_ID>` in Step 1, the crumb's `Scope.files` field contains the list of affected files (with optional line ranges). Store this as `AFFECTED_FILES_LIST` (space-separated strings, e.g., `"src/foo.py:10-50" "src/bar.py"`). RULES-lite.md Step 3 uses `AFFECTED_FILES_LIST` to write `.ant-farm-scope.json` before spawning the implementer. If the crumb has no `Scope.files`, set `AFFECTED_FILES_LIST=""` and the sidecar will be written with an empty `allowed_files` array.
+
+All orchestration rules from `~/.claude/orchestration/RULES-lite.md` apply without exception: pre-spawn-check gate, claims-vs-code gate, retry limits, progress log format, sidecar write at spawn, and sidecar cleanup at close.
 
 ## Error Reference
 

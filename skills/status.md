@@ -71,7 +71,7 @@ If all commands fail or return empty output, set all counts to `0` and set `HAS_
 
 ## Step 3 — Retrieve Last Session Summary
 
-Find the most recent exec-summary file under `.crumbs/history/`.
+Find the most recent exec-summary file under `.crumbs/history/` (full-mode sessions).
 
 ```bash
 ls -t .crumbs/history/exec-summary-*.md 2>/dev/null | head -1
@@ -88,6 +88,21 @@ head -20 "${LAST_SUMMARY_PATH}"
 Store as `LAST_SUMMARY_EXCERPT`.
 
 Extract the session date from the filename (e.g., `exec-summary-20260313-021748.md` → `2026-03-13 02:17`). Store as `LAST_SESSION_DATE`.
+
+**Also scan for lite-mode sessions:**
+
+```bash
+grep -rl "mode=lite" .crumbs/sessions/*/progress.log 2>/dev/null | sort -r | head -5
+```
+
+For each matching `progress.log`, extract the most recent `SESSION_COMPLETE` or `WAVE_VERIFIED` entry (whichever is latest) and store as a lite-mode session record:
+
+- `LITE_SESSION_DIR` — the session directory (e.g., `.crumbs/sessions/_session-20260313-120000`)
+- `LITE_TASK_ID` — value of the `task=` field in the `SESSION_COMPLETE` entry (or `tasks_verified=` from `WAVE_VERIFIED`)
+- `LITE_SESSION_DATE` — timestamp from the matched entry, formatted as `YYYY-MM-DD HH:MM`
+- `LITE_STATUS` — `complete` if a `SESSION_COMPLETE` entry exists, `in_progress` if only `WAVE_SPAWNED` or `WAVE_VERIFIED` exist
+
+Store as a list `LITE_SESSIONS`. If no lite-mode sessions are found, set `LITE_SESSIONS=[]` and `HAS_LITE_SESSIONS=false`. Otherwise set `HAS_LITE_SESSIONS=true`.
 
 ## Step 4 — Render Dashboard
 
@@ -162,11 +177,36 @@ If `HAS_SESSION=false`:
 ───────────────────────────────────────────
 ```
 
+After the full-mode last session block, render lite-mode sessions if `HAS_LITE_SESSIONS=true`:
+
+```
+───────────────────────────────────────────
+LITE MODE SESSIONS  (last 5)
+```
+
+For each entry in `LITE_SESSIONS` (most-recent first):
+
+```
+  <LITE_SESSION_DATE>  <LITE_TASK_ID>  [mode=lite]  <LITE_STATUS>
+```
+
+Example:
+
+```
+───────────────────────────────────────────
+LITE MODE SESSIONS  (last 5)
+  2026-03-13 12:00  AF-42   [mode=lite]  complete
+  2026-03-13 11:45  AF-39   [mode=lite]  in_progress
+```
+
+If `HAS_LITE_SESSIONS=false`, omit the `LITE MODE SESSIONS` section entirely.
+
 ### Partial-data edge cases
 
 - If `HAS_CRUMBS=false` but trails exist: show trails, show `CRUMBS` section with all zeros, show session section normally.
 - If `HAS_SESSION=false` but crumbs exist: show trails and crumbs normally, show `(no sessions completed yet)` in last session section.
 - If `HAS_TRAILS=false` but crumbs exist: show `(no trails)` in trails section, show crumb counts normally.
+- If `HAS_LITE_SESSIONS=false`: omit the `LITE MODE SESSIONS` section — do not render a placeholder.
 
 ## Error Reference
 
@@ -179,3 +219,5 @@ If `HAS_SESSION=false`:
 | `crumb list` fails for any status | Treat count as `0` for that status |
 | No exec-summary files in `.crumbs/history/` | Set `HAS_SESSION=false`, render `(no sessions completed yet)` |
 | exec-summary file found but unreadable | Set `HAS_SESSION=false`, render `(no sessions completed yet)` |
+| `grep` for lite-mode sessions fails or finds none | Set `HAS_LITE_SESSIONS=false`, omit `LITE MODE SESSIONS` section |
+| Lite-mode `progress.log` found but missing `SESSION_COMPLETE` | Infer status from latest entry (`WAVE_SPAWNED` → `in_progress`, `WAVE_VERIFIED` → `in_progress`) |
