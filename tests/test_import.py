@@ -21,6 +21,7 @@ from crumb import (
     _convert_beads_record,
     _resolve_beads_epic_refs,
     cmd_import,
+    cmd_update,
     read_tasks,
     read_config,
 )
@@ -586,3 +587,120 @@ class TestImportBeads:
         config = read_config()
         # AF-T1 was generated; next_trail_id must be at least 2
         assert config["next_trail_id"] >= 2
+
+
+# ---------------------------------------------------------------------------
+# TestFromJsonNoop
+# ---------------------------------------------------------------------------
+
+
+def _make_update_args_import(**kwargs: Any) -> argparse.Namespace:
+    """Return a minimal Namespace for cmd_update with sane defaults."""
+    defaults: Dict[str, Any] = {
+        "id": None,
+        "status": None,
+        "note": None,
+        "title": None,
+        "priority": None,
+        "description": None,
+        "from_json": None,
+        "json_output": False,
+    }
+    defaults.update(kwargs)
+    return argparse.Namespace(**defaults)
+
+
+class TestFromJsonNoop:
+    """Tests verifying --from-json no-op behaviour when values are identical."""
+
+    def test_from_json_identical_scalar_produces_no_changes(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """--from-json with the same scalar value must not print 'updated'.
+
+        When every field supplied via --from-json already matches the current
+        value in the crumb record, cmd_update must report 'no changes' rather
+        than 'updated <id>'.
+        """
+        # Seed a task with a known title and description.
+        tasks_path = crumbs_env / "tasks.jsonl"
+        record: Dict[str, Any] = {
+            "id": "AF-1",
+            "type": "task",
+            "title": "Existing title",
+            "description": "Existing description",
+            "status": "open",
+            "priority": "P2",
+            "created_at": "2026-01-01T00:00:00Z",
+            "updated_at": "2026-01-01T00:00:00Z",
+        }
+        tasks_path.write_text(json.dumps(record) + "\n", encoding="utf-8")
+
+        # Pass identical values via --from-json.
+        same_payload = json.dumps(
+            {"title": "Existing title", "description": "Existing description"}
+        )
+        cmd_update(_make_update_args_import(id="AF-1", from_json=same_payload))
+
+        captured = capsys.readouterr()
+        assert "updated" not in captured.out, (
+            "No-op --from-json must not produce 'updated' output"
+        )
+        assert "no changes" in captured.out
+
+    def test_from_json_changed_scalar_produces_updated(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """--from-json with an actually different value must print 'updated <id>'.
+
+        This is the positive control: ensures that the changed-flag logic still
+        fires when a field value genuinely differs from the stored record.
+        """
+        tasks_path = crumbs_env / "tasks.jsonl"
+        record: Dict[str, Any] = {
+            "id": "AF-1",
+            "type": "task",
+            "title": "Old title",
+            "status": "open",
+            "priority": "P2",
+            "created_at": "2026-01-01T00:00:00Z",
+            "updated_at": "2026-01-01T00:00:00Z",
+        }
+        tasks_path.write_text(json.dumps(record) + "\n", encoding="utf-8")
+
+        new_payload = json.dumps({"title": "New title"})
+        cmd_update(_make_update_args_import(id="AF-1", from_json=new_payload))
+
+        captured = capsys.readouterr()
+        assert "updated AF-1" in captured.out
+
+    def test_from_json_identical_dict_subfield_produces_no_changes(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """--from-json with an identical nested dict value must not print 'updated'.
+
+        The dict-merge path in cmd_update must also guard against no-op writes
+        when all incoming sub-keys already match the existing sub-values.
+        """
+        tasks_path = crumbs_env / "tasks.jsonl"
+        record: Dict[str, Any] = {
+            "id": "AF-1",
+            "type": "task",
+            "title": "Task",
+            "status": "open",
+            "priority": "P2",
+            "scope": {"agent_type": "python-pro", "files": ["crumb.py"]},
+            "created_at": "2026-01-01T00:00:00Z",
+            "updated_at": "2026-01-01T00:00:00Z",
+        }
+        tasks_path.write_text(json.dumps(record) + "\n", encoding="utf-8")
+
+        # Pass the same nested dict value — no real change.
+        same_payload = json.dumps({"scope": {"agent_type": "python-pro"}})
+        cmd_update(_make_update_args_import(id="AF-1", from_json=same_payload))
+
+        captured = capsys.readouterr()
+        assert "updated" not in captured.out, (
+            "Identical nested-dict --from-json must not produce 'updated' output"
+        )
+        assert "no changes" in captured.out

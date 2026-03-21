@@ -28,6 +28,7 @@ from crumb import (
     cmd_update,
     read_config,
     read_tasks,
+    write_tasks,
 )
 
 
@@ -952,3 +953,49 @@ class TestReopen:
         tasks = read_tasks(tasks_file)
         # updated_at should be set to a new timestamp (not the original)
         assert tasks[0]["updated_at"] != original_updated_at
+
+
+# ---------------------------------------------------------------------------
+# TestWriteTasksCleanup
+# ---------------------------------------------------------------------------
+
+
+class TestWriteTasksCleanup:
+    """Tests for write_tasks temp-file cleanup on failure."""
+
+    def test_write_tasks_cleans_up_tmp_on_json_serialization_error(
+        self, tmp_path: Path
+    ) -> None:
+        """write_tasks removes .jsonl.tmp when json.dumps raises a TypeError.
+
+        A record containing a non-serialisable value (e.g. a set) causes
+        json.dumps to raise TypeError mid-write.  The temp file must not
+        remain on disk after the exception propagates.
+        """
+        tasks_path = tmp_path / "tasks.jsonl"
+        tasks_path.write_text("", encoding="utf-8")
+        tmp_path_file = tasks_path.with_suffix(".jsonl.tmp")
+
+        # set is not JSON-serialisable — json.dumps will raise TypeError.
+        bad_records = [{"id": "AF-1", "bad_field": {1, 2, 3}}]
+
+        with pytest.raises((TypeError, SystemExit)):
+            write_tasks(tasks_path, bad_records)
+
+        assert not tmp_path_file.exists(), (
+            ".jsonl.tmp must be removed after a json.dumps failure"
+        )
+
+    def test_write_tasks_tmp_absent_after_successful_write(
+        self, tmp_path: Path
+    ) -> None:
+        """After a successful write_tasks call, no .jsonl.tmp file is left behind."""
+        tasks_path = tmp_path / "tasks.jsonl"
+        tasks_path.write_text("", encoding="utf-8")
+        tmp_path_file = tasks_path.with_suffix(".jsonl.tmp")
+
+        write_tasks(tasks_path, [{"id": "AF-1", "title": "OK"}])
+
+        assert not tmp_path_file.exists(), (
+            ".jsonl.tmp must not remain after a successful write"
+        )

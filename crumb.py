@@ -281,12 +281,12 @@ def write_tasks(path: Path, records: List[Dict[str, Any]]) -> None:
     """
     tmp_path = path.with_suffix(".jsonl.tmp")
     try:
-        with open(tmp_path, "w", encoding="utf-8") as fh:
-            for record in records:
-                fh.write(json.dumps(record, separators=(",", ":")) + "\n")
         try:
+            with open(tmp_path, "w", encoding="utf-8") as fh:
+                for record in records:
+                    fh.write(json.dumps(record, separators=(",", ":")) + "\n")
             os.rename(str(tmp_path), str(path))
-        except OSError:
+        except:  # noqa: E722
             tmp_path.unlink(missing_ok=True)
             raise
     except OSError as exc:
@@ -1134,10 +1134,17 @@ def cmd_update(args: argparse.Namespace) -> None:
                 if key in protected:
                     continue
                 if isinstance(value, dict) and isinstance(crumb.get(key), dict):
-                    crumb[key].update(value)
+                    # Deep-merge: only flag changed when the incoming dict
+                    # adds or overwrites at least one key with a different value.
+                    existing_sub: Dict[str, Any] = crumb[key]
+                    for sub_key, sub_val in value.items():
+                        if existing_sub.get(sub_key) != sub_val:
+                            existing_sub[sub_key] = sub_val
+                            changed = True
                 else:
-                    crumb[key] = value
-            changed = True
+                    if crumb.get(key) != value:
+                        crumb[key] = value
+                        changed = True
 
         # --- note append ---
         if args.note is not None:
