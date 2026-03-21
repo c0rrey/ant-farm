@@ -31,7 +31,7 @@ Compare the actual changes to the summary doc's "Files changed" and "Implementat
 ## Check 2: Acceptance Criteria Spot-Check
 Run `crumb show {TASK_ID}` to get the task's acceptance criteria.
 
-**GUARD: crumb show Failure Handling (INFRASTRUCTURE FAILURE)**
+**GUARD: crumb show Failure Handling (INFRASTRUCTURE FAILURE)** _(definition: `orchestration/reference/terms.md` Failure Taxonomy)_
 If `crumb show {TASK_ID}` fails (task not found, unreadable, or crumb command error):
 - Record the infrastructure failure: "{TASK_ID} — crumb show failed: {error details}"
 - Write a note in your review report: "Could not retrieve acceptance criteria for {TASK_ID} via `crumb show`: {error}. Proceeding with criteria from summary doc only."

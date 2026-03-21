@@ -25,6 +25,7 @@ For each task ID in the input list:
 
 1. Read `{session-dir}/task-metadata/{TASK_SUFFIX}.md`.
    **FAIL-FAST CHECK**: Halt and report for any of these conditions:
+   _(Failure label definitions — INFRASTRUCTURE FAILURE vs SUBSTANCE FAILURE — see `orchestration/reference/terms.md` Failure Taxonomy section.)_
 
    **Condition 1 — File missing or Scout error (INFRASTRUCTURE FAILURE)**: File is absent, unreadable, or contains `**Status**: error`.
    - **Failure artifact**: Write to `{session-dir}/prompts/task-{TASK_SUFFIX}-FAILED.md`:

@@ -51,7 +51,7 @@ Read the exec summary first. Then run all six checks below.
 1. Read the exec summary's "Open Issues" section and extract every crumb ID listed as open.
 2. Run `crumb show <id>` for each listed crumb to verify it is actually open.
 
-**GUARD: crumb show Failure Handling (INFRASTRUCTURE FAILURE)**
+**GUARD: crumb show Failure Handling (INFRASTRUCTURE FAILURE)** _(definition: `orchestration/reference/terms.md` Failure Taxonomy)_
 If `crumb show <id>` fails (task not found, unreadable, or crumb command error):
 - Record the infrastructure failure: "`<id>` — crumb show failed: {error details}"
 - Write a note in your verification report: "Could not verify status of `<id>` via `crumb show`: {error}. Skipping this crumb's status check."

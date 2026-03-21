@@ -69,7 +69,7 @@ Report each missing or empty field as: "Crumb `{crumb-id}`: missing or empty fie
    - Represent the cycle as: "Circular dependency: `{crumb-id-A}` → `{crumb-id-B}` → ... → `{crumb-id-A}`."
 4. Report each non-existent ID as: "Crumb `{crumb-id}`: `blocked_by` references `{missing-id}` which does not exist."
 
-**GUARD: crumb show Failure Handling (INFRASTRUCTURE FAILURE)**
+**GUARD: crumb show Failure Handling (INFRASTRUCTURE FAILURE)** _(definition: `orchestration/reference/terms.md` Failure Taxonomy)_
 If `crumb show <id>` fails (ID not found, unreadable, or crumb command error):
 - Record the failure: "`<id>` — crumb show failed: {error details}"
 - Write a note in your verification report: "Could not verify `<id>` via `crumb show`: {error}. Skipping dependency check for this ID."

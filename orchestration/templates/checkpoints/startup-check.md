@@ -38,7 +38,7 @@ For each task in the strategy:
 2. Compare the Scout's reported affected files (from briefing.md) against the crumb's actual affected files.
 3. Report each mismatch as: "Task {TASK_ID}: Scout lists `<file>` but crumb does not — OR — crumb lists `<file>` but Scout omits it."
 
-**GUARD: crumb show Failure Handling (INFRASTRUCTURE FAILURE)**
+**GUARD: crumb show Failure Handling (INFRASTRUCTURE FAILURE)** _(definition: `orchestration/reference/terms.md` Failure Taxonomy)_
 If `crumb show {TASK_ID}` fails (task not found, unreadable, or crumb command error):
 - Record the failure: "{TASK_ID} — crumb show failed: {error details}"
 - Write a note in your verification report: "Could not verify file list for {TASK_ID} via `crumb show`: {error}. Skipping this task's file list check."
