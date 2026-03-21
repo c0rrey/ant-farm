@@ -1,5 +1,53 @@
 # Changelog
 
+## 2026-03-21 — Session 135712 (AF-T56: Stale Agent Name Rename Campaign)
+
+### Summary
+
+Completed epic AF-T56, a mechanical find-and-replace campaign propagating the AF-225 agent renames (Pest Control → Checkpoint Auditor, Big Head → Review Consolidator, Nitpicker → Reviewer, Surveyor → Spec Writer, Forager → Researcher, Architect → Task Decomposer, CCO → pre-spawn-check, fix-dp → fix-cg) across all orchestration files. 20 implementation tasks ran across 2 waves, followed by 2 review rounds that caught and fixed 6 P1/P2 gaps. Session produced 23 commits touching 31 files and closed all 26 tasks.
+
+### Implementation (Waves 1–2)
+
+- **AF-285**: fix: update agent body text to canonical new names — 9 agent files (checkpoint-auditor, prompt-composer, review-consolidator, 4 reviewers, spec-writer, task-decomposer) (`5db7dbc`)
+- **AF-286**: fix: replace stale Pest Control/Nitpicker names in checkpoint templates and skeleton — checkpoint templates and review-consolidator-skeleton.md (`4e5f4c8`)
+- **AF-287**: fix: replace stale Pest Control/Big Head/Nitpicker names in RULES.md annotations (`0cbc88a`)
+- **AF-288**: fix: replace stale Nitpicker/Architect names in RULES-decompose.md table cells (`5381bc2`)
+- **AF-289**: fix: replace stale agent names in README.md and CONTRIBUTING.md (`fb30a44`)
+- **AF-290**: fix: replace stale Nitpicker/Architect names in GLOSSARY.md checkpoint table (`64793a6`)
+- **AF-291**: fix: replace stale agent names in SESSION_PLAN_TEMPLATE.md Quality Review section (`b921d88`)
+- **AF-292**: fix: global find-and-replace of stale display names in reviews.md (`9d79ce3`)
+- **AF-293**: fix: regenerate agent-catalog.md to replace Nitpicker with Reviewer team (`aefdeb6`)
+- **AF-294**: fix: replace stale Nitpicker terminology in setup.sh preflight warning (`cd484ac`)
+- **AF-198**: fix: rename fix-dp/fix DPs to fix-cg/fix CGs after Crumb Gatherer rename (`a7b2b1a`)
+- **AF-308**: fix: redirect stderr to /dev/null for crumb list in cross-session dedup (`62f9c93`)
+- **AF-310**: fix: split Step 10 into send-and-end-turn and reply-handling phases (`9f14d6e`)
+- **AF-314**: verify: big-head-skeleton.md rename AC already satisfied — no commit needed
+- **AF-298**: verify: RULES-review.md DP abbreviation expansion satisfied by AF-198 — no commit needed
+- **ant-farm-2sjc**: fix: add [OUT-OF-SCOPE] severity enforcement to Review Consolidator logic (`1035613`)
+- **ant-farm-fvui**: fix: rename 'Fix handoff' label to 'Review complete' in review-consolidator-skeleton.md (`9dea576`)
+- **ant-farm-uul5**: fix: clarify 'subsequent turns' in Review Consolidator retry protocol (`c8794d0`)
+- **ant-farm-ldha**: fix: replace nonexistent P4 severity with P1 vs P3 example in review-consolidator (`5813d72`)
+- **ant-farm-retj**: verify: Cross-Review Messaging already in correct position — no commit needed
+
+### Review Fixes (Round 1)
+
+- **AF-351**: fix: rename fix-dp to fix-cg in reviews.md:L1094–L1157 (`0398d39`)
+- **AF-352**: fix: rename Pest Control → Checkpoint Auditor in tdv.md (all 5 occurrences) (`3b03dd5`)
+- **AF-353**: fix: update stale Nitpicker/Big Head names in GLOSSARY.md L27 and L46 (`aa4d9d1`)
+- **AF-354**: fix: rename old role names to canonical names in RULES-decompose.md body text (`7647d0c`)
+- **AF-355**: fix: update stale skeleton template filenames in CONTRIBUTING.md, README.md, PLACEHOLDER_CONVENTIONS.md (`46971a6`)
+- **AF-356**: fix: add source provenance to code-reviewer.md missing warning in setup.sh (`4a5b49b`)
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 29 files, 20 tasks | 2 | 4 | 12 | PASS WITH ISSUES |
+| 2 | 6 fix tasks | 0 | 0 | 1 | PASS |
+
+19 root causes consolidated in Round 1 (24 raw → 19 after dedup; 1 skipped as cross-session duplicate). Round 2 confirmed all P1/P2 fixes landed cleanly. 13 P3 items deferred to Future Work trail (12 from Round 1 + AF-369 from Round 2).
+
+
 ## 2026-03-21 — Session 20260321-102858 (Installer, crumb.py, and orchestration docs quality sweep)
 
 ### Summary
