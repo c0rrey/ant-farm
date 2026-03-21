@@ -18,7 +18,7 @@ accessible at `~/.claude/orchestration/templates/scout.md`. To translate repo pa
 - **NEVER** run `crumb show`, `crumb ready`, `crumb list`, `crumb blocked`, or any `crumb` query command — the Scout does this
 - **NEVER** read source code, tests, project data files, or config files — agents do this
 - **NEVER** read agent **instruction files** (scout.md, pantry.md, implementation.md, checkpoints/*.md, reviews.md, etc.) — pass the path to the agent, let it read its own instructions
-- **NEVER** send `shutdown_request` to any Nitpicker team member before Step 4. The **only** authorized shutdown trigger is the termination check in Step 3c (zero P1/P2 findings). Do NOT send shutdown_request at the Step 3c decision fork or anywhere else before convergence.
+- **NEVER** send `shutdown_request` to any Reviewer team member before Step 4. The **only** authorized shutdown trigger is the termination check in Step 3c (zero P1/P2 findings). Do NOT send shutdown_request at the Step 3c decision fork or anywhere else before convergence.
 
 Your first instinct will be to "gather context" by running `crumb show` on the task list.
 **Do not do this.** Spawn the Scout and let it gather context for you.
@@ -31,7 +31,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 - `{SESSION_DIR}/briefing.md` — Scout-generated strategy summary; Queen reads after startup-check PASS to confirm task count before auto-proceeding to Step 2
 - `{SESSION_DIR}/task-metadata/*.md` — Per-task scope, acceptance criteria (pre-digested by Scout)
 - `{SESSION_DIR}/previews/*.md` — Combined prompt previews (pre-digested by Pantry)
-- `{SESSION_DIR}/review-reports/*.md` — Individual reviewer reports and Big Head consolidated summary
+- `{SESSION_DIR}/review-reports/*.md` — Individual reviewer reports and Review Consolidator consolidated summary
 - Verdict tables from Prompt Composer and Checkpoint Auditor — pre-spawn-check, scope-verify, claims-vs-code, review-integrity verdicts
 - Commit messages and git status/log/diff --stat output
 - Agent notifications (as they complete)
@@ -49,7 +49,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 - `orchestration/templates/scout.md` — Scout's instruction file
 - `orchestration/templates/pantry.md` — Pantry's instruction file
 - `orchestration/templates/implementation.md` — Implementation details (read by Pantry)
-- `orchestration/templates/checkpoints/` — Checkpoint definitions (read by Pest Control; common.md + specific checkpoint file)
+- `orchestration/templates/checkpoints/` — Checkpoint definitions (read by Checkpoint Auditor; common.md + specific checkpoint file)
 - `orchestration/templates/reviews.md` — Review protocol (read by build-review-prompts.sh)
 - `orchestration/reference/dependency-analysis.md` — Used by Scout for conflict analysis
 - `orchestration/reference/known-failures.md` — Reference material; for post-mortem only
@@ -283,7 +283,7 @@ Read `orchestration/reference/model-assignments.md` for the full Model Assignmen
 ## Concurrency Rules
 
 - Max 7 Crumb Gatherers concurrent
-- Max 12 total agents (Crumb Gatherers + support agents: Pantry, Pest Control, Scout)
+- Max 12 total agents (Crumb Gatherers + support agents: Pantry, Checkpoint Auditor, Scout)
 - No two agents edit the same file — queue conflicting tasks sequentially
 - Each agent runs `git pull --rebase` before committing
 - Only the Queen pushes to remote
@@ -323,7 +323,7 @@ Store SESSION_DIR in your context and pass it explicitly to every agent that nee
 - Pushing mid-session — only push at end (atomic deployment)
 - Updating docs per-agent — batch all doc updates in Step 4
 - Verbose agent prompts — be concise, agents read their own task details from their task brief
-- Running individual checkpoints per agent — spawn one Pest Control with the full batch
+- Running individual checkpoints per agent — spawn one Checkpoint Auditor with the full batch
 
 ## Template Lookup
 
@@ -334,7 +334,7 @@ Store SESSION_DIR in your context and pass it explicitly to every agent that nee
 | Review skeleton for team (Step 3b) | orchestration/templates/reviewer-skeleton.md |
 | Review Consolidator skeleton for consolidation (Step 3b) | orchestration/templates/review-consolidator-skeleton.md |
 | Implementation details (read by the Pantry) | orchestration/templates/implementation.md |
-| Checkpoint details (read by Pest Control) | orchestration/templates/checkpoints/ (common.md + specific checkpoint file) |
+| Checkpoint details (read by Checkpoint Auditor) | orchestration/templates/checkpoints/ (common.md + specific checkpoint file) |
 | Review details (read by build-review-prompts.sh) | orchestration/templates/reviews.md |
 | Pre-flight recon (Step 1) | orchestration/templates/scout.md |
 | Conflict patterns (read by the Scout) | orchestration/reference/dependency-analysis.md |
@@ -388,7 +388,7 @@ A wave is defined as a set of agents spawned concurrently in a single Step 2 bat
 
 ## Crumb Priority Calibration
 
-> **Note**: This section defines project-level issue priorities for crumbs filed in the tracker. Nitpicker review severity (P1/P2/P3) is defined separately in `orchestration/templates/reviews.md` and applies to review findings, not crumb filing priority.
+> **Note**: This section defines project-level issue priorities for crumbs filed in the tracker. Reviewer severity (P1/P2/P3) is defined separately in `orchestration/templates/reviews.md` and applies to review findings, not crumb filing priority.
 
 **P1** = build failure, broken links, data loss, security vulnerability
 
