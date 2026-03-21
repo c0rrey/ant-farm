@@ -1,5 +1,60 @@
 # Changelog
 
+## 2026-03-21 — Session 20260321-161341 (AF-T57: Documentation and Template Consistency Sweep)
+
+### Summary
+
+Completed 25 tasks targeting documentation and template consistency across the ant-farm orchestration layer (epic AF-T57). Work covered placeholder notation standardization, terminology alignment, path normalization, and missing field fixes across 21 files. All tasks were non-code documentation fixes. Round 1 review found 1 P1, 2 P2, and 4 P3 consolidated root causes; all were auto-fixed in-session. Round 2 found 1 residual P2 (concurrent-fix interaction between AF-375 and AF-370) and terminated clean after an inline fix. Session produced 24 commits.
+
+### Implementation (Wave 1 — 14 tasks)
+
+- **ant-farm-9aj1 / AF-301**: fix: add substitution clarification comments to prose `{CONSOLIDATED_OUTPUT_PATH}` instructions and rename `{OPEN_BEAD_IDS}` to `{OPEN_CRUMB_IDS}` in scribe-skeleton.md (`1ded8c0`)
+- **ant-farm-9d4e**: fix: replace bare numeric step-7 cross-file references with descriptive names in review-consolidator-skeleton.md (`438f5bd`)
+- **ant-farm-mv6b**: fix: add missing `summary` field to SendMessage pseudo-API examples in reviews.md (`287b672`)
+- **AF-149**: docs: add next_step value reference table to Position Check section in RULES.md (`cd71f57`)
+- **ant-farm-8awb**: fix: replace `{timestamp}` with `<timestamp>` in Hard Gates table and add checkpoint name prefix in CONTRIBUTING.md (`421fd56`)
+- **AF-296**: fix: replace "priority" with "severity" for P1/P2/P3 scale in ant-farm-review-consolidator agent (`49c1767`)
+- **ant-farm-bql5 / AF-311**: fix: disambiguate overloaded `{TASK_SUFFIX}` in Reviewer section of claims-vs-code.md to `{REVIEW_TYPE}` (`d1446de`)
+- **AF-145**: fix: standardize progress log placeholder notation to angle-bracket format in RULES-review.md (`49e01d5`)
+- **AF-176**: fix: replace cryptic `P<P>` placeholder with `P<severity>` in review-consolidator-skeleton.md crumb-filing template (`6737888`)
+- **AF-338**: fix: normalize bare path references in scout.md to `~/.claude/orchestration/` prefix (`23a65cd`)
+- **ant-farm-k476**: docs: define INFRASTRUCTURE/SUBSTANCE FAILURE taxonomy in terms.md and add cross-references to pantry.md and four checkpoint files (`0e127e2`)
+- **AF-337**: fix: replace `{session-dir}` with `{SESSION_DIR}` in pantry.md task brief write instruction (`9ec0f5c`)
+
+### Implementation (Wave 2 — 1 task)
+
+- **ant-farm-im8**: refactor: standardize task ID placeholder naming to `{TASK_ID}` / `{TASK_SUFFIX}` across 9 active and archive template files; update PLACEHOLDER_CONVENTIONS.md audit table (`3b088c0`)
+
+### Review Fixes (Round 1)
+
+- **AF-370**: fix: convert remaining REVIEW_TRIAGED entries in RULES-review.md L220/L222 to angle-bracket notation (`53f2429`)
+- **AF-371**: fix: replace "priority" with "severity" in OUT-OF-SCOPE rule in review-consolidator-skeleton.md (`5e72ccd`)
+- **AF-372**: fix: append `next_step=STEP_6_ESV` to SCRIBE_COMPLETE progress log entry in scribe-skeleton.md (`04eec6a`)
+- **AF-373**: fix: revert `{SESSION_DIR}` to `{session-dir}` in pantry.md path references for internal consistency (`baa5911`)
+- **AF-374**: fix: replace "Big Head" with "Review Consolidator" in PLACEHOLDER_CONVENTIONS.md reviews.md audit row (`fa0b794`, `a92bd6b`, `519b756`)
+- **AF-375**: fix: remove stale `{crumb-ids}`, `{names}`, `{hashes}`, `{range}` from RULES-review.md Tier 2 column in PLACEHOLDER_CONVENTIONS.md (`a92bd6b`)
+- **AF-376**: fix: normalize bare GLOSSARY.md path reference in scout.md:L54 to `~/.claude/orchestration/` prefix (`19fe698`)
+- **AF-377**: fix: update implementation-summary.md to use "Review Consolidator" agent name (`0ab66e7`)
+- **AF-378**: fix: update reviewer-skeleton.md to use "Review Consolidator" agent name (`540888e`)
+
+### Review Fixes (Round 2 — inline)
+
+- **AF-380**: fix: remove stale `{count}` from RULES-review.md Tier 2 column in PLACEHOLDER_CONVENTIONS.md after concurrent AF-370/AF-375 interaction (`e5d3b37`)
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 21 files, 15 tasks | 1 | 2 | 4 | NEEDS WORK |
+| 2 | fix commits only | 0 | 1 | 0 | PASS WITH ISSUES (inline fix) |
+
+10 raw findings consolidated to 7 root causes in Round 1 (3 merges). Round 2 found 1 residual P2 from a concurrent-fix interaction; fixed inline by Queen. All P1/P2 findings resolved before push.
+
+### Open Issues
+
+- **AF-379** (P3): Remaining "Big Head" → "Review Consolidator" terminology in `orchestration/templates/checkpoints/common.md`, `orchestration/reference/session-directory.md`, and `orchestration/reference/dependency-analysis.md`. Deferred — was out of scope for all fix agents this session.
+
+
 ## 2026-03-21 — Session 135712 (AF-T56: Stale Agent Name Rename Campaign)
 
 ### Summary
