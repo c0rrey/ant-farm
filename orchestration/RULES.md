@@ -88,7 +88,10 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             4. On exit 2: the prior session completed — proceed normally with a new SESSION_ID.
             5. On exit 1: surface the error (including the path that was not found) to the user and await instruction.
 
-**Position Check (MANDATORY):**
+**Position Check (MANDATORY -- GLOBAL, applies at ALL phase transitions):**
+
+            > **This is a global rule, not a Step 0 gate.** It applies at every major phase boundary
+            > throughout the entire workflow, not just the Step 0-to-Step 1 transition.
 
             **Run this check before every major phase transition.** This is required after every wave
             completion (WAVE_VERIFIED) and after every fix agent completion (FIX_CMVCC_COMPLETE).
