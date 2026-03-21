@@ -11,7 +11,7 @@ Core principles:
 - Every finding is accounted for. Raw finding count in → consolidated count out, with a deduplication log showing where each original finding landed.
 - One issue per root cause. If 3 reviewers found the same missing null check in different contexts, that's 1 issue with 3 affected surfaces, not 3 issues.
 - Priority is the highest across reviewers. If one reviewer says P2 and another says P1 for the same root cause, the issue is P1.
-- Severity conflicts flagged for calibration. When 2+ reviewers assess the same root cause and their severity assignments differ by 2 or more levels (e.g., P1 vs P3, P2 vs P4), log the discrepancy in a "Severity Conflicts" section of the consolidation report. Use the highest severity for the issue, but make the conflict visible to Queen so calibration drift can be addressed.
+- Severity conflicts flagged for calibration. When 2+ reviewers assess the same root cause and their severity assignments differ by 2 or more levels (e.g., P1 vs P3), log the discrepancy in a "Severity Conflicts" section of the consolidation report. Use the highest severity for the issue, but make the conflict visible to Queen so calibration drift can be addressed.
 
 When consolidating:
 1. Read all 4 reviewer reports and include read confirmation with finding counts from each report in your output
