@@ -14,7 +14,9 @@ from typing import Any, Dict, List, Optional
 
 import pytest
 
-from crumb import cmd_blocked, cmd_list, cmd_ready, cmd_search, write_tasks
+import json
+
+from crumb import cmd_blocked, cmd_list, cmd_ready, cmd_search, cmd_show, write_tasks
 
 
 # ---------------------------------------------------------------------------
@@ -75,6 +77,7 @@ def _list_args(**kwargs: Any) -> Namespace:
         "sort": "created_at",
         "limit": None,
         "short": False,
+        "json_output": False,
     }
     defaults.update(kwargs)
     return Namespace(**defaults)
@@ -809,3 +812,176 @@ class TestSearch:
         assert "P0" in out
         assert "open" in out
         assert "Find me" in out
+
+
+# ---------------------------------------------------------------------------
+# Helper for cmd_show direct-call tests
+# ---------------------------------------------------------------------------
+
+
+def _show_args(task_id: str, json_output: bool = False) -> Namespace:
+    """Build a Namespace matching cmd_show's expected attributes.
+
+    Args:
+        task_id: The crumb ID to look up.
+        json_output: Whether to request JSON output mode.
+
+    Returns:
+        Namespace with ``id`` and ``json_output`` set.
+    """
+    return Namespace(id=task_id, json_output=json_output)
+
+
+# ---------------------------------------------------------------------------
+# TestListJSON
+# ---------------------------------------------------------------------------
+
+
+class TestListJSON:
+    """Tests for cmd_list --json output mode (direct-call via Namespace)."""
+
+    def test_json_output_is_valid_json_array(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_list with json_output=True prints a JSON array parseable by json.loads."""
+        _write(crumbs_env, [_task("AF-1", "Alpha"), _task("AF-2", "Beta")])
+        cmd_list(_list_args(json_output=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        assert isinstance(parsed, list)
+        assert len(parsed) == 2
+
+    def test_json_output_contains_required_fields(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Each JSON object in the array contains all required schema fields."""
+        _write(crumbs_env, [_task("AF-1", "Schema check", "open", "P1")])
+        cmd_list(_list_args(json_output=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        obj = parsed[0]
+        for field in ("id", "title", "type", "status", "priority",
+                      "description", "acceptance_criteria", "scope", "links", "notes"):
+            assert field in obj, f"Required field '{field}' missing from JSON output"
+
+    def test_json_output_field_values_correct(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """JSON object field values match the stored task data."""
+        _write(crumbs_env, [_task("AF-1", "Value check", "in_progress", "P0")])
+        cmd_list(_list_args(json_output=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        obj = parsed[0]
+        assert obj["id"] == "AF-1"
+        assert obj["title"] == "Value check"
+        assert obj["status"] == "in_progress"
+        assert obj["priority"] == "P0"
+        assert obj["type"] == "task"
+
+    def test_json_output_with_filter_open(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """--json and --open compose: only open crumbs appear in the JSON array."""
+        _write(crumbs_env, [
+            _task("AF-1", "Open task", "open"),
+            _task("AF-2", "Closed task", "closed"),
+            _task("AF-3", "In progress", "in_progress"),
+        ])
+        cmd_list(_list_args(json_output=True, filter_open=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        ids = [obj["id"] for obj in parsed]
+        assert "AF-1" in ids
+        assert "AF-2" not in ids
+        assert "AF-3" not in ids
+
+    def test_json_output_empty_results_returns_empty_array(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_list --json with no matching results returns '[]', not 'no crumbs found'."""
+        _write(crumbs_env, [_task("AF-1", "Open only", "open")])
+        cmd_list(_list_args(json_output=True, filter_closed=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        assert parsed == []
+
+    def test_json_output_absent_fields_are_null(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Optional fields not stored on a crumb appear as null in JSON output."""
+        _write(crumbs_env, [_task("AF-1", "Minimal task")])
+        cmd_list(_list_args(json_output=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        obj = parsed[0]
+        # description and notes are not set by _task() — must be null
+        assert obj["description"] is None
+        assert obj["notes"] is None
+
+    def test_human_readable_unchanged_without_json_flag(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_list without json_output produces human-readable text, not JSON."""
+        _write(crumbs_env, [_task("AF-1", "Human readable", "open", "P2")])
+        cmd_list(_list_args(json_output=False))
+        out = capsys.readouterr().out
+        # Human-readable output: id in first column, not a JSON array
+        assert out.strip().startswith("AF-1")
+        # Must not be a JSON array
+        assert not out.strip().startswith("[")
+
+
+# ---------------------------------------------------------------------------
+# TestShowJSON
+# ---------------------------------------------------------------------------
+
+
+class TestShowJSON:
+    """Tests for cmd_show --json output mode (direct-call via Namespace)."""
+
+    def test_show_json_returns_single_object(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_show --json emits a single JSON object (dict), not a list."""
+        _write(crumbs_env, [_task("AF-1", "Show me")])
+        cmd_show(_show_args("AF-1", json_output=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        assert isinstance(parsed, dict)
+
+    def test_show_json_contains_required_fields(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_show --json object includes all required schema fields."""
+        _write(crumbs_env, [_task("AF-1", "Schema check", "open", "P1")])
+        cmd_show(_show_args("AF-1", json_output=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        for field in ("id", "title", "type", "status", "priority",
+                      "description", "acceptance_criteria", "scope", "links", "notes"):
+            assert field in parsed, f"Required field '{field}' missing from JSON output"
+
+    def test_show_json_field_values_correct(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_show --json values match the stored task data."""
+        _write(crumbs_env, [_task("AF-5", "Verify values", "closed", "P0")])
+        cmd_show(_show_args("AF-5", json_output=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        assert parsed["id"] == "AF-5"
+        assert parsed["title"] == "Verify values"
+        assert parsed["status"] == "closed"
+        assert parsed["priority"] == "P0"
+
+    def test_show_json_human_readable_unchanged(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_show without --json produces human-readable text, not JSON."""
+        _write(crumbs_env, [_task("AF-1", "Human readable output")])
+        cmd_show(_show_args("AF-1", json_output=False))
+        out = capsys.readouterr().out
+        # Human-readable: starts with "ID: AF-1" or similar, not a JSON brace
+        assert "AF-1" in out
+        assert not out.strip().startswith("{")

@@ -227,6 +227,115 @@ class TestCLIIntegration:
             f"Expected ID {task_id!r} to appear in show output."
         )
 
+    def test_list_json_returns_valid_json_array(self, tmp_path: Path) -> None:
+        """``crumb list --json`` exits 0 and outputs a JSON array parseable by json.loads().
+
+        Acceptance criterion 1: well-formed JSON array on stdout.
+        """
+        _make_crumbs_env(tmp_path)
+        _run(["create", "--title", "Task Alpha"], cwd=tmp_path)
+        _run(["create", "--title", "Task Beta"], cwd=tmp_path)
+
+        result = _run(["list", "--json"], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected exit code 0.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        parsed = json.loads(result.stdout)
+        assert isinstance(parsed, list), (
+            f"Expected a JSON array, got {type(parsed).__name__}."
+        )
+        assert len(parsed) == 2, (
+            f"Expected 2 items in JSON array, got {len(parsed)}."
+        )
+
+    def test_list_json_with_open_filter_returns_only_open(self, tmp_path: Path) -> None:
+        """``crumb list --json --open`` returns only open crumbs as a JSON array.
+
+        Acceptance criterion 2: filter flags compose correctly with --json.
+        """
+        _make_crumbs_env(tmp_path)
+        create_result = _run(["create", "--title", "Open task"], cwd=tmp_path)
+        task_id = create_result.stdout.strip().splitlines()[0].split()[-1]
+        _run(["close", task_id], cwd=tmp_path)
+        _run(["create", "--title", "Still open"], cwd=tmp_path)
+
+        result = _run(["list", "--json", "--open"], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected exit code 0.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        parsed = json.loads(result.stdout)
+        assert isinstance(parsed, list)
+        assert len(parsed) == 1, (
+            f"Expected 1 open crumb, got {len(parsed)}."
+        )
+        assert parsed[0]["status"] == "open"
+
+    def test_show_json_returns_valid_json_object(self, tmp_path: Path) -> None:
+        """``crumb show <id> --json`` exits 0 and outputs a JSON object.
+
+        Acceptance criterion 3: single well-formed JSON object on stdout.
+        """
+        _make_crumbs_env(tmp_path)
+        create_result = _run(["create", "--title", "Show JSON task"], cwd=tmp_path)
+        task_id = create_result.stdout.strip().splitlines()[0].split()[-1]
+
+        result = _run(["show", task_id, "--json"], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected exit code 0.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        parsed = json.loads(result.stdout)
+        assert isinstance(parsed, dict), (
+            f"Expected a JSON object (dict), got {type(parsed).__name__}."
+        )
+        assert parsed["id"] == task_id, (
+            f"Expected JSON 'id' field to be {task_id!r}, got {parsed.get('id')!r}."
+        )
+
+    def test_list_without_json_is_human_readable(self, tmp_path: Path) -> None:
+        """``crumb list`` without --json produces identical human-readable output.
+
+        Acceptance criterion 4: human-readable format is unchanged when --json is absent.
+        """
+        _make_crumbs_env(tmp_path)
+        _run(["create", "--title", "Readable task"], cwd=tmp_path)
+
+        result = _run(["list"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        output = result.stdout.strip()
+        # Human-readable output: first token on first line should be the ID (e.g. "AF-1")
+        first_token = output.splitlines()[0].split()[0]
+        assert first_token.startswith("AF-"), (
+            f"Expected human-readable ID in first column, got {first_token!r}."
+        )
+        # Definitely not a JSON array
+        assert not output.startswith("["), (
+            "Human-readable output must not start with '[' (JSON array)."
+        )
+
+    def test_show_json_contains_required_fields(self, tmp_path: Path) -> None:
+        """``crumb show <id> --json`` object contains all required schema fields.
+
+        Acceptance criterion 5: id, title, type, status, priority, description,
+        acceptance_criteria, scope, links, notes are all present.
+        """
+        _make_crumbs_env(tmp_path)
+        create_result = _run(["create", "--title", "Field check"], cwd=tmp_path)
+        task_id = create_result.stdout.strip().splitlines()[0].split()[-1]
+
+        result = _run(["show", task_id, "--json"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        parsed = json.loads(result.stdout)
+        for field in ("id", "title", "type", "status", "priority",
+                      "description", "acceptance_criteria", "scope", "links", "notes"):
+            assert field in parsed, (
+                f"Required field '{field}' missing from 'crumb show --json' output."
+            )
+
 
 # ---------------------------------------------------------------------------
 # Prune integration helpers

@@ -646,11 +646,64 @@ def _is_active_session(dir_path: Path, now_ts: float) -> bool:
     return (now_ts - mtime) < (ACTIVE_GUARD_MINUTES * 60)
 
 
+def _crumb_to_json_obj(crumb: Dict[str, Any]) -> Dict[str, Any]:
+    """Serialize a crumb record to a JSON-safe dict with all required fields.
+
+    All fields required by the JSON schema are always present; absent
+    fields are represented as ``None`` (serialized as JSON ``null``).
+    This guarantees a stable schema for downstream consumers (hooks, MCP
+    server) regardless of which optional fields a given crumb stores.
+
+    Required fields emitted:
+        id, title, type, status, priority, description,
+        acceptance_criteria, scope, links, notes
+
+    Additional fields stored on the record (e.g. created_at, updated_at,
+    closed_at, agent_type) are also included verbatim.
+
+    Example output::
+
+        {
+            "id": "AF-1",
+            "title": "Add --json flag",
+            "type": "task",
+            "status": "open",
+            "priority": "P2",
+            "description": null,
+            "acceptance_criteria": null,
+            "scope": {"files": ["crumb.py"]},
+            "links": {"blocked_by": [], "parent": "AF-T49"},
+            "notes": null
+        }
+
+    Args:
+        crumb: Raw task dict read from tasks.jsonl.
+
+    Returns:
+        Ordered dict suitable for ``json.dumps``.
+    """
+    _REQUIRED: List[str] = [
+        "id", "title", "type", "status", "priority",
+        "description", "acceptance_criteria", "scope", "links", "notes",
+    ]
+    obj: Dict[str, Any] = {field: crumb.get(field) for field in _REQUIRED}
+    # Append any extra keys stored on the record (created_at, updated_at, etc.)
+    for key, value in crumb.items():
+        if key not in obj:
+            obj[key] = value
+    return obj
+
+
 def cmd_list(args: argparse.Namespace) -> None:
     """List crumbs with optional filters, sort, and limit.
 
     Reads tasks.jsonl, applies composable filter flags, sorts, limits,
     and prints one line per crumb (short mode) or a summary table.
+
+    When ``--json`` is given, outputs a JSON array of crumb objects to
+    stdout instead of human-readable text.  The array is always
+    well-formed (``[]`` when no results match) and each element has the
+    schema documented in :func:`_crumb_to_json_obj`.
 
     Args:
         args: Parsed arguments from the list subparser.
@@ -721,6 +774,11 @@ def cmd_list(args: argparse.Namespace) -> None:
     if args.limit is not None and args.limit > 0:
         results = results[: args.limit]
 
+    # --- JSON output branch (before human-readable guard) ---
+    if args.json_output:
+        print(json.dumps([_crumb_to_json_obj(t) for t in results], indent=2))
+        return
+
     if not results:
         print("no crumbs found")
         return
@@ -747,8 +805,13 @@ def cmd_list(args: argparse.Namespace) -> None:
 def cmd_show(args: argparse.Namespace) -> None:
     """Show all fields for a crumb or trail.
 
+    When ``--json`` is given, outputs a single JSON object to stdout
+    instead of human-readable text.  The object has the schema
+    documented in :func:`_crumb_to_json_obj`.
+
     Args:
         args: Parsed arguments; args.id is the crumb ID to display.
+              args.json_output controls JSON vs human-readable output.
     """
     path = require_tasks_jsonl()
     tasks = read_tasks(path)
@@ -756,6 +819,11 @@ def cmd_show(args: argparse.Namespace) -> None:
     crumb = _find_crumb(tasks, args.id)
     if crumb is None:
         die(f"crumb '{args.id}' not found")
+
+    # --- JSON output branch ---
+    if args.json_output:
+        print(json.dumps(_crumb_to_json_obj(crumb), indent=2))
+        return
 
     # Print all known fields with labels
     fields = [
@@ -2563,11 +2631,23 @@ def build_parser() -> argparse.ArgumentParser:
         default="created_at",
     )
     p_list.add_argument("--short", action="store_true")
+    p_list.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="Output a JSON array of crumb objects instead of human-readable text.",
+    )
     p_list.set_defaults(func=cmd_list)
 
     # --- show ---
     p_show = sub.add_parser("show", help="Show full detail for a crumb or trail")
     p_show.add_argument("id", metavar="ID")
+    p_show.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="Output a single JSON object instead of human-readable text.",
+    )
     p_show.set_defaults(func=cmd_show)
 
     # --- create ---
