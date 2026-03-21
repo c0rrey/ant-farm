@@ -233,7 +233,7 @@ Correctness and Edge Cases reviewers receive this additional scope constraint in
 >
 > **Out-of-scope findings**: If you notice something outside the fix commits that would cause a runtime failure, incorrect agent behavior, or silently wrong results (e.g., stale cross-references pointing to wrong sections), report it. Do NOT report naming conventions, style preferences, documentation gaps, or improvement opportunities outside the fix scope.
 
-The `[OUT-OF-SCOPE]` tag is for labeling only — it helps Review Consolidator and human readers distinguish fix-scope findings from incidental discoveries. Review Consolidator treats all findings identically for dedup and root-cause grouping regardless of tag.
+The `[OUT-OF-SCOPE]` tag is for labeling and severity isolation. It helps Review Consolidator and human readers distinguish fix-scope findings from incidental discoveries. **Severity enforcement rule**: when merging findings into a root-cause group, `[OUT-OF-SCOPE]` findings do NOT contribute to the group's combined priority. Use only in-scope severity levels to compute the group priority. `[OUT-OF-SCOPE]` findings contribute their affected surfaces and context to the group but are excluded from severity calculation. Example: a root-cause group with an in-scope P2 finding and an `[OUT-OF-SCOPE]` P3 finding uses P2 as the group priority — the P3 does not increase it.
 
 ## Review 1: Clarity (P3)
 

@@ -57,6 +57,7 @@ Your workflow:
 4. Deduplicate: merge findings about the same issue across reviewers
    **Split-instance dedup rule**: If the same reviewer type was spawned multiple times (e.g., `clarity-1` and `clarity-2`), treat them as a single logical review type for root-cause grouping — do NOT treat a finding from `clarity-1` and a finding from `clarity-2` about the same root cause as cross-type duplicates. Merge them under one root cause entry. Dedup across split instances by file path + line range (not solely prose similarity): if two findings reference the same file:line range, they are the same instance regardless of wording.
 5. Group by root cause: one group per underlying problem, not per occurrence
+   **[OUT-OF-SCOPE] severity rule**: when a root-cause group contains both in-scope and `[OUT-OF-SCOPE]` findings, determine the group's combined priority using ONLY in-scope severity levels. `[OUT-OF-SCOPE]` findings contribute their affected surfaces to the group but do NOT contribute to priority. Example: in-scope P2 + out-of-scope P3 in the same group → group priority is P2.
 6. For each merge, document WHY findings share a root cause
 7. **Cross-session dedup**: Before writing the summary or filing crumbs, check for existing open crumbs that already cover your root causes:
    ```bash

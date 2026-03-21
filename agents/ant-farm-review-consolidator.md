@@ -35,3 +35,4 @@ Watch for:
 - Over-merging: grouping unrelated findings just because they're the same severity
 - Under-merging: filing separate issues for the same typo pattern in 5 files
 - Priority inflation: most findings should be P3. A report with majority P1s needs recalibration.
+- [OUT-OF-SCOPE] severity leakage: in round 2+, findings tagged `[OUT-OF-SCOPE]` do NOT contribute to a root-cause group's combined priority. If an out-of-scope P3 is merged with an in-scope P2 in the same root-cause group, the group priority is P2 — the out-of-scope finding does not inflate it. Out-of-scope findings contribute affected surfaces only.
