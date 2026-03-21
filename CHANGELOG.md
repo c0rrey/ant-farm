@@ -1,5 +1,41 @@
 # Changelog
 
+
+
+## 2026-03-20 — Session 20260320-193617 (Complete rename: metaphor names and checkpoint acronyms to canonical descriptive names)
+
+### Summary
+
+Eighteen tasks completed across six implementation waves, a full review cycle (2 rounds), and a review fix wave. Work delivered the complete rename of all ant-farm orchestration identifiers — 12 agent files, 6 checkpoint files, and references across 46 files — from metaphor names (Big Head, Pest Control, Nitpicker, Surveyor, Architect) and checkpoint acronyms (SSV, CCO, WWD, CMVCC, CCB, ESV) to descriptive canonical names. Round 1 review found 3 P1 and 7 P2 consolidated issues; all 10 auto-fixed. Round 2 found 1 P1 and 1 P2; both fixed; round 3 terminated clean. All 23 structural tests pass. 16 commits total.
+
+### Implementation (Waves 1–5)
+
+- **AF-225**: refactor: rename 12 agent `.md` files from metaphor names to descriptive names; update `name:` frontmatter in all 12 (`45acb96`)
+- **AF-226**: refactor: rename 6 checkpoint files from acronyms to descriptive names; follow-up `git rm` for stash-conflict residuals (`73690d7`, `0916d9c`)
+- **AF-227**: refactor: update agent names, checkpoint names, and progress-log key strings in RULES.md, RULES-decompose.md, RULES-review.md; retry for display-form references (`5284960`, `2010b1a`)
+- **AF-228**: refactor: update 17 template and checkpoint files with new agent names, `reviewer-team` team name, and new checkpoint filenames (`55e9353`)
+- **AF-229**: docs: update CLAUDE.md, GLOSSARY.md, README.md, CONTRIBUTING.md, generate-agent-catalog.sh, setup.sh migration table; regenerate agent-catalog.md; resolve 3 merge conflicts in README (`4220870`, `743445b`)
+- **AF-230**: fix: update RULES-decompose.md (3 stale `subagent_type` calls), agent-types.md, model-assignments.md, big-head-wiring.md, and test docstrings; all 23 pytest tests pass (`b742a49`)
+
+### Review Fixes (Rounds 1–2)
+
+- **AF-274, AF-277**: fix: rename `nitpicker-skeleton.md` → `reviewer-skeleton.md`, `big-head-skeleton.md` → `review-consolidator-skeleton.md`, `big-head-wiring.md` → `review-consolidator-wiring.md`; update wiring L3 pointer (`ee075e7`)
+- **AF-283**: fix: remove self-contradictory "judgment-heavy" label from sonnet model comment in reviews.md (`1252b09`)
+- **AF-281**: fix: update `ant-farm-pest-control` → `ant-farm-checkpoint-auditor` in RULES-decompose.md Step 5 TDV spawn (`5ac1931`, `47e8254`)
+- **AF-284**: fix: separate `find` stderr from null-delimited stdout in setup.sh (`82c6e38`)
+- **AF-275, AF-276, AF-278, AF-280, AF-282**: fix: update `reviewer-team` team name, `fix-pc-scope-verify`/`fix-pc-claims-vs-code` agent names, and reviewer section labels in model-assignments.md, review-consolidator-wiring.md, reviews.md (`dc1735c`)
+- **AF-315, AF-316** (RC-A2 + RC-B2): fix: update `_BUILD_SCRIPT_SKELETONS` in tests/test_orchestration.py to new skeleton names; replace `big-head-skeleton.md` references in reviews.md (7) and model-assignments.md (3) (`0e20449`)
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 46 files, 6 agents | 3 | 7 | 29 | NEEDS WORK → auto-fix |
+| 2 | fix commits ee075e7..dc1735c | 1 | 1 | 0 | NEEDS WORK → fix-now |
+
+10 root causes consolidated in round 1; 2 in round 2. All P1/P2 findings fixed before session close.
+
+
 ## 2026-03-20 — Session 171420 (crumb render-template: new subcommand, pipeline wiring, test coverage)
 
 ### Summary
@@ -56,7 +92,7 @@ Eight planned tasks and two review-driven fix tasks completed across three waves
 
 15 root causes consolidated. 4 cross-session deduplication skips applied (RC-1/AF-117, RC-8/AF-33, RC-9/AF-92, RC-11/AF-76). 9 P3 crumbs filed (AF-210–AF-218); 1 P2 drift crumb filed (AF-219: `docs/installation-guide.md` backup suffix mismatch).
 
-# Changelog
+
 
 ## 2026-03-18 — Session 20260318-000524 (Dirt Pusher to Crumb Gatherer Rename)
 
