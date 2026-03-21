@@ -140,10 +140,10 @@ Search the report for `crumb create`, `crumb update`, `crumb close`, or crumb ID
 - **FAIL: <list all failures with evidence>**
 
 Write your verification report to:
-`{SESSION_DIR}/pc/pc-{TASK_SUFFIX}-claims-vs-code-{timestamp}.md`
+`{SESSION_DIR}/pc/pc-{REVIEW_TYPE}-claims-vs-code-{timestamp}.md`
 
 Where:
-- `{TASK_SUFFIX}`: Reviewer review type (e.g., `review-correctness`, `review-edge-cases`, `review-clarity`, `review-drift`)
+- `{REVIEW_TYPE}`: Reviewer review type (e.g., `review-correctness`, `review-edge-cases`, `review-clarity`, `review-drift`)
 - `{SESSION_DIR}`: session artifact directory (e.g., `.crumbs/sessions/_session-abc123`)
 - timestamp: format defined in **Timestamp format** (Checkpoint Auditor Overview)
 ```
