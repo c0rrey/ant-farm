@@ -57,7 +57,8 @@ decomposition session.
 State tracked:
 - **Current step** (0–6): derived from progress log and agent return values
 - **Retry count per agent**: incremented each time an agent is re-spawned for a gate failure
-  - Surveyor retry count (max 1)
+  - PRD Importer retry count (max 1, PRD path only)
+  - Surveyor retry count (max 1, freeform path only)
   - Per-Forager retry count (max 1 each)
   - Architect retry count (max 2)
 
@@ -121,6 +122,29 @@ mkdir -p "${DECOMPOSE_DIR}/research"
 
 Store DECOMPOSE_DIR in your context. Pass it explicitly to every agent.
 
+If `INPUT_CLASS=PRD`, also record the PRD path in the manifest. Write a manifest file to capture session metadata:
+
+```bash
+# For PRD input:
+jq -n \
+  --arg decompose_id "${DECOMPOSE_ID}" \
+  --arg input_source "prd:<PRD_PATH>" \
+  --arg input_class "PRD" \
+  --arg prd_path "<PRD_PATH>" \
+  --arg created_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  '{decompose_id: $decompose_id, input_source: $input_source, input_class: $input_class, prd_path: $prd_path, created_at: $created_at}' \
+  > "${DECOMPOSE_DIR}/manifest.json"
+
+# For STRUCTURED or FREEFORM input (existing behavior):
+jq -n \
+  --arg decompose_id "${DECOMPOSE_ID}" \
+  --arg input_source "<INPUT_SOURCE>" \
+  --arg input_class "<INPUT_CLASS>" \
+  --arg created_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  '{decompose_id: $decompose_id, input_source: $input_source, input_class: $input_class, created_at: $created_at}' \
+  > "${DECOMPOSE_DIR}/manifest.json"
+```
+
 **Brownfield vs. greenfield detection**: Before spawning any agent, run:
 
 > **Before running**: substitute `{CODEBASE_ROOT}` with the absolute repo root path (e.g., `/Users/user/projects/myapp`). Do NOT run this block with the literal string `{CODEBASE_ROOT}`.
@@ -159,25 +183,16 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|DECOMPOSE_INIT|complete|decompose_dir=${DEC
 ---
 
 **Step 1:** Input classification — determine whether the user's input is a **freeform request**,
-            a **structured spec**, or a **PRD file path**.
+            a **structured spec**, or a **PRD import** (`INPUT_CLASS=PRD`).
 
-**PRD file path detection (check FIRST)**: If the user's input is a file path ending in `.md`
-(or `.txt`) and the path resolves to an existing file, treat it as a PRD import.
+**PRD import (check FIRST)**: If `INPUT_CLASS=PRD` was set by the skill (because the user
+invoked `/ant-farm-plan --prd <file>`), skip all classification logic and go directly to the
+PRD import path below. Do NOT re-validate the file here — the skill already confirmed it exists
+and is non-empty.
 
-```bash
-# Check if input looks like a file path (starts with / or ./ or contains /)
-# and the file exists on disk
-```
+**If PRD import (`INPUT_CLASS=PRD`):**
 
-A structured spec has ALL of these:
-- Numbered requirements (`REQ-N:` headings or equivalent)
-- Acceptance criteria for each requirement
-- A stated scope / non-requirements section
-
-A freeform request lacks one or more of these. When in doubt, treat as freeform.
-
-**If PRD file path:** Spawn the PRD Importer using `orchestration/templates/prd-import.md`
-as a guide.
+Spawn the PRD Importer using `orchestration/templates/prd-import.md` as a guide.
 
 ```
 Task(
@@ -187,21 +202,59 @@ Task(
 )
 ```
 
-The PRD Importer validates the file, extracts requirements, confirms with the user, and
-writes `{DECOMPOSE_DIR}/spec.md`. It may return one of three outcomes:
+The PRD Importer reads the file at `PRD_PATH`, extracts requirements into spec.md format,
+presents a summary to the user for confirmation (via `AskUserQuestion`), and writes
+`{DECOMPOSE_DIR}/spec.md` only after the user confirms. It may return one of three outcomes:
 
-- **success** → spec.md written; proceed to Step 1 spec-quality gate (same gate as Step 2),
-  then continue to Step 3 (Foragers).
-- **fallback_to_surveyor** → PRD had no testable ACs; pass the PRD path as the
-  `{FEATURE_REQUEST}` context when spawning the Surveyor in Step 2. Tell the user why
-  the fallback happened before spawning.
-- **error** → file missing, empty, or not a PRD; surface the error to the user and stop.
+- **success** → spec.md written and user has already confirmed; run the spec quality gate
+  (same gate as after Step 2), then proceed directly to Step 3 (Foragers). Do NOT spawn
+  the Surveyor. Step 3.5 (user approval) still applies before the Architect.
+- **fallback_to_surveyor** → PRD had no testable ACs; tell the user why the fallback happened,
+  then spawn the Surveyor in Step 2 passing the PRD path as the `{FEATURE_REQUEST}` context.
+- **error** → PRD Importer could not parse or write the spec; surface the error to the user
+  and stop.
+
+**IMPORTANT — confirmation ordering**: The PRD Importer handles user confirmation of extracted
+requirements *before* writing spec.md. This means confirmation happens before Forager spawning.
+Do NOT spawn Foragers until the PRD Importer returns with **success** outcome.
 
 Record in progress log:
 ```bash
 echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|INPUT_CLASS|prd|prd_path=<PRD_PATH>" \
   >> "${DECOMPOSE_DIR}/progress.log"
 ```
+
+---
+
+**Spec quality gate (PRD path)**: After the PRD Importer returns **success**, run the same
+spec quality gate that applies after Step 2 (Surveyor):
+- [ ] `{DECOMPOSE_DIR}/spec.md` exists and is non-empty
+- [ ] Contains at least one `REQ-N:` heading
+- [ ] Every REQ-N has at least one `AC-N.M:` entry
+- [ ] No acceptance criteria contain banned vague phrases
+- [ ] `## Scope` section is present
+- [ ] `## Non-Requirements` section is present
+
+**On gate PASS**: Proceed to Step 3 (Foragers).
+
+**On gate FAIL**: Re-spawn the PRD Importer with the specific violations. Maximum **1 retry**.
+If spec still fails after one retry, present the violations to the user and await instruction.
+
+```bash
+echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SPEC_QUALITY_GATE|pass|source=prd|spec=${DECOMPOSE_DIR}/spec.md" \
+  >> "${DECOMPOSE_DIR}/progress.log"
+```
+
+---
+
+**Classification for non-PRD input:**
+
+A structured spec has ALL of these:
+- Numbered requirements (`REQ-N:` headings or equivalent)
+- Acceptance criteria for each requirement
+- A stated scope / non-requirements section
+
+A freeform request lacks one or more of these. When in doubt, treat as freeform.
 
 **If structured spec:** Write the input verbatim to `{DECOMPOSE_DIR}/spec.md`. Skip Step 2
 (Surveyor). Then prompt the user:
@@ -471,7 +524,8 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|DECOMPOSE_COMPLETE|handoff=done" \
 
 | Gate | Step | Blocks | Failure Action |
 |------|------|--------|----------------|
-| Spec quality gate | After Step 2 (Surveyor) | Step 3 (Forager spawn) | Re-spawn Surveyor with violations; max 1 retry; escalate to user |
+| Spec quality gate (PRD path) | After Step 1 PRD Importer success | Step 3 (Forager spawn) | Re-spawn PRD Importer with violations; max 1 retry; escalate to user |
+| Spec quality gate (Surveyor path) | After Step 2 (Surveyor) | Step 3 (Forager spawn) | Re-spawn Surveyor with violations; max 1 retry; escalate to user |
 | Research complete | After Step 3 (all Foragers) | Step 3.5 (User approval) | Re-spawn failed Forager(s); max 1 retry each; escalate to user |
 | User approval | Step 3.5 | Step 4 (Architect spawn) | User revises spec; max 2 revision cycles; proceed with current state |
 | TDV PASS | After Step 5 (Checkpoint Auditor TDV) | Step 6 (Handoff) | Re-spawn Architect with violations; max 2 retries; escalate to user |
@@ -482,7 +536,8 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|DECOMPOSE_COMPLETE|handoff=done" \
 
 | Agent | Gate | Max Retries | Escalation Path |
 |-------|------|-------------|-----------------|
-| Surveyor | Spec quality gate FAIL | 1 | Present violations to user; await instruction |
+| PRD Importer | Spec quality gate FAIL (PRD path) | 1 | Present violations to user; await instruction |
+| Surveyor | Spec quality gate FAIL (Surveyor path) | 1 | Present violations to user; await instruction |
 | Forager (any focus) | Research complete FAIL (missing file) | 1 per Forager | Surface error per failed Forager; await instruction |
 | Forager (any focus) | Output exceeds 100 lines | 0 — truncate and proceed | Log truncation; do NOT re-spawn |
 | Architect | TDV FAIL | 2 | Present failure details to user; await instruction |
@@ -517,7 +572,8 @@ Omitting `model` causes the agent to inherit the Planner's model, wasting tokens
 
 ```
 .crumbs/sessions/_decompose-{DECOMPOSE_ID}/
-├── spec.md                    ← Surveyor output (or user-provided structured spec)
+├── manifest.json              ← Session metadata (input_class, prd_path if PRD import)
+├── spec.md                    ← Surveyor/PRD Importer output (or user-provided structured spec)
 ├── decomposition-brief.md     ← Architect output
 ├── progress.log               ← Append-only milestone log
 └── research/

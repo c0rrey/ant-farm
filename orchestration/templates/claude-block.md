@@ -19,6 +19,22 @@
 
 **Key rule**: After startup-check PASS, the Queen auto-proceeds to Step 2. No user approval required for execution strategy.
 
+## Plan Mode ("/ant-farm-plan")
+
+**Trigger**: When the user invokes `/ant-farm-plan`, `/ant-farm-plan <spec>`, or `/ant-farm-plan --prd <file>`.
+
+**CRITICAL — read before doing ANYTHING:**
+- Read `~/.claude/skills/plan.md` FIRST and ALONE — no parallel tool calls. Then follow it.
+
+**Input modes**:
+- `/ant-farm-plan <idea or inline text>` — freeform: Surveyor asks clarifying questions and writes spec.md
+- `/ant-farm-plan path/to/spec.md` — structured spec: Surveyor skipped; user may optionally run Foragers
+- `/ant-farm-plan --prd path/to/prd.md` — PRD import: Surveyor skipped; PRD Importer extracts requirements into spec.md format and confirms with user before Foragers spawn
+
+**When to use `--prd`**: Use when you have an existing Product Requirements Document to decompose directly. The Surveyor is skipped entirely. Use standard invocation when starting from scratch or from a lightweight outline.
+
+**Key rule**: All three input modes feed the same Forager and Architect pipeline. The spec.md format is identical regardless of source.
+
 ## Lite Mode ("ant-farm-quick")
 
 **Trigger**: When the user invokes `/ant-farm-quick` or `/ant-farm-quick <crumb-id>`.

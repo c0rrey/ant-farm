@@ -1,15 +1,26 @@
 ---
-description: This skill should be used when the user invokes "/ant-farm-plan", provides a spec file path or inline specification text to decompose, says "plan this", "decompose this spec", "break this into tasks", or asks to turn a requirement or idea into crumbs. Accepts a file path or inline text, classifies input as structured vs freeform, and routes to the RULES-decompose.md decomposition workflow.
+description: This skill should be used when the user invokes "/ant-farm-plan", provides a spec file path or inline specification text to decompose, says "plan this", "decompose this spec", "break this into tasks", or asks to turn a requirement or idea into crumbs. Accepts a file path, inline text, or --prd <file> flag, classifies input as structured vs freeform (or PRD import), and routes to the RULES-decompose.md decomposition workflow.
 ---
 
 # /ant-farm-plan — Decomposition Skill
 
-This skill governs the `/ant-farm-plan` slash command. It accepts a spec file path or inline specification text, detects the input type, classifies the input as structured or freeform, creates a timestamped `DECOMPOSE_DIR` under `.crumbs/sessions/`, and routes to `orchestration/RULES-decompose.md` for execution.
+This skill governs the `/ant-farm-plan` slash command. It accepts a spec file path or inline specification text, detects the input type, classifies the input as structured or freeform (or PRD import), creates a timestamped `DECOMPOSE_DIR` under `.crumbs/sessions/`, and routes to `orchestration/RULES-decompose.md` for execution.
+
+There are three input modes:
+
+| Mode | Invocation | Surveyor | Notes |
+|------|-----------|----------|-------|
+| Freeform | `/ant-farm-plan <idea text>` | Yes | Surveyor asks clarifying questions and writes spec.md |
+| Structured spec | `/ant-farm-plan path/to/spec.md` | No | Spec written verbatim; user may optionally run Foragers |
+| PRD import | `/ant-farm-plan --prd path/to/prd.md` | No | PRD extracted into spec.md format; user confirms before Foragers |
+
+Use `--prd` when you have an existing Product Requirements Document you want decomposed directly. The Surveyor is skipped; the PRD Importer agent reads the file, extracts requirements into spec.md format, and asks you to confirm before spawning Foragers. Use standard invocation (freeform or structured spec) when you are starting from scratch or from a lightweight outline.
 
 ## Trigger Conditions
 
 Activate this skill when the user:
 - Invokes `/ant-farm-plan` (with or without an argument)
+- Invokes `/ant-farm-plan --prd <file>` to import a PRD file directly
 - Provides a file path to a spec document as an argument to `/ant-farm-plan`
 - Provides inline specification text as an argument to `/ant-farm-plan`
 - Says "plan this", "decompose this spec", "break this into tasks", "turn this into crumbs", or similar
@@ -30,16 +41,50 @@ If `NOT_INITIALIZED`:
 
 Stop. Do not proceed.
 
+### Flag detection: --prd
+
+If the invocation is `/ant-farm-plan --prd <file>`:
+
+1. Extract `<file>` as `PRD_PATH`.
+2. Validate the file exists and is readable:
+
+```bash
+[ -f "<PRD_PATH>" ] && echo "PRD_EXISTS" || echo "PRD_NOT_FOUND"
+```
+
+If `PRD_NOT_FOUND`:
+
+> **Error**: PRD file not found: `<PRD_PATH>`. Check the path and try again.
+>
+> Usage: `/ant-farm-plan --prd path/to/prd.md`
+
+Stop. Do not proceed.
+
+3. Check the file is non-empty:
+
+```bash
+[ -s "<PRD_PATH>" ] && echo "PRD_NON_EMPTY" || echo "PRD_EMPTY"
+```
+
+If `PRD_EMPTY`:
+
+> **Error**: PRD file is empty: `<PRD_PATH>`. Provide a file with content.
+
+Stop. Do not proceed.
+
+4. Set `INPUT_CLASS=PRD`, `INPUT_SOURCE="prd:<PRD_PATH>"`, and `PRD_PATH` in context. Skip Steps 1 and 2. Proceed directly to Step 3 (Create DECOMPOSE_DIR), then Step 4 (Route to RULES-decompose.md) — passing `INPUT_CLASS=PRD` and `PRD_PATH` to the decomposition workflow.
+
 ### Error: Empty input
 
-If the user invoked `/ant-farm-plan` with no argument and no inline text:
+If the user invoked `/ant-farm-plan` with no argument and no inline text (and no `--prd` flag):
 
 > **Error**: No input provided. Usage:
 >
 > - `/ant-farm-plan path/to/spec.md` — decompose a spec file
 > - `/ant-farm-plan <inline text>` — decompose inline specification text
+> - `/ant-farm-plan --prd path/to/prd.md` — import a PRD file and skip the Surveyor
 >
-> Provide a file path or paste your spec text directly as the argument.
+> Provide a file path, paste your spec text directly, or use `--prd` to import a PRD.
 
 Stop. Do not proceed.
 
@@ -144,8 +189,9 @@ Store `DECOMPOSE_DIR` in context. Pass it explicitly to the decomposition workfl
 
 Read `orchestration/RULES-decompose.md` and follow its workflow from Step 1 onward, passing:
 - `DECOMPOSE_DIR` — the session directory created in Step 3
-- `INPUT_CLASS` — `STRUCTURED` or `FREEFORM`
-- `INPUT_TEXT` — the raw spec content
+- `INPUT_CLASS` — `STRUCTURED`, `FREEFORM`, or `PRD`
+- `INPUT_TEXT` — the raw spec content (empty string when `INPUT_CLASS=PRD`; the workflow uses `PRD_PATH` instead)
+- `PRD_PATH` — the validated PRD file path (only when `INPUT_CLASS=PRD`; omit otherwise)
 
 The decomposition workflow in `RULES-decompose.md` is responsible for:
 - Parsing the spec into epics, tasks, and dependencies
@@ -158,7 +204,9 @@ The decomposition workflow in `RULES-decompose.md` is responsible for:
 | Condition | Behavior |
 |---|---|
 | `.crumbs/` not initialized | Hard stop — instruct user to run `/ant-farm-init` |
-| No argument provided | Hard stop — show usage message |
+| `--prd <file>` given but file not found | Hard stop — show path; suggest checking the path |
+| `--prd <file>` given but file is empty | Hard stop — report empty PRD file |
+| No argument provided | Hard stop — show usage message including `--prd` option |
 | Argument looks like file path but file not found | Hard stop — show path and suggest inline alternative |
 | File found but empty | Hard stop — report empty file |
 | Inline text is whitespace-only | Hard stop — report empty input |
