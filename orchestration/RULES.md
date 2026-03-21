@@ -296,6 +296,13 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             ```
             Run `git status` after push — output MUST show "up to date with origin".
 
+            **Post-push sync**: After push succeeds, run `./scripts/setup.sh` to copy orchestration files
+            from the repo to `~/.claude/`. This ensures the global runtime matches the repo. If a pre-push
+            hook is installed (see CHANGELOG for history), it provides a non-fatal early warning on sync
+            drift but does not block the push. The post-push `setup.sh` run is the authoritative sync —
+            it catches silent failures that a non-fatal hook would miss. Both layers exist for
+            defense-in-depth: the hook warns early, `setup.sh` guarantees correctness.
+
             Clean up stashes and remote branches. Provide hand-off context for the next session.
             **Progress log (after git push succeeds):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SESSION_COMPLETE|pushed=true|next_step=DONE" >> ${SESSION_DIR}/progress.log`
 
