@@ -220,7 +220,7 @@ The review loop terminates when a round produces **zero P1 or P2 findings**. At 
 1. Big Head auto-files any P3 findings to "Future Work" trail (round 2+ only)
 2. In round 1, P3s are filed via the existing "Handle P3 Issues" flow in the Queen's Step 3c below
 3. Queen proceeds directly to RULES.md Step 4 (documentation — README and CLAUDE.md only)
-   - Note: CHANGELOG is authored by the Scribe at Step 5b, not here
+   - Note: CHANGELOG is authored by the Scribe at Step 5, not here
 4. No user prompt needed — the loop simply ends
 
 **Escalation cap**: After round 4 with no convergence (P1 or P2 findings still present), do NOT start round 5. Instead, escalate to the user with the full round history (round numbers, finding counts per round, crumb IDs) and ask whether to continue or abort. The reduced scope + reduced reviewers + P3 auto-filing make convergence fast; if it has not converged by round 4, human judgment is required.
@@ -1050,7 +1050,7 @@ If the consolidated summary shows zero P1 and zero P2 findings, the review loop 
 2. **Round 1**: P3 findings follow the existing "Handle P3 Issues" flow below — the Queen files them to Future Work
 3. Queen updates session state: `Termination: terminated (round N: 0 P1/P2)`
 4. Proceed to RULES.md Step 4 (Documentation — update README and CLAUDE.md only)
-   - Scribe authors the session CHANGELOG entry at Step 5b
+   - Scribe authors the session CHANGELOG entry at Step 5
 
 No user prompt needed — the loop simply ends.
 
@@ -1060,7 +1060,7 @@ The Queen determines the fix action based on RULES.md Step 3c decision tree:
 - **Auto-fix** (round 1, ≤10 root causes): proceed directly to Fix Workflow below
 - **Escalation** (round 1, >10 root causes): present to user, await decision
 - **User prompt** (round 2+): present to user, "Fix now or defer?"
-- **Defer**: P1/P2 crumbs stay open; document deferred items for the Scribe (Step 5b CHANGELOG); proceed to Step 4
+- **Defer**: P1/P2 crumbs stay open; document deferred items for the Scribe (Step 5 CHANGELOG); proceed to Step 4
 
 ### Fix Workflow
 
@@ -1215,4 +1215,4 @@ crumb trail create --title "Future Work" --description "Low-priority polish and 
 - No immediate action required — they're queued for later
 
 After handling P3 issues, proceed to RULES.md Step 4 (Documentation — update README and CLAUDE.md only).
-The Scribe authors the session CHANGELOG entry at Step 5b.
+The Scribe authors the session CHANGELOG entry at Step 5.

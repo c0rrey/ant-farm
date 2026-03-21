@@ -2,7 +2,7 @@
 
 ## Session Complete: Pre-Push Session Output Audit
 
-**When**: After Scribe writes `{SESSION_DIR}/exec-summary.md` and CHANGELOG.md, BEFORE `git push` (Step 5c in RULES.md)
+**When**: After Scribe writes `{SESSION_DIR}/exec-summary.md` and CHANGELOG.md, BEFORE `git push` (Step 6 in RULES.md)
 **Model**: `haiku` (mechanical counting and set comparisons — no judgment required)
 
 **Why**: The Scribe produces an exec summary and CHANGELOG entry that are the permanent record of the session. Errors here (missed tasks, phantom commits, stale crumb statuses) mislead future sessions and create audit gaps. A lightweight automated check before push catches output defects at zero implementation cost — the session is already complete, so no rework cascades.
@@ -154,7 +154,7 @@ Where:
 
 ### The Queen's Response
 
-**On PASS**: Proceed with `git push` (Step 6 in RULES.md).
+**On PASS**: Proceed with `git push` (Step 7 in RULES.md).
 
 **On FAIL**:
 1. Log the failing check details from the session-complete report.

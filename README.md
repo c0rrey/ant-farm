@@ -259,12 +259,12 @@ Review Consolidator reads all reports, merges duplicates by root cause, and file
 
 If P1/P2 issues are found, the system enters a review/fix/re-review loop until convergence, deferral, or the round cap.
 
-### Steps 4-6: Document and Land
+### Steps 4-7: Document and Land
 
 - **Step 4**: Update documentation if needed
-- **Step 5b**: Session Scribe writes exec summary and CHANGELOG entry
-- **Step 5c**: session-complete checkpoint verifies exec summary integrity
-- **Step 6**: `git pull --rebase && git push`. Work is not complete until push succeeds.
+- **Step 5**: Session Scribe writes exec summary and CHANGELOG entry
+- **Step 6**: session-complete checkpoint verifies exec summary integrity
+- **Step 7**: `git pull --rebase && git push`. Work is not complete until push succeeds.
 
 ## Custom Agents
 

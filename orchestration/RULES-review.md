@@ -118,7 +118,7 @@
             - Present findings to user: "Reviews found X P1 and Y P2 issues. Fix now or defer?"
             - **If "fix now"**: proceed to Fix Workflow below, then transition to round N+1 via SendMessage
               - Update session state: increment review round, record fix commit range
-            - **If "defer"**: P1/P2 crumbs stay open; note deferred items for the Scribe to document at Step 5b; proceed to Step 4
+            - **If "defer"**: P1/P2 crumbs stay open; note deferred items for the Scribe to document at Step 5; proceed to Step 4
 
             **Fix Workflow** (triggered by auto-fix or "fix now"):
 

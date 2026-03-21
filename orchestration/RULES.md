@@ -40,7 +40,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 - `orchestration/templates/crumb-gatherer-skeleton.md` — Once per implementation wave (skeleton structure; see [Glossary: wave](GLOSSARY.md#workflow-concepts))
 - `orchestration/templates/reviewer-skeleton.md` — Once per review cycle (skeleton structure)
 - `orchestration/templates/review-consolidator-skeleton.md` — Once per review cycle (skeleton structure)
-- `orchestration/templates/scribe-skeleton.md` — Once per session (read to fill placeholders before spawning the Scribe at Step 5b)
+- `orchestration/templates/scribe-skeleton.md` — Once per session (read to fill placeholders before spawning the Scribe at Step 5)
 - Project's `CLAUDE.md` — Global project rules
 - `{SESSION_DIR}/exec-summary.md` — Scribe output; read only when session-complete checkpoint escalates to user with a failed exec summary
 - `orchestration/reference/crumb-cheatsheet.md` — crumb CLI quick reference; read when composing agent prompts that invoke crumb commands
@@ -196,18 +196,18 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             **Progress log (after triage decision — non-fix path):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_TRIAGED|round=<N>|p1=<count>|p2=<count>|decision=<defer|terminated>|root_causes=<count>|next_step=STEP_4_DOCS" >> ${SESSION_DIR}/progress.log`
 
 **Step 4:** Documentation — update README and CLAUDE.md in single commit.
-            Note: session narrative and changelog entry are handled by the Scribe at Step 5b.
+            Note: session narrative and changelog entry are handled by the Scribe at Step 5.
             Before committing: file issues for any remaining work; run quality gates (tests, linters,
             builds) if code changed; apply review-findings gate (if reviews found P1 issues, present
             to user before proceeding — user decides fix now or defer; do NOT push with undisclosed
             P1 blockers).
-            **Progress log (after doc commit):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|DOCS_COMMITTED|complete|commit=<hash>|next_step=STEP_5_XREF" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after doc commit):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|DOCS_COMMITTED|complete|commit=<hash>|next_step=STEP_4B_XREF" >> ${SESSION_DIR}/progress.log`
 
-**Step 5:** Verify — cross-references valid, all tasks accounted for. Update issue status: close
+**Step 4b:** Verify — cross-references valid, all tasks accounted for. Update issue status: close
             finished tasks, update in-progress items.
-            **Progress log (after cross-reference check):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|XREF_VERIFIED|complete|tasks_closed=<ids>|next_step=STEP_5B_SCRIBE" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after cross-reference check):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|XREF_VERIFIED|complete|tasks_closed=<ids>|next_step=STEP_5_SCRIBE" >> ${SESSION_DIR}/progress.log`
 
-**Step 5b:** Scribe — spawn the Scribe agent to write the session exec summary and CHANGELOG entry.
+**Step 5:** Scribe — spawn the Scribe agent to write the session exec summary and CHANGELOG entry.
             ```
             Task(
               subagent_type="ant-farm-session-scribe",
@@ -222,9 +222,9 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             range, and produces two outputs:
             1. `{SESSION_DIR}/exec-summary.md` — canonical session record
             2. Prepends a CHANGELOG entry to `CHANGELOG.md`
-            **Progress log (after Scribe completes):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SCRIBE_COMPLETE|exec_summary=${SESSION_DIR}/exec-summary.md|next_step=STEP_5C_ESV" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after Scribe completes):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SCRIBE_COMPLETE|exec_summary=${SESSION_DIR}/exec-summary.md|next_step=STEP_6_ESV" >> ${SESSION_DIR}/progress.log`
 
-**Step 5c:** session-complete — spawn Checkpoint Auditor for Exec Summary Verification. **Hard gate: must PASS before Step 6.**
+**Step 6:** session-complete — spawn Checkpoint Auditor for Exec Summary Verification. **Hard gate: must PASS before Step 7.**
             ```
             Task(
               subagent_type="ant-farm-checkpoint-auditor",
@@ -237,15 +237,15 @@ The Queen's window is restricted to prevent context bloat, but certain files are
                       Read orchestration/templates/checkpoints/common.md and orchestration/templates/checkpoints/session-complete.md for full instructions."
             )
             ```
-            > **Field derivation**: `SESSION_START_COMMIT` is the first commit the Queen or any agent made this session (visible in `git log` since the pre-session HEAD). `SESSION_END_COMMIT` is the commit at HEAD immediately before Step 6's `git add CHANGELOG.md` commit. `SESSION_START_DATE` is the calendar date (UTC) when Step 0 ran (stored in queen-state.md or derivable from `SESSION_ID`).
+            > **Field derivation**: `SESSION_START_COMMIT` is the first commit the Queen or any agent made this session (visible in `git log` since the pre-session HEAD). `SESSION_END_COMMIT` is the commit at HEAD immediately before Step 7's `git add CHANGELOG.md` commit. `SESSION_START_DATE` is the calendar date (UTC) when Step 0 ran (stored in queen-state.md or derivable from `SESSION_ID`).
             session-complete checks: task coverage, commit coverage, open crumb accuracy, CHANGELOG derivation
             fidelity, section completeness, metric consistency.
             Artifact written to `{SESSION_DIR}/pc/pc-session-complete-{timestamp}.md`.
             **On session-complete FAIL**: Re-spawn Scribe with specific violations from session-complete report (max 1 retry).
             **On second session-complete FAIL**: Escalate to user — present failed checks, await decision.
-            **Progress log (after session-complete PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SESSION_COMPLETE_PASS|artifact=${SESSION_DIR}/pc/pc-session-complete-$(date +%Y%m%d-%H%M%S).md|next_step=STEP_6_PUSH" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after session-complete PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SESSION_COMPLETE_PASS|artifact=${SESSION_DIR}/pc/pc-session-complete-$(date +%Y%m%d-%H%M%S).md|next_step=STEP_7_PUSH" >> ${SESSION_DIR}/progress.log`
 
-**Step 6:** Land the plane — Queen commits the Scribe's CHANGELOG.md, copies the exec summary to history (local only), then pulls and pushes. NEVER `git add` any file under `.crumbs/` — the entire directory is gitignored.
+**Step 7:** Land the plane — Queen commits the Scribe's CHANGELOG.md, copies the exec summary to history (local only), then pulls and pushes. NEVER `git add` any file under `.crumbs/` — the entire directory is gitignored.
             ```bash
             git add CHANGELOG.md && git commit -m "docs: add session {SESSION_ID} changelog entry"
             cp "${SESSION_DIR}/exec-summary.md" ".crumbs/history/exec-summary-${SESSION_ID}.md"
@@ -268,7 +268,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 | claims-vs-code PASS | Task closure (crumb close) | ${SESSION_DIR}/pc/*-claims-vs-code-*.md |
 | review-integrity PASS | Presenting results | ${SESSION_DIR}/pc/pc-session-review-integrity-{timestamp}.md |
 | Reviews | Presenting findings to user (Step 3c) | ${SESSION_DIR}/review-reports/review-consolidated-{timestamp}.md |
-| session-complete PASS | Git push (Step 6) | ${SESSION_DIR}/pc/pc-session-complete-{timestamp}.md |
+| session-complete PASS | Git push (Step 7) | ${SESSION_DIR}/pc/pc-session-complete-{timestamp}.md |
 
 > **Note (Reviews gate):** Reviews are mandatory after ALL implementation completes (round 1). If findings require a fix cycle, reviews re-run with reduced scope — correctness and edge-cases only (round 2+).
 
@@ -287,7 +287,7 @@ Read `orchestration/reference/model-assignments.md` for the full Model Assignmen
 - No two agents edit the same file — queue conflicting tasks sequentially
 - Each agent runs `git pull --rebase` before committing
 - Only the Queen pushes to remote
-- Only the Queen updates README; the Scribe writes CHANGELOG.md (Queen commits it at Step 6)
+- Only the Queen updates README; the Scribe writes CHANGELOG.md (Queen commits it at Step 7)
 - Pipeline wave N Crumb Gatherers with wave N+1 Pantry in a single message (see Step 2 wave pipelining)
 
 ### Wave Management
@@ -340,7 +340,7 @@ Store SESSION_DIR in your context and pass it explicitly to every agent that nee
 | Conflict patterns (read by the Scout) | orchestration/reference/dependency-analysis.md |
 | Diagnosing a failure or post-mortem | orchestration/reference/known-failures.md |
 | Creating/recovering the Queen's state file | orchestration/templates/queen-state.md |
-| Exec summary authoring (Step 5b) | orchestration/templates/scribe-skeleton.md |
+| Exec summary authoring (Step 5) | orchestration/templates/scribe-skeleton.md |
 | Setting up orchestration in new project | orchestration/SETUP.md |
 
 ## Retry Limits

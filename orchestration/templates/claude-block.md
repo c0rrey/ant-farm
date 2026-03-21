@@ -49,7 +49,7 @@
 
 ## Landing the Plane (Session Completion)
 
-(Corresponds to RULES.md Step 6.)
+(Corresponds to RULES.md Step 7.)
 
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
 

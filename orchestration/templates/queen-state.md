@@ -35,7 +35,7 @@
 | Step 3 | Wave N post | claims-vs-code | pending/completed/failed | All PASS / {details} |
 | Step 3b | Round R review prompts | pre-spawn-check | pending/completed/failed | All PASS / {details} |
 | Step 3b | Round R review post | claims-vs-code + review-integrity | pending/completed/failed | All PASS / {details} |
-| Step 5c | Exec summary | session-complete | pending/completed/failed | PASS / FAIL / {details} |
+| Step 6 | Exec summary | session-complete | pending/completed/failed | PASS / FAIL / {details} |
 
 ## Review Rounds
 - **Current round**: {1 | 2 | 3 | ...}
@@ -45,7 +45,7 @@
 - **Fix commit range**: {first-fix-commit}..HEAD (set after fix cycle)
 - **Termination**: {pending | terminated (round N: 0 P1/P2)}
 
-## Scribe and Session-Complete (Step 5b / 5c)
+## Scribe and Session-Complete (Step 5 / 6)
 - **Scribe status**: {pending | spawned | completed | failed}
 - **Scribe retry**: {0 | 1} (max 1 retry before escalation)
 - **Exec summary path**: {SESSION_DIR}/exec-summary.md (or N/A)

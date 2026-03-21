@@ -26,7 +26,7 @@ Root-level artifacts in `${SESSION_DIR}`:
 - `queen-state.md` — session state for context recovery
 - `briefing.md` — written by Scout (Step 1a); strategy summary read by Queen after SSV PASS before auto-proceeding to Step 2
 - `session-summary.md` — written by Pantry (optional); end-of-session narrative summary
-- `exec-summary.md` — written by Scribe (Step 5b); canonical session record covering work completed, review findings, open issues, and narrative observations; source for the CHANGELOG derivative
+- `exec-summary.md` — written by Scribe (Step 5); canonical session record covering work completed, review findings, open issues, and narrative observations; source for the CHANGELOG derivative
 - `progress.log` — append-only milestone log; one pipe-delimited line per completed step; written by the Queen at each workflow milestone; never read or overwritten during normal operation; recovery sessions read this once to determine the resume point
 - `resume-plan.md` — written by `scripts/parse-progress-log.sh` on crash recovery; structured markdown resume plan presented to the user for approval before any action is taken
 
