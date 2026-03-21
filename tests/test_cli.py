@@ -606,12 +606,12 @@ def _make_session_dir(
     Returns:
         Path to the created directory.
     """
-    d = sessions_dir / name
-    d.mkdir(parents=True, exist_ok=True)
+    session_dir = sessions_dir / name
+    session_dir.mkdir(parents=True, exist_ok=True)
     if backdate_secs > 0:
         past = time.time() - backdate_secs
-        os.utime(d, (past, past))
-    return d
+        os.utime(session_dir, (past, past))
+    return session_dir
 
 
 def _session_name(prefix: str, days_old: int, hour: int = 12) -> str:
