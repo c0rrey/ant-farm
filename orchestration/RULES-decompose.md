@@ -158,8 +158,16 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|DECOMPOSE_INIT|complete|decompose_dir=${DEC
 
 ---
 
-**Step 1:** Input classification — determine whether the user's input is a **freeform request**
-            or a **structured spec**.
+**Step 1:** Input classification — determine whether the user's input is a **freeform request**,
+            a **structured spec**, or a **PRD file path**.
+
+**PRD file path detection (check FIRST)**: If the user's input is a file path ending in `.md`
+(or `.txt`) and the path resolves to an existing file, treat it as a PRD import.
+
+```bash
+# Check if input looks like a file path (starts with / or ./ or contains /)
+# and the file exists on disk
+```
 
 A structured spec has ALL of these:
 - Numbered requirements (`REQ-N:` headings or equivalent)
@@ -167,6 +175,33 @@ A structured spec has ALL of these:
 - A stated scope / non-requirements section
 
 A freeform request lacks one or more of these. When in doubt, treat as freeform.
+
+**If PRD file path:** Spawn the PRD Importer using `orchestration/templates/prd-import.md`
+as a guide.
+
+```
+Task(
+  subagent_type="ant-farm-spec-writer",
+  model="opus",
+  prompt="<filled prd-import.md template — see orchestration/templates/prd-import.md>"
+)
+```
+
+The PRD Importer validates the file, extracts requirements, confirms with the user, and
+writes `{DECOMPOSE_DIR}/spec.md`. It may return one of three outcomes:
+
+- **success** → spec.md written; proceed to Step 1 spec-quality gate (same gate as Step 2),
+  then continue to Step 3 (Foragers).
+- **fallback_to_surveyor** → PRD had no testable ACs; pass the PRD path as the
+  `{FEATURE_REQUEST}` context when spawning the Surveyor in Step 2. Tell the user why
+  the fallback happened before spawning.
+- **error** → file missing, empty, or not a PRD; surface the error to the user and stop.
+
+Record in progress log:
+```bash
+echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|INPUT_CLASS|prd|prd_path=<PRD_PATH>" \
+  >> "${DECOMPOSE_DIR}/progress.log"
+```
 
 **If structured spec:** Write the input verbatim to `{DECOMPOSE_DIR}/spec.md`. Skip Step 2
 (Surveyor). Then prompt the user:
