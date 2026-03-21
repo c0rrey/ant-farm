@@ -73,7 +73,7 @@ Write `{SESSION_DIR}/exec-summary.md` with exactly the following structure. Do n
 | Open issues remaining | N |
 
 ## Work Completed
-- **{task-id}**: {title} — {brief description of what changed and which files}
+- **{TASK_ID}**: {title} — {brief description of what changed and which files}
 
 ## Review Findings
 [Summary of review rounds: scope, finding counts, fix decisions, final verdict]
@@ -131,7 +131,7 @@ Prepend a new entry to `{CHANGELOG_PATH}`. The entry is derived from the exec su
 
 ### Implementation ({wave label or summary})
 
-- **{task-id}**: {commit type}: {description of what changed and which files} (`{commit-hash}`)
+- **{TASK_ID}**: {commit type}: {description of what changed and which files} (`{commit-hash}`)
 
 ### Review Fixes ({round label})
 

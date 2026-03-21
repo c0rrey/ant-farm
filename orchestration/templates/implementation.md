@@ -8,14 +8,14 @@
 ```markdown
 Execute {task-type} for {file-or-component}:
 
-Tasks: {task-id-1}, {task-id-2}, ...
+Tasks: {TASK_ID_1}, {TASK_ID_2}, ...
 
 ## Context (from crumb - do not re-discover)
 - **Affected files**: {list-from-crumb}
 - **Root cause**: {copy-from-crumb}
 - **Expected behavior**: {copy-from-crumb}
 - **Scope boundaries**: Read ONLY the files/lines listed above
-- **Summary output path**: `{session-dir}/summaries/{task-id}.md`
+- **Summary output path**: `{session-dir}/summaries/{TASK_ID}.md`
 
 ---
 
@@ -62,12 +62,12 @@ After implementation, review EVERY file you changed or created:
 - Record your commit hash in the summary doc (Step 6) so the claims-vs-code checkpoint can identify your commits without scanning `git log`
 
 ## Step 6: Write Summary Doc (MANDATORY)
-Write a structured summary to `{session-dir}/summaries/{task-id}.md` using the Write tool.
+Write a structured summary to `{session-dir}/summaries/{TASK_ID}.md` using the Write tool.
 (the Queen creates this directory at session start.)
 The summary MUST contain ALL of these sections — incomplete summaries will be rejected:
 
 ```markdown
-# Summary: {task-id}
+# Summary: {TASK_ID}
 **Task**: {title-from-crumb-show}
 **Agent**: {subagent-type}
 **Status**: completed | failed
@@ -170,7 +170,7 @@ Before sending any agent prompt, confirm it includes:
 - [ ] **Step 3**: Implementation instructions
 - [ ] **Step 4**: "Review EVERY file you changed" with explicit checks (MANDATORY)
 - [ ] **Step 5**: Commit instructions with `git pull --rebase`
-- [ ] **Step 6**: Write summary doc to `{session-dir}/summaries/{task-id}.md` (MANDATORY)
+- [ ] **Step 6**: Write summary doc to `{session-dir}/summaries/{TASK_ID}.md` (MANDATORY)
 
 If any checkbox is missing, DO NOT spawn the agent — fix the prompt first.
 

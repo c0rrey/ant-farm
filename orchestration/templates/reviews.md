@@ -8,7 +8,7 @@
 Verify all 4 criteria before proceeding to team launch. These checks span ALL trails worked in this session:
 
 1. **All Crumb Gatherers completed across ALL trails** — none stuck or errored (check the Queen's state file for every trail)
-2. **claims-vs-code PASS for every agent** — verify at least one artifact exists at `{session-dir}/pc/pc-{task-id}-claims-vs-code-*.md`; if multiple files match (e.g., after retries), check the most recent by timestamp — it must contain an explicit `PASS` verdict, not merely exist
+2. **claims-vs-code PASS for every agent** — verify at least one artifact exists at `{session-dir}/pc/pc-{TASK_ID}-claims-vs-code-*.md`; if multiple files match (e.g., after retries), check the most recent by timestamp — it must contain an explicit `PASS` verdict, not merely exist
 3. **The Queen's state file updated** — all completions tracked, checkpoint results recorded for all trails
 4. **Git log shows expected commits** — run `git log --oneline -N` (where N = total number of agents across all trails) to confirm commits exist
 

@@ -10,7 +10,7 @@ Every crumb gatherer executes these steps in order. Task briefs you compose must
 3. **Implement** — write clean, minimal code satisfying acceptance criteria
 4. **Correctness Review (MANDATORY)** — re-read every changed file; verify acceptance criteria; assumptions audit (3 specific failure scenarios + mitigations)
 5. **Commit** — `git pull --rebase && git add <files> && git commit -m "<type>: <description> (<task-id>)"`; record commit hash in summary doc; if rebase resolved conflicts, repeat Step 4
-6. **Summary Doc (MANDATORY)** — write to `{session-dir}/summaries/{task-id}.md`
+6. **Summary Doc (MANDATORY)** — write to `{session-dir}/summaries/{TASK_ID}.md`
 
 ## Mandatory Summary Doc Sections
 

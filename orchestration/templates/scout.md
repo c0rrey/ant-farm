@@ -78,7 +78,7 @@ For each task (ready AND blocked):
 2. Write to `{SESSION_DIR}/task-metadata/{task-suffix}.md` using this exact format:
 
 ```markdown
-# Task: {task-id}
+# Task: {TASK_ID}
 **Status**: success
 **Title**: {title}
 **Type**: {bug/feature/task}
@@ -229,7 +229,7 @@ Write `{SESSION_DIR}/briefing.md` using this exact format:
 ## File Modification Matrix
 | File | Tasks | Risk |
 |------|-------|------|
-| {file} | {task-id-1}, {task-id-2} | HIGH/MED/LOW |
+| {file} | {TASK_ID_1}, {TASK_ID_2} | HIGH/MED/LOW |
 
 <!-- If any error tasks exist, add immediately after the table: -->
 **Warning**: {N} task(s) excluded from conflict analysis due to fetch errors: {error-task-ids}. Conflict risk for these tasks is UNKNOWN.
@@ -290,7 +290,7 @@ Recommended strategy: {strategy name}
 
   Example error metadata file:
   ```markdown
-  # Task: {task-id}
+  # Task: {TASK_ID}
   **Status**: error
   **Title**: {title from crumb list, or "unknown — not in listing"}
   **Type**: {type from crumb list, or "unknown"}
