@@ -781,7 +781,8 @@ For each group of related findings across all reviews:
 Before writing the consolidated summary or filing any crumbs, check for open crumbs that already cover your root causes. This prevents duplicate tracking of issues found in previous sessions.
 
 ```bash
-if ! crumb list --open --short > /tmp/open-crumbs-$$.txt 2>&1; then
+_OPEN_CRUMBS_TMP="$(mktemp /tmp/open-crumbs-XXXXXX.txt)"
+if ! crumb list --open --short > "$_OPEN_CRUMBS_TMP" 2>/dev/null; then
   echo "ERROR: crumb list failed (file error or crumb error). Aborting crumb filing to prevent duplicates."
   cat > "{CONSOLIDATED_OUTPUT_PATH}" << 'EOF'
   # Review Consolidator Consolidation — BLOCKED: Cross-Session Dedup Infrastructure Error
@@ -797,7 +798,7 @@ fi
 If the bash block above exits with code 1, stop immediately. Do NOT proceed to consolidation or crumb filing. Use the SendMessage tool to notify the Queen: "Review Consolidator FAILED: crumb list infrastructure error during cross-session dedup. Crumb filing aborted to prevent duplicates. Consolidated output written to {CONSOLIDATED_OUTPUT_PATH}. Please check crumb status and re-spawn Review Consolidator when ready." Then end your turn.
 <!-- NOTE: {CONSOLIDATED_OUTPUT_PATH} in the SendMessage text above is a template placeholder substituted by build-review-prompts.sh at build time — a real filesystem path appears in its place when Review Consolidator receives this prompt. Consistent with the bash-block comment in review-consolidator-skeleton.md. -->
 
-For each root cause group, compare against existing crumb titles (from `/tmp/open-crumbs-$$.txt`):
+For each root cause group, compare against existing crumb titles (from `$_OPEN_CRUMBS_TMP`):
 
 - **Exact title match** (case-insensitive): Do NOT file. Log in the summary: "Dedup: RC-N matches existing crumb {ID} — skipped."
 - **Similar title** (same root cause, different wording): Run `crumb search "<key phrases>"` to confirm. If the existing crumb covers the same root cause, do NOT file. Log the match and the existing crumb ID.
@@ -923,7 +924,8 @@ File ONE crumb per root cause (not per finding, not per review).
 **Important**: Crumbs filed during session review are standalone. Do NOT assign them to a specific trail via `crumb link --parent`. They represent session-wide findings, not trail-specific work.
 
 ```bash
-cat > /tmp/crumb-desc-$$.md << 'CRUMB_DESC'
+_DESC_TMP="$(mktemp /tmp/crumb-desc-XXXXXX.md)"
+cat > "$_DESC_TMP" << 'CRUMB_DESC'
 ## Root Cause
 {What is specifically wrong — cite the code path, pattern, or design flaw.
 Reference file:line locations where the issue originates. This must be
@@ -949,14 +951,15 @@ CRUMB_DESC
 CRUMB_TITLE="{root-cause-title}"
 CRUMB_PRIORITY="P{combined-priority}"
 CRUMB_REVIEW_SOURCE="{primary-review-type}"
+_CRUMB_JSON_TMP="$(mktemp /tmp/crumb-XXXXXX.json)"
 python3 -c "
 import json, pathlib, sys
 title, priority, review_source = sys.argv[1], sys.argv[2], sys.argv[3]
 desc = pathlib.Path(sys.argv[4]).read_text()
 print(json.dumps({'type': 'bug', 'priority': priority, 'title': title, 'description': desc, 'review_source': review_source, 'acceptance_criteria': [], 'scope': {}, 'links': {}}))
-" "$CRUMB_TITLE" "$CRUMB_PRIORITY" "$CRUMB_REVIEW_SOURCE" "/tmp/crumb-desc-$$.md" > /tmp/crumb-$$.json || { echo "ERROR: JSON generation failed" >&2; exit 1; }
-crumb create --from-file /tmp/crumb-$$.json
-rm -f /tmp/crumb-desc-$$.md /tmp/crumb-$$.json
+" "$CRUMB_TITLE" "$CRUMB_PRIORITY" "$CRUMB_REVIEW_SOURCE" "$_DESC_TMP" > "$_CRUMB_JSON_TMP" || { echo "ERROR: JSON generation failed" >&2; exit 1; }
+crumb create --from-file "$_CRUMB_JSON_TMP"
+rm -f "$_DESC_TMP" "$_CRUMB_JSON_TMP"
 ```
 
 ### P3 Auto-Filing (Round 2+ Only)
@@ -973,7 +976,8 @@ In round 2+, Review Consolidator auto-files P3 findings to the "Future Work" tra
 
 2. For each P3 root cause:
    ```bash
-   cat > /tmp/crumb-desc-$$.md << 'CRUMB_DESC'
+   _DESC_TMP="$(mktemp /tmp/crumb-desc-XXXXXX.md)"
+   cat > "$_DESC_TMP" << 'CRUMB_DESC'
    ## Root Cause
    {What is wrong — file:line refs to the primary location.}
 
@@ -984,14 +988,17 @@ In round 2+, Review Consolidator auto-files P3 findings to the "Future Work" tra
    - [ ] {testable criterion}
    CRUMB_DESC
 
+   _CRUMB_TITLE="{root-cause-title}"
+   _CRUMB_JSON_TMP="$(mktemp /tmp/crumb-XXXXXX.json)"
    python3 -c "
-import json, pathlib
-desc = pathlib.Path('/tmp/crumb-desc-$$.md').read_text()
-print(json.dumps({'type': 'bug', 'priority': 'P3', 'title': '{root-cause-title}', 'description': desc, 'acceptance_criteria': [], 'scope': {}, 'links': {}}))
-" > /tmp/crumb-$$.json
-   crumb create --from-file /tmp/crumb-$$.json
+import json, pathlib, sys
+title = sys.argv[1]
+desc = pathlib.Path(sys.argv[2]).read_text()
+print(json.dumps({'type': 'bug', 'priority': 'P3', 'title': title, 'description': desc, 'acceptance_criteria': [], 'scope': {}, 'links': {}}))
+" "$_CRUMB_TITLE" "$_DESC_TMP" > "$_CRUMB_JSON_TMP" || { echo "ERROR: JSON generation failed" >&2; exit 1; }
+   crumb create --from-file "$_CRUMB_JSON_TMP"
    crumb link <new-crumb-id> --parent <future-work-trail-id>
-   rm -f /tmp/crumb-desc-$$.md /tmp/crumb-$$.json
+   rm -f "$_DESC_TMP" "$_CRUMB_JSON_TMP"
    ```
 
 3. In the consolidated summary, list P3 crumbs in a separate section:
