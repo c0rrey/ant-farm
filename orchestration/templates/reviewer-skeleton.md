@@ -49,4 +49,4 @@ Your report MUST include these sections (see brief for full format):
 - **Coverage Log**: every scoped file listed, even those with no issues found
 - **Overall Assessment**: score out of 10 + verdict (PASS / PASS WITH ISSUES / NEEDS WORK)
 
-Do NOT file crumbs (`crumb create`) — Review Consolidator handles all crumb filing.
+Do NOT file crumbs (`crumb create`) — Big Head handles all crumb filing.
