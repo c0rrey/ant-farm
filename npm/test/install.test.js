@@ -23,6 +23,7 @@ const { readInstallManifest, writeInstalledManifest, readInstalledManifest } = r
 const { copyWithBackup, writeSentinel, removeSentinel, pathExists, sha256File } = require('../lib/file-ops');
 const { DryRunCollector } = require('../lib/dry-run');
 const { syncClaudeMdBlock } = require('../lib/claude-md');
+const { registerMcp, MCP_SERVER_NAME, MCP_COMMAND, MCP_ARGS } = require('../lib/mcp-registration');
 
 // ---------------------------------------------------------------------------
 // Helper: create a temporary directory and clean it up after the test.
@@ -455,4 +456,127 @@ test('DryRunCollector: printReport does not throw', () => {
     console.log = orig;
   }
   assert.ok(lines.some(l => l.includes('Dry-run preview')), 'Report header should be printed');
+});
+
+// ===========================================================================
+// Test: registerMcp called during install flow
+// ===========================================================================
+
+test('install flow: registerMcp writes mcpServers.crumb entry to settings.json', async () => {
+  await withTmpDir(async (tmpDir) => {
+    const settingsPath = path.join(tmpDir, 'settings.json');
+
+    // settings.json absent before install — registerMcp should create it
+    const exists = await pathExists(settingsPath);
+    assert.ok(!exists, 'settings.json should not exist before install');
+
+    const { warnings } = await registerMcp({ dryRun: false, collector: null, settingsPath });
+
+    // No warnings expected on a fresh registration
+    assert.deepEqual(warnings, [], 'No warnings should be returned on fresh MCP registration');
+
+    // settings.json should now exist
+    const written = await pathExists(settingsPath);
+    assert.ok(written, 'registerMcp should create settings.json when it does not exist');
+
+    // Parse the written file and verify the crumb entry
+    const raw = await fs.readFile(settingsPath, 'utf8');
+    const settings = JSON.parse(raw);
+
+    assert.ok(
+      settings.mcpServers && typeof settings.mcpServers === 'object',
+      'settings.json should have an mcpServers object after registerMcp'
+    );
+    assert.ok(
+      settings.mcpServers[MCP_SERVER_NAME],
+      `mcpServers.${MCP_SERVER_NAME} entry should be present after registerMcp`
+    );
+    assert.equal(
+      settings.mcpServers[MCP_SERVER_NAME].command,
+      MCP_COMMAND,
+      'mcpServers.crumb.command should match the expected MCP command'
+    );
+    assert.deepEqual(
+      settings.mcpServers[MCP_SERVER_NAME].args,
+      MCP_ARGS,
+      'mcpServers.crumb.args should match the expected MCP args'
+    );
+  });
+});
+
+test('install flow: registerMcp is idempotent on re-install', async () => {
+  await withTmpDir(async (tmpDir) => {
+    const settingsPath = path.join(tmpDir, 'settings.json');
+
+    // First install
+    await registerMcp({ dryRun: false, collector: null, settingsPath });
+
+    // Second install (re-run)
+    const { warnings } = await registerMcp({ dryRun: false, collector: null, settingsPath });
+
+    assert.deepEqual(warnings, [], 'No warnings should be returned on idempotent re-install');
+
+    // Entry should still be present and not duplicated
+    const raw = await fs.readFile(settingsPath, 'utf8');
+    const settings = JSON.parse(raw);
+    assert.ok(
+      settings.mcpServers[MCP_SERVER_NAME],
+      'mcpServers.crumb entry should still be present after idempotent re-install'
+    );
+    // There should be exactly one crumb key, not an array or multi-value structure
+    assert.equal(typeof settings.mcpServers[MCP_SERVER_NAME], 'object');
+  });
+});
+
+test('install flow: registerMcp dry-run records update op without writing files', async () => {
+  await withTmpDir(async (tmpDir) => {
+    const settingsPath = path.join(tmpDir, 'settings.json');
+    const collector = new DryRunCollector();
+
+    const { warnings } = await registerMcp({ dryRun: true, collector, settingsPath });
+
+    assert.deepEqual(warnings, [], 'No warnings should be returned in dry-run mode');
+
+    // settings.json must NOT be created in dry-run
+    const exists = await pathExists(settingsPath);
+    assert.ok(!exists, 'registerMcp dry-run must not write settings.json');
+
+    // Collector should have recorded an update op for settings.json
+    const updateOps = collector._ops.filter(o => o.op === 'update');
+    assert.ok(
+      updateOps.length > 0,
+      'Dry-run collector should record an update op for settings.json'
+    );
+    const targetsSettings = updateOps.some(o => o.dst === settingsPath || o.src === settingsPath);
+    assert.ok(targetsSettings, 'Recorded update op should reference the settings.json path');
+  });
+});
+
+test('install flow: registerMcp preserves existing non-ant-farm mcpServers entries', async () => {
+  await withTmpDir(async (tmpDir) => {
+    const settingsPath = path.join(tmpDir, 'settings.json');
+
+    // Pre-populate settings.json with a user-owned MCP entry
+    const initial = {
+      mcpServers: {
+        'my-custom-server': { command: 'node', args: ['server.js'] },
+      },
+    };
+    await fs.writeFile(settingsPath, JSON.stringify(initial, null, 2) + '\n', 'utf8');
+
+    await registerMcp({ dryRun: false, collector: null, settingsPath });
+
+    const raw = await fs.readFile(settingsPath, 'utf8');
+    const settings = JSON.parse(raw);
+
+    // The user's entry must not be touched
+    assert.ok(
+      settings.mcpServers['my-custom-server'],
+      'User-owned mcpServers entry must be preserved after registerMcp'
+    );
+    assert.equal(settings.mcpServers['my-custom-server'].command, 'node');
+
+    // The crumb entry should also be present
+    assert.ok(settings.mcpServers[MCP_SERVER_NAME], 'crumb entry should be added alongside existing entries');
+  });
 });

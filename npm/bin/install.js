@@ -29,6 +29,7 @@ const { DryRunCollector } = require('../lib/dry-run');
 const { syncClaudeMdBlock } = require('../lib/claude-md');
 const { runUninstall } = require('../lib/uninstall');
 const { registerHooks, unregisterHooks } = require('../lib/hooks-registration');
+const { registerMcp, unregisterMcp } = require('../lib/mcp-registration');
 
 // The package root is the npm/ directory (one level up from bin/)
 const PACKAGE_ROOT = path.resolve(__dirname, '..');
@@ -119,6 +120,15 @@ async function runUninstallMode(dryRun) {
     // Non-fatal: warn but continue so the rest of uninstall proceeds.
     result.warnings.push(`Failed to unregister hooks from settings.json: ${err.message}`);
     console.warn(`  WARNING: Failed to unregister hooks from settings.json: ${err.message}`);
+  }
+
+  // Unregister the ant-farm crumb MCP server entry from Claude Code settings.json.
+  try {
+    await unregisterMcp({ dryRun, collector });
+  } catch (err) {
+    // Non-fatal: warn but continue so the rest of uninstall proceeds.
+    result.warnings.push(`Failed to unregister MCP server from settings.json: ${err.message}`);
+    console.warn(`  WARNING: Failed to unregister MCP server from settings.json: ${err.message}`);
   }
 
   const { removed, skipped, warnings } = result;
@@ -264,6 +274,22 @@ async function runInstallMode(dryRun) {
       console.warn('  You can register hooks manually. See README for details.');
     }
     for (const w of hookWarnings) {
+      console.warn(`WARNING: ${w}`);
+    }
+  }
+
+  // Register the ant-farm crumb MCP server entry in Claude Code settings.json.
+  {
+    let mcpWarnings = [];
+    try {
+      const result = await registerMcp({ dryRun, collector });
+      mcpWarnings = result.warnings;
+    } catch (err) {
+      // Non-fatal: warn but continue so file installs are not rolled back.
+      console.warn(`WARNING: Failed to register MCP server in settings.json: ${err.message}`);
+      console.warn('  You can register the MCP server manually. See README for details.');
+    }
+    for (const w of mcpWarnings) {
       console.warn(`WARNING: ${w}`);
     }
   }

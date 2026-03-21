@@ -8,6 +8,7 @@
  *  - --uninstall without manifest: warning printed, no files deleted
  *  - Dry-run uninstall: remove ops recorded, nothing deleted
  *  - Partial uninstall: some manifest files missing from disk
+ *  - unregisterMcp: called during uninstall flow
  */
 
 const { test } = require('node:test');
@@ -20,6 +21,7 @@ const { runUninstall } = require('../lib/uninstall');
 const { writeInstalledManifest, readInstalledManifest } = require('../lib/manifest');
 const { pathExists } = require('../lib/file-ops');
 const { DryRunCollector } = require('../lib/dry-run');
+const { registerMcp, unregisterMcp, MCP_SERVER_NAME, MCP_COMMAND, MCP_ARGS } = require('../lib/mcp-registration');
 
 // ---------------------------------------------------------------------------
 // Helper: create a temporary directory and clean it up after the test.
@@ -212,5 +214,102 @@ test('uninstall with corrupt manifest: rejects with descriptive error', async ()
       /Failed to read install manifest/,
       'runUninstall should reject with a descriptive error on corrupt manifest'
     );
+  });
+});
+
+// ===========================================================================
+// Test: unregisterMcp called during uninstall flow
+// ===========================================================================
+
+test('uninstall flow: unregisterMcp removes mcpServers.crumb entry from settings.json', async () => {
+  await withTmpDir(async (tmpDir) => {
+    const settingsPath = path.join(tmpDir, 'settings.json');
+
+    // First, register the MCP entry as the installer would
+    await registerMcp({ dryRun: false, collector: null, settingsPath });
+
+    // Verify it was written
+    const before = JSON.parse(await fs.readFile(settingsPath, 'utf8'));
+    assert.ok(before.mcpServers[MCP_SERVER_NAME], 'crumb entry should be present before unregister');
+
+    // Now unregister, as the uninstaller would
+    const { warnings } = await unregisterMcp({ dryRun: false, collector: null, settingsPath });
+
+    assert.deepEqual(warnings, [], 'No warnings should be returned on clean unregister');
+
+    // crumb entry should be gone
+    const after = JSON.parse(await fs.readFile(settingsPath, 'utf8'));
+    assert.ok(
+      !after.mcpServers || !after.mcpServers[MCP_SERVER_NAME],
+      'mcpServers.crumb entry should be absent after unregisterMcp'
+    );
+  });
+});
+
+test('uninstall flow: unregisterMcp is a no-op when crumb entry is absent', async () => {
+  await withTmpDir(async (tmpDir) => {
+    const settingsPath = path.join(tmpDir, 'settings.json');
+
+    // settings.json absent — should not throw
+    await assert.doesNotReject(
+      () => unregisterMcp({ dryRun: false, collector: null, settingsPath }),
+      'unregisterMcp should not throw when settings.json does not exist'
+    );
+  });
+});
+
+test('uninstall flow: unregisterMcp preserves other mcpServers entries', async () => {
+  await withTmpDir(async (tmpDir) => {
+    const settingsPath = path.join(tmpDir, 'settings.json');
+
+    // Pre-populate settings.json with both the crumb entry and a user entry
+    const initial = {
+      mcpServers: {
+        [MCP_SERVER_NAME]: { command: MCP_COMMAND, args: MCP_ARGS },
+        'my-other-server': { command: 'node', args: ['other.js'] },
+      },
+    };
+    await fs.writeFile(settingsPath, JSON.stringify(initial, null, 2) + '\n', 'utf8');
+
+    await unregisterMcp({ dryRun: false, collector: null, settingsPath });
+
+    const raw = await fs.readFile(settingsPath, 'utf8');
+    const settings = JSON.parse(raw);
+
+    // crumb entry should be gone
+    assert.ok(
+      !settings.mcpServers || !settings.mcpServers[MCP_SERVER_NAME],
+      'mcpServers.crumb should be removed after unregisterMcp'
+    );
+
+    // User-owned entry must be preserved
+    assert.ok(
+      settings.mcpServers && settings.mcpServers['my-other-server'],
+      'User-owned mcpServers entry must be preserved after unregisterMcp'
+    );
+  });
+});
+
+test('uninstall flow: unregisterMcp dry-run does not delete settings entry', async () => {
+  await withTmpDir(async (tmpDir) => {
+    const settingsPath = path.join(tmpDir, 'settings.json');
+
+    // Register the entry first
+    await registerMcp({ dryRun: false, collector: null, settingsPath });
+
+    const collector = new DryRunCollector();
+    await unregisterMcp({ dryRun: true, collector, settingsPath });
+
+    // Entry must still be present — dry-run writes nothing
+    const raw = await fs.readFile(settingsPath, 'utf8');
+    const settings = JSON.parse(raw);
+    assert.ok(
+      settings.mcpServers && settings.mcpServers[MCP_SERVER_NAME],
+      'mcpServers.crumb entry must remain after dry-run unregisterMcp'
+    );
+
+    // Collector should have recorded an update op
+    const updateOps = collector._ops.filter(o => o.op === 'update');
+    assert.ok(updateOps.length > 0, 'Dry-run collector should record an update op');
   });
 });
