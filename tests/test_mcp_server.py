@@ -634,6 +634,22 @@ class TestCrumbDoctor:
         assert result["ok"] is False
         assert result["error_count"] == 1
 
+    def test_empty_output_raises_value_error(
+        self, crumbs_env: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """_run_doctor raises ValueError (not JSONDecodeError) when cmd_doctor produces no output."""
+        import crumb as _crumb_mod
+
+        def _silent_cmd_doctor(args: argparse.Namespace) -> None:
+            # Simulate cmd_doctor calling die() before printing any JSON.
+            pass
+
+        monkeypatch.setattr(_crumb_mod, "cmd_doctor", _silent_cmd_doctor)
+        monkeypatch.setattr(mcp_server._crumb, "cmd_doctor", _silent_cmd_doctor)
+
+        with pytest.raises(ValueError, match="tasks.jsonl"):
+            asyncio.run(crumb_doctor())
+
 
 # ---------------------------------------------------------------------------
 # TestConcurrency

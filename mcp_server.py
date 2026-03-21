@@ -374,6 +374,11 @@ async def crumb_doctor(fix: bool = False) -> dict[str, Any]:
             if exc.code != 1:
                 raise
         raw = buf.getvalue().strip()
+        if not raw:
+            raise ValueError(
+                "cmd_doctor produced no JSON output -- "
+                "tasks.jsonl may be missing or .crumbs/ directory not found."
+            )
         return json.loads(raw)
 
     return await asyncio.to_thread(_run_doctor)
