@@ -367,9 +367,9 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|ARCHITECT_COMPLETE|brief=${DECOMPOSE_DIR}/d
 
 ---
 
-**Step 5:** Verification — spawn Pest Control for TDV (Trail Decomposition Verification).
+**Step 5:** Verification — spawn Checkpoint Auditor for TDV (Trail Decomposition Verification).
 
-TDV is a **Pest Control spawn**, not an inline check. Spawn Pest Control using the TDV checkpoint
+TDV is a **Checkpoint Auditor spawn**, not an inline check. Spawn Checkpoint Auditor using the TDV checkpoint
 from `orchestration/templates/checkpoints/common.md` and `orchestration/templates/checkpoints/tdv.md`.
 
 **Note**: The TDV checkpoint template uses `{SESSION_DIR}` as its output path placeholder. During
