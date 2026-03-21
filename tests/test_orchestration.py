@@ -230,7 +230,7 @@ def test_checkpoint_completeness(checkpoint_file: Path) -> None:
 # ---------------------------------------------------------------------------
 
 # Regex that matches brace expansion patterns used in the glossary, e.g.:
-#   ant-farm-nitpicker-{clarity,edge-cases,correctness,drift}
+#   ant-farm-reviewer-{clarity,edge-cases,correctness,drift}
 # Group 1: prefix before the brace, group 2: comma-separated alternatives.
 _BRACE_EXPAND_RE: re.Pattern[str] = re.compile(r"([\w-]+)\{([^}]+)\}")
 
@@ -238,8 +238,8 @@ _BRACE_EXPAND_RE: re.Pattern[str] = re.compile(r"([\w-]+)\{([^}]+)\}")
 def _expand_brace_notation(text: str) -> str:
     """Expand shell-style brace notation into individual tokens.
 
-    Transforms patterns like ``ant-farm-nitpicker-{clarity,edge-cases}`` into
-    the space-separated tokens ``ant-farm-nitpicker-clarity ant-farm-nitpicker-edge-cases``
+    Transforms patterns like ``ant-farm-reviewer-{clarity,edge-cases}`` into
+    the space-separated tokens ``ant-farm-reviewer-clarity ant-farm-reviewer-edge-cases``
     so that a simple ``in`` membership check on the resulting string works.
 
     Args:
@@ -261,9 +261,9 @@ def test_glossary_coverage() -> None:
     """Every agent filename stem must appear in orchestration/GLOSSARY.md.
 
     Reads GLOSSARY.md and checks that each ``agents/*.md`` stem (the agent's
-    logical name, e.g. ``ant-farm-scout-organizer``) is mentioned at least
+    logical name, e.g. ``ant-farm-recon-planner``) is mentioned at least
     once.  Brace expansion patterns (e.g.
-    ``ant-farm-nitpicker-{clarity,edge-cases,correctness,drift}``) are expanded
+    ``ant-farm-reviewer-{clarity,edge-cases,correctness,drift}``) are expanded
     before the membership check so that compact glossary entries covering
     multiple agent variants are handled correctly.
 
@@ -271,7 +271,7 @@ def test_glossary_coverage() -> None:
     reference or within an appropriate brace pattern) causes this test to fail.
     """
     raw_glossary = GLOSSARY_FILE.read_text(encoding="utf-8")
-    # Expand brace notation so "ant-farm-nitpicker-{clarity,...}" is treated
+    # Expand brace notation so "ant-farm-reviewer-{clarity,...}" is treated
     # as individual name occurrences.
     glossary_text = _expand_brace_notation(raw_glossary)
 

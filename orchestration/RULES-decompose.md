@@ -19,7 +19,7 @@ accessible at `~/.claude/orchestration/`. To translate repo paths to runtime pat
 
 - **NEVER** run `crumb show`, `crumb ready`, `crumb list`, `crumb blocked`, or any `crumb` query command
 - **NEVER** read source code, test files, or application data files directly — agents do this
-- **NEVER** read agent instruction files (`ant-farm-surveyor.md`, `ant-farm-forager.md`, `decomposition.md`) —
+- **NEVER** read agent instruction files (`ant-farm-spec-writer.md`, `ant-farm-researcher.md`, `decomposition.md`) —
   pass the path to the agent and let it read its own instructions
 - **NEVER** set `run_in_background` on Task agents — multiple Task calls in one message already
   run concurrently; background mode leaks JSONL transcripts into the Planner's context
@@ -194,11 +194,11 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|INPUT_CLASS|freeform|spec=pending" \
 **Step 2:** Requirements gathering — spawn the Surveyor (freeform input only).
 
 Spawn the Surveyor using `orchestration/templates/surveyor-skeleton.md` as a guide.
-Do NOT read `ant-farm-surveyor.md` yourself — pass its path to the Surveyor agent.
+Do NOT read `ant-farm-spec-writer.md` yourself — pass its path to the Surveyor agent.
 
 ```
 Task(
-  subagent_type="ant-farm-surveyor",
+  subagent_type="ant-farm-spec-writer",
   model="opus",
   prompt="<filled surveyor-skeleton.md template — see orchestration/templates/surveyor-skeleton.md>"
 )
@@ -238,10 +238,10 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SPEC_QUALITY_GATE|pass|spec=${DECOMPOSE_DIR
 Do NOT spawn them sequentially — they are designed for parallel execution.
 
 ```
-Task(subagent_type="ant-farm-forager", model="sonnet", prompt="<Stack forager prompt>")
-Task(subagent_type="ant-farm-forager", model="sonnet", prompt="<Architecture forager prompt>")
-Task(subagent_type="ant-farm-forager", model="sonnet", prompt="<Pitfall forager prompt>")
-Task(subagent_type="ant-farm-forager", model="sonnet", prompt="<Pattern forager prompt>")
+Task(subagent_type="ant-farm-researcher", model="sonnet", prompt="<Stack forager prompt>")
+Task(subagent_type="ant-farm-researcher", model="sonnet", prompt="<Architecture forager prompt>")
+Task(subagent_type="ant-farm-researcher", model="sonnet", prompt="<Pitfall forager prompt>")
+Task(subagent_type="ant-farm-researcher", model="sonnet", prompt="<Pattern forager prompt>")
 ```
 
 Fill each prompt from `orchestration/templates/forager-skeleton.md`. Pass the same `{SPEC_PATH}`
@@ -335,7 +335,7 @@ Do NOT read `decomposition.md` yourself — pass its path to the Architect agent
 
 ```
 Task(
-  subagent_type="ant-farm-architect",
+  subagent_type="ant-farm-task-decomposer",
   model="opus",
   prompt="<filled architect-skeleton.md template — see orchestration/templates/architect-skeleton.md>"
 )
@@ -472,9 +472,9 @@ Omitting `model` causes the agent to inherit the Planner's model, wasting tokens
 
 | Agent | subagent_type | Model | Rationale |
 |-------|--------------|-------|-----------|
-| Surveyor | `ant-farm-surveyor` | opus | User interaction + requirements synthesis require highest capability |
-| Forager (×4, parallel) | `ant-farm-forager` | sonnet | Focused single-topic research; sonnet is sufficient |
-| Architect | `ant-farm-architect` | opus | Multi-source synthesis + design decisions shaping all downstream work |
+| Surveyor | `ant-farm-spec-writer` | opus | User interaction + requirements synthesis require highest capability |
+| Forager (×4, parallel) | `ant-farm-researcher` | sonnet | Focused single-topic research; sonnet is sufficient |
+| Architect | `ant-farm-task-decomposer` | opus | Multi-source synthesis + design decisions shaping all downstream work |
 
 ---
 

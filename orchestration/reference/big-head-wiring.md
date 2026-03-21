@@ -58,12 +58,12 @@ Base case (no splits) — 6 members:
 TeamCreate(
   name="nitpicker-team",
   members=[
-    { "name": "clarity-reviewer",      "subagent_type": "ant-farm-nitpicker-clarity",     "prompt": "<filled nitpicker template with REVIEW_TYPE=clarity>", "model": "sonnet" },
-    { "name": "edge-cases-reviewer",   "subagent_type": "ant-farm-nitpicker-edge-cases",   "prompt": "<filled nitpicker template with REVIEW_TYPE=edge-cases>", "model": "opus" },
-    { "name": "correctness-reviewer",  "subagent_type": "ant-farm-nitpicker-correctness",  "prompt": "<filled nitpicker template with REVIEW_TYPE=correctness>", "model": "opus" },
-    { "name": "drift-reviewer",        "subagent_type": "ant-farm-nitpicker-drift",         "prompt": "<filled nitpicker template with REVIEW_TYPE=drift>", "model": "sonnet" },
-    { "name": "ant-farm-big-head",     "prompt": "<filled big-head template — report count from consolidation brief's expected_paths>", "model": "{MODEL}" },
-    { "name": "ant-farm-pest-control", "prompt": "<pest-control prompt>", "model": "sonnet" }
+    { "name": "clarity-reviewer",      "subagent_type": "ant-farm-reviewer-clarity",     "prompt": "<filled nitpicker template with REVIEW_TYPE=clarity>", "model": "sonnet" },
+    { "name": "edge-cases-reviewer",   "subagent_type": "ant-farm-reviewer-edge-cases",   "prompt": "<filled nitpicker template with REVIEW_TYPE=edge-cases>", "model": "opus" },
+    { "name": "correctness-reviewer",  "subagent_type": "ant-farm-reviewer-correctness",  "prompt": "<filled nitpicker template with REVIEW_TYPE=correctness>", "model": "opus" },
+    { "name": "drift-reviewer",        "subagent_type": "ant-farm-reviewer-drift",         "prompt": "<filled nitpicker template with REVIEW_TYPE=drift>", "model": "sonnet" },
+    { "name": "ant-farm-review-consolidator", "prompt": "<filled big-head template — report count from consolidation brief's expected_paths>", "model": "{MODEL}" },
+    { "name": "ant-farm-checkpoint-auditor", "prompt": "<pest-control prompt>", "model": "sonnet" }
   ]
 )
 ```
@@ -74,21 +74,21 @@ Split instance example (2 Clarity + 2 Drift splits) — 8 members:
 TeamCreate(
   name="nitpicker-team",
   members=[
-    { "name": "clarity-1",             "subagent_type": "ant-farm-nitpicker-clarity",     "prompt": "<filled nitpicker template with REVIEW_TYPE=clarity, file subset A>", "model": "sonnet" },
-    { "name": "clarity-2",             "subagent_type": "ant-farm-nitpicker-clarity",     "prompt": "<filled nitpicker template with REVIEW_TYPE=clarity, file subset B>", "model": "sonnet" },
-    { "name": "edge-cases-reviewer",   "subagent_type": "ant-farm-nitpicker-edge-cases",   "prompt": "<filled nitpicker template with REVIEW_TYPE=edge-cases>", "model": "opus" },
-    { "name": "correctness-reviewer",  "subagent_type": "ant-farm-nitpicker-correctness",  "prompt": "<filled nitpicker template with REVIEW_TYPE=correctness>", "model": "opus" },
-    { "name": "drift-1",               "subagent_type": "ant-farm-nitpicker-drift",         "prompt": "<filled nitpicker template with REVIEW_TYPE=drift, file subset A>", "model": "sonnet" },
-    { "name": "drift-2",               "subagent_type": "ant-farm-nitpicker-drift",         "prompt": "<filled nitpicker template with REVIEW_TYPE=drift, file subset B>", "model": "sonnet" },
-    { "name": "ant-farm-big-head",     "prompt": "<filled big-head template — report count from consolidation brief's expected_paths>", "model": "{MODEL}" },
-    { "name": "ant-farm-pest-control", "prompt": "<pest-control prompt>", "model": "sonnet" }
+    { "name": "clarity-1",             "subagent_type": "ant-farm-reviewer-clarity",     "prompt": "<filled nitpicker template with REVIEW_TYPE=clarity, file subset A>", "model": "sonnet" },
+    { "name": "clarity-2",             "subagent_type": "ant-farm-reviewer-clarity",     "prompt": "<filled nitpicker template with REVIEW_TYPE=clarity, file subset B>", "model": "sonnet" },
+    { "name": "edge-cases-reviewer",   "subagent_type": "ant-farm-reviewer-edge-cases",   "prompt": "<filled nitpicker template with REVIEW_TYPE=edge-cases>", "model": "opus" },
+    { "name": "correctness-reviewer",  "subagent_type": "ant-farm-reviewer-correctness",  "prompt": "<filled nitpicker template with REVIEW_TYPE=correctness>", "model": "opus" },
+    { "name": "drift-1",               "subagent_type": "ant-farm-reviewer-drift",         "prompt": "<filled nitpicker template with REVIEW_TYPE=drift, file subset A>", "model": "sonnet" },
+    { "name": "drift-2",               "subagent_type": "ant-farm-reviewer-drift",         "prompt": "<filled nitpicker template with REVIEW_TYPE=drift, file subset B>", "model": "sonnet" },
+    { "name": "ant-farm-review-consolidator", "prompt": "<filled big-head template — report count from consolidation brief's expected_paths>", "model": "{MODEL}" },
+    { "name": "ant-farm-checkpoint-auditor", "prompt": "<pest-control prompt>", "model": "sonnet" }
   ]
 )
 ```
 
 **Round 2+**: Only Correctness and Edge Cases reviewers are re-tasked; the consolidation brief's `expected_paths` is authoritative for the 2 expected report paths. Pest Control is always the last member of the persistent team.
 
-**Split instance idle semantics**: In round 2+, split Clarity instances (`clarity-1`, `clarity-2`, etc.) and split Drift instances (`drift-1`, `drift-2`, etc.) remain idle — exactly like the base-case `clarity-reviewer` and `drift-reviewer`. They are NOT re-tasked via SendMessage. Round 2+ SendMessage targets only `correctness-reviewer`, `edge-cases-reviewer`, `ant-farm-big-head`, and `ant-farm-pest-control` by name. Never use broadcast in round 2+.
+**Split instance idle semantics**: In round 2+, split Clarity instances (`clarity-1`, `clarity-2`, etc.) and split Drift instances (`drift-1`, `drift-2`, etc.) remain idle — exactly like the base-case `clarity-reviewer` and `drift-reviewer`. They are NOT re-tasked via SendMessage. Round 2+ SendMessage targets only `correctness-reviewer`, `edge-cases-reviewer`, `ant-farm-review-consolidator`, and `ant-farm-checkpoint-auditor` by name. Never use broadcast in round 2+.
 
 Round 2+ re-task targets (named-member SendMessage only — no broadcast):
 
@@ -96,10 +96,10 @@ Round 2+ re-task targets (named-member SendMessage only — no broadcast):
 TeamCreate(
   name="nitpicker-team",
   members=[
-    { "name": "correctness-reviewer",  "subagent_type": "ant-farm-nitpicker-correctness",  "prompt": "<filled nitpicker template with REVIEW_TYPE=correctness>", "model": "opus" },
-    { "name": "edge-cases-reviewer",   "subagent_type": "ant-farm-nitpicker-edge-cases",   "prompt": "<filled nitpicker template with REVIEW_TYPE=edge-cases>", "model": "opus" },
-    { "name": "ant-farm-big-head",     "prompt": "<filled big-head template — report count from consolidation brief's expected_paths>", "model": "{MODEL}" },
-    { "name": "ant-farm-pest-control", "prompt": "<pest-control prompt>", "model": "sonnet" }
+    { "name": "correctness-reviewer",  "subagent_type": "ant-farm-reviewer-correctness",  "prompt": "<filled nitpicker template with REVIEW_TYPE=correctness>", "model": "opus" },
+    { "name": "edge-cases-reviewer",   "subagent_type": "ant-farm-reviewer-edge-cases",   "prompt": "<filled nitpicker template with REVIEW_TYPE=edge-cases>", "model": "opus" },
+    { "name": "ant-farm-review-consolidator", "prompt": "<filled big-head template — report count from consolidation brief's expected_paths>", "model": "{MODEL}" },
+    { "name": "ant-farm-checkpoint-auditor", "prompt": "<pest-control prompt>", "model": "sonnet" }
   ]
 )
 ```
