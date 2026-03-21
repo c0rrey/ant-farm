@@ -103,8 +103,8 @@ Templates live in `orchestration/templates/`. Each template has a specific reade
 | `surveyor-skeleton.md` | Planner | Spec Writer spawn template |
 | `forager.md` | Researcher (self-read) | Parallel research instructions |
 | `forager-skeleton.md` | Planner | Researcher spawn template |
-| `decomposition.md` | Architect | Decomposition workflow instructions |
-| `architect-skeleton.md` | Planner | Architect spawn template |
+| `decomposition.md` | Task Decomposer | Decomposition workflow instructions |
+| `architect-skeleton.md` | Planner | Task Decomposer spawn template |
 | `SESSION_PLAN_TEMPLATE.md` | User (optional) | Session planning template for new projects |
 
 ### Placeholder conventions

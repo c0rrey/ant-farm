@@ -27,7 +27,7 @@ The core idea is **constrained delegation**. Work is split across specialist age
 ```
 Planning Workflow                    Execution Workflow
 
-  Surveyor                             Scout (recon)
+  Spec Writer                          Scout (recon)
      |                                    |
   Researchers (4x parallel)            startup-check gate
      |                                    |
@@ -54,7 +54,7 @@ Four layers, each with a clear job.
 
 **1. Task and artifact layer.** `crumb.py` stores tasks and trails in `.crumbs/tasks.jsonl`. Sessions write durable artifacts (metadata, prompts, summaries, review reports, checkpoint audits) under `.crumbs/sessions/`.
 
-**2. Two orchestrators.** The Planner handles decomposition (Surveyor, Foragers, Architect). The Queen handles execution (Scout, Pantry, Crumb Gatherers, Nitpickers, Big Head, Scribe). They have different permissions, different state models, and different agent teams.
+**2. Two orchestrators.** The Planner handles decomposition (Spec Writer, Researchers, Task Decomposer). The Queen handles execution (Scout, Pantry, Crumb Gatherers, Reviewers, Review Consolidator, Scribe). They have different permissions, different state models, and different agent teams.
 
 **3. Specialist agents.** Claude Code agent definitions in `agents/` cover recon, prompt composition, implementation, review, consolidation, verification, and documentation.
 
@@ -204,7 +204,7 @@ After startup-check PASS, the Queen auto-proceeds. Strategy approval is mechanic
 The Queen delegates prompt composition to the Pantry, which reads templates, extracts per-task context, and writes combined prompt previews to disk. The Checkpoint Auditor audits the previews against the pre-spawn-check checkpoint. Only agents with PASS verdicts are spawned.
 
 ```
-Queen                          Pantry                    Pest Control
+Queen                          Pantry                    Checkpoint Auditor
   │                              │                           │
   ├──spawn────────────────────►  │                           │
   │  "compose Wave N prompts"    │                           │
@@ -235,7 +235,7 @@ Agents are constrained by scope boundaries: they may only edit the files and lin
 
 ### Step 3: Monitor and Verify
 
-After each wave, Pest Control runs:
+After each wave, Checkpoint Auditor runs:
 
 - **scope-verify** (scope verification): files changed in the commit match expected scope. No scope creep.
 - **claims-vs-code** (substance verification): git diff matches summary claims, acceptance criteria are genuinely met, design approaches are substantively distinct.
