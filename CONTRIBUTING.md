@@ -39,7 +39,7 @@ Claude Code loads agent files once at startup. Adding or editing an agent file r
 1. **`README.md`** -- add the agent to the "Custom agents" table
 2. **`orchestration/RULES.md`** -- add the agent to the "Agent Types" table and "Model Assignments" table
 3. **`orchestration/templates/scout.md`** -- the Scout discovers agents dynamically by scanning `~/.claude/agents/`, so no template change is needed unless you want to add heuristic rules for when to recommend the new agent
-4. **`orchestration/GLOSSARY.md`** -- add the agent to the "Ant Metaphor Roles" table (lines 77-85)
+4. **`orchestration/GLOSSARY.md`** -- add the agent to the "Ant Metaphor Roles" table (the `## Ant Metaphor Roles` section)
 
 ### One-TeamCreate-per-session constraint
 
