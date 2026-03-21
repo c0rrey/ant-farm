@@ -110,7 +110,7 @@ These placeholders are filled in by **`build-review-prompts.sh`** when it compos
 - Guards in the templates detect unsubstituted double-brace markers and return an error rather than proceeding with incomplete data
 
 **Examples**:
-- `{{REVIEW_ROUND}}` — the integer review round number (1, 2, 3, ...) injected by `build-review-prompts.sh` into Big Head's brief so that shell conditionals (`if [ "$REVIEW_ROUND" -eq 1 ]`) execute correctly
+- `{{REVIEW_ROUND}}` — the integer review round number (1, 2, 3, ...) injected by `build-review-prompts.sh` into Review Consolidator's brief so that shell conditionals (`if [ "$REVIEW_ROUND" -eq 1 ]`) execute correctly
 - `{{COMMIT_RANGE}}` — the git commit range for the review scope (e.g., `abc123..HEAD`)
 - `{{CHANGED_FILES}}` — deduplicated list of files changed across all session epics
 - `{{TASK_IDS}}` — list of all crumb IDs worked in the session, used in acceptance-criteria verification
