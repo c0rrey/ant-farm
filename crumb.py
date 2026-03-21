@@ -2547,7 +2547,7 @@ def cmd_render_template(args: argparse.Namespace) -> None:
     try:
         template_text = template_path.read_text(encoding="utf-8")
     except OSError as exc:
-        die(f"cannot read template {args.template}: {exc}")
+        die(f"cannot read template: {exc}")
 
     # Parse --slot KEY=VALUE pairs into a dict.
     slots: Dict[str, str] = {}
