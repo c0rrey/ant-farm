@@ -12,9 +12,9 @@ Every `Task` tool call the Queen makes MUST include the `model` parameter from t
 | PC — WWD | Task (`ant-farm-checkpoint-auditor`) | haiku | Mechanical file comparison |
 | PC — CMVCC | Task (`ant-farm-checkpoint-auditor`) | sonnet | Judgment: claims vs actual code |
 | PC — CCB | Task (`ant-farm-checkpoint-auditor`) | sonnet | Judgment: crumb quality and dedup correctness |
-| Reviewers — Correctness, Edge Cases | TeamCreate member | opus | Higher-judgment reviews; set in big-head-skeleton.md |
-| Reviewers — Clarity, Drift | TeamCreate member | sonnet | Lower-judgment reviews; set in big-head-skeleton.md |
-| Review Consolidator | TeamCreate member | opus | Set in big-head-skeleton.md (`{MODEL}`) |
+| Reviewers — Correctness, Edge Cases | TeamCreate member | opus | Higher-judgment reviews; set in review-consolidator-skeleton.md |
+| Reviewers — Clarity, Drift | TeamCreate member | sonnet | Lower-judgment reviews; set in review-consolidator-skeleton.md |
+| Review Consolidator | TeamCreate member | opus | Set in review-consolidator-skeleton.md (`{MODEL}`) |
 | PC (team member) | TeamCreate member | sonnet | Runs CMVCC inside team; needs sonnet |
 | Fix Crumb Gatherers | Task (dynamic type) into team | sonnet | Same model as regular Crumb Gatherers; spawned with `team_name: "reviewer-team"` |
 | fix-pc-scope-verify | Task into team | haiku | Scope verify for fix DPs: lightweight scope check; spawned with `team_name: "reviewer-team"` |

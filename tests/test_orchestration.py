@@ -303,8 +303,8 @@ BUILD_SCRIPT: Path = REPO_ROOT / "scripts" / "build-review-prompts.sh"
 # Only these two are processed by that script; the other *-skeleton.md files
 # are used directly by the Queen/Planner without going through this script.
 _BUILD_SCRIPT_SKELETONS: tuple[str, ...] = (
-    "nitpicker-skeleton.md",
-    "big-head-skeleton.md",
+    "reviewer-skeleton.md",
+    "review-consolidator-skeleton.md",
 )
 
 # Matches single-brace UPPERCASE placeholders used in skeleton templates,

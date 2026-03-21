@@ -80,7 +80,7 @@ Task IDs for acceptance criteria: {list of all task IDs worked this session}
 2. Edge Cases Review (P2) — see prompt below; model: opus
 3. Correctness Review (P1-P2) — see prompt below; model: opus
 4. Drift Review (P3) — see prompt below; model: sonnet
-5. Review Consolidator (consolidation) — see prompt from big-head-skeleton.md; model specified in Review Consolidator Protocol section
+5. Review Consolidator (consolidation) — see prompt from review-consolidator-skeleton.md; model specified in Review Consolidator Protocol section
 6. Checkpoint Auditor (checkpoint validator) — receives consolidated report path from Review Consolidator via SendMessage; runs claims-vs-code and review-integrity checkpoints and replies with verdict
 ~~~
 
@@ -104,7 +104,7 @@ Task IDs for acceptance criteria: {list of all task IDs worked this session}
 4. Correctness Review (P1-P2) — see prompt below; model: opus
 5. Drift Review part 1 (P3) — drift-1; file subset A from return table; model: sonnet
 6. Drift Review part 2 (P3) — drift-2; file subset B from return table; model: sonnet
-7. Review Consolidator (consolidation) — see prompt from big-head-skeleton.md; model specified in Review Consolidator Protocol section
+7. Review Consolidator (consolidation) — see prompt from review-consolidator-skeleton.md; model specified in Review Consolidator Protocol section
 8. Checkpoint Auditor (checkpoint validator) — receives consolidated report path from Review Consolidator via SendMessage; runs claims-vs-code and review-integrity checkpoints and replies with verdict
 ~~~
 
@@ -128,7 +128,7 @@ Clarity and Drift reviewers (including split instances clarity-1, clarity-2, dri
 re-tasked — they remain idle. Do NOT send them messages in round 2+.
 ~~~
 
-**The Review Consolidator is spawned as a team member using the big-head-skeleton.md template**, not as a separate Task agent. The Queen fills in the skeleton placeholders and uses the result as the teammate's prompt.
+**The Review Consolidator is spawned as a team member using the review-consolidator-skeleton.md template**, not as a separate Task agent. The Queen fills in the skeleton placeholders and uses the result as the teammate's prompt.
 
 ### Fallback: Sequential Reviews with File-Based Coordination (When TeamCreate Unavailable)
 
@@ -156,7 +156,7 @@ re-tasked — they remain idle. Do NOT send them messages in round 2+.
 3. **Spawn Big Head (after all 4 reviews complete)**:
    - Spawn as Task agent (model: opus)
    - Input: paths to all 4 review reports (copy from the reports directory)
-   - Use big-head-skeleton.md template for the Review Consolidator (same as team mode)
+   - Use review-consolidator-skeleton.md template for the Review Consolidator (same as team mode)
    - Output: consolidated summary to {session-dir}/review-reports/review-consolidated-{timestamp}.md
 
 4. **Quality assurance**:
@@ -490,9 +490,9 @@ After all Reviewer reports are complete (count determined by the consolidation b
 
 ### Step Numbering Cross-Reference
 
-reviews.md and big-head-skeleton.md (Review Consolidator template) use different step numbering schemes. Use this table to cross-reference them without consulting both files simultaneously:
+reviews.md and review-consolidator-skeleton.md (Review Consolidator template) use different step numbering schemes. Use this table to cross-reference them without consulting both files simultaneously:
 
-| reviews.md step | big-head-skeleton.md (Review Consolidator) step | Description |
+| reviews.md step | review-consolidator-skeleton.md (Review Consolidator) step | Description |
 |----------------|--------------------------|-------------|
 | Step 0 | Step 1 | Verify all expected report files exist (prerequisite gate) |
 | Step 0a | Step 1 (continued) | Polling loop and timeout handling for missing reports |
@@ -543,7 +543,7 @@ Before reading any reports, verify the expected files exist. The authoritative l
 
 ### Step 0a: Remediation Path for Missing Reports (TIMEOUT + ERROR RETURN)
 
-> **Authoritative source**: This section is the authoritative protocol for missing-report handling. The big-head-skeleton.md step 1 defers to this brief. If any apparent conflict exists between the skeleton and this brief, follow this brief.
+> **Authoritative source**: This section is the authoritative protocol for missing-report handling. The review-consolidator-skeleton.md step 1 defers to this brief. If any apparent conflict exists between the skeleton and this brief, follow this brief.
 
 If any report file is missing after the initial check, do NOT wait indefinitely. Instead:
 
