@@ -104,6 +104,8 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_SPAWNED|wave=1|mode=lite|task=${TASK_I
 
 **Write .ant-farm-scope.json atomically (temp file + rename) before spawning:**
 
+> **AFFECTED_FILES_LIST** is the space-separated list of `file:line-range` strings from the crumb's `Scope.files` field (populated in Step 1 when you ran `crumb show`). Construct this list from the crumb's affected files before running the snippet below.
+
 ```bash
 # Build the allowed_files JSON array from the crumb's affected files list
 # Each entry must be a quoted string with optional line range, e.g. "src/foo.py:10-50"
@@ -124,8 +126,6 @@ with open(tmp, 'w') as f:
 os.replace(tmp, '.ant-farm-scope.json')
 " "${SCOPE_JSON}"
 ```
-
-> **AFFECTED_FILES_LIST** is the space-separated list of `file:line-range` strings from the crumb's `Scope.files` field (populated in Step 1 when you ran `crumb show`). Construct this list from the crumb's affected files before running the snippet above.
 
 ```
 Task(
