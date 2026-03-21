@@ -161,7 +161,7 @@ print(json.dumps({'type': 'bug', 'priority': 'P3', 'title': '<title>', 'descript
     Use this exact format:
 
     ```
-    Fix handoff: <N> root causes filed.
+    Review complete: <N> root causes filed.
     P1: <count>, P2: <count>, P3: <count>
 
     Crumbs requiring fixes:
