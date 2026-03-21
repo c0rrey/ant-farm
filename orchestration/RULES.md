@@ -28,21 +28,21 @@ Your first instinct will be to "gather context" by running `crumb show` on the t
 The Queen's window is restricted to prevent context bloat, but certain files are explicitly PERMITTED.
 
 **PERMITTED (Queen must read these):**
-- `{SESSION_DIR}/briefing.md` — Scout-generated strategy summary; Queen reads after SSV PASS to confirm task count before auto-proceeding to Step 2
+- `{SESSION_DIR}/briefing.md` — Scout-generated strategy summary; Queen reads after startup-check PASS to confirm task count before auto-proceeding to Step 2
 - `{SESSION_DIR}/task-metadata/*.md` — Per-task scope, acceptance criteria (pre-digested by Scout)
 - `{SESSION_DIR}/previews/*.md` — Combined prompt previews (pre-digested by Pantry)
 - `{SESSION_DIR}/review-reports/*.md` — Individual reviewer reports and Big Head consolidated summary
-- Verdict tables from Pantry and Pest Control — CCO, WWD, CMVCC, CCB verdicts
+- Verdict tables from Prompt Composer and Checkpoint Auditor — pre-spawn-check, scope-verify, claims-vs-code, review-integrity verdicts
 - Commit messages and git status/log/diff --stat output
 - Agent notifications (as they complete)
 
 **PERMITTED (Queen reads once per phase, for context only):**
 - `orchestration/templates/crumb-gatherer-skeleton.md` — Once per implementation wave (skeleton structure; see [Glossary: wave](GLOSSARY.md#workflow-concepts))
-- `orchestration/templates/nitpicker-skeleton.md` — Once per review cycle (skeleton structure)
-- `orchestration/templates/big-head-skeleton.md` — Once per review cycle (skeleton structure)
+- `orchestration/templates/reviewer-skeleton.md` — Once per review cycle (skeleton structure)
+- `orchestration/templates/review-consolidator-skeleton.md` — Once per review cycle (skeleton structure)
 - `orchestration/templates/scribe-skeleton.md` — Once per session (read to fill placeholders before spawning the Scribe at Step 5b)
 - Project's `CLAUDE.md` — Global project rules
-- `{SESSION_DIR}/exec-summary.md` — Scribe output; read only when ESV escalates to user with a failed exec summary
+- `{SESSION_DIR}/exec-summary.md` — Scribe output; read only when session-complete checkpoint escalates to user with a failed exec summary
 - `orchestration/reference/crumb-cheatsheet.md` — crumb CLI quick reference; read when composing agent prompts that invoke crumb commands
 
 **FORBIDDEN (agents read; Queen never reads):**
@@ -105,7 +105,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             Skipping Step 3b is a critical workflow violation.
 
 **Step 1:** Recon — Read `{SESSION_DIR}/briefing.md` written by the Scout's previous run, or spawn the Scout
-            (`ant-farm-scout-organizer` subagent, `model: "opus"`) if this is the first session. Include in Scout's prompt:
+            (`ant-farm-recon-planner` subagent, `model: "opus"`) if this is the first session. Include in Scout's prompt:
             (1) `Session directory: <value of SESSION_DIR>`,
             (2) `Mode: <mode>` — derive from the user's message:
                 - User specifies an epic → `epic <epic-id>`
@@ -117,77 +117,77 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             or any other `crumb` commands — the Scout handles all task discovery and metadata gathering.
             WAIT for the Scout to return its briefing verdict (written to `{SESSION_DIR}/briefing.md`).
 
-**Step 1b:** SSV gate — After Scout writes `{SESSION_DIR}/briefing.md`, spawn Pest Control
-            (`ant-farm-pest-control`, `model: "haiku"`) for Scout Strategy Verification (SSV).
+**Step 1b:** startup-check gate — After Scout writes `{SESSION_DIR}/briefing.md`, spawn Checkpoint Auditor
+            (`ant-farm-checkpoint-auditor`, `model: "haiku"`) for Scout Strategy Verification (startup-check).
             Pass `Session directory: <value of SESSION_DIR>` and the paths `orchestration/templates/checkpoints/common.md`
-            and `orchestration/templates/checkpoints/ssv.md` as its instruction files. Pest Control reads `{SESSION_DIR}/briefing.md` itself and runs all three
+            and `orchestration/templates/checkpoints/startup-check.md` as its instruction files. Checkpoint Auditor reads `{SESSION_DIR}/briefing.md` itself and runs all three
             mechanical checks (file overlap within waves, file list match against crumbs, intra-wave dependency
-            ordering). **SSV must PASS before proceeding.**
+            ordering). **startup-check must PASS before proceeding.**
 
-            **On SSV PASS**: Proceed directly to Step 2. Do NOT wait for user approval. SSV is the
+            **On startup-check PASS**: Proceed directly to Step 2. Do NOT wait for user approval. startup-check is the
             mechanical safety gate — a passing strategy is structurally sound and ready to execute.
             No complexity threshold applies; auto-approve regardless of task count.
             **Zero-task guard:** If the briefing's task count is 0, do NOT auto-proceed to Step 2.
             Escalate to the user with the zero-task briefing for review and await instruction.
-            **On SSV FAIL**: Re-run Scout with the specific violations from the SSV report (do NOT present
-            a failed strategy to the user). After Scout revises briefing.md, re-run SSV.
-            **Retry cap:** The SSV FAIL -> re-Scout cycle has a maximum of 1 retry. If SSV fails again
-            after one re-Scout run, do NOT re-run Scout a second time. Surface the SSV violations to
+            **On startup-check FAIL**: Re-run Scout with the specific violations from the startup-check report (do NOT present
+            a failed strategy to the user). After Scout revises briefing.md, re-run startup-check.
+            **Retry cap:** The startup-check FAIL -> re-Scout cycle has a maximum of 1 retry. If startup-check fails again
+            after one re-Scout run, do NOT re-run Scout a second time. Surface the startup-check violations to
             the user and await instruction.
 
-            **Progress log (after SSV PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SCOUT_COMPLETE|briefing=${SESSION_DIR}/briefing.md|ssv=pass|tasks_accepted=<N>|next_step=STEP_2_PANTRY" >> ${SESSION_DIR}/progress.log`
-            where `<N>` is the count of tasks in the briefing task list after SSV PASS (N=0 is not logged — it is caught by the zero-task guard earlier in Step 1b).
+            **Progress log (after startup-check PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SCOUT_COMPLETE|briefing=${SESSION_DIR}/briefing.md|startup_check=pass|tasks_accepted=<N>|next_step=STEP_2_PANTRY" >> ${SESSION_DIR}/progress.log`
+            where `<N>` is the count of tasks in the briefing task list after startup-check PASS (N=0 is not logged — it is caught by the zero-task guard earlier in Step 1b).
 
-**Step 2:** Spawn — Spawn the Pantry (`ant-farm-pantry-impl`, `model: "opus"`) for task briefs + combined previews
+**Step 2:** Spawn — Spawn the Prompt Composer (`ant-farm-prompt-composer`, `model: "opus"`) for task briefs + combined previews
             (→ orchestration/templates/pantry.md, Section 1). Include `Session directory: <value of SESSION_DIR>`
-            in Pantry's prompt. Pass preview file paths and SESSION_DIR to Pest Control
-            (`ant-farm-pest-control`, `model: "haiku"`) for Colony Cartography Office (CCO); Pest Control reads `orchestration/templates/checkpoints/common.md` and `orchestration/templates/checkpoints/cco.md` itself.
-            Only after all CCO PASS: spawn agents using skeleton
-            (→ orchestration/templates/crumb-gatherer-skeleton.md, using Agent Type from Pantry verdict table, `model: "sonnet"` for all Crumb Gatherers regardless of subagent_type).
-            **Wave pipelining**: When spawning wave N Crumb Gatherers, include the wave N+1 Pantry
-            (`ant-farm-pantry-impl`, `model: "opus"`) in the SAME message so they launch concurrently.
-            The Pantry reads from task-metadata (written by Scout) and has no dependency on wave N's output.
+            in Prompt Composer's prompt. Pass preview file paths and SESSION_DIR to Checkpoint Auditor
+            (`ant-farm-checkpoint-auditor`, `model: "haiku"`) for pre-spawn-check; Checkpoint Auditor reads `orchestration/templates/checkpoints/common.md` and `orchestration/templates/checkpoints/pre-spawn-check.md` itself.
+            Only after all pre-spawn-check PASS: spawn agents using skeleton
+            (→ orchestration/templates/crumb-gatherer-skeleton.md, using Agent Type from Prompt Composer verdict table, `model: "sonnet"` for all Crumb Gatherers regardless of subagent_type).
+            **Wave pipelining**: When spawning wave N Crumb Gatherers, include the wave N+1 Prompt Composer
+            (`ant-farm-prompt-composer`, `model: "opus"`) in the SAME message so they launch concurrently.
+            The Prompt Composer reads from task-metadata (written by Scout) and has no dependency on wave N's output.
             This eliminates the idle gap between waves. The flow per wave boundary:
-            1. Wave N CCO PASS → spawn wave N Crumb Gatherers + wave N+1 Pantry (in a single Task call to achieve concurrency)
-            2. Wave N+1 Pantry returns → spawn wave N+1 CCO
-            3. Wave N Crumb Gatherers finish → run WWD/CMVCC (Step 3)
-            4. Wave N+1 CCO PASS + wave N WWD + CMVCC both PASS → spawn wave N+1 Crumb Gatherers + wave N+2 Pantry
+            1. Wave N pre-spawn-check PASS → spawn wave N Crumb Gatherers + wave N+1 Prompt Composer (in a single Task call to achieve concurrency)
+            2. Wave N+1 Prompt Composer returns → spawn wave N+1 pre-spawn-check
+            3. Wave N Crumb Gatherers finish → run scope-verify/claims-vs-code (Step 3)
+            4. Wave N+1 pre-spawn-check PASS + wave N scope-verify + claims-vs-code both PASS → spawn wave N+1 Crumb Gatherers + wave N+2 Prompt Composer
             For the final wave (no wave N+1), skip the Pantry — just spawn Crumb Gatherers alone.
             **Progress log (after each wave's Crumb Gatherers are spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_SPAWNED|wave=<N>|spawned=<agent-ids>|previews_dir=${SESSION_DIR}/previews|next_step=STEP_3_VERIFY" >> ${SESSION_DIR}/progress.log`
 
-**Step 3:** Verify — Run WWD, then CMVCC, for each wave.
+**Step 3:** Verify — Run scope-verify, then claims-vs-code, for each wave.
 
-            **WWD execution mode depends on how agents in the wave were spawned:**
+            **scope-verify execution mode depends on how agents in the wave were spawned:**
             - **Serial mode** (agents spawned sequentially, one at a time): After each agent commits, spawn
-              one Pest Control (`model: "haiku"`) instance for that agent's commit. This is a true per-agent
-              gate — the next agent must not be spawned until WWD PASS is received for the previous one.
+              one Checkpoint Auditor (`model: "haiku"`) instance for that agent's commit. This is a true per-agent
+              gate — the next agent must not be spawned until scope-verify PASS is received for the previous one.
             - **Batch mode** (agents spawned in parallel in a single message): After ALL wave agents have
-              committed, spawn one Pest Control (`model: "haiku"`) instance per committed task (can be
-              concurrent). Wait for ALL WWD reports before proceeding to CMVCC. This is a post-hoc batch
+              committed, spawn one Checkpoint Auditor (`model: "haiku"`) instance per committed task (can be
+              concurrent). Wait for ALL scope-verify reports before proceeding to claims-vs-code. This is a post-hoc batch
               check — per-agent serial gating is mechanically impossible when commits arrive nearly
               simultaneously.
             **Mode selection rule**: If you spawned agents in a single message (parallel wave), use batch
             mode. If you spawned agents individually in separate messages, use serial mode.
-            **Progress log (after all WWD reports PASS for the wave):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_WWD_PASS|wave=<N>|mode=<serial|batch>|tasks_checked=<ids>|next_step=STEP_3_CMVCC" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after all scope-verify reports PASS for the wave):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_SCOPE_VERIFY_PASS|wave=<N>|mode=<serial|batch>|tasks_checked=<ids>|next_step=STEP_3_CLAIMS_VS_CODE" >> ${SESSION_DIR}/progress.log`
 
-            After all WWD reports PASS, spawn Pest Control (`model: "sonnet"`) for Crumbs Moved vs Crumbs Claimed (CMVCC)
-            (pass task IDs, commit hashes, summary doc paths; Pest Control reads
-            `orchestration/templates/checkpoints/common.md` + `orchestration/templates/checkpoints/cmvcc.md` + task-metadata/ + git diffs itself).
-            Failed CMVCC → resume agent (max 2 retries).
-            **Progress log (after CMVCC PASS for each wave):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_VERIFIED|wave=<N>|cmvcc=pass|tasks_verified=<ids>|commits=<hashes>|next_step=REVIEW_3B" >> ${SESSION_DIR}/progress.log`
+            After all scope-verify reports PASS, spawn Checkpoint Auditor (`model: "sonnet"`) for claims-vs-code
+            (pass task IDs, commit hashes, summary doc paths; Checkpoint Auditor reads
+            `orchestration/templates/checkpoints/common.md` + `orchestration/templates/checkpoints/claims-vs-code.md` + task-metadata/ + git diffs itself).
+            Failed claims-vs-code → resume agent (max 2 retries).
+            **Progress log (after claims-vs-code PASS for each wave):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_VERIFIED|wave=<N>|claims_vs_code=pass|tasks_verified=<ids>|commits=<hashes>|next_step=REVIEW_3B" >> ${SESSION_DIR}/progress.log`
             Note: For non-final waves, use `next_step=NEXT_WAVE` instead. The Position Check (see below) uses this value to confirm the correct next action.
 
 **Step 3b:** Review — Read `orchestration/RULES-review.md` now for the full Step 3b workflow.
 
-            **Progress log (after Nitpicker team completes round 1):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_COMPLETE|round=<N>|team=complete|report=${SESSION_DIR}/review-reports/review-consolidated-${TIMESTAMP}.md|next_step=STEP_3C_TRIAGE" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after reviewer team completes round 1):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_COMPLETE|round=<N>|team=complete|report=${SESSION_DIR}/review-reports/review-consolidated-${TIMESTAMP}.md|next_step=STEP_3C_TRIAGE" >> ${SESSION_DIR}/progress.log`
 
 **Step 3c:** User triage — Read `orchestration/RULES-review.md` now for the full Step 3c workflow.
 
-            **Progress log (after fix Scout SSV PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_SCOUT_COMPLETE|round=<N>|ssv=pass|fix_crumbs=<crumb-ids>|next_step=FIX_AGENTS_SPAWN" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after fix Scout startup-check PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_SCOUT_COMPLETE|round=<N>|startup_check=pass|fix_crumbs=<crumb-ids>|next_step=FIX_AGENTS_SPAWN" >> ${SESSION_DIR}/progress.log`
 
-            **Progress log (after fix agents spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_AGENTS_SPAWNED|round=<N>|fix_dps=<names>|fix_pcs=fix-pc-wwd,fix-pc-cmvcc|next_step=FIX_INNER_LOOP" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after fix agents spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_AGENTS_SPAWNED|round=<N>|fix_dps=<names>|fix_pcs=fix-pc-scope-verify,fix-pc-claims-vs-code|next_step=FIX_INNER_LOOP" >> ${SESSION_DIR}/progress.log`
 
-            **Progress log (after all fix DPs verified by fix-pc-cmvcc):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_CMVCC_COMPLETE|round=<N>|verified_dps=<names>|commits=<hashes>|next_step=ROUND_TRANSITION" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after all fix DPs verified by fix-pc-claims-vs-code):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_CLAIMS_VS_CODE_COMPLETE|round=<N>|verified_dps=<names>|commits=<hashes>|next_step=ROUND_TRANSITION" >> ${SESSION_DIR}/progress.log`
 
             **Progress log (after round transition messages sent):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|ROUND_TRANSITION|from_round=<N>|to_round=<N+1>|fix_commits=<range>|next_step=REVIEW_3B" >> ${SESSION_DIR}/progress.log`
 
@@ -210,7 +210,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 **Step 5b:** Scribe — spawn the Scribe agent to write the session exec summary and CHANGELOG entry.
             ```
             Task(
-              subagent_type="ant-farm-technical-writer",
+              subagent_type="ant-farm-session-scribe",
               model="sonnet",
               prompt="Write session exec summary. Session dir: {SESSION_DIR}. Commit range: {RANGE}.
                       Open crumbs: {IDS}. CHANGELOG path: CHANGELOG.md.
@@ -224,33 +224,31 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             2. Prepends a CHANGELOG entry to `CHANGELOG.md`
             **Progress log (after Scribe completes):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SCRIBE_COMPLETE|exec_summary=${SESSION_DIR}/exec-summary.md|next_step=STEP_5C_ESV" >> ${SESSION_DIR}/progress.log`
 
-**Step 5c:** ESV — spawn Pest Control for Exec Summary Verification. **Hard gate: must PASS before Step 6.**
+**Step 5c:** session-complete — spawn Checkpoint Auditor for Exec Summary Verification. **Hard gate: must PASS before Step 6.**
             ```
             Task(
-              subagent_type="ant-farm-pest-control",
+              subagent_type="ant-farm-checkpoint-auditor",
               model="haiku",
-              prompt="ESV checkpoint. Session dir: {SESSION_DIR}.
+              prompt="session-complete checkpoint. Session dir: {SESSION_DIR}.
                       Session start commit: {SESSION_START_COMMIT} (first commit of this session).
                       Session end commit: {SESSION_END_COMMIT} (final commit before push, typically HEAD).
                       Session start date: {SESSION_START_DATE} (ISO 8601, e.g. 2026-02-22 — used to scope crumb list).
                       Verify exec-summary.md and CHANGELOG.md.
-                      Read orchestration/templates/checkpoints/common.md and orchestration/templates/checkpoints/esv.md for full instructions."
+                      Read orchestration/templates/checkpoints/common.md and orchestration/templates/checkpoints/session-complete.md for full instructions."
             )
             ```
             > **Field derivation**: `SESSION_START_COMMIT` is the first commit the Queen or any agent made this session (visible in `git log` since the pre-session HEAD). `SESSION_END_COMMIT` is the commit at HEAD immediately before Step 6's `git add CHANGELOG.md` commit. `SESSION_START_DATE` is the calendar date (UTC) when Step 0 ran (stored in queen-state.md or derivable from `SESSION_ID`).
-            ESV checks: task coverage, commit coverage, open crumb accuracy, CHANGELOG derivation
+            session-complete checks: task coverage, commit coverage, open crumb accuracy, CHANGELOG derivation
             fidelity, section completeness, metric consistency.
-            Artifact written to `{SESSION_DIR}/pc/pc-session-esv-{timestamp}.md`.
-            **On ESV FAIL**: Re-spawn Scribe with specific violations from ESV report (max 1 retry).
-            **On second ESV FAIL**: Escalate to user — present failed checks, await decision.
-            **Progress log (after ESV PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|ESV_PASS|artifact=${SESSION_DIR}/pc/pc-session-esv-$(date +%Y%m%d-%H%M%S).md|next_step=STEP_6_PUSH" >> ${SESSION_DIR}/progress.log`
+            Artifact written to `{SESSION_DIR}/pc/pc-session-complete-{timestamp}.md`.
+            **On session-complete FAIL**: Re-spawn Scribe with specific violations from session-complete report (max 1 retry).
+            **On second session-complete FAIL**: Escalate to user — present failed checks, await decision.
+            **Progress log (after session-complete PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SESSION_COMPLETE_PASS|artifact=${SESSION_DIR}/pc/pc-session-complete-$(date +%Y%m%d-%H%M%S).md|next_step=STEP_6_PUSH" >> ${SESSION_DIR}/progress.log`
 
-**Step 6:** Land the plane — Queen commits the Scribe's CHANGELOG.md, copies the exec summary to history, then pulls and pushes.
+**Step 6:** Land the plane — Queen commits the Scribe's CHANGELOG.md, copies the exec summary to history (local only), then pulls and pushes. NEVER `git add` any file under `.crumbs/` — the entire directory is gitignored.
             ```bash
             git add CHANGELOG.md && git commit -m "docs: add session {SESSION_ID} changelog entry"
             cp "${SESSION_DIR}/exec-summary.md" ".crumbs/history/exec-summary-${SESSION_ID}.md"
-            git add ".crumbs/history/exec-summary-${SESSION_ID}.md"
-            git commit -m "chore: archive session {SESSION_ID} exec summary"
             git pull --rebase
             git push
             ```
@@ -263,14 +261,14 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 
 | Gate | Blocks | Artifact |
 |------|--------|----------|
-| SSV PASS | Pantry spawn (and all downstream steps) | ${SESSION_DIR}/pc/pc-session-ssv-{timestamp}.md |
-| CCO PASS (impl) | Agent spawn | ${SESSION_DIR}/pc/*-cco-*.md |
-| CCO PASS (review) | Nitpicker team spawn | ${SESSION_DIR}/pc/pc-session-cco-review-{timestamp}.md |
-| WWD PASS | Serial mode: next agent spawn; Batch mode: CMVCC spawn (all wave agents checked before CMVCC) | ${SESSION_DIR}/pc/*-wwd-*.md |
-| CMVCC PASS | Task closure (crumb close) | ${SESSION_DIR}/pc/*-cmvcc-*.md |
-| CCB PASS | Presenting results | ${SESSION_DIR}/pc/pc-session-ccb-{timestamp}.md |
+| startup-check PASS | Prompt Composer spawn (and all downstream steps) | ${SESSION_DIR}/pc/pc-session-startup-check-{timestamp}.md |
+| pre-spawn-check PASS (impl) | Agent spawn | ${SESSION_DIR}/pc/*-pre-spawn-check-*.md |
+| pre-spawn-check PASS (review) | Reviewer team spawn | ${SESSION_DIR}/pc/pc-session-pre-spawn-check-review-{timestamp}.md |
+| scope-verify PASS | Serial mode: next agent spawn; Batch mode: claims-vs-code spawn (all wave agents checked before claims-vs-code) | ${SESSION_DIR}/pc/*-scope-verify-*.md |
+| claims-vs-code PASS | Task closure (crumb close) | ${SESSION_DIR}/pc/*-claims-vs-code-*.md |
+| review-integrity PASS | Presenting results | ${SESSION_DIR}/pc/pc-session-review-integrity-{timestamp}.md |
 | Reviews | Presenting findings to user (Step 3c) | ${SESSION_DIR}/review-reports/review-consolidated-{timestamp}.md |
-| ESV PASS | Git push (Step 6) | ${SESSION_DIR}/pc/pc-session-esv-{timestamp}.md |
+| session-complete PASS | Git push (Step 6) | ${SESSION_DIR}/pc/pc-session-complete-{timestamp}.md |
 
 > **Note (Reviews gate):** Reviews are mandatory after ALL implementation completes (round 1). If findings require a fix cycle, reviews re-run with reduced scope — correctness and edge-cases only (round 2+).
 
@@ -333,8 +331,8 @@ Store SESSION_DIR in your context and pass it explicitly to every agent that nee
 |----------------|----------------|
 | Composing agent prompts (Step 2) | orchestration/templates/pantry.md |
 | Agent skeleton for spawning (Step 2) | orchestration/templates/crumb-gatherer-skeleton.md |
-| Review skeleton for team (Step 3b) | orchestration/templates/nitpicker-skeleton.md |
-| Big Head skeleton for consolidation (Step 3b) | orchestration/templates/big-head-skeleton.md |
+| Review skeleton for team (Step 3b) | orchestration/templates/reviewer-skeleton.md |
+| Review Consolidator skeleton for consolidation (Step 3b) | orchestration/templates/review-consolidator-skeleton.md |
 | Implementation details (read by the Pantry) | orchestration/templates/implementation.md |
 | Checkpoint details (read by Pest Control) | orchestration/templates/checkpoints/ (common.md + specific checkpoint file) |
 | Review details (read by build-review-prompts.sh) | orchestration/templates/reviews.md |
@@ -349,18 +347,18 @@ Store SESSION_DIR in your context and pass it explicitly to every agent that nee
 
 | Situation | Max Retries | After Limit |
 |-----------|-------------|-------------|
-| Agent fails CMVCC | 2 | Escalate to user with full context |
-| CCB fails | 1 | Present to user with verification report attached |
+| Agent fails claims-vs-code | 2 | Escalate to user with full context |
+| review-integrity fails | 1 | Present to user with verification report attached |
 | Agent stuck (no commit within 15 turns) | 0 | Run stuck-agent diagnostic (see below); escalate to user |
-| Pantry CCO fails | 1 | Escalate to user; do not spawn Crumb Gatherers without verified prompts |
+| Prompt Composer pre-spawn-check fails | 1 | Escalate to user; do not spawn Crumb Gatherers without verified prompts |
 | Scout fails or returns no tasks | 1 | Escalate to user; do not proceed to Step 2 without task list |
-| SSV FAIL -> re-Scout cycle | 1 | Escalate to user with SSV violations; do not re-run Scout a third time |
+| startup-check FAIL -> re-Scout cycle | 1 | Escalate to user with startup-check violations; do not re-run Scout a third time |
 | Fix DP stuck/crash (no commit in team) | 0 | Run stuck-agent diagnostic; file a crumb for the failed fix; escalate to user. Do NOT re-spawn without user approval |
-| Fix PC crash (fix-pc-wwd or fix-pc-cmvcc) | 1 | Spawn replacement into team (`team_name: "nitpicker-team"`); resume from last SendMessage |
+| Fix PC crash (fix-pc-scope-verify or fix-pc-claims-vs-code) | 1 | Spawn replacement into team (`team_name: "reviewer-team"`); resume from last SendMessage |
 | Reviewer failure (round 2+, re-task via SendMessage fails) | 1 | Spawn fresh reviewer into team as replacement; re-send the round transition message |
-| Big Head crash (before crumb filing complete) | 1 | Spawn fresh Big Head into team with handoff brief describing which crumbs were filed and which remain; re-run CCB after |
-| CCB material spot-check fail | 1 | Shut down current Big Head; spawn fresh Big Head into team with handoff brief identifying failed crumbs; re-run full crumb review then re-run CCB |
-| Scribe fails ESV | 1 | Escalate to user with ESV report; user decides fix manually or push as-is |
+| Review Consolidator crash (before crumb filing complete) | 1 | Spawn fresh Review Consolidator into team with handoff brief describing which crumbs were filed and which remain; re-run review-integrity after |
+| review-integrity material spot-check fail | 1 | Shut down current Review Consolidator; spawn fresh Review Consolidator into team with handoff brief identifying failed crumbs; re-run full crumb review then re-run review-integrity |
+| Scribe fails session-complete | 1 | Escalate to user with session-complete report; user decides fix manually or push as-is |
 | Total retries per session | 5 | Pause all new spawns; triage with user |
 
 Track retry count in the Queen's state file (→ templates/queen-state.md).
@@ -379,7 +377,7 @@ Do not re-spawn the agent or attempt a fix without user approval after the stuck
 
 ### Wave Failure Threshold
 
-If more than 50% of agents in a single wave fail (CMVCC failure, stuck, or unrecoverable error), the Queen must:
+If more than 50% of agents in a single wave fail (claims-vs-code failure, stuck, or unrecoverable error), the Queen must:
 
 1. Stop spawning new agents for the remainder of the current wave.
 2. Collect failure summaries from all failed agents in the wave.
