@@ -44,9 +44,15 @@ Without this file, the Nitpicker team members will fail to spawn (Claude Code wi
 `code-reviewer` agent type). `setup.sh` automatically checks for this file at the end of setup (Step 8:
 Preflight checks) and emits a visible warning if it is absent.
 
+<<<<<<< Updated upstream
 **Step 2: Install orchestration triggers into the project's CLAUDE.md**
 
 Run `/ant-farm-init` inside the target project in Claude Code. This installs the orchestration block into the project's `CLAUDE.md` file (which Claude Code loads into the system prompt at session start).
+=======
+**Step 2: Install orchestration triggers into the project's prompt-dir CLAUDE.md**
+
+Run `/ant-farm:init` inside the target project in Claude Code. This installs orchestration triggers into the project's prompt-dir `CLAUDE.md` (the per-project Claude Code prompt directory, not the global `~/.claude/CLAUDE.md`).
+>>>>>>> Stashed changes
 
 Alternatively, add the orchestration section manually:
 

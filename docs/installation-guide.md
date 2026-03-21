@@ -38,7 +38,11 @@ The script performs these steps:
 3. **Review script** -- copies `scripts/build-review-prompts.sh` to `~/.claude/orchestration/scripts/` and marks it executable
 4. **Skills** -- copies `skills/*.md` to `~/.claude/skills/ant-farm-<name>/SKILL.md`
 5. **Crumb CLI** -- copies `crumb.py` to `~/.local/bin/crumb` and marks it executable
+<<<<<<< Updated upstream
 6. **CLAUDE.md** -- removes any existing ant-farm sentinel block from `~/.claude/CLAUDE.md` (migration cleanup), removes any stale block from the prompt-dir file, then writes the ant-farm prompt block to the repo's `CLAUDE.md`
+=======
+6. **CLAUDE.md** -- removes any existing ant-farm sentinel block from `~/.claude/CLAUDE.md` (migration cleanup), then writes the ant-farm prompt block to this project's per-project prompt-dir file (`~/.claude/projects/-<escaped-project-path>/CLAUDE.md`)
+>>>>>>> Stashed changes
 7. **PATH check** -- warns if `~/.local/bin` is not in your PATH
 8. **Preflight check** -- warns if `~/.claude/agents/code-reviewer.md` is missing (required by the Nitpicker review team)
 
@@ -95,11 +99,16 @@ The setup process copies files from the repo to runtime locations. It is idempot
 
 ### CLAUDE.md: Global Migration Cleanup
 
+<<<<<<< Updated upstream
+=======
+- **Source**: `{repo-root}/CLAUDE.md`
+>>>>>>> Stashed changes
 - **Action**: Removes any existing ant-farm sentinel block (`<!-- ant-farm:start -->` / `<!-- ant-farm:end -->` and everything between them) from `~/.claude/CLAUDE.md`. Content outside the block is left untouched.
 - **Why**: Earlier versions of ant-farm injected a sentinel block into the global `~/.claude/CLAUDE.md`. The current model stores per-project instructions in the project's prompt-dir file instead. Step 6 removes the old block so the global file is not polluted.
 
 If `~/.claude/CLAUDE.md` contains no ant-farm sentinel block, this step is a no-op.
 
+<<<<<<< Updated upstream
 ### Repo CLAUDE.md Installation
 
 After migration cleanup, `setup.sh` writes the ant-farm prompt block to the project's `CLAUDE.md`:
@@ -110,6 +119,21 @@ After migration cleanup, `setup.sh` writes the ant-farm prompt block to the proj
 - **Why**: Claude Code loads the repo's `CLAUDE.md` into the system prompt at session start. The orchestration triggers must live here to be available from the first message.
 
 You can also create or update this file at any time by running the `/ant-farm-init` skill from within Claude Code. The skill writes the same content and is the recommended way to onboard a new project without running the full setup script.
+=======
+### Per-Project Prompt-Dir Installation
+
+After migration cleanup, `setup.sh` writes the ant-farm prompt block to the per-project prompt-dir file for the ant-farm project:
+
+- **Source**: `{repo-root}/CLAUDE.md`
+- **Target**: `~/.claude/projects/-<escaped-project-path>/CLAUDE.md`
+  - The escaped path replaces each `/` in the absolute project path with `-`. For example, a project at `/Users/alice/projects/ant-farm` writes to `~/.claude/projects/-Users-alice-projects-ant-farm/CLAUDE.md`.
+- **Behavior**: Overwrites (or creates) the prompt-dir file with the current repo CLAUDE.md content.
+- **Why**: Claude Code loads prompt-dir files automatically when a matching project is opened. Storing the block here means the instructions are active for this project without modifying the global `~/.claude/CLAUDE.md`.
+
+You can also create or update this file at any time by running the `/ant-farm:init` skill from within Claude Code. The skill writes the same content to the same path and is the recommended way to onboard a new checkout without running the full setup script.
+
+**Path convention**: `~/.claude/projects/-<escaped-absolute-path>/CLAUDE.md`
+>>>>>>> Stashed changes
 
 ### Orchestration Directory Installation
 
@@ -243,6 +267,7 @@ rm -rf ~/.claude/
 rm -rf ~/.claude/orchestration/ ~/.claude/agents/ ~/.claude/skills/
 ```
 
+<<<<<<< Updated upstream
 ### Step 3: Remove Orchestration Block from Project CLAUDE.md
 
 The setup script writes an ant-farm sentinel block into the project's `CLAUDE.md`. Remove it by deleting everything between (and including) the `<!-- ant-farm:start -->` and `<!-- ant-farm:end -->` markers.
@@ -256,6 +281,31 @@ If you had a personal `~/.claude/CLAUDE.md` before installing ant-farm (older in
 ```bash
 # Find any backup
 ls -la ~/.claude/CLAUDE.md.af-bak.*
+=======
+### Step 3: Remove Per-Project Prompt-Dir Files
+
+The setup script writes ant-farm instructions to a per-project prompt-dir file. Remove it manually:
+
+```bash
+# Determine the escaped path for your project
+# Replace each '/' in the absolute project path with '-'
+# Example: /Users/alice/projects/ant-farm → -Users-alice-projects-ant-farm
+rm ~/.claude/projects/-<escaped-project-path>/CLAUDE.md
+
+# If that leaves the project directory empty, remove it too
+rmdir ~/.claude/projects/-<escaped-project-path>/
+```
+
+If you used `/ant-farm:init` in any additional project directories, repeat this step for each one.
+
+### Step 4: Restore Global CLAUDE.md (If Desired)
+
+If you had a personal `~/.claude/CLAUDE.md` before installing ant-farm (older installs may have left a backup), you can restore it:
+
+```bash
+# Find any backup
+ls -la ~/.claude/CLAUDE.md.bak.*
+>>>>>>> Stashed changes
 
 # Restore an old backup
 cp ~/.claude/CLAUDE.md.af-bak.XXXXXXX ~/.claude/CLAUDE.md
@@ -319,6 +369,7 @@ The script backs up existing files, so re-running is safe.
    ls -la ~/.local/bin/crumb
    ```
 
+<<<<<<< Updated upstream
 ### Orchestration Block Not Active
 
 **Symptom**: ant-farm instructions are not active when working in the project -- the Queen does not follow Parallel Work Mode or other project-specific rules.
@@ -335,6 +386,28 @@ The script backs up existing files, so re-running is safe.
    ```
 
 3. **Restart Claude Code** after modifying `CLAUDE.md`, to ensure the file is loaded fresh.
+=======
+### Per-Project Prompt-Dir File Not Loading
+
+**Symptom**: ant-farm instructions are not active when working in the project — the Queen does not follow Parallel Work Mode or other project-specific rules.
+
+**Why**: Claude Code loads per-project prompt-dir files based on the open project path. The file must exist at the exact path `~/.claude/projects/-<escaped-project-path>/CLAUDE.md`, where the escape replaces each `/` in the absolute path with `-`.
+
+**Solutions**:
+
+1. **Run `/ant-farm:init`** from within Claude Code while the project is open. This skill writes the prompt-dir file to the correct location automatically.
+
+2. **Verify the file path manually**:
+   ```bash
+   # Check that the prompt-dir file exists
+   ls -la ~/.claude/projects/-<escaped-project-path>/CLAUDE.md
+
+   # If missing, re-run setup.sh or use /ant-farm:init
+   ./scripts/setup.sh
+   ```
+
+3. **Restart Claude Code** after creating or modifying the prompt-dir file, to ensure the file is loaded fresh.
+>>>>>>> Stashed changes
 
 ### Personal `~/.claude/CLAUDE.md` Edits Not Overwritten
 
