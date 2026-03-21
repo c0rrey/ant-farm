@@ -219,7 +219,7 @@ The review loop terminates when a round produces **zero P1 or P2 findings**. At 
 
 1. Review Consolidator auto-files any P3 findings to "Future Work" trail (round 2+ only)
 2. In round 1, P3s are filed via the existing "Handle P3 Issues" flow in the Queen's Step 3c below
-3. Queen proceeds directly to RULES.md Step 4 (documentation — README and CLAUDE.md only)
+3. Queen then proceeds to RULES.md Step 4 (documentation — README and CLAUDE.md only)
    - Note: CHANGELOG is authored by the Scribe at Step 5, not here
 4. No user prompt needed — the loop simply ends
 
