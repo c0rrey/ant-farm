@@ -1,6 +1,6 @@
 <!-- Reader: Pest Control. The Queen does NOT read this file. -->
 
-## Crumbs Moved vs Crumbs Claimed (CMVCC): Substance Verification
+## Claims vs Code: Substance Verification
 
 ### Crumb Gatherers
 
@@ -10,9 +10,9 @@
 **Why sonnet not haiku**: This checkpoint reads actual source code and compares it to report claims. "Is this finding description accurate for what's at build.py:L200?" requires understanding both the code and the claim. Haiku can check format; sonnet can check truth.
 
 ```markdown
-**Pest Control verification - CMVCC (Substance Verification)**
+**Checkpoint Auditor verification - claims-vs-code (Substance Verification)**
 
-You are **Pest Control**, the verification subagent. Your role is to cross-check agent claims against ground truth. See "Pest Control Overview" section above for full conventions.
+You are the **Checkpoint Auditor**, the verification subagent. Your role is to cross-check agent claims against ground truth. See "Checkpoint Auditor Overview" section above for full conventions.
 
 Verify the substance of the Crumb Gatherer's work by cross-checking claims against ground truth.
 
@@ -67,23 +67,23 @@ Pick 1 changed file and read the agent's correctness notes for it.
 - **FAIL: <list all failures with evidence>** — Multiple checks failed or critical fabrication detected
 
 Write your verification report to:
-`{SESSION_DIR}/pc/pc-{TASK_SUFFIX}-cmvcc-{timestamp}.md`
+`{SESSION_DIR}/pc/pc-{TASK_SUFFIX}-claims-vs-code-{timestamp}.md`
 
 Where:
 - `{TASK_SUFFIX}`: suffix portion of crumb ID with no project prefix (e.g., `74g1` from `my-project-74g.1`)
 - `{SESSION_DIR}`: session artifact directory (e.g., `.crumbs/sessions/_session-abc123`)
-- timestamp: format defined in **Timestamp format** (Pest Control Overview)
+- timestamp: format defined in **Timestamp format** (Checkpoint Auditor Overview)
 ```
 
-### Nitpickers
+### Reviewers
 
-**When**: After each Nitpicker completes its report
+**When**: After each Reviewer completes its report
 **Model**: `sonnet`
 
 ```markdown
-**Pest Control verification - CMVCC (Nitpicker Substance Verification)**
+**Checkpoint Auditor verification - claims-vs-code (Reviewer Substance Verification)**
 
-You are **Pest Control**, the verification subagent. Your role is to cross-check Nitpicker findings against actual code.
+You are the **Checkpoint Auditor**, the verification subagent. Your role is to cross-check reviewer findings against actual code.
 
 Verify the substance of a Nitpicker's report by cross-checking findings against actual code.
 
@@ -140,12 +140,12 @@ Search the report for `crumb create`, `crumb update`, `crumb close`, or crumb ID
 - **FAIL: <list all failures with evidence>**
 
 Write your verification report to:
-`{SESSION_DIR}/pc/pc-{TASK_SUFFIX}-cmvcc-{timestamp}.md`
+`{SESSION_DIR}/pc/pc-{TASK_SUFFIX}-claims-vs-code-{timestamp}.md`
 
 Where:
-- `{TASK_SUFFIX}`: Nitpicker review type (e.g., `review-correctness`, `review-edge-cases`, `review-clarity`, `review-drift`)
+- `{TASK_SUFFIX}`: Reviewer review type (e.g., `review-correctness`, `review-edge-cases`, `review-clarity`, `review-drift`)
 - `{SESSION_DIR}`: session artifact directory (e.g., `.crumbs/sessions/_session-abc123`)
-- timestamp: format defined in **Timestamp format** (Pest Control Overview)
+- timestamp: format defined in **Timestamp format** (Checkpoint Auditor Overview)
 ```
 
 ### The Queen's Response
@@ -160,7 +160,7 @@ Where:
    <paste specific failures from verification report>
    Please address these gaps: re-do the missing work, update your summary doc, and recommit.
    ```
-3. Re-run CMVCC after the agent updates
+3. Re-run claims-vs-code after the agent updates
 4. If it fails a second time, flag to user for manual review
 
 ---

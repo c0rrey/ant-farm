@@ -1,6 +1,6 @@
 # Review Focus Areas
 
-Per-type focus blocks for ant-farm-nitpicker review prompts. Each block is delimited
+Per-type focus blocks for ant-farm-reviewer review prompts. Each block is delimited
 by `<!-- FOCUS: {type} -->` / `<!-- /FOCUS: {type} -->` for awk extraction
 in `build-review-prompts.sh`.
 

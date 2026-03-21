@@ -1,6 +1,6 @@
 <!-- Reader: Pest Control. The Queen does NOT read this file. -->
 
-## Exec Summary Verification (ESV): Pre-Push Session Output Audit
+## Session Complete: Pre-Push Session Output Audit
 
 **When**: After Scribe writes `{SESSION_DIR}/exec-summary.md` and CHANGELOG.md, BEFORE `git push` (Step 5c in RULES.md)
 **Model**: `haiku` (mechanical counting and set comparisons — no judgment required)
@@ -10,9 +10,9 @@
 **Why haiku**: All six checks are set comparisons, count reconciliations, and status lookups with no ambiguity. No judgment or code comprehension is required. Haiku handles this class of verification faster and cheaper than sonnet.
 
 ```markdown
-**Pest Control verification - ESV (Exec Summary Verification)**
+**Checkpoint Auditor verification - session-complete (Exec Summary Verification)**
 
-You are **Pest Control**, the verification subagent. Your role is to verify the Scribe's session output for correctness before the session is pushed to remote. See "Pest Control Overview" section above for full conventions.
+You are the **Checkpoint Auditor**, the verification subagent. Your role is to verify the Scribe's session output for correctness before the session is pushed to remote. See "Checkpoint Auditor Overview" section above for full conventions.
 
 **Exec summary**: `{SESSION_DIR}/exec-summary.md`
 **Session directory**: `{SESSION_DIR}`
@@ -142,14 +142,14 @@ Check 6 (Metric Consistency): PASS / FAIL — {evidence or "All counts consisten
 > Check 6 (Metric Consistency): FAIL
 > - At a Glance says "Tasks completed: 4" but Work Completed section lists 3 tasks.
 >
-> Recommendation: Re-spawn Scribe with these violations. Scribe must update exec-summary.md and CHANGELOG to resolve Check 2, Check 3, and Check 6 before re-running ESV.
+> Recommendation: Re-spawn Scribe with these violations. Scribe must update exec-summary.md and CHANGELOG to resolve Check 2, Check 3, and Check 6 before re-running session-complete.
 
 Write your verification report to:
-`{SESSION_DIR}/pc/pc-session-esv-{timestamp}.md`
+`{SESSION_DIR}/pc/pc-session-session-complete-{timestamp}.md`
 
 Where:
 - `{SESSION_DIR}`: session artifact directory (e.g., `.crumbs/sessions/_session-abc123`)
-- timestamp: format defined in **Timestamp format** (Pest Control Overview)
+- timestamp: format defined in **Timestamp format** (Checkpoint Auditor Overview)
 ```
 
 ### The Queen's Response
@@ -157,15 +157,15 @@ Where:
 **On PASS**: Proceed with `git push` (Step 6 in RULES.md).
 
 **On FAIL**:
-1. Log the failing check details from the ESV report.
+1. Log the failing check details from the session-complete report.
 2. Do NOT push to remote.
 3. Re-spawn Scribe with a prompt that includes the specific violations:
    ```
-   ESV found errors in the exec summary or CHANGELOG that must be corrected before push:
-   <paste specific failures from ESV report>
+   session-complete found errors in the exec summary or CHANGELOG that must be corrected before push:
+   <paste specific failures from session-complete report>
    Please update {SESSION_DIR}/exec-summary.md and CHANGELOG.md to resolve these issues.
    ```
-4. After Scribe updates the outputs, re-run ESV.
-5. If ESV fails a second time, escalate to user — present the failed ESV report and ask whether to fix manually or push as-is. Do NOT push with undisclosed failures.
+4. After Scribe updates the outputs, re-run session-complete.
+5. If session-complete fails a second time, escalate to user — present the failed session-complete report and ask whether to fix manually or push as-is. Do NOT push with undisclosed failures.
 
 ---

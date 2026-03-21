@@ -59,7 +59,7 @@ After implementation, review EVERY file you changed or created:
 - `git pull --rebase && git add <files> && git commit -m "<type>: <description> (<task-id>)"`
 - (MANDATORY): Include the task ID in parentheses at the end of the commit message (e.g., `fix: handle None input (my-project-abc)`)
 - (MANDATORY) **Conditional Re-Review**: If `git pull --rebase` resolves any merge conflicts, you MUST repeat Step 4 (Per-File Correctness Review) on all files affected by the conflict resolution before committing. Conflict resolution can silently change code semantics. Verify the merged files are correct before proceeding.
-- Record your commit hash in the summary doc (Step 6) so Crumbs Moved vs Crumbs Claimed (CMVCC) can identify your commits without scanning `git log`
+- Record your commit hash in the summary doc (Step 6) so the claims-vs-code checkpoint can identify your commits without scanning `git log`
 
 ## Step 6: Write Summary Doc (MANDATORY)
 Write a structured summary to `{session-dir}/summaries/{task-id}.md` using the Write tool.
@@ -174,7 +174,7 @@ Before sending any agent prompt, confirm it includes:
 
 If any checkbox is missing, DO NOT spawn the agent — fix the prompt first.
 
-**External validation**: After composing the prompt, run **Colony Cartography Office (CCO)** to independently verify this checklist. See templates/checkpoints.md.
+**External validation**: After composing the prompt, run the **pre-spawn-check** (Checkpoint Auditor) to independently verify this checklist. See templates/checkpoints/pre-spawn-check.md.
 
 ## Information Diet for Agents
 
@@ -247,7 +247,7 @@ Your task: Design 4+ approaches to add these 3 fields to validation, select best
 
 ### Workflow:
 1. **During Wave N**: Compose prompts for Wave N+1 and Wave N+2
-2. **Run CCO** on all future wave prompts (verify in parallel)
+2. **Run pre-spawn-check** on all future wave prompts (verify in parallel)
 3. **When Wave N completes**: Immediately spawn Wave N+1 (prompts already verified)
 4. **Repeat**: Prepare Wave N+2 prompts while Wave N+1 runs
 

@@ -1,16 +1,16 @@
 <!-- Reader: Pest Control. The Queen does NOT read this file. -->
 
-## Colony Census Bureau (CCB): Consolidation Audit
+## Review Integrity: Consolidation Audit
 
-**When**: After Big Head consolidation (after all review reports merged and crumbs filed — 4 reports in round 1, 2 in round 2+)
+**When**: After Review Consolidator consolidation (after all review reports merged and crumbs filed — 4 reports in round 1, 2 in round 2+)
 **Model**: `sonnet` (judgment required for crumb quality and dedup correctness)
 
-**CCB must PASS before presenting results to the user.**
+**review-integrity must PASS before presenting results to the user.**
 
 ```markdown
-**Pest Control verification - CCB (Consolidation Audit)**
+**Checkpoint Auditor verification - review-integrity (Consolidation Audit)**
 
-You are **Pest Control**, the verification subagent. Your role is to audit Big Head's consolidated report for integrity.
+You are the **Checkpoint Auditor**, the verification subagent. Your role is to audit the Review Consolidator's consolidated report for integrity.
 
 Audit the review consolidation for completeness, accuracy, and traceability.
 
@@ -65,16 +65,16 @@ For each selected crumb:
 
 **SUSPECT severity distinction:**
 
-- **Minor** — Root cause is vague or ambiguous but not outright wrong (e.g., "the function is inefficient" with no specifics, but the referenced code does contain the function). Action: flag the crumb for amendment, add a note to the CCB report, continue audit. Do NOT escalate.
+- **Minor** — Root cause is vague or ambiguous but not outright wrong (e.g., "the function is inefficient" with no specifics, but the referenced code does contain the function). Action: flag the crumb for amendment, add a note to the review-integrity report, continue audit. Do NOT escalate.
 - **Material** — Root cause is factually incorrect (e.g., the referenced line does not contain the described problem, or the fix direction would not address the actual defect). Action: trigger the Material Spot-Check Escalation Path below.
 
 **Material Spot-Check Escalation Path:**
-1. Set CCB verdict to PARTIAL and include a `context-degradation-suspected` flag in the verdict line.
-2. The Queen shuts down the current Big Head instance.
-3. The Queen spawns a fresh Big Head with a handoff brief describing which crumbs failed spot-check and why.
-4. Fresh Big Head performs a full crumb review (re-reads source files, corrects or re-files affected crumbs).
-5. Queen re-runs CCB.
-6. If the re-run CCB still returns SUSPECT on any spot-checked crumb, escalate to the user with the CCB report attached.
+1. Set review-integrity verdict to PARTIAL and include a `context-degradation-suspected` flag in the verdict line.
+2. The Queen shuts down the current Review Consolidator instance.
+3. The Queen spawns a fresh Review Consolidator with a handoff brief describing which crumbs failed spot-check and why.
+4. Fresh Review Consolidator performs a full crumb review (re-reads source files, corrects or re-files affected crumbs).
+5. Queen re-runs review-integrity.
+6. If the re-run review-integrity still returns SUSPECT on any spot-checked crumb, escalate to the user with the review-integrity report attached.
 
 Report: "Spot-checked {N} crumb(s): {list titles}. Result: {CONFIRMED / SUSPECT — minor / SUSPECT — material}. {brief explanation per crumb}"
 
@@ -113,13 +113,13 @@ Run `crumb list --open --after {SESSION_START_DATE}` and cross-reference against
 - **FAIL: <list all failures with evidence>**
 
 Write your verification report to:
-`{SESSION_DIR}/pc/pc-session-ccb-{timestamp}.md`
+`{SESSION_DIR}/pc/pc-session-review-integrity-{timestamp}.md`
 
 Where:
 - `{SESSION_DIR}`: session artifact directory (e.g., `.crumbs/sessions/_session-abc123`)
-- timestamp: format defined in **Timestamp format** (Pest Control Overview)
+- timestamp: format defined in **Timestamp format** (Checkpoint Auditor Overview)
 
-**CRITICAL FIX**: The timestamp ensures each CCB audit is preserved. Previous versions used static filename `consolidation-audit.md` which caused overwrites on repeated consolidations. Now each audit has a unique timestamped filename, preserving complete audit history.
+**CRITICAL FIX**: The timestamp ensures each review-integrity audit is preserved. Previous versions used static filename `consolidation-audit.md` which caused overwrites on repeated consolidations. Now each audit has a unique timestamped filename, preserving complete audit history.
 ```
 
 ### The Queen's Response
@@ -128,7 +128,7 @@ Where:
 
 **On PARTIAL or FAIL**:
 1. Fix consolidation gaps (re-read reports, file missing crumbs, update dedup log)
-2. Re-run CCB
+2. Re-run review-integrity
 3. If it fails a second time, present to user with the verification report attached so they can see what was flagged
 
 ---

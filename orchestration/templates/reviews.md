@@ -8,7 +8,7 @@
 Verify all 4 criteria before proceeding to team launch. These checks span ALL trails worked in this session:
 
 1. **All Crumb Gatherers completed across ALL trails** — none stuck or errored (check the Queen's state file for every trail)
-2. **Crumbs Moved vs Crumbs Claimed (CMVCC) PASS for every agent** — verify at least one artifact exists at `{session-dir}/pc/pc-{task-id}-cmvcc-*.md`; if multiple files match (e.g., after retries), check the most recent by timestamp — it must contain an explicit `PASS` verdict, not merely exist
+2. **claims-vs-code PASS for every agent** — verify at least one artifact exists at `{session-dir}/pc/pc-{task-id}-claims-vs-code-*.md`; if multiple files match (e.g., after retries), check the most recent by timestamp — it must contain an explicit `PASS` verdict, not merely exist
 3. **The Queen's state file updated** — all completions tracked, checkpoint results recorded for all trails
 4. **Git log shows expected commits** — run `git log --oneline -N` (where N = total number of agents across all trails) to confirm commits exist
 
@@ -39,7 +39,7 @@ After the transition gate passes, the Queen launches **the Nitpickers** using **
 - **Nitpickers — Correctness, Edge Cases**: `opus` — higher-judgment reviews requiring deeper reasoning
 - **Nitpickers — Clarity, Drift**: `sonnet` — lower-judgment reviews sufficient for code review and finding cataloging
 - **Big Head**: `opus` — consolidation requires high-judgment dedup and root-cause grouping
-- **Pest Control (team member)**: `sonnet` — runs CMVCC (judgment-heavy) inside the team; sonnet needed for substance verification
+- **Checkpoint Auditor (team member)**: `sonnet` — runs claims-vs-code (judgment-heavy) inside the team; sonnet needed for substance verification
 
 ### Review Type Canonical Names
 
@@ -56,7 +56,7 @@ The short name is the authoritative identifier. Any template using a review type
 
 ### Team Setup
 
-**Pre-spawn requirement**: Before creating the Nitpickers, run **CCO** on all review prompts. See `templates/checkpoints.md`.
+**Pre-spawn requirement**: Before creating the reviewers, run **pre-spawn-check** on all review prompts. See `templates/checkpoints/pre-spawn-check.md`.
 
 **Round 1**: the Queen creates the Nitpicker team with a **variable member count** determined by `build-review-prompts.sh`'s return table. Base case is 6 members (4 reviewers + Big Head + Pest Control); when split reviewer instances occur the count increases (e.g., 8 members when 2 Clarity + 2 Drift splits are produced). Do NOT hardcode 6 members — build the list from the return table.
 
@@ -80,8 +80,8 @@ Task IDs for acceptance criteria: {list of all task IDs worked this session}
 2. Edge Cases Review (P2) — see prompt below; model: opus
 3. Correctness Review (P1-P2) — see prompt below; model: opus
 4. Drift Review (P3) — see prompt below; model: sonnet
-5. Big Head (consolidation) — see prompt from big-head-skeleton.md; model specified in Big Head Consolidation Protocol section
-6. Pest Control (checkpoint validator) — receives consolidated report path from Big Head via SendMessage; runs CMVCC and CCB checkpoints and replies with verdict
+5. Review Consolidator (consolidation) — see prompt from big-head-skeleton.md; model specified in Review Consolidator Protocol section
+6. Checkpoint Auditor (checkpoint validator) — receives consolidated report path from Review Consolidator via SendMessage; runs claims-vs-code and review-integrity checkpoints and replies with verdict
 ~~~
 
 Split instance example (2 Clarity + 2 Drift splits) — 8 members:
@@ -104,8 +104,8 @@ Task IDs for acceptance criteria: {list of all task IDs worked this session}
 4. Correctness Review (P1-P2) — see prompt below; model: opus
 5. Drift Review part 1 (P3) — drift-1; file subset A from return table; model: sonnet
 6. Drift Review part 2 (P3) — drift-2; file subset B from return table; model: sonnet
-7. Big Head (consolidation) — see prompt from big-head-skeleton.md; model specified in Big Head Consolidation Protocol section
-8. Pest Control (checkpoint validator) — receives consolidated report path from Big Head via SendMessage; runs CMVCC and CCB checkpoints and replies with verdict
+7. Review Consolidator (consolidation) — see prompt from big-head-skeleton.md; model specified in Review Consolidator Protocol section
+8. Checkpoint Auditor (checkpoint validator) — receives consolidated report path from Review Consolidator via SendMessage; runs claims-vs-code and review-integrity checkpoints and replies with verdict
 ~~~
 
 **Round 2+**: the Nitpicker team is **persistent** — do NOT create a new team. Re-task the existing Correctness and Edge Cases reviewers via named-member SendMessage (see Round Transition via SendMessage section). Big Head and Pest Control remain in the team and are re-tasked the same way. The team has at minimum 4 active members (Correctness + Edge Cases + Big Head + Pest Control); Clarity and Drift reviewers — including all split instances (e.g., `clarity-1`, `clarity-2`, `drift-1`, `drift-2`) — remain idle and are NOT re-tasked.
@@ -121,14 +121,14 @@ Report output path: {reviewer-specific path from Round Transition section}
 
 1. Correctness Review (P1-P2) — SendMessage to `correctness-reviewer`; model: opus (unchanged from round 1)
 2. Edge Cases Review (P2) — SendMessage to `edge-cases-reviewer`; model: opus (unchanged from round 1)
-3. Big Head (consolidation) — SendMessage to `ant-farm-big-head` with round N+1 and 2 expected report paths
-4. Pest Control (checkpoint validator) — remains available; Big Head SendMessages `ant-farm-pest-control` as in round 1
+3. Review Consolidator (consolidation) — SendMessage to `ant-farm-review-consolidator` with round N+1 and 2 expected report paths
+4. Checkpoint Auditor (checkpoint validator) — remains available; Review Consolidator SendMessages `ant-farm-checkpoint-auditor` as in round 1
 
 Clarity and Drift reviewers (including split instances clarity-1, clarity-2, drift-1, drift-2, etc.) are NOT
 re-tasked — they remain idle. Do NOT send them messages in round 2+.
 ~~~
 
-**Big Head is spawned as a team member using the big-head-skeleton.md template**, not as a separate Task agent. The Queen fills in the skeleton placeholders and uses the result as the teammate's prompt.
+**The Review Consolidator is spawned as a team member using the big-head-skeleton.md template**, not as a separate Task agent. The Queen fills in the skeleton placeholders and uses the result as the teammate's prompt.
 
 ### Fallback: Sequential Reviews with File-Based Coordination (When TeamCreate Unavailable)
 
@@ -156,12 +156,12 @@ re-tasked — they remain idle. Do NOT send them messages in round 2+.
 3. **Spawn Big Head (after all 4 reviews complete)**:
    - Spawn as Task agent (model: opus)
    - Input: paths to all 4 review reports (copy from the reports directory)
-   - Use big-head-skeleton.md template (same as team mode)
+   - Use big-head-skeleton.md template for the Review Consolidator (same as team mode)
    - Output: consolidated summary to {session-dir}/review-reports/review-consolidated-{timestamp}.md
 
 4. **Quality assurance**:
-   - CCO still runs on all 4 review prompts (before spawning reviewers)
-   - CMVCC and CCB still run on review artifacts (after Big Head completes)
+   - pre-spawn-check still runs on all 4 review prompts (before spawning reviewers)
+   - claims-vs-code and review-integrity still run on review artifacts (after Review Consolidator completes)
    - Final output format identical to Team Protocol
 
 #### Trade-offs of Fallback Mode
@@ -490,9 +490,9 @@ After all Nitpicker reports are complete (count determined by the consolidation 
 
 ### Step Numbering Cross-Reference
 
-reviews.md and big-head-skeleton.md use different step numbering schemes. Use this table to cross-reference them without consulting both files simultaneously:
+reviews.md and big-head-skeleton.md (Review Consolidator template) use different step numbering schemes. Use this table to cross-reference them without consulting both files simultaneously:
 
-| reviews.md step | big-head-skeleton.md step | Description |
+| reviews.md step | big-head-skeleton.md (Review Consolidator) step | Description |
 |----------------|--------------------------|-------------|
 | Step 0 | Step 1 | Verify all expected report files exist (prerequisite gate) |
 | Step 0a | Step 1 (continued) | Polling loop and timeout handling for missing reports |
@@ -510,9 +510,9 @@ The Big Head consolidation process includes two distinct verification layers tha
 
 1. **Big Head Step 0 (Prerequisite Gate)**: A mandatory check performed by Big Head BEFORE reading any reports. This gate ensures all expected reports exist (count from the consolidation brief's `expected_paths` list) before consolidation logic begins. This prevents wasted effort on reading partial report sets or proceeding with missing data.
 
-2. **Pest Control CCB Check 0 (Independent Audit)**: A separate, independent check performed AFTER Big Head consolidation is complete (see checkpoints.md). This audit verifies the same round-appropriate reports but runs in a different context — it confirms that consolidation did not proceed in a degraded state (e.g., no reviewer failures during the review phase).
+2. **Checkpoint Auditor review-integrity Check 0 (Independent Audit)**: A separate, independent check performed AFTER Review Consolidator consolidation is complete (see checkpoints/review-integrity.md). This audit verifies the same round-appropriate reports but runs in a different context — it confirms that consolidation did not proceed in a degraded state (e.g., no reviewer failures during the review phase).
 
-**Why both?** The prerequisite gate (Big Head Step 0) is a blocker for Big Head's own work. The audit check (CCB Check 0) is an independent verification that consolidation ran on complete input — a safety check from a different agent with fresh eyes. The redundancy is intentional: different agents, different timing, different failure modes.
+**Why both?** The prerequisite gate (Review Consolidator Step 0) is a blocker for the Review Consolidator's own work. The audit check (review-integrity Check 0) is an independent verification that consolidation ran on complete input — a safety check from a different agent with fresh eyes. The redundancy is intentional: different agents, different timing, different failure modes.
 
 ### Step 0: Verify All Reports Exist (MANDATORY GATE)
 
@@ -862,8 +862,8 @@ Findings merged:
 **Notification to Pest Control (SendMessage):**
 ```
 SendMessage(
-  to="ant-farm-pest-control",
-  message="Consolidated report ready. Path: {session-dir}/review-reports/review-consolidated-{timestamp}.md. Please run CMVCC and CCB checkpoints and reply with PASS or FAIL + specifics."
+  to="ant-farm-checkpoint-auditor",
+  message="Consolidated report ready. Path: {session-dir}/review-reports/review-consolidated-{timestamp}.md. Please run claims-vs-code and review-integrity checkpoints and reply with PASS or FAIL + specifics."
 )
 ```
 
@@ -871,12 +871,12 @@ SendMessage(
 
 **Turn-based retry protocol:**
 - After sending the SendMessage, **end your turn**. Do not sleep or poll.
-- Pest Control's reply arrives as a new conversation turn. Process it when it arrives.
-- If Pest Control has not replied after 2 subsequent turns of processing other work, send one retry message:
+- The Checkpoint Auditor's reply arrives as a new conversation turn. Process it when it arrives.
+- If the Checkpoint Auditor has not replied after 2 subsequent turns of processing other work, send one retry message:
   ```
   SendMessage(
-    to="ant-farm-pest-control",
-    message="Retry request: Consolidated report ready at {CONSOLIDATED_OUTPUT_PATH}. Please run CMVCC and CCB checkpoints and reply with PASS or FAIL + specifics. (First message sent — no reply received after 2 turns.)"
+    to="ant-farm-checkpoint-auditor",
+    message="Retry request: Consolidated report ready at {CONSOLIDATED_OUTPUT_PATH}. Please run claims-vs-code and review-integrity checkpoints and reply with PASS or FAIL + specifics. (First message sent — no reply received after 2 turns.)"
   )
   ```
   Then end your turn again and await the reply.
@@ -1031,16 +1031,16 @@ Before filing crumbs, confirm Big Head has:
 
 ## After Consolidation Complete
 
-**Prerequisite**: Colony Census Bureau (CCB) must PASS before proceeding.
+**Prerequisite**: review-integrity must PASS before proceeding.
 
-Big Head writes the consolidated summary to `{session-dir}/review-reports/review-consolidated-{timestamp}.md`.
+The Review Consolidator writes the consolidated summary to `{session-dir}/review-reports/review-consolidated-{timestamp}.md`.
 
 This section documents the Queen's Step 3c (User Triage) workflow. **The Queen owns this step**, not the review agents.
-The Queen reads Big Head's consolidated summary and follows the procedures below.
+The Queen reads the Review Consolidator's consolidated summary and follows the procedures below.
 
 ## Queen's Step 3c: User Triage on P1/P2 Issues
 
-**Prerequisite**: CCB PASS + consolidated summary written by Big Head
+**Prerequisite**: review-integrity PASS + consolidated summary written by Review Consolidator
 
 ### Termination Check (zero P1/P2 findings)
 
@@ -1064,7 +1064,7 @@ The Queen determines the fix action based on RULES.md Step 3c decision tree:
 
 ### Fix Workflow
 
-Triggered by auto-fix (round 1) or user choosing "fix now" (round 2+). Fix agents spawn **into the persistent Nitpicker team** (not as standalone Task agents) using the Task tool with `team_name: "nitpicker-team"` so they can communicate directly with reviewers and iterate within the team via SendMessage.
+Triggered by auto-fix (round 1) or user choosing "fix now" (round 2+). Fix agents spawn **into the persistent reviewer team** (not as standalone Task agents) using the Task tool with `team_name: "reviewer-team"` so they can communicate directly with reviewers and iterate within the team via SendMessage.
 
 #### Fix-Cycle Scout and Auto-Approval
 
@@ -1072,16 +1072,16 @@ Before spawning fix agents, the Queen runs a fix-cycle Scout to plan the fix str
 
 **Auto-approval**: The fix-cycle Scout strategy is auto-approved — no user confirmation gate. The Scout's output feeds directly into fix agent spawning.
 
-**SSV gate**: SSV still runs as a mechanical safety net on the Scout's strategy:
-- SSV PASS → proceed to fix agent spawning
-- SSV FAIL → re-run Scout with violations listed, max 1 retry; if still failing, escalate to user
+**startup-check gate**: startup-check still runs as a mechanical safety net on the Scout's strategy:
+- startup-check PASS → proceed to fix agent spawning
+- startup-check FAIL → re-run Scout with violations listed, max 1 retry; if still failing, escalate to user
 
-#### Pantry and CCO Skip Rationale
+#### Pantry and pre-spawn-check Skip Rationale
 
-Fix briefs do **not** go through Pantry or CCO. Reason:
+Fix briefs do **not** go through Pantry or pre-spawn-check. Reason:
 
-- **Pantry skipped**: The Big Head crumbs already contain root cause, affected surfaces, fix suggestion, and acceptance criteria — validated by CCB. The crumb IS the brief. Re-composing it through Pantry adds no value and wastes a round-trip.
-- **CCO skipped**: The crumb content passed CCB (Colony Census Bureau) and the Scout's fix strategy passed SSV. Two independent mechanical gates have already validated correctness. A third CCO pass would be redundant.
+- **Pantry skipped**: The Review Consolidator crumbs already contain root cause, affected surfaces, fix suggestion, and acceptance criteria — validated by review-integrity. The crumb IS the brief. Re-composing it through Pantry adds no value and wastes a round-trip.
+- **pre-spawn-check skipped**: The crumb content passed review-integrity and the Scout's fix strategy passed startup-check. Two independent mechanical gates have already validated correctness. A third pre-spawn-check pass would be redundant.
 
 Fix agents receive the crumb ID directly as their source of truth.
 
@@ -1092,8 +1092,8 @@ Fix agents spawn into the Nitpicker team with the following naming convention:
 | Role | Round 1 name | Round 2+ name |
 |---|---|---|
 | Fix Crumb Gatherer N | `fix-dp-1`, `fix-dp-2`, ... | `fix-dp-r2-1`, `fix-dp-r2-2`, ... |
-| Fix PC — What Was Done | `fix-pc-wwd` | `fix-pc-wwd-r2` |
-| Fix PC — CMVCC | `fix-pc-cmvcc` | `fix-pc-cmvcc-r2` |
+| Fix PC — Scope Verify | `fix-pc-scope-verify` | `fix-pc-scope-verify-r2` |
+| Fix PC — Claims vs Code | `fix-pc-claims-vs-code` | `fix-pc-claims-vs-code-r2` |
 
 Round suffix (`-r2`, `-r3`, etc.) increments with each review round to avoid name collisions within the persistent team.
 
@@ -1123,16 +1123,16 @@ The prompt is intentionally minimal. Crumb content drives the work, not the prom
 The fix inner loop runs between a fix DP and the two fix PCs within the team. The loop is fully asynchronous via SendMessage.
 
 ```
-fix-dp-N  -->  [commit]  -->  SendMessage(fix-pc-wwd)
+fix-dp-N  -->  [commit]  -->  SendMessage(fix-pc-scope-verify)
                                     |
-                              fix-pc-wwd runs WWD check
+                              fix-pc-scope-verify runs scope-verify check
                                     |
                          PASS ------+------ FAIL
                           |                   |
-               SendMessage(fix-pc-cmvcc)   SendMessage(fix-dp-N) with specifics
+               SendMessage(fix-pc-claims-vs-code)   SendMessage(fix-dp-N) with specifics
                           |                   |
-                    fix-pc-cmvcc          fix-dp-N iterates (max 2 retries total)
-                    runs CMVCC                |
+                    fix-pc-claims-vs-code  fix-dp-N iterates (max 2 retries total)
+                    runs claims-vs-code        |
                           |             if retry limit hit → SendMessage(Queen) to escalate
                  PASS ----+---- FAIL
                   |              |
@@ -1141,11 +1141,11 @@ fix-dp-N  -->  [commit]  -->  SendMessage(fix-pc-wwd)
                               if retry limit hit → SendMessage(Queen) to escalate
 ```
 
-**Retry limit**: Each fix CG has a maximum of 2 retries total across both WWD and CMVCC failures. On the third failure, the CG sends a message to the Queen with the failure details and goes idle. The Queen escalates to the user.
+**Retry limit**: Each fix CG has a maximum of 2 retries total across both scope-verify and claims-vs-code failures. On the third failure, the CG sends a message to the Queen with the failure details and goes idle. The Queen escalates to the user.
 
-**fix-pc-wwd** (Haiku): Lightweight "What Was Done" check — verifies the commit touches only the files listed in the crumb, no stray edits, and the commit message is well-formed. Fast and cheap.
+**fix-pc-scope-verify** (Haiku): Lightweight scope check — verifies the commit touches only the files listed in the crumb, no stray edits, and the commit message is well-formed. Fast and cheap.
 
-**fix-pc-cmvcc** (Sonnet): Full Crumbs Moved vs Crumbs Claimed check — verifies the fix satisfies the crumb's acceptance criteria, tests pass, and no regressions introduced.
+**fix-pc-claims-vs-code** (Sonnet): Full claims-vs-code check — verifies the fix satisfies the crumb's acceptance criteria, tests pass, and no regressions introduced.
 
 #### Wave Composition
 
@@ -1179,7 +1179,7 @@ After all fix CGs complete and fix-pc-cmvcc has issued PASS for each:
    - Task IDs reviewed: `{crumb-ids fixed this round}`
    - Report output path: `{session-dir}/review-reports/edge-cases-r{N+1}-{timestamp}.md`
 
-3. **Re-task Big Head**: SendMessage to `ant-farm-big-head` with:
+3. **Re-task Review Consolidator**: SendMessage to `ant-farm-review-consolidator` with:
    - Review round: N+1
    - Expected report paths: list the exact paths from step 1 and 2 above (consolidation brief's expected_paths is authoritative; typically correctness + edge cases, but include any split instances)
    - Report paths: paths from step 1 and 2 above
@@ -1193,9 +1193,9 @@ The loop continues until a round produces zero P1/P2 findings.
 
 After all fix agents complete and SendMessage round-transition messages are sent:
 - Correctness and Edge Cases reviewers produce round N+1 reports scoped to fix commits
-- Big Head consolidates and runs CCB
-- CCB PASS + zero P1/P2 → loop ends; proceed to RULES.md Step 4
-- CCB PASS + P1/P2 remain → return to "If P1 or P2 issues found" above (user prompt for round 2+)
+- Review Consolidator consolidates and runs review-integrity
+- review-integrity PASS + zero P1/P2 → loop ends; proceed to RULES.md Step 4
+- review-integrity PASS + P1/P2 remain → return to "If P1 or P2 issues found" above (user prompt for round 2+)
 
 ### Handle P3 Issues (Queen's Step 3c)
 

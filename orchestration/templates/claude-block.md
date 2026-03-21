@@ -17,7 +17,7 @@
 - `templates/` — Agent prompts, checkpoints, reviews (read on demand)
 - `reference/` — Dependency analysis, known failures (read when needed)
 
-**Key rule**: After SSV PASS, the Queen auto-proceeds to Step 2. No user approval required for execution strategy.
+**Key rule**: After startup-check PASS, the Queen auto-proceeds to Step 2. No user approval required for execution strategy.
 
 ## Landing the Plane (Session Completion)
 
@@ -31,18 +31,19 @@
 2. **Run quality gates** (if code changed) - Tests, linters, builds
 3. **Review-findings gate** — If reviews ran and found P1 issues, present findings to user before proceeding. User decides: fix now, or document deferred P1s in CHANGELOG and push. Do NOT push with undisclosed P1 blockers. If no reviews ran or no P1s exist, proceed.
 4. **Update issue status** - Close finished work, update in-progress items
-5. **Run Scribe** — Spawn the Scribe (`technical-writer`, `model: "sonnet"`) to write `{SESSION_DIR}/exec-summary.md` and prepend a CHANGELOG entry. Use `orchestration/templates/scribe-skeleton.md` as the prompt template. Commit the Scribe output.
-6. **ESV gate** — Spawn Pest Control (`pest-control`, `model: "haiku"`) for Exec Summary Verification. Pass `{SESSION_DIR}` and `orchestration/templates/checkpoints/common.md` + `orchestration/templates/checkpoints/esv.md`. ESV must PASS before pushing. On FAIL: re-spawn Scribe with violations (max 1 retry); if still failing, present to user.
+5. **Run Scribe** — Spawn the Scribe (`ant-farm-session-scribe`, `model: "sonnet"`) to write `{SESSION_DIR}/exec-summary.md` and prepend a CHANGELOG entry. Use `orchestration/templates/scribe-skeleton.md` as the prompt template. Commit CHANGELOG.md only — NEVER `git add` any file under `.crumbs/` (the entire directory is gitignored).
+6. **Session-complete gate** — Spawn the Checkpoint Auditor (`ant-farm-checkpoint-auditor`, `model: "haiku"`) for Exec Summary Verification. Pass `{SESSION_DIR}` and `orchestration/templates/checkpoints/common.md` + `orchestration/templates/checkpoints/session-complete.md`. session-complete must PASS before pushing. On FAIL: re-spawn Scribe with violations (max 1 retry); if still failing, present to user.
 7. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
    git pull --rebase
    git push
    git status  # MUST show "up to date with origin"
    ```
-8. **Clean up** - Clear stashes, prune remote branches
+8. **Sync global runtime files** — Run `./scripts/setup.sh` to copy any changed orchestration files, agents, skills, and scripts to `~/.claude/`.
+9. **Clean up** - Clear stashes, prune remote branches
    (Session artifacts in .crumbs/sessions/_session-*/ are retained for posterity. Prune old sessions manually when needed.)
-9. **Verify** - All changes committed AND pushed
-10. **Hand off** - Provide context for next session
+10. **Verify** - All changes committed AND pushed
+11. **Hand off** - Provide context for next session
 
 **CRITICAL RULES:**
 - Work is NOT complete until `git push` succeeds

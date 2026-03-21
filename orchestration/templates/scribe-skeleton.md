@@ -5,7 +5,7 @@
 Fill in all `{PLACEHOLDER}` values (uppercase) and use the result as the Task tool `prompt` parameter.
 The agent-facing text starts below the `---` separator. Do NOT include this instruction block.
 
-**Model**: The Task tool call MUST include `model: "sonnet"`. subagent_type: `ant-farm-technical-writer`.
+**Model**: The Task tool call MUST include `model: "sonnet"`. subagent_type: `ant-farm-session-scribe`.
 
 Read term definitions from `orchestration/reference/terms.md` for `{TASK_ID}`, `{TASK_SUFFIX}`, and `{SESSION_DIR}`. Scribe-specific placeholders used in this template:
 - `{SESSION_ID}` — short session identifier (e.g., `abc123` — the hex suffix of the session dir)

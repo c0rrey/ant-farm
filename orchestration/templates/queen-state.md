@@ -15,8 +15,8 @@
 | pending/completed/failed | {path} | {N} | {M} | {name} |
 
 ## Agent Registry
-| Agent Name | Task IDs | Files Assigned | Status | Commit Hash | CMVCC |
-|------------|----------|----------------|--------|-------------|--------------|
+| Agent Name | Task IDs | Files Assigned | Status | Commit Hash | claims-vs-code |
+|------------|----------|----------------|--------|-------------|----------------|
 | {name}     | {ids}    | {files}        | spawned/completed/errored | {hash} | PASS/PENDING/FAIL |
 
 ## The Pantry
@@ -30,12 +30,12 @@
 
 | Step | Phase | Checkpoint | Status | Verdict |
 |------|-------|------------|--------|---------|
-| Step 2 | Wave N impl prompts | CCO | pending/completed/failed | All PASS / {details} |
-| Step 3 | Wave N per-agent | WWD | pending/completed/failed | All PASS / {details} |
-| Step 3 | Wave N post | CMVCC | pending/completed/failed | All PASS / {details} |
-| Step 3b | Round R review prompts | CCO | pending/completed/failed | All PASS / {details} |
-| Step 3b | Round R review post | CMVCC + CCB | pending/completed/failed | All PASS / {details} |
-| Step 5c | Exec summary | ESV | pending/completed/failed | PASS / FAIL / {details} |
+| Step 2 | Wave N impl prompts | pre-spawn-check | pending/completed/failed | All PASS / {details} |
+| Step 3 | Wave N per-agent | scope-verify | pending/completed/failed | All PASS / {details} |
+| Step 3 | Wave N post | claims-vs-code | pending/completed/failed | All PASS / {details} |
+| Step 3b | Round R review prompts | pre-spawn-check | pending/completed/failed | All PASS / {details} |
+| Step 3b | Round R review post | claims-vs-code + review-integrity | pending/completed/failed | All PASS / {details} |
+| Step 5c | Exec summary | session-complete | pending/completed/failed | PASS / FAIL / {details} |
 
 ## Review Rounds
 - **Current round**: {1 | 2 | 3 | ...}
@@ -45,13 +45,13 @@
 - **Fix commit range**: {first-fix-commit}..HEAD (set after fix cycle)
 - **Termination**: {pending | terminated (round N: 0 P1/P2)}
 
-## Scribe and ESV (Step 5b / 5c)
+## Scribe and Session-Complete (Step 5b / 5c)
 - **Scribe status**: {pending | spawned | completed | failed}
 - **Scribe retry**: {0 | 1} (max 1 retry before escalation)
 - **Exec summary path**: {SESSION_DIR}/exec-summary.md (or N/A)
-- **ESV status**: {pending | spawned | PASS | FAIL}
-- **ESV artifact**: {SESSION_DIR}/pc/pc-session-esv-{timestamp}.md (or N/A)
-- **ESV escalated**: {no | yes — awaiting user decision}
+- **Session-complete status**: {pending | spawned | PASS | FAIL}
+- **Session-complete artifact**: {SESSION_DIR}/pc/pc-session-session-complete-{timestamp}.md (or N/A)
+- **Session-complete escalated**: {no | yes — awaiting user decision}
 
 ## Queue Position
 - **Completed**: {N} of {total} tasks

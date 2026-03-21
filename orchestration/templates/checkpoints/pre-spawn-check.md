@@ -1,6 +1,6 @@
 <!-- Reader: Pest Control. The Queen does NOT read this file. -->
 
-## Colony Cartography Office (CCO): Pre-Spawn Prompt Audit
+## Pre-Spawn Check: Pre-Spawn Prompt Audit
 
 ### Crumb Gatherers
 
@@ -9,7 +9,7 @@
 
 **Why**: The orchestrator has a self-policing checklist, but nobody audits the orchestrator. Catching prompt defects before spawn is 100x cheaper than catching them after.
 
-#### Verdict Thresholds for CCO
+#### Verdict Thresholds for pre-spawn-check
 
 **PASS verdict**: All 7 checks pass without exceptions.
 
@@ -23,9 +23,9 @@
 **FAIL verdict**: Any check fails without WARN exception, or Check 7 is WARN but the file is large (≥100 lines) or lacks context.
 
 ```markdown
-**Pest Control verification - CCO (Pre-Spawn Prompt Audit)**
+**Checkpoint Auditor verification - pre-spawn-check (Pre-Spawn Prompt Audit)**
 
-You are **Pest Control**, the verification subagent. Your role is to audit the composed agent prompt before spawn. See "Pest Control Overview" section above for full conventions.
+You are the **Checkpoint Auditor**, the verification subagent. Your role is to audit the composed agent prompt before spawn. See "Checkpoint Auditor Overview" section above for full conventions.
 
 Audit the following Crumb Gatherer prompt for completeness and correctness.
 Do NOT execute the prompt — only verify its contents.
@@ -68,40 +68,40 @@ Do NOT execute the prompt — only verify its contents.
 >
 > Passing checks: 1, 3, 4, 6, 7
 >
-> Recommendation: Rewrite prompt with actual file paths (e.g., `build.py:L200-215`) and explicit scope boundaries before re-running CCO.
+> Recommendation: Rewrite prompt with actual file paths (e.g., `build.py:L200-215`) and explicit scope boundaries before re-running pre-spawn-check.
 
 Write your verification report to:
 
-**Batch mode (most common):** `{SESSION_DIR}/pc/pc-session-cco-impl-{timestamp}.md`
-- Use when the Queen runs CCO over all Crumb Gatherer prompts for a wave in a single audit.
-- The suffix `impl` distinguishes this artifact from the Nitpicker CCO (`cco-review`) in the same session.
+**Batch mode (most common):** `{SESSION_DIR}/pc/pc-session-pre-spawn-check-impl-{timestamp}.md`
+- Use when the Queen runs pre-spawn-check over all Crumb Gatherer prompts for a wave in a single audit.
+- The suffix `impl` distinguishes this artifact from the Reviewer pre-spawn-check (`pre-spawn-check-review`) in the same session.
 
-**Per-task mode (single-prompt audit):** `{SESSION_DIR}/pc/pc-{TASK_SUFFIX}-cco-{timestamp}.md`
+**Per-task mode (single-prompt audit):** `{SESSION_DIR}/pc/pc-{TASK_SUFFIX}-pre-spawn-check-{timestamp}.md`
 - Use only when auditing a single Crumb Gatherer prompt in isolation.
-- Example: `{SESSION_DIR}/pc/pc-74g1-cco-{timestamp}.md`
+- Example: `{SESSION_DIR}/pc/pc-74g1-pre-spawn-check-{timestamp}.md`
 
 Where:
 - `{TASK_SUFFIX}`: suffix portion of crumb ID with no project prefix (e.g., `74g1` from `my-project-74g.1`)
 - `{SESSION_DIR}`: session artifact directory (e.g., `.crumbs/sessions/_session-abc123`)
-- timestamp: format defined in **Timestamp format** (Pest Control Overview)
+- timestamp: format defined in **Timestamp format** (Checkpoint Auditor Overview)
 ```
 
-### The Nitpickers
+### The Reviewers
 
 **When**: After composing all review prompts (round 1: 4 prompts; round 2+: 2 prompts), BEFORE creating the team
 **Model**: `haiku`
 
 ```markdown
-**Pest Control verification - CCO (Pre-Spawn Nitpickers Audit)**
+**Checkpoint Auditor verification - pre-spawn-check (Pre-Spawn Reviewers Audit)**
 
-You are **Pest Control**, the verification subagent. Your role is to audit the Nitpickers prompts before spawn.
+You are the **Checkpoint Auditor**, the verification subagent. Your role is to audit the reviewer prompts before spawn.
 
 **Review round**: {REVIEW_ROUND}
 **Input guard**: If {REVIEW_ROUND} still appears as the literal text `{REVIEW_ROUND}` (curly braces present), or is missing, blank, or non-numeric (not a positive integer), return the following message and do NOT proceed with the audit:
 
-"CCO ABORTED: REVIEW_ROUND placeholder was not substituted before spawning CCO (got: '{REVIEW_ROUND}'). Root cause: upstream substitution failure — the Queen or Pantry did not replace `{REVIEW_ROUND}` in the CCO prompt before dispatch. Fix: ensure the prompt-composition step fills in REVIEW_ROUND as a plain integer (e.g. `1`) before spawning Pest Control."
+"pre-spawn-check ABORTED: REVIEW_ROUND placeholder was not substituted before spawning pre-spawn-check (got: '{REVIEW_ROUND}'). Root cause: upstream substitution failure — the Queen or Pantry did not replace `{REVIEW_ROUND}` in the pre-spawn-check prompt before dispatch. Fix: ensure the prompt-composition step fills in REVIEW_ROUND as a plain integer (e.g. `1`) before spawning the Checkpoint Auditor."
 
-Audit the following Nitpicker prompts for completeness and consistency.
+Audit the following reviewer prompts for completeness and consistency.
 Round 1: 4 prompts (clarity, edge-cases, correctness, drift).
 Round 2+: 2 prompts (correctness, edge-cases only).
 Do NOT execute the prompts — only verify their contents.
@@ -127,7 +127,7 @@ Both rounds — paste these 2 prompts:
 ## Verify each item (PASS or FAIL with evidence):
 
 1. **File list matches git diff**: the Queen provides the commit range (`<first-commit>..<last-commit>`) in the spawn prompt — use those exact values. This is session-wide, spanning all trails. Run `git diff --name-only <first-commit>..<last-commit>` and verify the prompt file list matches exactly. Every file in the diff must appear in the prompt, and every file in the prompt must appear in the diff. If there is a mismatch, FAIL with the list of missing/extra files.
-   > **Known limitation**: The commit range is Queen-provided. If the Queen passes incorrect commit hashes (e.g., too narrow or too broad), this check validates against wrong ground truth. There is no independent way for Pest Control to derive the "correct" commit range. Mitigation: WWD (Post-Commit Scope Verification) independently validates per-task scope after each agent commits, catching scope errors that slip through here.
+   > **Known limitation**: The commit range is Queen-provided. If the Queen passes incorrect commit hashes (e.g., too narrow or too broad), this check validates against wrong ground truth. There is no independent way for the Checkpoint Auditor to derive the "correct" commit range. Mitigation: scope-verify (Post-Commit Scope Verification) independently validates per-task scope after each agent commits, catching scope errors that slip through here.
 2. **Same file list**: All prompts contain the same set of files to review (not different subsets)
 3. **Same commit range**: All prompts reference the same commit range
 4. **Correct focus areas**: Each prompt has focus areas specific to its review type:
@@ -138,24 +138,24 @@ Both rounds — paste these 2 prompts:
    (Flag if focus areas are copy-pasted identically across prompts)
 5. **No crumb filing instruction**: Each prompt contains "Do NOT file crumbs" or equivalent
 6. **Report format reference**: Each prompt specifies the output path `{SESSION_DIR}/review-reports/{type}-review-{timestamp}.md`
-7. **Messaging guidelines**: Each prompt includes guidance on when to message other Nitpickers
+7. **Messaging guidelines**: Each prompt includes guidance on when to message other reviewers
 
 ## Verdict
 - **PASS** — All 7 checks pass for all prompts in scope for this round
 - **FAIL: <list each failing check, specifying which prompt(s)>**
 
 Write your verification report to:
-`{SESSION_DIR}/pc/pc-session-cco-review-{timestamp}.md`
+`{SESSION_DIR}/pc/pc-session-pre-spawn-check-review-{timestamp}.md`
 
 Where:
 - `{SESSION_DIR}`: session artifact directory (e.g., `.crumbs/sessions/_session-abc123`)
-- timestamp: format defined in **Timestamp format** (Pest Control Overview)
+- timestamp: format defined in **Timestamp format** (Checkpoint Auditor Overview)
 ```
 
 ### The Queen's Response
 
 **On PASS**: Proceed to spawn the agent(s) or create the team.
 
-**On FAIL**: Fix the specific gaps in the prompt(s), then re-run CCO. Do NOT spawn until PASS.
+**On FAIL**: Fix the specific gaps in the prompt(s), then re-run pre-spawn-check. Do NOT spawn until PASS.
 
 ---

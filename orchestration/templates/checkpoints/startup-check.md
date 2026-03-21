@@ -1,6 +1,6 @@
 <!-- Reader: Pest Control. The Queen does NOT read this file. -->
 
-## Scout Strategy Verification (SSV): Pre-Implementation Strategy Audit
+## Startup Check: Pre-Implementation Strategy Audit
 
 **When**: After Scout returns `{SESSION_DIR}/briefing.md` and BEFORE spawning Pantry (Step 2 in RULES.md)
 **Model**: `haiku` (pure set comparisons — no judgment required)
@@ -10,9 +10,9 @@
 **Why haiku**: All three checks are set comparisons and dependency graph traversals with no ambiguity. No judgment or code comprehension is required. Haiku handles this class of verification faster and cheaper than sonnet.
 
 ```markdown
-**Pest Control verification - SSV (Scout Strategy Verification)**
+**Checkpoint Auditor verification - startup-check (Scout Strategy Verification)**
 
-You are **Pest Control**, the verification subagent. Your role is to verify the Scout's execution strategy for mechanical correctness before any implementation work begins. See "Pest Control Overview" section above for full conventions.
+You are the **Checkpoint Auditor**, the verification subagent. Your role is to verify the Scout's execution strategy for mechanical correctness before any implementation work begins. See "Checkpoint Auditor Overview" section above for full conventions.
 
 **Briefing file**: `{SESSION_DIR}/briefing.md`
 **Session directory**: `{SESSION_DIR}`
@@ -68,7 +68,7 @@ An intra-wave dependency means an agent that is supposed to start in parallel ac
 
 **PASS** — All 3 checks pass. Report PASS to the Queen. The Queen will auto-proceed to spawn Pantry (Step 2) — do NOT spawn Pantry yourself.
 
-**FAIL: <list each failing check>** — One or more checks failed. Do NOT spawn Pantry. Report specific violations so Scout can revise the strategy.
+**FAIL: <list each failing check>** — One or more checks failed. Do NOT spawn Pantry. Report specific violations so the Scout can revise the strategy.
 
 **Example FAIL verdict:**
 
@@ -85,27 +85,27 @@ An intra-wave dependency means an agent that is supposed to start in parallel ac
 > Recommendation: Re-run Scout with these violations noted. Move ant-farm-def or ant-farm-abc to a different wave (file conflict), and move ant-farm-uvw to Wave 2 or later (dependency ordering).
 
 Write your verification report to:
-`{SESSION_DIR}/pc/pc-session-ssv-{timestamp}.md`
+`{SESSION_DIR}/pc/pc-session-startup-check-{timestamp}.md`
 
 Where:
 - `{SESSION_DIR}`: session artifact directory (e.g., `.crumbs/sessions/_session-abc123`)
-- timestamp: format defined in **Timestamp format** (Pest Control Overview)
+- timestamp: format defined in **Timestamp format** (Checkpoint Auditor Overview)
 ```
 
 ### The Queen's Response
 
-**On PASS**: Auto-proceed to spawn Pantry (Step 2 in RULES.md). The SSV validates mechanical correctness (no file conflicts, no dependency violations); a PASS is sufficient to begin implementation without waiting for user approval.
+**On PASS**: Auto-proceed to spawn Pantry (Step 2 in RULES.md). The startup-check validates mechanical correctness (no file conflicts, no dependency violations); a PASS is sufficient to begin implementation without waiting for user approval.
 
 **On FAIL**:
-1. Log the violation details from the SSV report.
+1. Log the violation details from the startup-check report.
 2. Do NOT spawn Pantry.
 3. Re-run Scout with a prompt that includes the specific violations:
    ```
-   SSV found strategy errors that must be corrected before implementation can begin:
-   <paste specific violations from SSV report>
+   startup-check found strategy errors that must be corrected before implementation can begin:
+   <paste specific violations from startup-check report>
    Please revise the wave plan to resolve these issues and rewrite {SESSION_DIR}/briefing.md.
    ```
-4. After Scout revises `{SESSION_DIR}/briefing.md`, re-run SSV.
-5. If SSV fails a second time, escalate to user with the full violation report.
+4. After Scout revises `{SESSION_DIR}/briefing.md`, re-run startup-check.
+5. If startup-check fails a second time, escalate to user with the full violation report.
 
 ---

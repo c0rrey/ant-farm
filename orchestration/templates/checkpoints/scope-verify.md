@@ -1,22 +1,22 @@
 <!-- Reader: Pest Control. The Queen does NOT read this file. -->
 
-## Wandering Worker Detection (WWD): Post-Commit Scope Verification
+## Scope Verify: Post-Commit Scope Verification
 
 **When**: Two execution modes depending on how agents were spawned (a "wave" is a group of agents spawned for the same execution round):
 - **Serial mode**: After each individual agent commits, BEFORE spawning the next agent in the wave. Agents were spawned one at a time; true per-agent gating is possible.
-- **Batch mode**: After ALL agents in the wave have committed (agents were spawned in parallel in a single message, so per-agent serial gating is mechanically impossible). One WWD instance per committed task, run concurrently. All WWD reports must PASS before CMVCC runs.
+- **Batch mode**: After ALL agents in the wave have committed (agents were spawned in parallel in a single message, so per-agent serial gating is mechanically impossible). One scope-verify instance per committed task, run concurrently. All scope-verify reports must PASS before claims-vs-code runs.
 
 **Mode selection rule**: If the Queen spawned agents in a single message (parallel wave), use batch mode. If the Queen spawned agents individually in separate messages, use serial mode. (Authoritative source: RULES.md Step 3.)
 **Model**: `haiku` (mechanical file list comparison — cheap, fast)
 
-**Why**: Catches scope creep in real-time between agents, before CMVCC runs. Prevents cascading work attribution errors when multiple agents work on related files.
+**Why**: Catches scope creep in real-time between agents, before claims-vs-code runs. Prevents cascading work attribution errors when multiple agents work on related files.
 
-**Known failure mode**: In Wave 1 of Epic 74g, agent 74g.6 (comment task) made functional changes belonging to 74g.7 (foundingDate filter), which cascaded into 74g.7 making changes belonging to 74g.4 (sameAs conditional). WWD would have caught the first scope violation immediately.
+**Known failure mode**: In Wave 1 of Epic 74g, agent 74g.6 (comment task) made functional changes belonging to 74g.7 (foundingDate filter), which cascaded into 74g.7 making changes belonging to 74g.4 (sameAs conditional). scope-verify would have caught the first scope violation immediately.
 
 ```markdown
-**Pest Control verification - WWD (Post-Commit Scope Verification)**
+**Checkpoint Auditor verification - scope-verify (Post-Commit Scope Verification)**
 
-You are **Pest Control**, the verification subagent. Your role is to verify agent commits match task scope.
+You are the **Checkpoint Auditor**, the verification subagent. Your role is to verify agent commits match task scope.
 
 **Task ID**: {TASK_ID}
 **Expected files** (from `crumb show {TASK_ID}`): {list files from task description}
@@ -34,7 +34,7 @@ You are **Pest Control**, the verification subagent. Your role is to verify agen
 - ⚠️ Extra files changed (e.g., regenerated HTML from template changes) — check if legitimate
 - ❌ Unexpected files changed (e.g., different template, unrelated config)
 
-#### Verdict Thresholds and Queue Blocking Behavior for WWD
+#### Verdict Thresholds and Queue Blocking Behavior for scope-verify
 
 **PASS verdict**: All changed files are in the expected scope (from `crumb show {TASK_ID}`), or any extra files are clearly legitimate build outputs (e.g., HTML regenerated from template change, CSS compiled from SASS).
 
@@ -50,12 +50,12 @@ You are **Pest Control**, the verification subagent. Your role is to verify agen
 - **FAIL: <list unexpected files>** — Agent edited files outside task scope (scope creep detected). Blocks queue progression until documented.
 
 Write your verification report to:
-`{SESSION_DIR}/pc/pc-{TASK_SUFFIX}-wwd-{timestamp}.md`
+`{SESSION_DIR}/pc/pc-{TASK_SUFFIX}-scope-verify-{timestamp}.md`
 ```
 
 ### The Queen's Response
 
-**On PASS**: Continue normally (run CMVCC, backfill queue).
+**On PASS**: Continue normally (run claims-vs-code, backfill queue).
 
 **On WARN** (does NOT block queue):
 - Review the extra files within 30 seconds of receiving this report

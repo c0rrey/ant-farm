@@ -201,14 +201,14 @@ Reviews run as a single parallel Nitpicker team spawned via TeamCreate (per RULE
 **Round 1 team composition (6 members):**
 - 4 Nitpicker reviewers (Clarity, Edge Cases, Correctness, Drift) — run concurrently
 - 1 Big Head (deduplication, root-cause grouping, issue filing)
-- 1 Pest Control (CCB verification — added as team member so Big Head can SendMessage to it)
+- 1 Checkpoint Auditor (review-integrity verification — added as team member so the Review Consolidator can SendMessage to it)
 
 **Round 2+ team composition (4 members):**
 - 2 Nitpicker reviewers (Correctness + Edge Cases only)
 - 1 Big Head
 - 1 Pest Control
 
-**Pre-spawn gate:** CCO must PASS before the Nitpicker team is spawned.
+**Pre-spawn gate:** pre-spawn-check must PASS before the reviewer team is spawned.
 
 **Output:** Big Head consolidated summary written to `${SESSION_DIR}/review-reports/review-consolidated-{timestamp}.md`
 
@@ -274,7 +274,7 @@ Before declaring session complete:
   - [ ] `python build.py --dry-run` succeeds
   - [ ] `pytest tests/` passes (if tests exist)
   - [ ] Linter passes (if configured)
-- [ ] ESV PASS (Step 5c) — Exec Summary Verification passed before git push
+- [ ] session-complete PASS (Step 5c) — Exec Summary Verification passed before git push
 
 ### Documentation Complete
 
