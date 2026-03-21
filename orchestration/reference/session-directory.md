@@ -2,7 +2,7 @@
 
 At session start (Step 0), generate a session ID and create the session artifact directory:
 
-    SESSION_ID=$(date +%Y%m%d-%H%M%S)
+    SESSION_ID="$(date +%Y%m%d-%H%M%S)-$(head -c4 /dev/urandom | xxd -p)"
     SESSION_DIR=".crumbs/sessions/_session-${SESSION_ID}"
     mkdir -p "${SESSION_DIR}"/{task-metadata,previews,prompts,pc,summaries}
     crumb prune >/dev/null || true

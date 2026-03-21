@@ -350,7 +350,7 @@ Read `orchestration/reference/session-directory.md` for full setup instructions 
 
 At session start (Step 0), run:
 
-    SESSION_ID=$(date +%Y%m%d-%H%M%S)
+    SESSION_ID="$(date +%Y%m%d-%H%M%S)-$(head -c4 /dev/urandom | xxd -p)"
     SESSION_DIR=".crumbs/sessions/_session-${SESSION_ID}"
     mkdir -p "${SESSION_DIR}"/{task-metadata,previews,prompts,pc,summaries}
     crumb prune 2>/dev/null || echo "WARNING: crumb prune failed (non-blocking) — continuing session setup"
