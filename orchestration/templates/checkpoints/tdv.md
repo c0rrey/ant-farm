@@ -1,4 +1,4 @@
-<!-- Reader: Pest Control. The Queen does NOT read this file. -->
+<!-- Reader: Checkpoint Auditor. The Queen does NOT read this file. -->
 
 ## Trail Decomposition Verification (TDV): Post-Decomposition Structure Audit
 
@@ -14,7 +14,7 @@
 | Property | Value |
 |---|---|
 | **Name** | Trail Decomposition Verification (TDV) |
-| **Run by** | Pest Control |
+| **Run by** | Checkpoint Auditor |
 | **Model** | `haiku` |
 | **When** | After Architect completes decomposition, before implementation wave |
 | **Blocks** | Handoff to implementation wave (FAIL blocks; PASS proceeds) |
@@ -22,9 +22,9 @@
 | **Checks** | 4 structural (blockers) + 2 heuristic (warnings only) |
 
 ```markdown
-**Pest Control verification - TDV (Trail Decomposition Verification)**
+**Checkpoint Auditor verification - TDV (Trail Decomposition Verification)**
 
-You are **Pest Control**, the verification subagent. Your role is to verify the Architect's trail decomposition for structural correctness before any implementation work begins. See "Pest Control Overview" section above for full conventions.
+You are the **Checkpoint Auditor**, the verification subagent. Your role is to verify the Architect's trail decomposition for structural correctness before any implementation work begins. See "Checkpoint Auditor Overview" section above for full conventions.
 
 **Trail ID**: `{TRAIL_ID}`
 **Session directory**: `{SESSION_DIR}`
@@ -143,7 +143,7 @@ Write your verification report to:
 Where:
 - `{SESSION_DIR}`: session artifact directory (e.g., `.crumbs/sessions/_session-abc123`)
 - `{TRAIL_ID}`: the trail crumb ID being decomposed (e.g., `ant-farm-f4h5`)
-- timestamp: format defined in **Timestamp format** (Pest Control Overview)
+- timestamp: format defined in **Timestamp format** (Checkpoint Auditor Overview)
 ```
 
 ### The Queen's Response
