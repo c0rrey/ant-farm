@@ -108,4 +108,4 @@ TeamCreate(
 
 ### Step 3 — Report paths are included automatically
 
-`build-review-prompts.sh` writes all expected report paths into `{DATA_FILE_PATH}` (the consolidation brief) automatically via `fill_slot`. Review Consolidator's spawn prompt already includes `{DATA_FILE_PATH}`, so Review Consolidator discovers all report paths from the brief without any manual embedding or follow-up SendMessage.
+`build-review-prompts.sh` writes all expected report paths into `{DATA_FILE_PATH}` (the consolidation brief) automatically via `crumb render-template --slot`. Review Consolidator's spawn prompt already includes `{DATA_FILE_PATH}`, so Review Consolidator discovers all report paths from the brief without any manual embedding or follow-up SendMessage.
