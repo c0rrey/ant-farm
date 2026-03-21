@@ -261,14 +261,14 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 
 | Gate | Blocks | Artifact |
 |------|--------|----------|
-| startup-check PASS | Prompt Composer spawn (and all downstream steps) | ${SESSION_DIR}/pc/pc-session-startup-check-{timestamp}.md |
+| startup-check PASS | Prompt Composer spawn (and all downstream steps) | ${SESSION_DIR}/pc/pc-session-startup-check-<timestamp>.md |
 | pre-spawn-check PASS (impl) | Agent spawn | ${SESSION_DIR}/pc/*-pre-spawn-check-*.md |
-| pre-spawn-check PASS (review) | Reviewer team spawn | ${SESSION_DIR}/pc/pc-session-pre-spawn-check-review-{timestamp}.md |
+| pre-spawn-check PASS (review) | Reviewer team spawn | ${SESSION_DIR}/pc/pc-session-pre-spawn-check-review-<timestamp>.md |
 | scope-verify PASS | Serial mode: next agent spawn; Batch mode: claims-vs-code spawn (all wave agents checked before claims-vs-code) | ${SESSION_DIR}/pc/*-scope-verify-*.md |
 | claims-vs-code PASS | Task closure (crumb close) | ${SESSION_DIR}/pc/*-claims-vs-code-*.md |
-| review-integrity PASS | Presenting results | ${SESSION_DIR}/pc/pc-session-review-integrity-{timestamp}.md |
-| Reviews | Presenting findings to user (Step 3c) | ${SESSION_DIR}/review-reports/review-consolidated-{timestamp}.md |
-| session-complete PASS | Git push (Step 7) | ${SESSION_DIR}/pc/pc-session-complete-{timestamp}.md |
+| review-integrity PASS | Presenting results | ${SESSION_DIR}/pc/pc-session-review-integrity-<timestamp>.md |
+| Reviews | Presenting findings to user (Step 3c) | ${SESSION_DIR}/review-reports/review-consolidated-<timestamp>.md |
+| session-complete PASS | Git push (Step 7) | ${SESSION_DIR}/pc/pc-session-complete-<timestamp>.md |
 
 > **Note (Reviews gate):** Reviews are mandatory after ALL implementation completes (round 1). If findings require a fix cycle, reviews re-run with reduced scope — correctness and edge-cases only (round 2+).
 
