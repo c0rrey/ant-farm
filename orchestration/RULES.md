@@ -350,7 +350,7 @@ At session start (Step 0), run:
     SESSION_ID=$(date +%Y%m%d-%H%M%S)
     SESSION_DIR=".crumbs/sessions/_session-${SESSION_ID}"
     mkdir -p "${SESSION_DIR}"/{task-metadata,previews,prompts,pc,summaries}
-    crumb prune >/dev/null || true
+    crumb prune 2>/dev/null || echo "WARNING: crumb prune failed (non-blocking) — continuing session setup"
 
 Store SESSION_DIR in your context and pass it explicitly to every agent that needs to write artifacts.
 
