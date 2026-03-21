@@ -1,5 +1,53 @@
 # Changelog
 
+## 2026-03-21 — Session 20260321-180235 (Safety-Fix Propagation and RULES.md Clarity Sweep)
+
+### Summary
+
+Completed 24 tasks across two implementation waves and one fix cycle. Wave 1 (13 tasks) and Wave 2 (7 tasks) targeted RULES.md operator-instruction clarity and safety-feature propagation: shutdown-authorization/dispatch timing disambiguation, crash-recovery labeling, Position Check global-scope signaling, batch-mode boundary conditions, wave failure threshold counting, round-2 reviewer composition alignment, SESSION_ID collision guard, signals/ sentinel directory, sentinel-file completion protocol, post-push sync documentation, mktemp migration, and crumb prune visible-warning forms. Two tasks were pre-resolved by prior sessions; one by a concurrent fix. Round 1 review (4 reviewers, 18 raw findings → 15 root causes) found Correctness clean and four P2 propagation gaps; all P2s were auto-fixed in-session. Round 2 (2 reviewers) found 0 issues. Eleven P3 documentation-polish items deferred as AF-385–AF-395. Session produced 21 commits across 11 files.
+
+### Implementation (Wave 1 — 13 tasks)
+
+- **ant-farm-dnlu**: fix: distinguish shutdown authorization from dispatch timing in RULES.md with sub-bullets (`bb3d8bb`)
+- **ant-farm-8evt**: fix: promote crash recovery to labeled Step 0a with conditional callout in RULES.md (`9da762d`)
+- **AF-217**: fix: make Position Check global scope visually prominent in RULES.md (`a622954`)
+- **ant-farm-hf9a**: fix: add batch mode boundary conditions for N=1 and partial commits in RULES.md (`f30a8e0`)
+- **ant-farm-jzc3**: docs: team roster dense bullet pre-resolved (content in RULES-review.md); no change (no commit)
+- **ant-farm-bb01**: docs: Information Diet section pre-resolved (removed in prior session); no change (no commit)
+- **AF-120**: fix: replace silent error suppression with visible warning for crumb prune in RULES.md (`50156df`)
+- **ant-farm-mtfh**: fix: clarify wave failure threshold retry counting timing in RULES.md (`16d70ea`)
+- **ant-farm-s7vu**: docs: replace 'directly' with 'then' in Termination Rule to remove P3-skipping ambiguity (`efed6fb`)
+- **AF-200**: fix: replace PID-based temp file naming with mktemp in review-consolidator-skeleton.md and decomposition.md (`b92e645`)
+- **AF-309**: fix: file existence guard in RULES-decompose.md wc -l loop pre-resolved by AF-362 (no new commit)
+- **AF-341**: fix: replace vague "notes you recorded" with progress.log reference in RULES-decompose.md (`0c8a6c3`)
+- **AF-339**: fix: move AFFECTED_FILES_LIST explanation before bash snippet in RULES-lite.md (`6eb272d`)
+
+### Implementation (Wave 2 — 7 tasks)
+
+- **ant-farm-xyas**: docs: align RULES.md round 2+ reviewer composition with reviews.md (`7c93db5`)
+- **ant-farm-jegj**: docs: add Pantry review-mode precondition guards and RULES.md validation reference (`ddb4f5a`)
+- **AF-147**: docs: document review-focus-areas.md in Template Lookup table and RULES-review.md (`87977cb`)
+- **AF-199**: fix: add random suffix to SESSION_ID for concurrent Queen collision guard in RULES.md and session-directory.md (`25a259f`)
+- **AF-94**: docs: document all session directory prefixes in RULES.md (`2f847c9`)
+- **ant-farm-e26s**: docs: document post-push sync and pre-push hook defense-in-depth in RULES.md Step 7 (`9a1b55d`)
+- **ant-farm-f0x**: feat: add sentinel-file completion protocol for background subagents in RULES.md, crumb-gatherer-skeleton.md, and checkpoints/common.md (`902fd9e`)
+
+### Review Fixes (Round 1)
+
+- **AF-381**: fix: pass dynamic values via sys.argv in python3 crumb-filing blocks in reviews.md, review-consolidator-skeleton.md, and RULES-lite.md (`bf40c70`)
+- **AF-382**: fix: replace PID-based temp files with mktemp in reviews.md (12 locations) (`a4717ff`)
+- **AF-383**: fix: add random suffix to SESSION_ID in RULES-lite.md (`d99d5a6`)
+- **AF-384**: fix: propagate signals/ directory to session-directory.md and RULES-lite.md (`7dec448`)
+
+### Review Statistics
+
+| Round | P1 | P2 | P3 | Decision |
+|-------|----|----|----|----------|
+| 1 | 0 | 4 | 11 | auto-fix P2s / defer P3s to crumbs |
+| 2 | 0 | 0 | 0 | terminated (clean) |
+
+18 raw findings consolidated to 15 root causes in Round 1 (3 merges). Correctness reviewer: 0 findings. All 4 P2s resolved before push. 11 P3s deferred as AF-385–AF-395.
+
 ## 2026-03-21 — Session 20260321-161341 (AF-T57: Documentation and Template Consistency Sweep)
 
 ### Summary
