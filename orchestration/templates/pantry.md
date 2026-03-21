@@ -104,13 +104,13 @@ For each task ID in the input list:
    The Queen decides whether to override at spawn time; override policy is defined in
    `~/.claude/orchestration/templates/crumb-gatherer-skeleton.md` (the {AGENT_TYPE} placeholder description).
 
-4. Write a task brief to `{SESSION_DIR}/prompts/task-{TASK_SUFFIX}.md` with this exact format:
+4. Write a task brief to `{session-dir}/prompts/task-{TASK_SUFFIX}.md` with this exact format:
 
 ```markdown
 # Task Brief: {TASK_ID}
 **Task**: {title from task-metadata}
 **Agent Type**: {from task metadata}
-**Summary output path**: {SESSION_DIR}/summaries/{TASK_SUFFIX}.md
+**Summary output path**: {session-dir}/summaries/{TASK_SUFFIX}.md
 
 ## Context
 - **Affected files**: {file:line references from crumb}
