@@ -360,6 +360,7 @@ truncate any file exceeding 100 lines:
 ```bash
 for focus in stack architecture pitfall pattern; do
   f="${DECOMPOSE_DIR}/research/${focus}.md"
+  [ -f "${f}" ] || { echo "WARN: ${f} missing, skipping truncation" >> "${DECOMPOSE_DIR}/progress.log"; continue; }
   lines=$(wc -l < "${f}")
   if [ "${lines}" -gt 100 ]; then
     echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FORAGER_TRUNCATED|${focus}|lines=${lines}" \
