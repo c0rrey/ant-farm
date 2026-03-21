@@ -1,4 +1,4 @@
-# Big Head Consolidation Skeleton Template
+# Review Consolidator Skeleton Template
 
 <!-- Queen-facing wiring instructions: orchestration/reference/review-consolidator-wiring.md -->
 <!-- Agent-facing template starts below the --- separator. -->

@@ -1,4 +1,4 @@
-# Nitpicker Skeleton Template
+# Reviewer Skeleton Template
 
 ## Instructions for the Queen
 

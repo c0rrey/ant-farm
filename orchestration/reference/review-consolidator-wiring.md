@@ -1,7 +1,7 @@
-# Big Head Wiring Instructions
+# Review Consolidator Wiring Instructions
 
-Queen-facing instructions for spawning Big Head via TeamCreate.
-Extracted from `orchestration/templates/big-head-skeleton.md` (formerly lines 1–71).
+Queen-facing instructions for spawning the Review Consolidator via TeamCreate.
+Extracted from `orchestration/templates/review-consolidator-skeleton.md` (formerly lines 1–71).
 
 ## Overview
 
@@ -20,7 +20,7 @@ Canonical across all orchestration templates:
 
 ## Step Numbering Note
 
-The steps in the big-head-skeleton.md (Steps 1–12) correspond to the Big Head Consolidation Protocol in `orchestration/templates/reviews.md`, which uses a different numbering scheme (Step 0/0a/1/2/2.5/3/4). See the **Step Numbering Cross-Reference** table in that section for the authoritative mapping. Quick reference: skeleton Step 1 = reviews.md Step 0 (prerequisite gate); skeleton Steps 9–10 = reviews.md Step 4 (Pest Control checkpoint + crumb filing).
+The steps in the review-consolidator-skeleton.md (Steps 1–12) correspond to the Review Consolidator Consolidation Protocol in `orchestration/templates/reviews.md`, which uses a different numbering scheme (Step 0/0a/1/2/2.5/3/4). See the **Step Numbering Cross-Reference** table in that section for the authoritative mapping. Quick reference: skeleton Step 1 = reviews.md Step 0 (prerequisite gate); skeleton Steps 9–10 = reviews.md Step 4 (Pest Control checkpoint + crumb filing).
 
 ## Wiring: TeamCreate + Direct Spawn Prompt
 
@@ -40,7 +40,7 @@ Replace `{PLACEHOLDER}` values (uppercase) in the agent-facing template below:
 
 ### Step 2 — Create the Nitpicker team
 
-Pass the filled-in template text (everything below the `---` separator in `big-head-skeleton.md`) as Big Head's `prompt`. Include all expected Nitpicker report paths directly in Big Head's spawn prompt so it can begin consolidation as soon as the reports are ready. Pest Control must be a team member so Big Head can SendMessage to it directly for checkpoint validation (see Step 4 in reviews.md).
+Pass the filled-in template text (everything below the `---` separator in `review-consolidator-skeleton.md`) as the Review Consolidator's `prompt`. Include all expected Nitpicker report paths directly in Big Head's spawn prompt so it can begin consolidation as soon as the reports are ready. Pest Control must be a team member so Big Head can SendMessage to it directly for checkpoint validation (see Step 4 in reviews.md).
 
 **Round 1**: Big Head is the 5th member in the base case (6 total); Pest Control is always the last member. The consolidation brief's `expected_paths` list is authoritative for how many report paths Big Head must wait for.
 
