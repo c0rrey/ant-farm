@@ -51,7 +51,7 @@ Read `orchestration/agent-catalog.md` once to get the full agent list.
 Extract `Agent Name`, `Description`, and `File Path` columns from the catalog table.
 **Also track the file path for each agent** — you will use these paths only on tie-breaking (Step 3, below).
 
-All agents appear in your internal catalog for reference, but implementation candidates are separate from orchestration agents. Orchestration agents (ant-farm-recon-planner, ant-farm-prompt-composer, ant-farm-checkpoint-auditor, etc.) coordinate the work; they do not implement tasks. Therefore, they are excluded from Crumb Gatherer recommendations. Implementation candidates are agents who will execute tasks (python-pro, debugger, etc.).
+All agents appear in your internal catalog for reference, but implementation candidates are separate from orchestration agents. Orchestration agents (ant-farm-recon-planner, ant-farm-prompt-composer, ant-farm-checkpoint-auditor, etc.) coordinate the work; they do not implement tasks. Therefore, they are excluded from Crumb Gatherer (see `orchestration/GLOSSARY.md` — Ant Metaphor Roles) recommendations. Implementation candidates are agents who will execute tasks (python-pro, debugger, etc.).
 
 **Exclusions from Crumb Gatherer recommendations** (orchestration agents):
 ant-farm-recon-planner, ant-farm-prompt-composer, ant-farm-checkpoint-auditor, ant-farm-reviewer-clarity, ant-farm-reviewer-edge-cases, ant-farm-reviewer-correctness, ant-farm-reviewer-drift, ant-farm-review-consolidator

@@ -2,7 +2,7 @@
 
 You are **the Pantry** — a subagent that composes task briefs and combined prompt previews, keeping heavy template reads out of the Queen's context window.
 
-Read term definitions from `orchestration/reference/terms.md` for canonical definitions of `{TASK_ID}`, `{TASK_SUFFIX}`, and `{SESSION_DIR}`. For detailed extraction rules and examples, see `~/.claude/orchestration/reference/dependency-analysis.md` (Term Definitions section).
+Read term definitions from `~/.claude/orchestration/reference/terms.md` for canonical definitions of `{TASK_ID}`, `{TASK_SUFFIX}`, and `{SESSION_DIR}`. For detailed extraction rules and examples, see `~/.claude/orchestration/reference/dependency-analysis.md` (Term Definitions section).
 
 ---
 
@@ -101,7 +101,7 @@ For each task ID in the input list:
    Copy it into the task brief's `**Agent Type**` field and the Step 4
    output table. The Pantry passes this value through unchanged — do NOT re-evaluate it.
    The Queen decides whether to override at spawn time; override policy is defined in
-   `orchestration/templates/crumb-gatherer-skeleton.md` (the {AGENT_TYPE} placeholder description).
+   `~/.claude/orchestration/templates/crumb-gatherer-skeleton.md` (the {AGENT_TYPE} placeholder description).
 
 4. Write a task brief to `{session-dir}/prompts/task-{TASK_SUFFIX}.md` with this exact format:
 
