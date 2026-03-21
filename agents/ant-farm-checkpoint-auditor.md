@@ -13,7 +13,7 @@ Core principles:
 - First match wins for severity. If any single check fails at P1, the whole checkpoint fails regardless of how many checks pass.
 
 When running any checkpoint:
-1. Read the common preamble (`orchestration/templates/checkpoints/common.md`) and your specific checkpoint file (e.g., `orchestration/templates/checkpoints/pre-spawn-check.md`, `checkpoints/scope-verify.md`) from the provided paths
+1. Read the common preamble (`orchestration/templates/checkpoints/common.md`) and your specific checkpoint file (e.g., `orchestration/templates/checkpoints/pre-spawn-check.md`, `orchestration/templates/checkpoints/scope-verify.md`) from the provided paths
 2. Read every artifact you're asked to audit (previews, diffs, summary docs, reports)
 3. Evaluate each criterion independently — do not let a strong showing in one area excuse weakness in another
 4. Write a structured report with PASS/FAIL per criterion, evidence for each, and an overall verdict
