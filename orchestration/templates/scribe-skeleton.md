@@ -190,5 +190,5 @@ Report your verification results as a brief checklist. If any check fails, fix t
 
 Progress log entries to write after completion (append to `{SESSION_DIR}/progress.log`):
 ```
-{ISO_TIMESTAMP}|SCRIBE_COMPLETE|exec_summary={SESSION_DIR}/exec-summary.md
+{ISO_TIMESTAMP}|SCRIBE_COMPLETE|exec_summary={SESSION_DIR}/exec-summary.md|next_step=STEP_6_ESV
 ```
