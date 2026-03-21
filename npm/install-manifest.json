@@ -194,6 +194,11 @@
       "src": "hooks/lib/scope-reader.js",
       "dst": "hooks/lib/scope-reader.js",
       "description": "ant-farm hook library: scope sidecar reader"
+    },
+    {
+      "src": "mcp_server.py",
+      "dst": "mcp_server.py",
+      "description": "ant-farm crumb MCP server (stdio transport for Claude Code MCP integration)"
     }
   ]
 }

@@ -26,12 +26,15 @@ you'll use in Steps 4-5.
 
 Based on input mode:
 - **`ready`** (no specific scope): Run `crumb ready --limit=20 --sort=priority`
-  to grab the 20 highest-priority unblocked tasks. Use this when the user
-  says "let's get to work" without specifying an epic, task list, or filter.
+  (or use the `crumb_list` MCP tool with `status="open"` and `sort="priority"` if
+  the MCP server is available) to grab the 20 highest-priority unblocked tasks.
+  Use this when the user says "let's get to work" without specifying an epic,
+  task list, or filter.
 - **`epic <epic-id>`**: Run `crumb trail show <epic-id>`, extract child task IDs
 - **`tasks <id1>, <id2>, ...`**: Use the provided list directly
 - **`filter <description>`**: Translate the description into `crumb list` flags
-  (e.g., "all P2 bugs" → `crumb list --priority=2 --type=bug --open`).
+  (e.g., "all P2 bugs" → `crumb list --priority=2 --type=bug --open`), or use
+  the `crumb_list` MCP tool with equivalent parameters if the MCP server is available.
   Use your judgment to construct the query. If the filter is ambiguous,
   note the ambiguity in the briefing so the Queen can clarify with the user.
 
