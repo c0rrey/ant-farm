@@ -200,6 +200,13 @@ The Queen's window is restricted to prevent context bloat, but certain files are
               simultaneously.
             **Mode selection rule**: If you spawned agents in a single message (parallel wave), use batch
             mode. If you spawned agents individually in separate messages, use serial mode.
+            **Boundary conditions:**
+            - **N=1 (single-agent wave)**: Use serial mode. A single agent does not benefit from batch mode's
+              concurrent scope-verify spawns, and serial mode's per-agent gating is simpler.
+            - **Partial wave commit (batch mode)**: If some agents in a parallel wave crash without committing,
+              run scope-verify for the committed subset only. Do not wait indefinitely for crashed agents.
+              Log the crashed agents as failures (see Wave Management > Agent failure), then proceed with
+              scope-verify and claims-vs-code for the agents that did commit.
             **Progress log (after all scope-verify reports PASS for the wave):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_SCOPE_VERIFY_PASS|wave=<N>|mode=<serial|batch>|tasks_checked=<ids>|next_step=STEP_3_CLAIMS_VS_CODE" >> ${SESSION_DIR}/progress.log`
 
             After all scope-verify reports PASS, spawn Checkpoint Auditor (`model: "sonnet"`) for claims-vs-code
