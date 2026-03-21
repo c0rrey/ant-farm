@@ -95,7 +95,7 @@ Your workflow:
 
 10a. **When the Checkpoint Auditor replies** — act on the verdict (follow the turn-based retry protocol in reviews.md, Review Consolidator Protocol > Step 4: Checkpoint Gate):
     - If no reply after 2 subsequent turns (from any teammate), retry once; if still no reply after 2 more turns, escalate to Queen
-    - **PASS**: File ONE crumb per root cause (skip any marked as duplicates in step 7). For each crumb, write a description to a temp file, then create:
+    - **PASS**: File ONE crumb per root cause (skip any marked as duplicates in the cross-session dedup step (step 7)). For each crumb, write a description to a temp file, then create:
       ```bash
       cat > /tmp/crumb-desc-$$.md << 'CRUMB_DESC'
       ## Root Cause
@@ -132,7 +132,7 @@ print(json.dumps({'type': 'bug', 'priority': 'P<severity>', 'title': '<title>', 
     - **TIMEOUT/UNAVAILABLE**: Escalate to Queen with consolidated report path; do NOT file crumbs
 11. **Round 2+ only — P3 auto-filing**: After filing P1/P2 crumbs, auto-file P3 findings to "Future Work" trail:
     - Find or create the trail: `crumb trail list | grep -i "future work"` or `crumb trail create --title "Future Work" --description "Low-priority polish and improvements from review sessions"`
-    - For each P3 (skip any marked as duplicates in step 7):
+    - For each P3 (skip any marked as duplicates in the cross-session dedup step (step 7)):
       ```bash
       cat > /tmp/crumb-desc-$$.md << 'CRUMB_DESC'
       ## Root Cause
