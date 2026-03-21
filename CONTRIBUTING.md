@@ -94,8 +94,8 @@ Templates live in `orchestration/templates/`. Each template has a specific reade
 | `checkpoints/` | Checkpoint Auditor | Per-checkpoint definitions (common.md + one per type) |
 | `reviews.md` | `build-review-prompts.sh` | Review protocol, report format |
 | `crumb-gatherer-skeleton.md` | Queen | Minimal agent spawn template |
-| `nitpicker-skeleton.md` | Queen, `build-review-prompts.sh` | Review agent spawn template |
-| `big-head-skeleton.md` | Queen, `build-review-prompts.sh` | Review Consolidator spawn template |
+| `reviewer-skeleton.md` | Queen, `build-review-prompts.sh` | Review agent spawn template |
+| `review-consolidator-skeleton.md` | Queen, `build-review-prompts.sh` | Review Consolidator spawn template |
 | `queen-state.md` | Queen | Session state file schema |
 | `scribe-skeleton.md` | Queen | Session Scribe spawn template |
 | `review-focus-areas.md` | `build-review-prompts.sh` | Per-type focus blocks for Reviewer prompts |
@@ -121,7 +121,7 @@ Common placeholders:
 
 - **`implementation.md`** defines the 6 mandatory steps that every Crumb Gatherer must follow. If you change a step, update the corresponding pre-spawn-check rule in `checkpoints/pre-spawn-check.md` (Check 4 verifies all 6 steps are present).
 - **`reviews.md`** defines review types and report format. Changes here must stay in sync with `build-review-prompts.sh` (which reads `reviews.md` to build review prompts) and the review-integrity checks in `checkpoints/review-integrity.md` (which verify report structure).
-- **`nitpicker-skeleton.md`** and **`big-head-skeleton.md`** are read by `build-review-prompts.sh` to produce filled prompt files. If you change their structure, verify the script still parses them correctly.
+- **`reviewer-skeleton.md`** and **`review-consolidator-skeleton.md`** are read by `build-review-prompts.sh` to produce filled prompt files. If you change their structure, verify the script still parses them correctly.
 - **`crumb-gatherer-skeleton.md`** is what the Queen uses to spawn agents. If you add fields, the Pantry's task briefs must include the corresponding data.
 
 ## Testing Changes
@@ -156,8 +156,8 @@ For changes to the review pipeline script:
 ./scripts/build-review-prompts.sh <SESSION_DIR> \
   "abc1234..HEAD" "file1.py\nfile2.py" "task-1 task-2" \
   "$(date +%Y%m%d-%H%M%S)" 1 \
-  ~/.claude/orchestration/templates/nitpicker-skeleton.md \
-  ~/.claude/orchestration/templates/big-head-skeleton.md
+  ~/.claude/orchestration/templates/reviewer-skeleton.md \
+  ~/.claude/orchestration/templates/review-consolidator-skeleton.md
 ```
 
 The script exits 0 on success and prints error messages to stderr on failure.
@@ -231,8 +231,8 @@ Changes to one file often require updates to others. This table lists the critic
 
 | If you change... | Also update... |
 |------------------|----------------|
-| `nitpicker-skeleton.md` structure | `build-review-prompts.sh` (parses this file) |
-| `big-head-skeleton.md` structure | `build-review-prompts.sh` (parses this file) |
+| `reviewer-skeleton.md` structure | `build-review-prompts.sh` (parses this file) |
+| `review-consolidator-skeleton.md` structure | `build-review-prompts.sh` (parses this file) |
 | `crumb-gatherer-skeleton.md` fields | `pantry.md` (Pantry must produce matching task brief data) |
 | Slot marker names (`{{...}}`) | `build-review-prompts.sh` (fills the markers) |
 

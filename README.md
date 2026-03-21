@@ -156,7 +156,7 @@ ant-farm/
 │   │   ├── checkpoints/     # Per-checkpoint definitions (common.md + one file per checkpoint)
 │   │   │   ├── common.md   # Shared preamble (term definitions, verdict thresholds)
 │   │   │   ├── pre-spawn-check.md, scope-verify.md, claims-vs-code.md, review-integrity.md, startup-check.md, session-complete.md, tdv.md
-│   │   ├── crumb-gatherer-skeleton.md, nitpicker-skeleton.md, big-head-skeleton.md
+│   │   ├── crumb-gatherer-skeleton.md, reviewer-skeleton.md, review-consolidator-skeleton.md
 │   │   ├── scribe-skeleton.md, surveyor-skeleton.md, forager-skeleton.md
 │   │   ├── decomposition.md, architect-skeleton.md
 │   │   └── review-focus-areas.md, queen-state.md, SESSION_PLAN_TEMPLATE.md
@@ -347,8 +347,8 @@ All file paths in this document use repo-root relative format. At runtime, agent
 | `orchestration/templates/forager.md` | The Researcher | Parallel research instructions |
 | `orchestration/templates/decomposition.md` | The Task Decomposer | Decomposition workflow instructions |
 | `orchestration/templates/crumb-gatherer-skeleton.md` | The Queen | Minimal agent spawn template |
-| `orchestration/templates/nitpicker-skeleton.md` | The Queen | Minimal review agent spawn template |
-| `orchestration/templates/big-head-skeleton.md` | The Queen | Review Consolidator spawn template |
+| `orchestration/templates/reviewer-skeleton.md` | The Queen | Minimal review agent spawn template |
+| `orchestration/templates/review-consolidator-skeleton.md` | The Queen | Review Consolidator spawn template |
 | `orchestration/templates/scribe-skeleton.md` | The Queen | Session Scribe spawn template |
 | `orchestration/templates/surveyor-skeleton.md` | The Planner | Spec Writer spawn template |
 | `orchestration/templates/forager-skeleton.md` | The Planner | Researcher spawn template |

@@ -106,7 +106,7 @@ These placeholders are filled in by **`build-review-prompts.sh`** when it compos
 **Characteristics**:
 - ALL CAPS with underscores, wrapped in double curly braces: `{{VAR}}`
 - Filled in exclusively by `build-review-prompts.sh` (the shell script that composes review prompts)
-- Appear in review skeleton templates (`reviews.md`, `big-head-skeleton.md`, `nitpicker-skeleton.md`)
+- Appear in review skeleton templates (`reviews.md`, `review-consolidator-skeleton.md`, `reviewer-skeleton.md`)
 - Never appear in final delivered prompts — all instances replaced before delivery to agents
 - Guards in the templates detect unsubstituted double-brace markers and return an error rather than proceeding with incomplete data
 
@@ -146,8 +146,8 @@ All files audited. All files use the Tiered convention correctly. When updating 
 | `RULES.md` | `{TIMESTAMP}` (Step 3b-i, via `${TIMESTAMP}` shell var), `{SESSION_DIR}` (all gates) | None | `${SESSION_ID}`, `${SESSION_DIR}`, `${TIMESTAMP}` (Step 3b-i) | None | No (references other term defs) | PASS |
 | `checkpoints.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{SESSION_DIR}` (term def near top, used throughout), `{SESSION_START_DATE}` (ESV) | `{checkpoint}`, `{path}`, `{N}`, `{M}`, `{before-commit}`, `{after-commit}`, `{commit}`, `{file}`, `{line}`, `{description}`, `{list}` (in examples) | None | None | Yes (term def near top) | PASS |
 | `crumb-gatherer-skeleton.md` | `{TASK_TYPE}`, `{TASK_ID}`, `{TASK_SUFFIX}`, `{AGENT_TYPE}`, `{DATA_FILE_PATH}`, `{SUMMARY_OUTPUT_PATH}`, `{SESSION_DIR}` | None | None | None | Yes (L8-11) | PASS |
-| `nitpicker-skeleton.md` | `{REVIEW_TYPE}`, `{DATA_FILE_PATH}`, `{REPORT_OUTPUT_PATH}` | None | None | None | Partial (L8-11, missing EPOCH/timestamp defs) | PASS |
-| `big-head-skeleton.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{TIMESTAMP}`, `{DATA_FILE_PATH}`, `{CONSOLIDATED_OUTPUT_PATH}`, `{SESSION_DIR}` | None | None | None | Yes (L8-12) | PASS |
+| `reviewer-skeleton.md` | `{REVIEW_TYPE}`, `{DATA_FILE_PATH}`, `{REPORT_OUTPUT_PATH}` | None | None | None | Partial (L8-11, missing EPOCH/timestamp defs) | PASS |
+| `review-consolidator-skeleton.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{TIMESTAMP}`, `{DATA_FILE_PATH}`, `{CONSOLIDATED_OUTPUT_PATH}`, `{SESSION_DIR}` | None | None | None | Yes (L8-12) | PASS |
 | `reviews.md` | None | `{session-dir}`, `{timestamp}`, `{first-commit}`, `{last-commit}`, `{N}`, `{M}`, `{review-type}`, `{reviewer}`, `{list}`, `{path}`, `{id}`, `{title}`, `{crumb-id}`, `{hash}`, `{filename}`, `{combined-priority}`, `{root-cause-title}`, `{primary-review-type}`, `{instance}`, and others (throughout); CLI examples using `<angle-bracket>` preserved as-is | `${SESSION_DIR}` (code blocks only) | `{{REVIEW_ROUND}}` — substituted by `build-review-prompts.sh` before Big Head brief delivery | No | PASS |
 | `implementation.md` | None | `{task-type}`, `{file-or-component}`, `{task-id-1}`, `{task-id-2}`, `{list-from-crumb}`, `{copy-from-crumb}`, `{session-dir}`, `{task-id}`, `{list}`, `{filename}` (in template block); CLI examples using `<angle-bracket>` preserved as-is | None | None | No | PASS |
 | `queen-state.md` | None | `{YYYY-MM-DDTHH:MM:SSZ}`, `{session-id}`, `{chosen-execution-strategy}`, `{name}`, `{ids}`, `{files}`, `{hash}`, `{task-ids}`, `{details}`, `{first-session-commit}`, `{last-impl-commit}`, `{first-fix-commit}`, `{N}`, `{total}`, `{list}`, `{used}`, `{agent}`, `{error-summary}` | None | None | No | PASS |
@@ -197,7 +197,7 @@ This pattern finds mixed-case placeholders like `{MyVar}` or `{my_VAR}`, which s
 grep -rE '\{\{[A-Z][A-Z_]*\}\}' orchestration/
 ```
 
-Expected matches: `{{REVIEW_ROUND}}`, `{{COMMIT_RANGE}}`, `{{CHANGED_FILES}}`, `{{TASK_IDS}}`. These should only appear in review skeleton templates (`reviews.md`, `big-head-skeleton.md`, `nitpicker-skeleton.md`) and are substituted exclusively by `build-review-prompts.sh` before prompt delivery. Any double-brace placeholder that survives to a delivered agent prompt indicates a substitution failure.
+Expected matches: `{{REVIEW_ROUND}}`, `{{COMMIT_RANGE}}`, `{{CHANGED_FILES}}`, `{{TASK_IDS}}`. These should only appear in review skeleton templates (`reviews.md`, `review-consolidator-skeleton.md`, `reviewer-skeleton.md`) and are substituted exclusively by `build-review-prompts.sh` before prompt delivery. Any double-brace placeholder that survives to a delivered agent prompt indicates a substitution failure.
 
 ---
 
