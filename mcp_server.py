@@ -94,15 +94,20 @@ def _run_cmd_json(fn: Any, args: argparse.Namespace) -> Any:
         The Python object produced by ``json.loads`` of the captured output.
 
     Raises:
-        ValueError: If the captured stdout is not valid JSON.
+        ValueError: If the captured stdout is empty or not valid JSON.
         SystemExit: Re-raised if the crumb function exits non-zero (e.g.
-            crumb_doctor with errors).
+            crumb_list when no .crumbs/ directory is found).
     """
     buf = io.StringIO()
     with _stdout_lock:
         with contextlib.redirect_stdout(buf):
             fn(args)
     raw = buf.getvalue().strip()
+    if not raw:
+        raise ValueError(
+            f"Command '{getattr(fn, '__name__', fn)}' produced no output — "
+            "expected JSON but stdout was empty."
+        )
     return json.loads(raw)
 
 
@@ -216,7 +221,8 @@ async def crumb_update(
 
     Args:
         crumb_id: The crumb ID to update (e.g. "AF-123").
-        status: New status: "open" or "in_progress". Use crumb_close to close.
+        status: New status: "open" or "in_progress". To close a crumb, use
+            ``crumb close <id>`` via the CLI (no MCP tool for close exists).
         title: New title string.
         priority: New priority: "P0", "P1", "P2", "P3", or "P4".
         description: New description string.
@@ -360,9 +366,13 @@ async def crumb_doctor(fix: bool = False) -> dict[str, Any]:
             with _stdout_lock:
                 with contextlib.redirect_stdout(buf):
                     _crumb.cmd_doctor(args)
-        except SystemExit:
-            # Errors were found — the report was still printed before exit
-            pass
+        except SystemExit as exc:
+            # Exit code 1 means doctor found errors but still printed its
+            # JSON report — suppress it so the caller can inspect the report.
+            # Any other exit code (e.g. missing .crumbs/ dir) is unexpected
+            # infrastructure failure and must propagate.
+            if exc.code != 1:
+                raise
         raw = buf.getvalue().strip()
         return json.loads(raw)
 

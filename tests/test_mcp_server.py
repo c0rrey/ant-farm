@@ -205,6 +205,23 @@ class TestRunCmdJsonHelper:
         with pytest.raises((ValueError, json.JSONDecodeError)):
             _run_cmd_json(bad_cmd, argparse.Namespace())
 
+    def test_raises_value_error_on_empty_stdout(self, crumbs_env: Path) -> None:
+        """Raises ValueError with a descriptive message when the command emits no output."""
+        def silent_cmd(args: argparse.Namespace) -> None:
+            pass  # produces no stdout
+
+        with pytest.raises(ValueError, match="no output"):
+            _run_cmd_json(silent_cmd, argparse.Namespace())
+
+    def test_system_exit_propagates_on_non_json_path(self, crumbs_env: Path) -> None:
+        """SystemExit raised by the command re-propagates out of _run_cmd_json."""
+        def exiting_cmd(args: argparse.Namespace) -> None:
+            raise SystemExit(2)
+
+        with pytest.raises(SystemExit) as exc_info:
+            _run_cmd_json(exiting_cmd, argparse.Namespace())
+        assert exc_info.value.code == 2
+
 
 # ---------------------------------------------------------------------------
 # TestCrumbList
@@ -571,6 +588,51 @@ class TestCrumbDoctor:
         result = asyncio.run(crumb_doctor())
         assert result["ok"] is False
         assert isinstance(result["errors"], list)
+
+    def test_unexpected_system_exit_propagates(
+        self, crumbs_env: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """SystemExit with code != 1 propagates out of crumb_doctor."""
+        import crumb as _crumb_mod
+
+        def _failing_cmd_doctor(args: argparse.Namespace) -> None:
+            # Simulate an infrastructure failure (e.g. missing .crumbs/ dir)
+            # by raising SystemExit with a code other than 1.
+            raise SystemExit(2)
+
+        monkeypatch.setattr(_crumb_mod, "cmd_doctor", _failing_cmd_doctor)
+
+        with pytest.raises(SystemExit) as exc_info:
+            asyncio.run(crumb_doctor())
+        assert exc_info.value.code == 2
+
+    def test_exit_code_1_does_not_propagate(
+        self, crumbs_env: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """SystemExit with code 1 is suppressed; the JSON report is returned."""
+        import crumb as _crumb_mod
+
+        def _exit_1_cmd_doctor(args: argparse.Namespace) -> None:
+            # Simulate doctor finding errors: print a valid report then exit 1.
+            import json as _json
+            report = {
+                "ok": False,
+                "error_count": 1,
+                "warning_count": 0,
+                "errors": ["synthetic error"],
+                "warnings": [],
+                "fixes_applied": [],
+            }
+            print(_json.dumps(report))
+            raise SystemExit(1)
+
+        monkeypatch.setattr(_crumb_mod, "cmd_doctor", _exit_1_cmd_doctor)
+        # monkeypatch the module-level reference used by mcp_server
+        monkeypatch.setattr(mcp_server._crumb, "cmd_doctor", _exit_1_cmd_doctor)
+
+        result = asyncio.run(crumb_doctor())
+        assert result["ok"] is False
+        assert result["error_count"] == 1
 
 
 # ---------------------------------------------------------------------------
