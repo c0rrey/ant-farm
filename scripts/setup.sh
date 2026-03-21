@@ -671,7 +671,7 @@ fi
 # ---------------------------------------------------------------------------
 if [ ! -f "${HOME}/.claude/agents/code-reviewer.md" ]; then
     warn "~/.claude/agents/code-reviewer.md is missing."
-    warn "Nitpicker team members will fail to spawn without it."
+    warn "Reviewer team members will fail to spawn without it."
     warn "Copy it manually to ~/.claude/agents/code-reviewer.md before starting a review session."
 fi
 
