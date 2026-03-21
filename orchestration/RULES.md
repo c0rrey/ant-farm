@@ -66,7 +66,11 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             Do NOT examine, read, or query any task/issue details.
             **Progress log:** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SESSION_INIT|complete|session_dir=${SESSION_DIR}|next_step=STEP_1_SCOUT" >> ${SESSION_DIR}/progress.log`
 
-            **Crash recovery detection (run BEFORE generating a new SESSION_ID):**
+**Step 0a: Crash Recovery Check**
+            > **[CONDITIONAL -- only run if a prior session is indicated in the user's message]**
+            > If no prior session is indicated, skip this block entirely and proceed to Step 1.
+
+            Run BEFORE generating a new SESSION_ID.
             Check whether the user's message contains a session directory path
             (e.g. `.crumbs/sessions/_session-<id>`). If a prior SESSION_DIR is
             supplied or you can identify an incomplete session from context:
@@ -83,7 +87,6 @@ The Queen's window is restricted to prevent context bloat, but certain files are
                - `fresh start`: generate a new SESSION_ID and proceed normally.
             4. On exit 2: the prior session completed — proceed normally with a new SESSION_ID.
             5. On exit 1: surface the error (including the path that was not found) to the user and await instruction.
-            If no prior session is indicated, skip crash recovery and proceed normally.
 
 **Position Check (MANDATORY):**
 
