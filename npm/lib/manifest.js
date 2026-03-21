@@ -44,6 +44,7 @@ async function readInstallManifest(packageRoot) {
  * @param {Array<{dst: string, checksum: string}>} installedFiles
  *   Each entry has the destination path (relative to claudeDir) and its
  *   SHA-256 hex checksum.
+ * @returns {Promise<string>} Absolute path to the written manifest file.
  */
 async function writeInstalledManifest(claudeDir, version, installedFiles) {
   const manifestPath = path.join(claudeDir, '.ant-farm-manifest.json');

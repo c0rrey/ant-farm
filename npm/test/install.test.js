@@ -72,10 +72,10 @@ async function createFakePackageRoot(tmpDir) {
 }
 
 // ---------------------------------------------------------------------------
-// Helper: perform a simulated "install" pass.
+// Helper: simulate a complete install pass end-to-end.
 // Mirrors the core copy loop in install.js runInstallMode().
 // ---------------------------------------------------------------------------
-async function runInstallLoop(packageRoot, claudeDir, { dryRun = false } = {}) {
+async function simulateInstallPass(packageRoot, claudeDir, { dryRun = false } = {}) {
   const collector = dryRun ? new DryRunCollector() : null;
 
   const manifest = await readInstallManifest(packageRoot);
@@ -123,7 +123,7 @@ test('fresh install: all manifest files are copied to claudeDir', async () => {
     await fs.mkdir(claudeDir);
 
     const { packageRoot, manifestFiles } = await createFakePackageRoot(tmpDir);
-    const { installedFiles } = await runInstallLoop(packageRoot, claudeDir);
+    const { installedFiles } = await simulateInstallPass(packageRoot, claudeDir);
 
     // Both files should be present in claudeDir
     for (const entry of manifestFiles) {
@@ -158,7 +158,7 @@ test('fresh install: no backup files are created when destination is empty', asy
     await fs.mkdir(claudeDir);
 
     const { packageRoot } = await createFakePackageRoot(tmpDir);
-    await runInstallLoop(packageRoot, claudeDir);
+    await simulateInstallPass(packageRoot, claudeDir);
 
     // Glob for .bak files
     const agentsDir = path.join(claudeDir, 'agents');
@@ -180,7 +180,7 @@ test('idempotent re-run: files are updated and backup files are created', async 
     const { packageRoot } = await createFakePackageRoot(tmpDir);
 
     // First install
-    await runInstallLoop(packageRoot, claudeDir);
+    await simulateInstallPass(packageRoot, claudeDir);
 
     // Modify a source file to force a diff
     await fs.writeFile(
@@ -190,7 +190,7 @@ test('idempotent re-run: files are updated and backup files are created', async 
     );
 
     // Second install
-    await runInstallLoop(packageRoot, claudeDir);
+    await simulateInstallPass(packageRoot, claudeDir);
 
     // Destination file should have the updated content
     const content = await fs.readFile(path.join(claudeDir, 'agents', 'foo.md'), 'utf8');
@@ -212,14 +212,14 @@ test('idempotent re-run: manifest is updated with new checksums', async () => {
     const { packageRoot } = await createFakePackageRoot(tmpDir);
 
     // First install
-    await runInstallLoop(packageRoot, claudeDir);
+    await simulateInstallPass(packageRoot, claudeDir);
     const firstManifest = await readInstalledManifest(claudeDir);
 
     // Modify a source file
     await fs.writeFile(path.join(tmpDir, 'agents', 'foo.md'), '# foo changed\n', 'utf8');
 
     // Second install
-    await runInstallLoop(packageRoot, claudeDir);
+    await simulateInstallPass(packageRoot, claudeDir);
     const secondManifest = await readInstalledManifest(claudeDir);
 
     const firstFoo = firstManifest.files.find(f => f.path === 'agents/foo.md');
@@ -245,7 +245,7 @@ test('dry-run: no files are written to claudeDir', async () => {
 
     const { packageRoot } = await createFakePackageRoot(tmpDir);
 
-    await runInstallLoop(packageRoot, claudeDir, { dryRun: true });
+    await simulateInstallPass(packageRoot, claudeDir, { dryRun: true });
 
     // claudeDir should remain empty (no files or subdirs created)
     const entries = await fs.readdir(claudeDir);
@@ -260,7 +260,7 @@ test('dry-run: collector records install operations for each manifest file', asy
 
     const { packageRoot, manifestFiles } = await createFakePackageRoot(tmpDir);
 
-    const { collector } = await runInstallLoop(packageRoot, claudeDir, { dryRun: true });
+    const { collector } = await simulateInstallPass(packageRoot, claudeDir, { dryRun: true });
 
     // Should have one 'install' operation per file
     const installOps = collector._ops.filter(o => o.op === 'install');
@@ -280,10 +280,10 @@ test('dry-run re-run: collector records update+backup operations for existing fi
     const { packageRoot, manifestFiles } = await createFakePackageRoot(tmpDir);
 
     // Real first install so files exist
-    await runInstallLoop(packageRoot, claudeDir);
+    await simulateInstallPass(packageRoot, claudeDir);
 
     // Dry-run second pass
-    const { collector } = await runInstallLoop(packageRoot, claudeDir, { dryRun: true });
+    const { collector } = await simulateInstallPass(packageRoot, claudeDir, { dryRun: true });
 
     const updateOps = collector._ops.filter(o => o.op === 'update');
     const backupOps = collector._ops.filter(o => o.op === 'backup');
@@ -337,7 +337,7 @@ test('partial install: sentinel is removed after successful install', async () =
     await writeSentinel(sentinelPath, 'ant-farm installation in progress\n');
 
     // Perform a real install
-    await runInstallLoop(packageRoot, claudeDir);
+    await simulateInstallPass(packageRoot, claudeDir);
 
     // Manually remove sentinel as install.js would at end of runInstallMode
     await removeSentinel(sentinelPath);

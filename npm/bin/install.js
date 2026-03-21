@@ -272,8 +272,10 @@ async function runInstallMode(dryRun) {
       hookWarnings = result.warnings;
     } catch (err) {
       // Non-fatal: warn but continue so file installs are not rolled back.
-      console.warn(`WARNING: Failed to register hooks in settings.json: ${err.message}`);
-      console.warn('  You can register hooks manually. See README for details.');
+      // Push into hookWarnings so the message surfaces through the same
+      // consolidated warning path below and is visible to the user.
+      hookWarnings.push(`Failed to register hooks in settings.json: ${err.message}`);
+      hookWarnings.push('  You can register hooks manually. See README for details.');
     }
     for (const w of hookWarnings) {
       console.warn(`WARNING: ${w}`);

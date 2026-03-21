@@ -204,7 +204,7 @@ async function syncClaudeMdBlock(blockContent, dst, { dryRun = false, collector 
 
   // Both sentinels present — compare content
   const existingBlock = extractBlock(existing);
-  if (existingBlock === block.trimEnd()) {
+  if (existingBlock.trimEnd() === block.trimEnd()) {
     if (dryRun) {
       collector.add('claude-md-unchanged', null, dst);
     } else {

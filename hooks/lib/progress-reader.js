@@ -20,8 +20,9 @@
  *   DOCS_COMMITTED    → step 5 (docs committed)
  *   XREF_VERIFIED     → step 5 (cross-reference verified)
  *   SCRIBE_COMPLETE   → step 5 (scribe done)
- *   ESV_PASS          → step 6 (exec summary verified)
- *   SESSION_COMPLETE  → step 6 (session complete)
+ *   ESV_PASS               → step 6 (exec summary verified)
+ *   SESSION_COMPLETE_PASS  → step 6 (session-complete checkpoint passed)
+ *   SESSION_COMPLETE       → step 6 (session complete)
  *
  * Returns null on any parse failure (missing file, empty, malformed line,
  * truncated/partial last line). The caller must treat null as a silent no-op.
@@ -48,6 +49,7 @@ const EVENT_STEP_MAP = {
   XREF_VERIFIED: 5,
   SCRIBE_COMPLETE: 5,
   ESV_PASS: 6,
+  SESSION_COMPLETE_PASS: 6,
   SESSION_COMPLETE: 6,
 };
 
