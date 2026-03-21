@@ -87,7 +87,7 @@
             team using the Task tool with `team_name: "reviewer-team"`. Do NOT add a second TeamCreate
             call anywhere in the workflow.
 
-            **Progress log (after reviewer team completes round 1):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_COMPLETE|round={N}|team=complete|report=${SESSION_DIR}/review-reports/review-consolidated-${TIMESTAMP}.md|next_step=STEP_3C_TRIAGE" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after reviewer team completes round 1):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_COMPLETE|round=<N>|team=complete|report=${SESSION_DIR}/review-reports/review-consolidated-${TIMESTAMP}.md|next_step=STEP_3C_TRIAGE" >> ${SESSION_DIR}/progress.log`
 
 **Step 3c:** User triage — **after review-integrity PASS and Review Consolidator consolidation completes**:
             1. Read the consolidated review summary (Review Consolidator sends crumb list to Queen via SendMessage — see review-consolidator-skeleton.md step 12)
@@ -138,7 +138,7 @@
             - startup-check PASS → proceed to fix agent spawning (auto-approved)
             - startup-check FAIL → re-run Scout with violations listed (max 1 retry); if still failing, escalate to user
 
-            **Progress log (after fix Scout startup-check PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_SCOUT_COMPLETE|round={N}|startup_check=pass|fix_crumbs={crumb-ids}|next_step=FIX_AGENTS_SPAWN" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after fix Scout startup-check PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_SCOUT_COMPLETE|round=<N>|startup_check=pass|fix_crumbs=<crumb-ids>|next_step=FIX_AGENTS_SPAWN" >> ${SESSION_DIR}/progress.log`
 
             **Step 3c-ii. Spawn fix agents into team** — Prompt Composer and pre-spawn-check are skipped for fix agents
             (the Review Consolidator crumb IS the brief; crumb content passed review-integrity; startup-check independently verified the
@@ -162,7 +162,7 @@
             Then go idle and wait.
             ```
 
-            **Progress log (after fix agents spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_AGENTS_SPAWNED|round={N}|fix_cgs={names}|fix_pcs=fix-pc-scope-verify,fix-pc-claims-vs-code|next_step=FIX_INNER_LOOP" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after fix agents spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_AGENTS_SPAWNED|round=<N>|fix_cgs=<names>|fix_pcs=fix-pc-scope-verify,fix-pc-claims-vs-code|next_step=FIX_INNER_LOOP" >> ${SESSION_DIR}/progress.log`
 
             **Step 3c-iii. Fix inner loop** — fully asynchronous via SendMessage within the team:
             ```
@@ -189,7 +189,7 @@
             failures. On the third failure, the CG sends a message to the Queen and goes idle.
             The Queen escalates to the user.
 
-            **Progress log (after all fix CGs verified by fix-pc-claims-vs-code):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_CLAIMS_VS_CODE_COMPLETE|round={N}|verified_cgs={names}|commits={hashes}|next_step=ROUND_TRANSITION" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after all fix CGs verified by fix-pc-claims-vs-code):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_CLAIMS_VS_CODE_COMPLETE|round=<N>|verified_cgs=<names>|commits=<hashes>|next_step=ROUND_TRANSITION" >> ${SESSION_DIR}/progress.log`
 
             **Step 3c-iv. Round transition via SendMessage** — after all fix CGs complete and
             fix-pc-claims-vs-code has issued PASS for each, the Queen sends messages to re-task the persistent
@@ -210,7 +210,7 @@
                Do NOT send them any message. Named-member SendMessage is required — never use broadcast, which would
                inadvertently wake idle Clarity and Drift split instances.
 
-            **Progress log (after round transition messages sent):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|ROUND_TRANSITION|from_round={N}|to_round={N+1}|fix_commits={range}|next_step=REVIEW_3B" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after round transition messages sent):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|ROUND_TRANSITION|from_round=<N>|to_round=<N+1>|fix_commits=<range>|next_step=REVIEW_3B" >> ${SESSION_DIR}/progress.log`
 
             After the round transition, the loop returns to the top of Step 3c: Review Consolidator consolidates
             round N+1 reports, review-integrity runs inside the team, and the Queen reads the new crumb list from
