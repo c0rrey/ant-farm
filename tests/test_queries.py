@@ -93,7 +93,6 @@ def _ready_args(**kwargs: Any) -> Namespace:
     return Namespace(**defaults)
 
 
-
 def _search_args(query: str) -> Namespace:
     """Build a Namespace matching cmd_search's expected attributes."""
     return Namespace(query=query)
@@ -107,10 +106,14 @@ def _search_args(query: str) -> Namespace:
 class TestList:
     """Tests for cmd_list filter, sort, limit, and output modes."""
 
-    def test_no_filters_shows_all_non_closed(
+    def test_no_filters_shows_all_tasks_including_closed(
         self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
-        """cmd_list with no filters returns all non-closed crumbs."""
+        """cmd_list with no filters returns all tasks, including closed ones.
+
+        cmd_list has no implicit hide-closed behaviour; closed tasks are only
+        excluded when an explicit status flag (--open, --in-progress) is passed.
+        """
         _write(crumbs_env, [
             _task("AF-1", "Alpha", "open"),
             _task("AF-2", "Beta", "in_progress"),
@@ -120,23 +123,7 @@ class TestList:
         out = capsys.readouterr().out
         assert "AF-1" in out
         assert "AF-2" in out
-        # closed task shows when no status filter is applied; all records are listed
-        # (default list shows everything, not just non-closed — verify spec)
-        # cmd_list has no implicit hide-closed; closed is only excluded by --open/--in-progress
         assert "AF-3" in out
-
-    def test_no_status_filter_includes_closed(
-        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
-    ) -> None:
-        """cmd_list without status flags includes closed crumbs too."""
-        _write(crumbs_env, [
-            _task("AF-1", "Open one", "open"),
-            _task("AF-2", "Closed one", "closed"),
-        ])
-        cmd_list(_list_args())
-        out = capsys.readouterr().out
-        assert "AF-1" in out
-        assert "AF-2" in out
 
     def test_filter_open_excludes_others(
         self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]

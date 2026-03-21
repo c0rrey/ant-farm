@@ -396,7 +396,6 @@ class TestCreate:
         self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
         """cmd_create --json output 'id' field matches the record written to tasks.jsonl."""
-        from crumb import read_tasks
         args = _make_create_args(title="ID match", json_output=True)
         cmd_create(args)
 
