@@ -26,6 +26,11 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+# Temp file registry — all mktemp results are appended here so the EXIT trap
+# can clean them up even if the script exits early due to set -e.
+TEMP_FILES=()
+trap 'rm -f "${TEMP_FILES[@]+"${TEMP_FILES[@]}"}" 2>/dev/null' EXIT
 TS="$(date +%Y%m%dT%H%M%S)"
 DRY_RUN=false
 FORCE=false
@@ -105,9 +110,9 @@ ANTFARM_END="<!-- ant-farm:end -->"
 #   matching. Returns empty string if no block found.
 extract_block() {
     awk -v start="$ANTFARM_START" -v end="$ANTFARM_END" '
-        $0 == start { found=1 }
+        index($0, start) > 0 { found=1 }
         found { print }
-        $0 == end && found { exit }
+        index($0, end) > 0 && found { exit }
     ' "$1"
 }
 
@@ -192,17 +197,17 @@ sync_claude_block() {
     # New block content is read from a temp file (not -v) to avoid BSD awk
     # silently dropping multi-line strings passed via -v assignment.
     local blockfile tmpfile
-    blockfile="$(mktemp)"
-    tmpfile="$(mktemp)"
+    blockfile="$(mktemp)"; TEMP_FILES+=("$blockfile")
+    tmpfile="$(mktemp)"; TEMP_FILES+=("$tmpfile")
     printf '%s\n' "$block" > "$blockfile"
 
     if awk -v start="$ANTFARM_START" -v end="$ANTFARM_END" -v blockfile="$blockfile" '
-        $0 == start {
+        index($0, start) > 0 {
             while ((getline line < blockfile) > 0) print line
             close(blockfile)
             skip=1; next
         }
-        skip && $0 == end { skip=0; next }
+        skip && index($0, end) > 0 { skip=0; next }
         !skip { print }
     ' "$dst" > "$tmpfile"; then
         mv "$tmpfile" "$dst"
@@ -259,11 +264,11 @@ remove_claude_block() {
     # Strip the block: print all lines EXCEPT those between (inclusive) the sentinels.
     # Write stripped result to a temp file, then atomically replace DST.
     local tmpfile
-    tmpfile="$(mktemp)"
+    tmpfile="$(mktemp)"; TEMP_FILES+=("$tmpfile")
 
     if awk -v start="$ANTFARM_START" -v end="$ANTFARM_END" '
-        $0 == start { skip=1; next }
-        skip && $0 == end { skip=0; next }
+        index($0, start) > 0 { skip=1; next }
+        skip && index($0, end) > 0 { skip=0; next }
         !skip { print }
     ' "$dst" > "$tmpfile"; then
         mv "$tmpfile" "$dst"
@@ -425,8 +430,8 @@ if [ -d "$REPO_ROOT/orchestration" ]; then
     fi
 
     # Walk the orchestration tree
-    find_output=$(mktemp)
-    if ! find "$REPO_ROOT/orchestration" -type f -print0 > "$find_output" 2>/dev/null; then
+    find_output=$(mktemp); TEMP_FILES+=("$find_output")
+    if ! find "$REPO_ROOT/orchestration" -type f -print0 > "$find_output"; then
         warn "find failed while walking orchestration/: $(cat "$find_output")"
         rm -f "$find_output"
     else
