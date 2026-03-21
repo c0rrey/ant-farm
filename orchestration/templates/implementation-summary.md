@@ -27,7 +27,7 @@ Task briefs must reference all of these sections:
 
 - **Step 2 (Design)**: Prevents agents from jumping to the first solution. Distinct approaches must differ in algorithm, data structure, or architectural pattern — not just cosmetic variations.
 - **Step 4 (Correctness Review)**: Catching issues before commit is cheaper than review-round fixes. The assumptions audit (3 specific failure scenarios) is required — generic risks do not count.
-- **Step 6 (Summary Doc)**: Incomplete summaries are rejected. Big Head and Pest Control depend on the summary for traceability.
+- **Step 6 (Summary Doc)**: Incomplete summaries are rejected. Review Consolidator and Pest Control depend on the summary for traceability.
 
 ## Scope Boundary Principle
 
