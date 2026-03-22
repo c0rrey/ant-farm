@@ -24,6 +24,8 @@ This file gives you the 6-step crumb-gatherer workflow, mandatory summary doc se
 For each task ID in the input list:
 
 1. Read `{session-dir}/task-metadata/{TASK_SUFFIX}.md`.
+   > **Filesystem assumption**: This read assumes local-FS synchronous flush — the Scout completes and flushes all writes before the Pantry is spawned. No retry logic is needed under this model. If remote/NFS filesystem support is introduced, add retry logic here.
+
    **FAIL-FAST CHECK**: Validate before proceeding — skip this task on any of these conditions:
    _(Failure label definitions — INFRASTRUCTURE FAILURE vs SUBSTANCE FAILURE — see `orchestration/reference/terms.md` Failure Taxonomy section.)_
 
@@ -163,6 +165,7 @@ Do NOT fix adjacent issues you notice.
    c. Append the task brief content below it
    d. Write to `{session-dir}/previews/task-{TASK_SUFFIX}-preview.md`
    e. **Immediately after writing**: verify the file exists by reading it back. If the read fails or returns empty, halt and report: `PREVIEW FAILED: {TASK_ID} — preview file not written to {path}`
+      > **Filesystem assumption**: This read-back assumes local-FS synchronous flush — the write in step (d) completes before this verification read. No retry logic is needed under this model. If remote/NFS filesystem support is introduced, add retry logic here.
    f. **Write scope sidecar** — Write `.ant-farm-scope.json` to the project root (the current working directory, NOT `{session-dir}`). This file is read at runtime by the ant-farm-scope-advisor hook to enforce file scope for the spawned agent.
 
       Use this exact JSON format:
