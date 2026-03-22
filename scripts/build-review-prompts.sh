@@ -47,7 +47,7 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 _TEMP_FILES_TO_CLEAN=()
 cleanup_temp_files() {
-    for f in "${_TEMP_FILES_TO_CLEAN[@]}"; do
+    for f in ${_TEMP_FILES_TO_CLEAN[@]+"${_TEMP_FILES_TO_CLEAN[@]}"}; do
         rm -f "$f"
     done
 }
@@ -62,7 +62,7 @@ trap cleanup_temp_files EXIT
 #      it guarantees render-template is available.
 #   2. PATH-installed crumb: ~/.local/bin/crumb (via $HOME resolution)
 #      Used when running from the installed location (~/.claude/orchestration/scripts/).
-#      setup.sh installs crumb.py to ~/.local/bin/crumb (confirmed: setup.sh:L509).
+#      setup.sh installs crumb.py to ~/.local/bin/crumb (confirmed: setup.sh:L515).
 #   3. Plain 'crumb' on PATH (last resort).
 #
 # A startup validation below confirms the resolved binary supports render-template.
