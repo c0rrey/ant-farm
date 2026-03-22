@@ -185,7 +185,7 @@ fi
 # ---------------------------------------------------------------------------
 
 # Sort CHANGED_FILES with LC_ALL=C for reproducible partition assignments.
-CHANGED_FILES_SORTED="$(printf '%s\n' "$CHANGED_FILES" | LC_ALL=C sort)"
+CHANGED_FILES_SORTED="$(printf '%s\n' "$CHANGED_FILES" | LC_ALL=C sort | sed '/^$/d')"
 
 # Count non-empty lines in the sorted list.
 FILE_COUNT=0
