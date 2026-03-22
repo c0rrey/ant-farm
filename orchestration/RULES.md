@@ -93,31 +93,33 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             4. On exit 2: the prior session completed — proceed normally with a new SESSION_ID.
             5. On exit 1: surface the error (including the path that was not found) to the user and await instruction.
 
-**Position Check (MANDATORY -- GLOBAL, applies at ALL phase transitions):**
+---
 
-            > **This is a global rule, not a Step 0 gate.** It applies at every major phase boundary
-            > throughout the entire workflow, not just the Step 0-to-Step 1 transition.
+## Position Check (MANDATORY — GLOBAL, applies at ALL phase transitions)
 
-            **Run this check before every major phase transition.** This is required after every wave
-            completion (WAVE_VERIFIED) and after every fix agent completion (FIX_CMVCC_COMPLETE).
-            It is also recommended at any Step boundary where context may have been refreshed.
+> **This is a global rule, not part of any single Step.** It applies at every major phase boundary
+> throughout the entire workflow (Steps 0→1, 1→2, 2→3, 3→3b, 3b→3c, etc.).
 
-            ```bash
-            tail -1 "${SESSION_DIR}/progress.log" | grep -o 'next_step=[^|]*'
-            ```
+**Run this check before every major phase transition.** This is required after every wave
+completion (WAVE_VERIFIED) and after every fix agent completion (FIX_CMVCC_COMPLETE).
+It is also recommended at any Step boundary where context may have been refreshed.
 
-            Compare the `next_step=` value against the step you are about to execute:
-            - **Match**: proceed normally.
-            - **Mismatch**: STOP. Do not execute the intended step. Re-read the full progress log
-              to determine the actual workflow position, then reconcile before continuing.
-            - **Empty / no match**: progress.log may be missing or malformed. Run
-              `parse-progress-log.sh ${SESSION_DIR}` to diagnose and present the resume plan.
+```bash
+tail -1 "${SESSION_DIR}/progress.log" | grep -o 'next_step=[^|]*'
+```
 
-            **Hard requirement**: If the last WAVE_VERIFIED entry shows `next_step=REVIEW_3B` and
-            no subsequent WAVE_SPAWNED entry is present, the next action MUST be Step 3b (Review).
-            Skipping Step 3b is a critical workflow violation.
+Compare the `next_step=` value against the step you are about to execute:
+- **Match**: proceed normally.
+- **Mismatch**: STOP. Do not execute the intended step. Re-read the full progress log
+  to determine the actual workflow position, then reconcile before continuing.
+- **Empty / no match**: progress.log may be missing or malformed. Run
+  `parse-progress-log.sh ${SESSION_DIR}` to diagnose and present the resume plan.
 
-            **next_step value convention**: Progress log entries use descriptive step identifiers
+**Hard requirement**: If the last WAVE_VERIFIED entry shows `next_step=REVIEW_3B` and
+no subsequent WAVE_SPAWNED entry is present, the next action MUST be Step 3b (Review).
+Skipping Step 3b is a critical workflow violation.
+
+**next_step value convention**: Progress log entries use descriptive step identifiers
             rather than the shorthand abbreviations from the original AF-140 task table. Descriptive
             names are self-documenting and match the step labels in this file. Valid values:
 
@@ -132,7 +134,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             | `STEP_3C_TRIAGE` | About to triage review findings (Step 3c) |
             | `FIX_SCOUT` | About to spawn fix Scout for a fix round |
             | `FIX_AGENTS_SPAWN` | About to spawn fix Crumb Gatherers |
-            | `FIX_INNER_LOOP` | Fix agents spawned; waiting for inner verify loop |
+            | `FIX_INNER_LOOP` | Fix agents spawned; waiting for fix-cycle scope-verify and claims-vs-code checks |
             | `ROUND_TRANSITION` | About to transition to the next review round |
             | `STEP_4_DOCS` | About to run Step 4 (doc/CHANGELOG update) |
             | `STEP_4B_XREF` | About to run Step 4b (cross-reference / issue status check) |
@@ -295,6 +297,7 @@ The Queen's window is restricted to prevent context bloat, but certain files are
 **Step 7:** Land the plane — Queen commits the Scribe's CHANGELOG.md, copies the exec summary to history (local only), then pulls and pushes. NEVER `git add` any file under `.crumbs/` — the entire directory is gitignored.
             ```bash
             git add CHANGELOG.md && git commit -m "docs: add session {SESSION_ID} changelog entry"
+            mkdir -p .crumbs/history
             cp "${SESSION_DIR}/exec-summary.md" ".crumbs/history/exec-summary-${SESSION_ID}.md"
             git pull --rebase
             git push
@@ -362,7 +365,7 @@ Read `orchestration/reference/session-directory.md` for full setup instructions 
 
 At session start (Step 0), run:
 
-    SESSION_ID="$(date +%Y%m%d-%H%M%S)-$(head -c4 /dev/urandom | xxd -p)"
+    SESSION_ID="$(date +%Y%m%d-%H%M%S)-$(od -An -tx1 -N4 /dev/urandom | tr -d ' \n')"
     SESSION_DIR=".crumbs/sessions/_session-${SESSION_ID}"
     mkdir -p "${SESSION_DIR}"/{task-metadata,previews,prompts,pc,summaries,signals}
     crumb prune 2>/dev/null || echo "WARNING: crumb prune failed (non-blocking) — continuing session setup"
