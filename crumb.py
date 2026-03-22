@@ -504,6 +504,9 @@ def _crumb_to_json_obj(crumb: Dict[str, Any]) -> Dict[str, Any]:
     """Serialize a crumb to a JSON-safe dict with all required fields as keys.
 
     Required fields are always present (None if absent). Extra keys are appended.
+
+    See docs/json-schema.md for the full field reference, per-command output
+    shapes, and copy-pasteable examples.
     """
     required_fields: List[str] = [
         "id", "title", "type", "status", "priority",
