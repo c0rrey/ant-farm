@@ -37,6 +37,9 @@
 
 set -euo pipefail
 
+# Maximum concurrent agents Claude Code supports in a single team.
+MAX_TEAM_SIZE=15
+
 # ---------------------------------------------------------------------------
 # Script-level temp file cleanup (AF-258).
 # Functions use trap RETURN for immediate cleanup on normal return, but RETURN
@@ -301,12 +304,12 @@ fi
 # ---------------------------------------------------------------------------
 # Preflight: team-size check.
 # Total expected team members = reviewer instances + Review Consolidator + Checkpoint Auditor.
-# Claude Code supports at most 15 concurrent agents; exceeding this silently
-# drops agents. Error early rather than silently under-review.
+# Claude Code supports at most MAX_TEAM_SIZE concurrent agents; exceeding this
+# silently drops agents. Error early rather than silently under-review.
 # ---------------------------------------------------------------------------
 EXPECTED_TEAM_SIZE=$(( ${#ACTIVE_REVIEW_TYPES[@]} + 2 ))
-if [ "$EXPECTED_TEAM_SIZE" -gt 15 ]; then
-    echo "ERROR: Team size check failed: expected_team_size=${EXPECTED_TEAM_SIZE} (${#ACTIVE_REVIEW_TYPES[@]} reviewer instances + Review Consolidator + Checkpoint Auditor) exceeds the 15-agent ceiling." >&2
+if [ "$EXPECTED_TEAM_SIZE" -gt "$MAX_TEAM_SIZE" ]; then
+    echo "ERROR: Team size check failed: expected_team_size=${EXPECTED_TEAM_SIZE} (${#ACTIVE_REVIEW_TYPES[@]} reviewer instances + Review Consolidator + Checkpoint Auditor) exceeds the ${MAX_TEAM_SIZE}-agent ceiling." >&2
     echo "Reduce REVIEW_SPLIT_THRESHOLD or limit the number of changed files per session." >&2
     exit 1
 fi
