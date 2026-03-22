@@ -44,7 +44,8 @@ Stop. Do not proceed.
 ### Error: All tasks closed
 
 ```bash
-crumb list --open --short 2>/dev/null | grep -c . || echo 0
+OPEN_OUTPUT=$(crumb list --open --short 2>&1) || { echo "ERROR: crumb list --open failed: ${OPEN_OUTPUT}"; exit 1; }
+echo "${OPEN_OUTPUT}" | grep -c . || echo 0
 ```
 
 If all crumbs are closed (open count = 0):
@@ -62,7 +63,8 @@ Run this lightweight check before spawning the Scout. It catches structural issu
 Verify every ID listed in any crumb's `blocked_by` array exists somewhere in `.crumbs/tasks.jsonl`.
 
 ```bash
-crumb doctor 2>&1 | grep -i "dangling blocked_by" || echo "OK"
+DOCTOR_OUTPUT=$(crumb doctor 2>&1) || { echo "ERROR: crumb doctor failed: ${DOCTOR_OUTPUT}"; exit 1; }
+echo "${DOCTOR_OUTPUT}" | grep -i "dangling blocked_by" || echo "OK"
 ```
 
 If dangling references are found:
@@ -74,7 +76,8 @@ If dangling references are found:
 Verify every crumb's `links.parent` value (if set) points to an existing trail ID.
 
 ```bash
-crumb doctor 2>&1 | grep -i "dangling parent" || echo "OK"
+DOCTOR_OUTPUT=$(crumb doctor 2>&1) || { echo "ERROR: crumb doctor failed: ${DOCTOR_OUTPUT}"; exit 1; }
+echo "${DOCTOR_OUTPUT}" | grep -i "dangling parent" || echo "OK"
 ```
 
 If dangling parent links are found:
@@ -86,7 +89,8 @@ If dangling parent links are found:
 Detect crumbs left in `in_progress` state from a previous crashed or abandoned execution session.
 
 ```bash
-crumb list --in-progress --short 2>/dev/null
+INPROGRESS_OUTPUT=$(crumb list --in-progress --short 2>&1) || { echo "ERROR: crumb list --in-progress failed: ${INPROGRESS_OUTPUT}"; exit 1; }
+echo "${INPROGRESS_OUTPUT}"
 ```
 
 If any in_progress crumbs are found:
@@ -104,7 +108,7 @@ Generate a session ID and create the session artifact directory:
 ```bash
 SESSION_ID=$(date +%Y%m%d-%H%M%S)
 SESSION_DIR=".crumbs/sessions/_session-${SESSION_ID}"
-mkdir -p "${SESSION_DIR}"/{task-metadata,previews,prompts,pc,summaries}
+mkdir -p "${SESSION_DIR}"/{task-metadata,previews,prompts,pc,summaries,signals}
 echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SESSION_INIT|complete|session_dir=${SESSION_DIR}" >> "${SESSION_DIR}/progress.log"
 ```
 
