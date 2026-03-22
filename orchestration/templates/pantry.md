@@ -255,7 +255,7 @@ Session summary: {session-dir}/session-summary.md
 
 ---
 
-## Section 2: Review Mode Preconditions [DEPRECATED]
+## Appendix: Review Mode Preconditions [DEPRECATED]
 
 > **STOP: DO NOT USE THIS SECTION FOR REVIEW BRIEF COMPOSITION.** This section is deprecated. Review prompt generation is now handled by `scripts/build-review-prompts.sh`. For the current review protocol and Big Head consolidation workflow, see `orchestration/templates/reviews.md`.
 
@@ -274,7 +274,7 @@ On any precondition failure, do NOT compose review briefs. Return the error to t
 
 ---
 
-## Section 3: Error Handling
+## Section 2: Error Handling
 
 - **Write each brief immediately** after composing it (not all at once). This ensures partial progress is preserved on failure.
 - **On any unrecoverable error**: return a partial file path table showing which tasks succeeded and which failed, plus the error message. The Queen can spawn a new instance for just the failed tasks.
