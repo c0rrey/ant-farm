@@ -53,20 +53,20 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 if [ -f "${SCRIPT_DIR}/../crumb.py" ]; then
-    CRUMB="python3 ${SCRIPT_DIR}/../crumb.py"
+    CRUMB=(python3 "${SCRIPT_DIR}/../crumb.py")
 elif [ -f "${HOME}/.local/bin/crumb" ]; then
-    CRUMB="${HOME}/.local/bin/crumb"
+    CRUMB=("${HOME}/.local/bin/crumb")
 else
-    CRUMB="crumb"
+    CRUMB=(crumb)
 fi
 
 # ---------------------------------------------------------------------------
 # Startup validation: confirm resolved CRUMB supports render-template.
 # Catches stale installs or missing PATH entries before the first $CRUMB call.
 # ---------------------------------------------------------------------------
-if ! $CRUMB render-template --help >/dev/null 2>&1; then
+if ! "${CRUMB[@]}" render-template --help >/dev/null 2>&1; then
     echo "ERROR: crumb binary does not support 'render-template' subcommand." >&2
-    echo "  Resolved CRUMB='${CRUMB}'" >&2
+    echo "  Resolved CRUMB='${CRUMB[*]}'" >&2
     echo "  Run ./scripts/setup.sh to install the current crumb.py to ~/.local/bin/crumb." >&2
     exit 1
 fi
@@ -185,7 +185,7 @@ fi
 # ---------------------------------------------------------------------------
 
 # Sort CHANGED_FILES with LC_ALL=C for reproducible partition assignments.
-CHANGED_FILES_SORTED="$(printf '%s\n' "$CHANGED_FILES" | LC_ALL=C sort | sed '/^$/d')"
+CHANGED_FILES_SORTED="$(printf '%s\n' "$CHANGED_FILES" | LC_ALL=C sort | sed '/^[[:space:]]*$/d')"
 
 # Count non-empty lines in the sorted list.
 FILE_COUNT=0
@@ -417,7 +417,7 @@ build_nitpicker_prompt() {
     #           COMMIT_RANGE, CHANGED_FILES, TASK_IDS, TIMESTAMP.
     #    Values with newlines are passed as quoted shell arguments; Python's
     #    argparse receives the full string including embedded newlines.
-    $CRUMB render-template "$tmp_template" \
+    "${CRUMB[@]}" render-template "$tmp_template" \
         --slot "REVIEW_TYPE=${review_type}" \
         --slot "DATA_FILE_PATH=${data_file_path}" \
         --slot "REPORT_OUTPUT_PATH=${report_output_path}" \
@@ -508,7 +508,7 @@ build_big_head_prompt() {
     # 4. Delegate all slot substitution to crumb render-template.
     #    Slots: REVIEW_ROUND, DATA_FILE_PATH, CONSOLIDATED_OUTPUT_PATH,
     #           TIMESTAMP, EXPECTED_REPORT_PATHS.
-    $CRUMB render-template "$tmp_template" \
+    "${CRUMB[@]}" render-template "$tmp_template" \
         --slot "REVIEW_ROUND=${REVIEW_ROUND}" \
         --slot "DATA_FILE_PATH=${out_file}" \
         --slot "CONSOLIDATED_OUTPUT_PATH=${consolidated_output}" \
