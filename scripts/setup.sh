@@ -548,8 +548,8 @@ remove_claude_block "$GLOBAL_CLAUDE_DST"
 #   the repo's own CLAUDE.md (Step 6c). Clean up the old location.
 # ---------------------------------------------------------------------------
 # Transform repo root path to projects subdir name: /Users/x/my-repo → -Users-x-my-repo
-REPO_ROOT_ESCAPED="$(printf '%s' "$REPO_ROOT" | tr '/' '-')"
-PROMPTDIR_CLAUDE="${HOME}/.claude/projects/${REPO_ROOT_ESCAPED}/CLAUDE.md"
+REPO_ROOT_SLUG="$(printf '%s' "$REPO_ROOT" | tr '/' '-')"
+PROMPTDIR_CLAUDE="${HOME}/.claude/projects/${REPO_ROOT_SLUG}/CLAUDE.md"
 log "Checking for stale ant-farm block in prompt-dir ${PROMPTDIR_CLAUDE} ..."
 remove_claude_block "$PROMPTDIR_CLAUDE"
 
