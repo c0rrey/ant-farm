@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-03-22 — Simplify crumb.py (32% reduction)
+
+### Summary
+
+Simplified crumb.py from 3033 to 2055 lines (32% reduction, 978 lines removed) with no functionality loss and no external interface changes. All 455 tests pass.
+
+### Changes
+
+- **Remove Beads import subsystem** (-293 lines): Deleted dead one-time migration code (`_convert_beads_record`, `_resolve_beads_epic_refs`, `_apply_blocks_deps`, `_BEADS_*` maps, `--from-beads` flag) and corresponding `TestImportBeads` test class. Plain JSONL import retained.
+- **Trim docstrings** (-578 lines): Reduced 691 lines of docstrings (22.8% of file) — trimmed functions with docstring-to-code ratio > 2x, removed embedded JSON examples from command handlers, condensed module docstring and `cmd_prune` timezone essay.
+- **Extract shared helpers** (-107 lines net): Added `_require_crumb()` (replaces 9 find+die patterns), `_format_row()` (replaces 12 display format blocks), `_sort_crumbs()` (replaces 3 sort blocks), `_print_fields()` (replaces 2 label-value loops), `_add_json_flag()` (replaces 6 argparse blocks).
+- **Clean up unused imports**: Removed `tempfile` and `Iterator`.
+
 ## 2026-03-22 — Session 20260322-131616 (crumb.py Bug Fix Sweep — Epic AF-T63)
 
 ### Summary

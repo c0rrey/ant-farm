@@ -4,32 +4,7 @@
 
 Single-file Python CLI, stdlib only, minimum Python 3.8.
 Manages tasks and trails in .crumbs/tasks.jsonl with flock-based
-concurrency safety and atomic writes.
-
-Usage:
-    crumb list [--open] [--closed] [--in-progress] [--parent ID]
-               [--priority P0-P4] [--type TYPE] [--agent-type TYPE]
-               [--discovered] [--after DATE] [--limit N]
-               [--sort FIELD] [--short]
-    crumb show <ID>
-    crumb create --title "..." [--from-json '...'] [--from-file PATH]
-    crumb update <ID> [--status STATUS] [--note "..."] [FIELD=VALUE ...]
-    crumb close <ID> [<ID> ...]
-    crumb reopen <ID>
-    crumb ready [--limit N] [--sort FIELD]
-    crumb blocked
-    crumb link <ID> [--parent ID] [--blocked-by ID]
-                    [--remove-blocked-by ID] [--discovered-from ID]
-    crumb search "QUERY"
-    crumb trail list
-    crumb trail show <ID>
-    crumb trail create --title "..."
-    crumb trail close <ID>
-    crumb tree [ID]
-    crumb import <FILE> [--from-beads]
-    crumb doctor
-    crumb init [--prefix PREFIX]
-    crumb prune [--days N] [--dry-run]
+concurrency safety and atomic writes.  Run ``crumb --help`` for usage.
 """
 
 from __future__ import annotations
@@ -46,11 +21,11 @@ import os
 import re
 import shutil
 import sys
-import tempfile
+
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -88,15 +63,7 @@ SESSION_TS_FORMAT: str = "%Y%m%d-%H%M%S"
 
 
 def die(message: str, code: int = 1) -> None:
-    """Print error to stderr and exit with given code.
-
-    Args:
-        message: Human-readable error description (printed with "error: " prefix).
-        code: Process exit code; defaults to 1.
-
-    Raises:
-        SystemExit: Always — this function never returns normally.
-    """
+    """Print error to stderr and exit."""
     print(f"error: {message}", file=sys.stderr)
     sys.exit(code)
 
@@ -107,14 +74,7 @@ def die(message: str, code: int = 1) -> None:
 
 
 def find_crumbs_dir() -> Path:
-    """Walk up from cwd to filesystem root; return first .crumbs/ found.
-
-    Returns:
-        Absolute path to the .crumbs/ directory.
-
-    Raises:
-        SystemExit: If no .crumbs/ directory is found in any ancestor.
-    """
+    """Walk up from cwd to filesystem root; return first .crumbs/ found."""
     current = Path.cwd().resolve()
     while True:
         candidate = current / CRUMBS_DIR_NAME
@@ -131,38 +91,17 @@ def find_crumbs_dir() -> Path:
 
 
 def tasks_path() -> Path:
-    """Return path to tasks.jsonl, exiting if .crumbs/ not found.
-
-    Returns:
-        Absolute path to .crumbs/tasks.jsonl.
-
-    Raises:
-        SystemExit: If no .crumbs/ directory is found in any ancestor.
-    """
+    """Return path to .crumbs/tasks.jsonl."""
     return find_crumbs_dir() / TASKS_FILE
 
 
 def config_path() -> Path:
-    """Return path to config.json, exiting if .crumbs/ not found.
-
-    Returns:
-        Absolute path to .crumbs/config.json.
-
-    Raises:
-        SystemExit: If no .crumbs/ directory is found in any ancestor.
-    """
+    """Return path to .crumbs/config.json."""
     return find_crumbs_dir() / CONFIG_FILE
 
 
 def lock_path() -> Path:
-    """Return path to tasks.lock, exiting if .crumbs/ not found.
-
-    Returns:
-        Absolute path to .crumbs/tasks.lock.
-
-    Raises:
-        SystemExit: If no .crumbs/ directory is found in any ancestor.
-    """
+    """Return path to .crumbs/tasks.lock."""
     return find_crumbs_dir() / LOCK_FILE
 
 
@@ -172,15 +111,7 @@ def lock_path() -> Path:
 
 
 def read_config() -> Dict[str, Any]:
-    """Read config.json, returning defaults merged with stored values.
-
-    Returns:
-        Dict with keys: prefix, default_priority, next_crumb_id, next_trail_id.
-
-    Raises:
-        SystemExit: If config.json exists but cannot be read or contains
-            invalid JSON, or if a counter field is not an integer.
-    """
+    """Read config.json, returning defaults merged with stored values."""
     path = config_path()
     if not path.exists():
         return dict(DEFAULT_CONFIG)
@@ -200,14 +131,7 @@ def read_config() -> Dict[str, Any]:
 
 
 def write_config(config: Dict[str, Any]) -> None:
-    """Atomically write config.json.
-
-    Args:
-        config: Dict to serialise.
-
-    Raises:
-        SystemExit: If the config file cannot be written (OS error).
-    """
+    """Atomically write config.json via temp-then-rename."""
     path = config_path()
     tmp_path = path.with_suffix(".json.tmp")
     try:
@@ -229,18 +153,7 @@ def write_config(config: Dict[str, Any]) -> None:
 
 
 def read_tasks(path: Path) -> List[Dict[str, Any]]:
-    """Read all records from a JSONL file.
-
-    Args:
-        path: Path to the JSONL file.
-
-    Returns:
-        List of parsed dicts, one per non-empty line.
-
-    Raises:
-        SystemExit: If the file cannot be opened (OS error). Malformed
-            JSON lines emit a warning to stderr and are skipped, not raised.
-    """
+    """Read all records from a JSONL file. Malformed lines are skipped with a warning."""
     records: List[Dict[str, Any]] = []
     try:
         fh_ctx = open(path, "r", encoding="utf-8")
@@ -262,16 +175,7 @@ def read_tasks(path: Path) -> List[Dict[str, Any]]:
 
 
 def write_tasks(path: Path, records: List[Dict[str, Any]]) -> None:
-    """Atomically write records to a JSONL file via temp-then-rename.
-
-    Args:
-        path: Destination JSONL path.
-        records: List of dicts to serialise, one per line.
-
-    Raises:
-        SystemExit: If the temporary file cannot be written or renamed
-            (OS error).
-    """
+    """Atomically write records to a JSONL file via temp-then-rename."""
     tmp_path = path.with_suffix(".jsonl.tmp")
     try:
         try:
@@ -296,39 +200,15 @@ _LOCK_RETRY_INTERVAL: float = 0.05
 
 
 class FileLock:
-    """Context manager that holds an exclusive flock on tasks.lock.
+    """Context manager holding an exclusive flock on tasks.lock (Unix-only).
 
-    Platform restriction: uses ``fcntl.flock``, which is Unix-only (Linux,
-    macOS). On Windows ``fcntl`` is absent; the module imports cleanly but
-    ``FileLock.__enter__`` will call ``die()`` (raising ``SystemExit``) when
-    the lock is first attempted.
-
-    Acquires the lock with ``LOCK_NB`` (non-blocking) and retries for up to
-    ``_LOCK_TIMEOUT_SECS`` seconds so the process never blocks indefinitely.
-
-    Usage::
-
-        with FileLock():
-            # read, modify, write tasks.jsonl safely
+    Retries with LOCK_NB for up to _LOCK_TIMEOUT_SECS seconds.
     """
 
     def __init__(self) -> None:
-        """Initialise with no open lock file handle."""
         self._lock_file: Optional[Any] = None
 
     def __enter__(self) -> "FileLock":
-        """Acquire the exclusive flock on tasks.lock.
-
-        Retries with ``LOCK_NB`` until the lock is acquired or the timeout
-        expires (default: ``_LOCK_TIMEOUT_SECS`` seconds).
-
-        Returns:
-            self, allowing use as a context manager.
-
-        Raises:
-            SystemExit: If the lock file cannot be created/opened, or if the
-                lock cannot be acquired within ``_LOCK_TIMEOUT_SECS`` seconds.
-        """
         if fcntl is None:
             die("file locking requires fcntl (Unix-only); Windows is not supported")
         path = lock_path()
@@ -359,11 +239,6 @@ class FileLock:
         return self
 
     def __exit__(self, *_: Any) -> None:
-        """Release the flock by closing the lock file handle.
-
-        Closing the file descriptor releases the flock held on it.
-        Safe to call even if __enter__ was never reached (guard on None).
-        """
         if self._lock_file is not None:
             # flock is released automatically on close
             self._lock_file.close()
@@ -379,13 +254,7 @@ _STALE_TMP_AGE_SECS: float = 5.0
 
 
 def cleanup_stale_tmp_files() -> None:
-    """Remove any leftover .tmp files from a previous crashed write.
-
-    Called at startup before any command runs.  Only deletes files whose
-    mtime is older than ``_STALE_TMP_AGE_SECS`` seconds to avoid racing
-    with a concurrent ``write_tasks`` call that may still be using its
-    temp file.
-    """
+    """Remove leftover .tmp files from a previous crashed write."""
     # Walk up from cwd silently (do not use die() / find_crumbs_dir() here
     # to avoid printing errors during startup before help is displayed).
     current = Path.cwd().resolve()
@@ -424,11 +293,7 @@ def cleanup_stale_tmp_files() -> None:
 
 
 def now_iso() -> str:
-    """Return current UTC time as an ISO 8601 string with Z suffix.
-
-    Returns:
-        UTC timestamp formatted as 'YYYY-MM-DDTHH:MM:SSZ'.
-    """
+    """Return current UTC time as ISO 8601 with Z suffix."""
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
@@ -438,14 +303,7 @@ def now_iso() -> str:
 
 
 def require_tasks_jsonl() -> Path:
-    """Return path to tasks.jsonl, exiting with error if not found.
-
-    Returns:
-        Path to existing tasks.jsonl.
-
-    Raises:
-        SystemExit: If .crumbs/tasks.jsonl does not exist.
-    """
+    """Return path to tasks.jsonl, dying if not found."""
     path = tasks_path()
     if not path.exists():
         die("no .crumbs/tasks.jsonl found. Run /ant-farm-init first.")
@@ -458,15 +316,7 @@ def require_tasks_jsonl() -> Path:
 
 
 def _find_crumb(tasks: List[Dict[str, Any]], crumb_id: str) -> Optional[Dict[str, Any]]:
-    """Return the first record matching crumb_id, or None.
-
-    Args:
-        tasks: List of task dicts from tasks.jsonl.
-        crumb_id: The ID string to look up (case-sensitive).
-
-    Returns:
-        Matching dict or None if not found.
-    """
+    """Return the first record matching crumb_id, or None."""
     for task in tasks:
         if task.get("id") == crumb_id:
             return task
@@ -474,14 +324,7 @@ def _find_crumb(tasks: List[Dict[str, Any]], crumb_id: str) -> Optional[Dict[str
 
 
 def _priority_sort_key(priority: str) -> int:
-    """Return an integer sort key for a priority string (P0 sorts first).
-
-    Args:
-        priority: Priority string such as 'P0', 'P1', ..., 'P4'.
-
-    Returns:
-        Integer in range 0-4; unknown values sort last (5).
-    """
+    """Return an integer sort key for a priority string (P0=0, unknown=5)."""
     try:
         return int(priority[1]) if len(priority) == 2 and priority[0] == "P" else 5
     except (ValueError, IndexError):
@@ -489,30 +332,77 @@ def _priority_sort_key(priority: str) -> int:
 
 
 def _status_sort_key(status: str) -> int:
-    """Return an integer sort key for a status string.
-
-    Args:
-        status: Status string such as 'open', 'in_progress', 'closed'.
-
-    Returns:
-        Integer sort key; unknown values sort last.
-    """
+    """Return an integer sort key for a status string."""
     order = {"open": 0, "in_progress": 1, "closed": 2}
     return order.get(status, 3)
+
+
+def _require_crumb(
+    tasks: List[Dict[str, Any]], crumb_id: str, label: str = "crumb"
+) -> Dict[str, Any]:
+    """Find a crumb by ID, dying with an error message if not found."""
+    crumb = _find_crumb(tasks, crumb_id)
+    if crumb is None:
+        die(f"{label} '{crumb_id}' not found")
+    return crumb
+
+
+def _sort_crumbs(results: List[Dict[str, Any]], sort_field: str) -> None:
+    """Sort results in-place by the given field (priority, status, or created_at)."""
+    if sort_field == "priority":
+        results.sort(key=lambda t: _priority_sort_key(t.get("priority", "P4")))
+    elif sort_field == "status":
+        results.sort(key=lambda t: _status_sort_key(t.get("status", "")))
+    else:
+        results.sort(key=lambda t: t.get("created_at") or "")
+
+
+def _format_row(crumb: Dict[str, Any], indent: int = 0) -> str:
+    """Format a crumb as a single display row."""
+    tid = crumb.get("id", "?")
+    title = crumb.get("title", "")
+    status = crumb.get("status", "")
+    priority = crumb.get("priority", "")
+    pad = " " * indent
+    id_width = 10 if indent else 12
+    return f"{pad}{tid:<{id_width}} {priority:<4} {status:<12} {title}"
+
+
+def _print_fields(record: Dict[str, Any], fields: List[Tuple[str, str]],
+                  show_extras: bool = False) -> None:
+    """Print label-value pairs for a record, skipping empty values."""
+    for key, label in fields:
+        value = record.get(key)
+        if value is None or value == "" or value == [] or value == {}:
+            continue
+        if isinstance(value, list):
+            print(f"{label}:")
+            for item in value:
+                print(f"  - {item}")
+        else:
+            print(f"{label}: {value}")
+    if show_extras:
+        known_keys = {k for k, _ in fields}
+        for key, value in record.items():
+            if key not in known_keys and value not in (None, "", [], {}):
+                label = key.replace("_", " ").title()
+                print(f"{label}: {value}")
+
+
+def _add_json_flag(parser: argparse.ArgumentParser) -> None:
+    """Add the standard --json output flag to a subcommand parser."""
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="Output JSON instead of human-readable text.",
+    )
 
 
 def _get_trail_children(
     tasks: List[Dict[str, Any]], trail_id: str
 ) -> List[Dict[str, Any]]:
-    """Return all non-trail records whose links.parent equals trail_id.
-
-    Args:
-        tasks: Full task list from tasks.jsonl.
-        trail_id: The trail ID to match against.
-
-    Returns:
-        List of child crumb dicts (excludes the trail record itself).
-    """
+    """Return all non-trail records whose links.parent equals trail_id."""
     children = []
     for t in tasks:
         if t.get("type") == "trail":
@@ -526,18 +416,7 @@ def _get_trail_children(
 def _auto_close_trail_if_complete(
     tasks: List[Dict[str, Any]], path: Path, closed_crumb_id: str
 ) -> None:
-    """Auto-close a trail when the last open child is closed.
-
-    Called from cmd_close (inside FileLock) after write_tasks. Looks up
-    the closed crumb's parent trail (via links.parent). If all children
-    of that trail are now closed, closes the trail and calls write_tasks
-    again.
-
-    Args:
-        tasks: Already-modified task list (crumb already marked closed).
-        path: Path to tasks.jsonl for the second write_tasks call.
-        closed_crumb_id: The ID of the crumb that was just closed.
-    """
+    """Auto-close a trail when its last open child is closed."""
     crumb = _find_crumb(tasks, closed_crumb_id)
     if crumb is None:
         return
@@ -572,17 +451,7 @@ def _auto_close_trail_if_complete(
 def _auto_reopen_trail_if_needed(
     tasks: List[Dict[str, Any]], path: Path, trail_id: str, crumb_status: str
 ) -> None:
-    """Auto-reopen a trail when a new open crumb is linked to it as parent.
-
-    Called from cmd_link (inside FileLock) after write_tasks. If the trail
-    is closed and the newly-linked crumb is not closed, reopens the trail.
-
-    Args:
-        tasks: Already-modified task list.
-        path: Path to tasks.jsonl for the second write_tasks call.
-        trail_id: The trail to potentially reopen.
-        crumb_status: Current status of the crumb that was just linked.
-    """
+    """Auto-reopen a closed trail when a new non-closed crumb is linked to it."""
     if crumb_status == "closed":
         return  # Linking a closed crumb; trail stays closed
 
@@ -601,20 +470,7 @@ def _auto_reopen_trail_if_needed(
 
 
 def _parse_session_dir_timestamp(name: str) -> Optional[datetime]:
-    """Extract and parse the YYYYMMDD-HHMMSS timestamp from a session directory name.
-
-    Checks whether *name* starts with one of the known session directory
-    prefixes (``_session-``, ``_decompose-``, ``_review-``), strips the
-    prefix, and attempts to parse the remainder as a ``%Y%m%d-%H%M%S``
-    timestamp.  Returns ``None`` for names that do not match any known
-    prefix or whose timestamp portion is not parseable.
-
-    Args:
-        name: Directory base name (not a full path).
-
-    Returns:
-        Parsed :class:`datetime` (naive, local) or ``None``.
-    """
+    """Parse YYYYMMDD-HHMMSS timestamp from a session directory name, or None."""
     matched_prefix: Optional[str] = None
     for prefix in SESSION_DIR_PREFIXES:
         if name.startswith(prefix):
@@ -635,21 +491,7 @@ def _parse_session_dir_timestamp(name: str) -> Optional[datetime]:
 
 
 def _is_active_session(dir_path: Path, now_ts: float) -> bool:
-    """Return True if *dir_path* was modified within the active-guard window.
-
-    Uses ``os.stat(dir_path).st_mtime`` so that ongoing writes to the
-    session directory extend the guard window.  A fresh ``stat`` call is
-    made here (not cached) to mitigate TOCTOU between the age check and
-    the actual ``shutil.rmtree``.
-
-    Args:
-        dir_path: Absolute path to the session directory.
-        now_ts: Current time as a POSIX timestamp (``time.time()``).
-
-    Returns:
-        ``True`` if the directory's mtime is within
-        :data:`ACTIVE_GUARD_MINUTES` minutes of *now_ts*.
-    """
+    """Return True if dir_path's mtime is within ACTIVE_GUARD_MINUTES."""
     try:
         mtime = os.stat(dir_path).st_mtime
     except OSError:
@@ -659,40 +501,9 @@ def _is_active_session(dir_path: Path, now_ts: float) -> bool:
 
 
 def _crumb_to_json_obj(crumb: Dict[str, Any]) -> Dict[str, Any]:
-    """Serialize a crumb record to a JSON-safe dict with all required fields.
+    """Serialize a crumb to a JSON-safe dict with all required fields as keys.
 
-    All fields required by the JSON schema are always present; absent
-    fields are represented as ``None`` (serialized as JSON ``null``).
-    This guarantees a stable schema for downstream consumers (hooks, MCP
-    server) regardless of which optional fields a given crumb stores.
-
-    Required fields emitted:
-        id, title, type, status, priority, description,
-        acceptance_criteria, scope, links, notes
-
-    Additional fields stored on the record (e.g. created_at, updated_at,
-    closed_at, agent_type) are also included verbatim.
-
-    Example output::
-
-        {
-            "id": "AF-1",
-            "title": "Add --json flag",
-            "type": "task",
-            "status": "open",
-            "priority": "P2",
-            "description": null,
-            "acceptance_criteria": null,
-            "scope": {"files": ["crumb.py"]},
-            "links": {"blocked_by": [], "parent": "AF-T49"},
-            "notes": null
-        }
-
-    Args:
-        crumb: Raw task dict read from tasks.jsonl.
-
-    Returns:
-        Ordered dict suitable for ``json.dumps``.
+    Required fields are always present (None if absent). Extra keys are appended.
     """
     required_fields: List[str] = [
         "id", "title", "type", "status", "priority",
@@ -707,19 +518,7 @@ def _crumb_to_json_obj(crumb: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def cmd_list(args: argparse.Namespace) -> None:
-    """List crumbs with optional filters, sort, and limit.
-
-    Reads tasks.jsonl, applies composable filter flags, sorts, limits,
-    and prints one line per crumb (short mode) or a summary table.
-
-    When ``--json`` is given, outputs a JSON array of crumb objects to
-    stdout instead of human-readable text.  The array is always
-    well-formed (``[]`` when no results match) and each element has the
-    schema documented in :func:`_crumb_to_json_obj`.
-
-    Args:
-        args: Parsed arguments from the list subparser.
-    """
+    """List crumbs with optional filters, sort, and limit."""
     path = require_tasks_jsonl()
     tasks = read_tasks(path)
 
@@ -780,17 +579,7 @@ def cmd_list(args: argparse.Namespace) -> None:
             if (t.get("created_at") or "") > after_str
         ]
 
-    # --- sort ---
-    sort_field = args.sort  # 'priority' | 'created_at' | 'status'
-    if sort_field == "priority":
-        results.sort(key=lambda t: _priority_sort_key(t.get("priority", "P4")))
-    elif sort_field == "status":
-        results.sort(key=lambda t: _status_sort_key(t.get("status", "")))
-    else:
-        # Default: created_at ascending
-        results.sort(key=lambda t: t.get("created_at") or "")
-
-    # --- limit ---
+    _sort_crumbs(results, args.sort)
     if args.limit is not None and args.limit > 0:
         results = results[: args.limit]
 
@@ -806,118 +595,43 @@ def cmd_list(args: argparse.Namespace) -> None:
     # --- output ---
     if args.short:
         for t in results:
-            tid = t.get("id", "?")
-            title = t.get("title", "")
-            status = t.get("status", "")
-            priority = t.get("priority", "")
-            print(f"{tid:<12} {priority:<4} {status:<12} {title}")
+            print(_format_row(t))
     else:
         for t in results:
             tid = t.get("id", "?")
-            title = t.get("title", "")
-            status = t.get("status", "")
             priority = t.get("priority", "")
+            status = t.get("status", "")
             crumb_type = t.get("type", "")
             created_at = t.get("created_at", "")
+            title = t.get("title", "")
             print(f"{tid:<12} {priority:<4} {status:<12} {crumb_type:<10} {created_at[:10]}  {title}")
 
 
 def cmd_show(args: argparse.Namespace) -> None:
-    """Show all fields for a crumb or trail.
-
-    When ``--json`` is given, outputs a single JSON object to stdout
-    instead of human-readable text.  The object has the schema
-    documented in :func:`_crumb_to_json_obj`.
-
-    Args:
-        args: Parsed arguments; args.id is the crumb ID to display.
-              args.json_output controls JSON vs human-readable output.
-    """
+    """Show all fields for a crumb or trail."""
     path = require_tasks_jsonl()
     tasks = read_tasks(path)
+    crumb = _require_crumb(tasks, args.id)
 
-    crumb = _find_crumb(tasks, args.id)
-    if crumb is None:
-        die(f"crumb '{args.id}' not found")
-
-    # --- JSON output branch ---
     if args.json_output:
         print(json.dumps(_crumb_to_json_obj(crumb), indent=2))
         return
 
-    # Print all known fields with labels
     fields = [
-        ("id", "ID"),
-        ("type", "Type"),
-        ("title", "Title"),
-        ("status", "Status"),
-        ("priority", "Priority"),
-        ("agent_type", "Agent Type"),
-        ("description", "Description"),
-        ("acceptance_criteria", "Acceptance Criteria"),
-        ("scope", "Scope"),
-        ("parent", "Parent"),
-        ("discovered_from", "Discovered From"),
-        ("blocked_by", "Blocked By"),
-        ("links", "Links"),
-        ("notes", "Notes"),
-        ("created_at", "Created At"),
-        ("updated_at", "Updated At"),
+        ("id", "ID"), ("type", "Type"), ("title", "Title"),
+        ("status", "Status"), ("priority", "Priority"),
+        ("agent_type", "Agent Type"), ("description", "Description"),
+        ("acceptance_criteria", "Acceptance Criteria"), ("scope", "Scope"),
+        ("parent", "Parent"), ("discovered_from", "Discovered From"),
+        ("blocked_by", "Blocked By"), ("links", "Links"), ("notes", "Notes"),
+        ("created_at", "Created At"), ("updated_at", "Updated At"),
         ("closed_at", "Closed At"),
     ]
-
-    for key, label in fields:
-        value = crumb.get(key)
-        if value is None or value == "" or value == [] or value == {}:
-            continue
-        if isinstance(value, list):
-            print(f"{label}:")
-            for item in value:
-                print(f"  - {item}")
-        else:
-            print(f"{label}: {value}")
-
-    # Print any extra keys not in the known list
-    known_keys = {k for k, _ in fields}
-    for key, value in crumb.items():
-        if key not in known_keys and value not in (None, "", [], {}):
-            label = key.replace("_", " ").title()
-            print(f"{label}: {value}")
+    _print_fields(crumb, fields, show_extras=True)
 
 
 def cmd_create(args: argparse.Namespace) -> None:
-    """Create a new crumb and append it to tasks.jsonl.
-
-    Accepts either --title with optional flags, --from-json with a
-    JSON object containing explicit fields, or --from-file with a path
-    to a JSON file. Auto-assigns an ID from config if not provided in
-    the JSON payload.
-
-    When ``--json`` is given, outputs the newly created crumb as a JSON
-    object to stdout instead of the human-readable "created <ID>" message.
-    The object has the schema documented in :func:`_crumb_to_json_obj`.
-
-    Example JSON output::
-
-        {
-            "id": "AF-1",
-            "title": "My task",
-            "type": "task",
-            "status": "open",
-            "priority": "P2",
-            "description": null,
-            "acceptance_criteria": null,
-            "scope": null,
-            "links": null,
-            "notes": null,
-            "created_at": "2026-01-01T00:00:00Z",
-            "updated_at": "2026-01-01T00:00:00Z"
-        }
-
-    Args:
-        args: Parsed arguments from the create subparser.
-              args.json_output controls JSON vs human-readable output.
-    """
+    """Create a new crumb and append it to tasks.jsonl."""
     with FileLock():
         path = tasks_path()
         # tasks.jsonl may not exist yet; create it on first write
@@ -1047,51 +761,12 @@ def cmd_create(args: argparse.Namespace) -> None:
 
 
 def cmd_update(args: argparse.Namespace) -> None:
-    """Update crumb fields or append a note.
-
-    Handles --status, --title, --priority, --description, and --note.
-    Attempting to set status to a value that requires a special transition
-    (e.g. closed -> in_progress) exits 1 with guidance.
-
-    When ``--json`` is given, outputs the updated crumb as a JSON object to
-    stdout instead of the human-readable "updated <ID>" message.  The object
-    includes a ``"success": true`` field in addition to the full crumb record
-    fields from :func:`_crumb_to_json_obj`.
-
-    Example JSON output::
-
-        {
-            "success": true,
-            "id": "AF-1",
-            "title": "My task",
-            "type": "task",
-            "status": "in_progress",
-            "priority": "P2",
-            "description": null,
-            "acceptance_criteria": null,
-            "scope": null,
-            "links": null,
-            "notes": null,
-            "created_at": "2026-01-01T00:00:00Z",
-            "updated_at": "2026-03-21T12:00:00Z"
-        }
-
-    When no changes are made and ``--json`` is given, outputs::
-
-        {"success": false, "message": "no changes"}
-
-    Args:
-        args: Parsed arguments; args.id is the target crumb ID.
-              args.json_output controls JSON vs human-readable output.
-    """
+    """Update crumb fields or append a note."""
     with FileLock():
         path = require_tasks_jsonl()
         tasks = read_tasks(path)
 
-        crumb = _find_crumb(tasks, args.id)
-        if crumb is None:
-            die(f"crumb '{args.id}' not found")
-
+        crumb = _require_crumb(tasks, args.id)
         changed = False
 
         # --- status transition guard ---
@@ -1190,14 +865,7 @@ def cmd_update(args: argparse.Namespace) -> None:
 
 
 def cmd_close(args: argparse.Namespace) -> None:
-    """Close one or more crumbs, stamping closed_at on each.
-
-    Already-closed crumbs are silently skipped (idempotent). Each ID
-    is resolved independently; an unknown ID exits 1 immediately.
-
-    Args:
-        args: Parsed arguments; args.ids is the list of crumb IDs to close.
-    """
+    """Close one or more crumbs. Already-closed crumbs are skipped."""
     with FileLock():
         path = require_tasks_jsonl()
         tasks = read_tasks(path)
@@ -1240,19 +908,12 @@ def cmd_close(args: argparse.Namespace) -> None:
 
 
 def cmd_reopen(args: argparse.Namespace) -> None:
-    """Reopen a closed crumb, restoring status to open and clearing closed_at.
-
-    Args:
-        args: Parsed arguments; args.id is the target crumb ID.
-    """
+    """Reopen a closed crumb."""
     with FileLock():
         path = require_tasks_jsonl()
         tasks = read_tasks(path)
 
-        crumb = _find_crumb(tasks, args.id)
-        if crumb is None:
-            die(f"crumb '{args.id}' not found")
-
+        crumb = _require_crumb(tasks, args.id)
         if crumb.get("status") != "closed":
             current = crumb.get("status", "open")
             die(f"crumb '{args.id}' is not closed (current status: '{current}')")
@@ -1267,18 +928,7 @@ def cmd_reopen(args: argparse.Namespace) -> None:
 
 
 def _get_blocked_by(crumb: Dict[str, Any]) -> List[str]:
-    """Return the blocked_by list for a crumb, checking both top-level and links.
-
-    The blocked_by list may live at crumb["blocked_by"] (direct field) or
-    crumb["links"]["blocked_by"] (set by cmd_link). Both locations are
-    checked and merged to handle records created via --from-json or link.
-
-    Args:
-        crumb: A crumb record dict.
-
-    Returns:
-        List of blocker ID strings (may be empty).
-    """
+    """Return merged blocked_by list from both top-level and links fields."""
     top_level: List[str] = crumb.get("blocked_by") or []
     if not isinstance(top_level, list):
         top_level = [top_level] if top_level else []
@@ -1300,19 +950,7 @@ def _get_blocked_by(crumb: Dict[str, Any]) -> List[str]:
 def _is_crumb_blocked(
     crumb: Dict[str, Any], id_to_record: Dict[str, Dict[str, Any]]
 ) -> bool:
-    """Return True if crumb has at least one unresolved blocker.
-
-    A blocker is unresolved when its ID exists in id_to_record AND its
-    status is not 'closed'. Blockers that reference non-existent IDs are
-    treated as resolved (returns False contribution).
-
-    Args:
-        crumb: The crumb to evaluate.
-        id_to_record: Mapping of ID string to record dict for all tasks.
-
-    Returns:
-        True if at least one blocker is unresolved; False otherwise.
-    """
+    """Return True if crumb has at least one unresolved (non-closed) blocker."""
     for bid in _get_blocked_by(crumb):
         blocker = id_to_record.get(bid)
         if blocker is not None and blocker.get("status") != "closed":
@@ -1321,15 +959,7 @@ def _is_crumb_blocked(
 
 
 def cmd_ready(args: argparse.Namespace) -> None:
-    """List open crumbs with no unresolved blockers.
-
-    A crumb is ready when its status is 'open' AND every entry in its
-    blocked_by list either does not exist or refers to a closed crumb.
-    Supports --limit and --sort flags matching cmd_list behaviour.
-
-    Args:
-        args: Parsed arguments; args.limit and args.sort are optional.
-    """
+    """List open crumbs with no unresolved blockers."""
     path = require_tasks_jsonl()
     tasks = read_tasks(path)
 
@@ -1348,38 +978,17 @@ def cmd_ready(args: argparse.Namespace) -> None:
         and not _is_crumb_blocked(t, id_to_record)
     ]
 
-    # --- sort ---
-    sort_field = getattr(args, "sort", "created_at")
-    if sort_field == "priority":
-        results.sort(key=lambda t: _priority_sort_key(t.get("priority", "P4")))
-    elif sort_field == "status":
-        results.sort(key=lambda t: _status_sort_key(t.get("status", "")))
-    else:
-        results.sort(key=lambda t: t.get("created_at") or "")
-
-    # --- limit ---
+    _sort_crumbs(results, getattr(args, "sort", "created_at"))
     limit = getattr(args, "limit", None)
     if limit is not None and limit > 0:
         results = results[:limit]
 
     for t in results:
-        tid = t.get("id", "?")
-        title = t.get("title", "")
-        status = t.get("status", "")
-        priority = t.get("priority", "")
-        print(f"{tid:<12} {priority:<4} {status:<12} {title}")
+        print(_format_row(t))
 
 
 def cmd_blocked(args: argparse.Namespace) -> None:
-    """List open crumbs with at least one unresolved blocker.
-
-    A crumb is blocked when its status is 'open' AND at least one entry in
-    its blocked_by list refers to an existing crumb whose status is not
-    'closed'. Blockers referencing non-existent IDs are ignored.
-
-    Args:
-        args: Parsed arguments (no flags for blocked currently).
-    """
+    """List open crumbs with at least one unresolved blocker."""
     path = require_tasks_jsonl()
     tasks = read_tasks(path)
 
@@ -1398,37 +1007,18 @@ def cmd_blocked(args: argparse.Namespace) -> None:
         and _is_crumb_blocked(t, id_to_record)
     ]
 
-    results.sort(key=lambda t: t.get("created_at") or "")
-
+    _sort_crumbs(results, "created_at")
     for t in results:
-        tid = t.get("id", "?")
-        title = t.get("title", "")
-        status = t.get("status", "")
-        priority = t.get("priority", "")
-        print(f"{tid:<12} {priority:<4} {status:<12} {title}")
+        print(_format_row(t))
 
 
 def cmd_link(args: argparse.Namespace) -> None:
-    """Manage crumb links: parent, blocked_by, and discovered_from.
-
-    Multiple flags can be combined in a single invocation. Dangling
-    references are allowed — the doctor command validates referential
-    integrity.
-
-    Args:
-        args: Parsed arguments; args.id is the target crumb ID.
-            args.link_parent: Set the parent trail link.
-            args.blocked_by: Append to the blocked_by array.
-            args.remove_blocked_by: Remove from the blocked_by array.
-            args.discovered_from: Set the discovered_from provenance.
-    """
+    """Manage crumb links: parent, blocked_by, and discovered_from."""
     with FileLock():
         path = require_tasks_jsonl()
         tasks = read_tasks(path)
 
-        crumb = _find_crumb(tasks, args.id)
-        if crumb is None:
-            die(f"crumb '{args.id}' not found")
+        crumb = _require_crumb(tasks, args.id)
 
         # Ensure the links sub-dict exists
         links: Dict[str, Any] = crumb.get("links") or {}
@@ -1488,16 +1078,7 @@ def cmd_link(args: argparse.Namespace) -> None:
 
 
 def cmd_search(args: argparse.Namespace) -> None:
-    """Case-insensitive full-text search across crumb and trail titles and descriptions.
-
-    Matches the query string against each record's title and description fields
-    using str.lower() comparison. Prints one line per matching record using
-    the same format as cmd_list. Empty results produce no output and exit 0.
-
-    Args:
-        args: Parsed arguments; args.query is the search string.
-              args.json_output controls JSON vs human-readable output.
-    """
+    """Case-insensitive full-text search across titles and descriptions."""
     path = require_tasks_jsonl()
     tasks = read_tasks(path)
 
@@ -1516,22 +1097,11 @@ def cmd_search(args: argparse.Namespace) -> None:
         return
 
     for t in results:
-        tid = t.get("id", "?")
-        title = t.get("title", "")
-        status = t.get("status", "")
-        priority = t.get("priority", "")
-        print(f"{tid:<12} {priority:<4} {status:<12} {title}")
+        print(_format_row(t))
 
 
 def cmd_trail(args: argparse.Namespace) -> None:
-    """Trail subcommands: list, show, create, close.
-
-    Dispatches on args.trail_command. Trails are tasks.jsonl records
-    with type='trail' and T-prefixed IDs (e.g., AF-T1).
-
-    Args:
-        args: Parsed arguments; args.trail_command is the sub-subcommand.
-    """
+    """Dispatch trail subcommands: list, show, create, close."""
     trail_cmd = getattr(args, "trail_command", None)
 
     if trail_cmd == "create":
@@ -1547,14 +1117,7 @@ def cmd_trail(args: argparse.Namespace) -> None:
 
 
 def _cmd_trail_create(args: argparse.Namespace) -> None:
-    """Create a new trail record with an AF-T{n} auto-ID.
-
-    Reads next_trail_id from config.json, builds the trail record,
-    appends it to tasks.jsonl, and increments the counter.
-
-    Args:
-        args: Parsed arguments; args.title is required.
-    """
+    """Create a new trail with an auto-assigned T-prefixed ID."""
     with FileLock():
         path = tasks_path()
         if path.exists():
@@ -1596,43 +1159,23 @@ def _cmd_trail_create(args: argparse.Namespace) -> None:
 
 
 def _cmd_trail_show(args: argparse.Namespace) -> None:
-    """Show trail fields and its child crumbs.
-
-    Args:
-        args: Parsed arguments; args.id is the trail ID.
-    """
+    """Show trail fields and its child crumbs."""
     path = require_tasks_jsonl()
     tasks = read_tasks(path)
 
-    trail = _find_crumb(tasks, args.id)
-    if trail is None:
-        die(f"trail '{args.id}' not found")
+    trail = _require_crumb(tasks, args.id, label="trail")
     if trail.get("type") != "trail":
         die(f"'{args.id}' is not a trail")
 
-    # Print trail fields
     fields = [
-        ("id", "ID"),
-        ("type", "Type"),
-        ("title", "Title"),
-        ("status", "Status"),
-        ("priority", "Priority"),
+        ("id", "ID"), ("type", "Type"), ("title", "Title"),
+        ("status", "Status"), ("priority", "Priority"),
         ("description", "Description"),
         ("acceptance_criteria", "Acceptance Criteria"),
-        ("created_at", "Created At"),
-        ("updated_at", "Updated At"),
+        ("created_at", "Created At"), ("updated_at", "Updated At"),
         ("closed_at", "Closed At"),
     ]
-    for key, label in fields:
-        value = trail.get(key)
-        if value is None or value == "" or value == [] or value == {}:
-            continue
-        if isinstance(value, list):
-            print(f"{label}:")
-            for item in value:
-                print(f"  - {item}")
-        else:
-            print(f"{label}: {value}")
+    _print_fields(trail, fields)
 
     # Print child crumbs
     children = _get_trail_children(tasks, args.id)
@@ -1643,19 +1186,11 @@ def _cmd_trail_show(args: argparse.Namespace) -> None:
         print("  (none)")
     else:
         for child in children:
-            cid = child.get("id", "?")
-            title = child.get("title", "")
-            status = child.get("status", "")
-            priority = child.get("priority", "")
-            print(f"  {cid:<12} {priority:<4} {status:<12} {title}")
+            print(_format_row(child, indent=2))
 
 
 def _cmd_trail_list(args: argparse.Namespace) -> None:
-    """List all trails with completion counts (X/Y closed).
-
-    Args:
-        args: Parsed arguments (no additional flags for trail list).
-    """
+    """List all trails with completion counts."""
     path = require_tasks_jsonl()
     tasks = read_tasks(path)
 
@@ -1677,20 +1212,12 @@ def _cmd_trail_list(args: argparse.Namespace) -> None:
 
 
 def _cmd_trail_close(args: argparse.Namespace) -> None:
-    """Close a trail, rejecting if any children are still open.
-
-    Exits 1 with stderr listing open children if any exist.
-
-    Args:
-        args: Parsed arguments; args.id is the trail ID.
-    """
+    """Close a trail, rejecting if any children are still open."""
     with FileLock():
         path = require_tasks_jsonl()
         tasks = read_tasks(path)
 
-        trail = _find_crumb(tasks, args.id)
-        if trail is None:
-            die(f"trail '{args.id}' not found")
+        trail = _require_crumb(tasks, args.id, label="trail")
         if trail.get("type") != "trail":
             die(f"'{args.id}' is not a trail")
 
@@ -1721,327 +1248,45 @@ def _cmd_trail_close(args: argparse.Namespace) -> None:
 
 
 def cmd_tree(args: argparse.Namespace) -> None:
-    """Display trail/crumb hierarchy as an indented tree.
-
-    Without an ID argument: shows all trails followed by their child crumbs
-    (indented by 2 spaces), then orphan crumbs (no parent trail) at the end.
-    With an ID argument: shows only the specified trail and its children;
-    exits 1 if the ID is not found or is not a trail.
-
-    Args:
-        args: Parsed arguments; args.id is the optional trail ID to scope to.
-    """
+    """Display trail/crumb hierarchy as an indented tree."""
     path = require_tasks_jsonl()
     tasks = read_tasks(path)
 
     trail_id_filter: Optional[str] = getattr(args, "id", None)
 
     if trail_id_filter is not None:
-        # Scoped to a single trail
-        trail = _find_crumb(tasks, trail_id_filter)
-        if trail is None:
-            die(f"trail '{trail_id_filter}' not found")
+        trail = _require_crumb(tasks, trail_id_filter, label="trail")
         if trail.get("type") != "trail":
             die(f"'{trail_id_filter}' is not a trail")
-
-        tid = trail.get("id", "?")
-        title = trail.get("title", "")
-        status = trail.get("status", "")
-        priority = trail.get("priority", "")
-        print(f"{tid:<12} {priority:<4} {status:<12} {title}")
-
-        children = _get_trail_children(tasks, trail_id_filter)
-        for child in children:
-            cid = child.get("id", "?")
-            ctitle = child.get("title", "")
-            cstatus = child.get("status", "")
-            cpriority = child.get("priority", "")
-            print(f"  {cid:<10} {cpriority:<4} {cstatus:<12} {ctitle}")
+        print(_format_row(trail))
+        for child in _get_trail_children(tasks, trail_id_filter):
+            print(_format_row(child, indent=2))
         return
 
     # Full tree: all trails with children, then orphans
     trails = [t for t in tasks if t.get("type") == "trail"]
-
-    # Collect all non-trail records and find orphans
     non_trails = [t for t in tasks if t.get("type") != "trail"]
-
-    # Build a set of non-trail IDs that have a valid parent link
     child_ids: Set[str] = set()
 
     for trail in trails:
-        tid = trail.get("id", "?")
-        title = trail.get("title", "")
-        status = trail.get("status", "")
-        priority = trail.get("priority", "")
-        print(f"{tid:<12} {priority:<4} {status:<12} {title}")
+        print(_format_row(trail))
+        for child in _get_trail_children(tasks, trail.get("id", "?")):
+            print(_format_row(child, indent=2))
+            child_ids.add(child.get("id", "?"))
 
-        children = _get_trail_children(tasks, tid)
-        for child in children:
-            cid = child.get("id", "?")
-            ctitle = child.get("title", "")
-            cstatus = child.get("status", "")
-            cpriority = child.get("priority", "")
-            print(f"  {cid:<10} {cpriority:<4} {cstatus:<12} {ctitle}")
-            child_ids.add(cid)
-
-    # Print orphan crumbs (non-trail, no valid parent link)
-    orphans = [
-        t for t in non_trails
-        if t.get("id") not in child_ids
-    ]
+    orphans = [t for t in non_trails if t.get("id") not in child_ids]
     if orphans:
         print("(orphans)")
         for t in orphans:
-            tid = t.get("id", "?")
-            title = t.get("title", "")
-            status = t.get("status", "")
-            priority = t.get("priority", "")
-            print(f"  {tid:<10} {priority:<4} {status:<12} {title}")
-
-
-_BEADS_PRIORITY_MAP: Dict[int, str] = {
-    0: "P0",
-    1: "P1",
-    2: "P2",
-    3: "P3",
-    4: "P4",
-}
-
-_BEADS_STATUS_MAP: Dict[str, str] = {
-    "open": "open",
-    "in_progress": "in_progress",
-    "closed": "closed",
-}
-
-
-def _convert_beads_record(
-    beads_rec: Dict[str, Any],
-    epic_id_map: Dict[str, str],
-    config: Dict[str, Any],
-) -> Dict[str, Any]:
-    """Convert a single Beads issue record to crumb format.
-
-    Args:
-        beads_rec: A single record from Beads issues.jsonl.
-        epic_id_map: Maps Beads epic IDs to their generated trail IDs.
-        config: Current config dict (may be mutated to advance next_trail_id).
-
-    Returns:
-        A crumb-format record dict.
-    """
-    beads_id: str = beads_rec.get("id", "")
-    issue_type: str = beads_rec.get("issue_type", "task")
-    is_epic = issue_type == "epic"
-
-    # --- type mapping ---
-    # Beads epics become crumb trails; task/bug/feature map directly;
-    # any unrecognised Beads type falls back to "task".
-    if is_epic:
-        crumb_type = "trail"
-    elif issue_type in ("task", "bug", "feature"):
-        crumb_type = issue_type
-    else:
-        crumb_type = "task"
-
-    # --- ID assignment ---
-    # Epics get new T-prefixed trail IDs (AF-T1, AF-T2, …) from the running
-    # counter in config.  The mapping from old Beads epic ID → new trail ID
-    # is stored in epic_id_map so that child records can resolve their parent
-    # link in the post-pass (_resolve_beads_epic_refs).
-    # Non-epic records keep their existing Beads IDs unchanged.
-    if is_epic:
-        prefix = config["prefix"]
-        next_tid = int(config.get("next_trail_id", 1))
-        trail_id = f"{prefix}-T{next_tid}"
-        config["next_trail_id"] = next_tid + 1  # advance counter (mutates config in-place)
-        epic_id_map[beads_id] = trail_id  # register mapping for post-pass
-        crumb_id = trail_id
-    else:
-        crumb_id = beads_id
-
-    # --- priority mapping ---
-    # Beads stores priority as an integer (0 = highest) or as a P-string.
-    # Convert integer to P-string via lookup table; pass through valid P-strings
-    # unchanged; default to config's default_priority if neither applies.
-    raw_priority = beads_rec.get("priority")
-    if isinstance(raw_priority, int) and raw_priority in _BEADS_PRIORITY_MAP:
-        priority = _BEADS_PRIORITY_MAP[raw_priority]
-    elif isinstance(raw_priority, str) and raw_priority in VALID_PRIORITIES:
-        priority = raw_priority  # already in crumb format
-    else:
-        priority = config.get("default_priority", "P2")  # unknown — use project default
-
-    # --- status mapping ---
-    # Beads and crumb share the same status vocabulary, so this is a passthrough
-    # with a safe default of "open" for any unrecognised value.
-    raw_status = beads_rec.get("status", "open")
-    status = _BEADS_STATUS_MAP.get(raw_status, "open")
-
-    now = now_iso()
-    record: Dict[str, Any] = {
-        "id": crumb_id,
-        "type": crumb_type,
-        "title": beads_rec.get("title", ""),
-        "status": status,
-        "priority": priority,
-        # Preserve original timestamps; fall back to current time if absent
-        "created_at": beads_rec.get("created_at", now),
-        "updated_at": beads_rec.get("updated_at", now),
-    }
-
-    # Optional fields: only include in output record if present in source
-    if beads_rec.get("description"):
-        record["description"] = beads_rec["description"]
-    if beads_rec.get("closed_at"):
-        record["closed_at"] = beads_rec["closed_at"]
-
-    # --- dependency mapping (first pass: parent-child only) ---
-    # Scan each Beads dependency entry.  "parent-child" deps set links.parent.
-    # "blocks" deps are intentionally deferred to _apply_blocks_deps because
-    # target records may not have been converted yet at this point in the loop.
-    deps: List[Dict[str, Any]] = beads_rec.get("dependencies") or []
-    if isinstance(deps, list) and deps:
-        parent_id: Optional[str] = None
-        for dep in deps:
-            if not isinstance(dep, dict):
-                continue
-            dep_type = dep.get("type", "")
-            depends_on = dep.get("depends_on_id", "")
-            if dep_type == "parent-child" and depends_on:
-                # This record is a child of depends_on (epic/trail).
-                # If multiple parent-child deps exist, last one wins (intentional).
-                parent_id = dep.get("depends_on_id", "")
-            # "blocks" deps are handled by _apply_blocks_deps post-pass
-
-        links: Dict[str, Any] = {}
-        if parent_id:
-            # Store raw Beads parent ID here; _resolve_beads_epic_refs will
-            # rewrite it to the generated trail ID if parent was an epic.
-            links["parent"] = parent_id
-        if links:
-            record["links"] = links
-
-    return record
-
-
-def _resolve_beads_epic_refs(
-    records: List[Dict[str, Any]], epic_id_map: Dict[str, str]
-) -> None:
-    """Update links in records to replace Beads epic IDs with trail IDs.
-
-    Called after all records are converted so epic_id_map is fully populated.
-    Mutates records in-place.
-
-    Args:
-        records: List of converted crumb records.
-        epic_id_map: Maps Beads epic ID → generated trail ID.
-    """
-    for record in records:
-        links = record.get("links")
-        if not isinstance(links, dict):
-            continue  # no links to rewrite on this record
-
-        # Rewrite links.parent: if the stored value is a Beads epic ID,
-        # replace it with the generated trail ID (e.g. "BD-42" → "AF-T3").
-        # IDs that are already crumb IDs (non-epics) are not in epic_id_map
-        # and pass through unchanged.
-        parent = links.get("parent")
-        if parent and parent in epic_id_map:
-            links["parent"] = epic_id_map[parent]
-
-        # Rewrite each entry in links.blocked_by the same way.
-        # epic_id_map.get(bid, bid) returns the mapped trail ID if the
-        # blocker was an epic, or the original ID otherwise.
-        blocked_by: List[str] = links.get("blocked_by") or []
-        if isinstance(blocked_by, list) and blocked_by:
-            links["blocked_by"] = [
-                epic_id_map.get(bid, bid) for bid in blocked_by
-            ]
-
-
-def _apply_blocks_deps(
-    raw_beads: List[Dict[str, Any]],
-    records: List[Dict[str, Any]],
-    epic_id_map: Dict[str, str],
-) -> None:
-    """Apply blocks-type dependencies to the correct target records.
-
-    A Beads dep {issue_id: A, depends_on_id: B, type: "blocks"} means
-    "A blocks B", so B's links.blocked_by should contain A (not A's).
-    Mutates records in-place.
-
-    Args:
-        raw_beads: Original Beads records (used to read dependency lists).
-        records: List of converted crumb records to mutate.
-        epic_id_map: Maps Beads epic ID → generated trail ID.
-    """
-    # Build a fast O(1) lookup from crumb ID → converted record so we can
-    # mutate target records directly when we find a "blocks" relationship.
-    record_index: Dict[str, Dict[str, Any]] = {
-        r["id"]: r for r in records if r.get("id")
-    }
-
-    # Build a translation table from every Beads ID to its crumb ID.
-    # For epics this uses the generated trail ID from epic_id_map;
-    # for all other records the Beads ID and crumb ID are identical.
-    beads_id_to_crumb_id: Dict[str, str] = {}
-    for beads_rec in raw_beads:
-        beads_id = beads_rec.get("id", "")
-        if beads_id in epic_id_map:
-            beads_id_to_crumb_id[beads_id] = epic_id_map[beads_id]  # epic → trail ID
-        else:
-            beads_id_to_crumb_id[beads_id] = beads_id  # non-epic: ID unchanged
-
-    # Walk every raw Beads record and look for "blocks" dependencies.
-    # Beads semantics: dep {issue_id: A, depends_on_id: B, type: "blocks"}
-    # means "A blocks B", so we append A's crumb ID to B's blocked_by list.
-    for beads_rec in raw_beads:
-        source_beads_id = beads_rec.get("id", "")
-        # Translate the blocking issue's Beads ID to its crumb ID
-        source_crumb_id = beads_id_to_crumb_id.get(source_beads_id, source_beads_id)
-        deps: List[Dict[str, Any]] = beads_rec.get("dependencies") or []
-        if not isinstance(deps, list):
-            continue
-        for dep in deps:
-            if not isinstance(dep, dict):
-                continue
-            if dep.get("type") != "blocks":
-                continue  # skip parent-child and any other dep types
-            target_beads_id = dep.get("depends_on_id", "")
-            if not target_beads_id:
-                continue  # malformed dep entry; skip
-            # Translate the blocked issue's Beads ID to its crumb ID
-            target_crumb_id = beads_id_to_crumb_id.get(target_beads_id, target_beads_id)
-            target_record = record_index.get(target_crumb_id)
-            if target_record is None:
-                print(
-                    f"warning: blocks dep from '{source_crumb_id}' targets "
-                    f"'{target_crumb_id}' which is not in the converted set — skipping",
-                    file=sys.stderr,
-                )
-                continue  # target not in converted set (e.g. skipped as duplicate)
-            # Append source to target's blocked_by list (no duplicates)
-            links = target_record.setdefault("links", {})
-            blocked_by: List[str] = links.setdefault("blocked_by", [])
-            if source_crumb_id not in blocked_by:
-                blocked_by.append(source_crumb_id)
+            print(_format_row(t, indent=2))
 
 
 def cmd_import(args: argparse.Namespace) -> None:
-    """Import crumbs from a JSONL file, with optional Beads format migration.
+    """Import crumbs from a JSONL file.
 
-    Plain mode: reads the file line-by-line, skips malformed JSON (with
-    warning), skips duplicate IDs (with warning), appends valid entries to
-    tasks.jsonl. Updates config counters after import.
-
-    Beads mode (--from-beads): converts Beads issues.jsonl format to crumb
-    format. Priority integers map to P0-P4. Type 'epic' becomes 'trail'
-    with a T-prefixed ID. Dependencies are mapped to links.parent /
-    links.blocked_by.
-
-    Args:
-        args: Parsed arguments; args.file is the input path,
-              args.from_beads enables Beads migration mode.
+    Reads line-by-line, skips malformed JSON and duplicate IDs (with
+    warnings), appends valid entries to tasks.jsonl, and updates config
+    counters after import.
     """
     import_path = Path(args.file)
     if not import_path.exists():
@@ -2064,94 +1309,44 @@ def cmd_import(args: argparse.Namespace) -> None:
         skipped_malformed = 0
         skipped_duplicate = 0
 
-        if getattr(args, "from_beads", False):
-            # --- Beads migration mode ---
-            # Two-pass: first collect all records, then resolve epic refs
-            raw_beads: List[Dict[str, Any]] = []
-            try:
-                with open(import_path, "r", encoding="utf-8") as fh:
-                    for lineno, line in enumerate(fh, start=1):
-                        line = line.rstrip("\n")
-                        if not line:
-                            continue
-                        try:
-                            raw_beads.append(json.loads(line))
-                        except json.JSONDecodeError as exc:
-                            print(
-                                f"warning: skipping malformed JSON on line {lineno}: {exc}",
-                                file=sys.stderr,
-                            )
-                            skipped_malformed += 1
-            except OSError as exc:
-                die(f"cannot read {import_path}: {exc}")
+        try:
+            with open(import_path, "r", encoding="utf-8") as fh:
+                for lineno, line in enumerate(fh, start=1):
+                    line = line.rstrip("\n")
+                    if not line:
+                        continue
+                    try:
+                        record: Dict[str, Any] = json.loads(line)
+                    except json.JSONDecodeError as exc:
+                        print(
+                            f"warning: skipping malformed JSON on line {lineno}: {exc}",
+                            file=sys.stderr,
+                        )
+                        skipped_malformed += 1
+                        continue
 
-            # Sort epics first so epic_id_map is populated before children
-            epic_id_map: Dict[str, str] = {}
-            epics = [r for r in raw_beads if r.get("issue_type") == "epic"]
-            non_epics = [r for r in raw_beads if r.get("issue_type") != "epic"]
+                    crumb_id = record.get("id", "")
+                    if not crumb_id:
+                        print(
+                            f"warning: skipping record on line {lineno}: missing 'id' field",
+                            file=sys.stderr,
+                        )
+                        skipped_malformed += 1
+                        continue
 
-            converted: List[Dict[str, Any]] = []
-            for beads_rec in epics + non_epics:
-                record = _convert_beads_record(beads_rec, epic_id_map, config)
-                crumb_id = record.get("id", "")
-                if crumb_id in existing_ids:
-                    print(
-                        f"warning: skipping duplicate ID '{crumb_id}'",
-                        file=sys.stderr,
-                    )
-                    skipped_duplicate += 1
-                    continue
-                existing_ids.add(crumb_id)
-                converted.append(record)
+                    if crumb_id in existing_ids:
+                        print(
+                            f"warning: skipping duplicate ID '{crumb_id}' on line {lineno}",
+                            file=sys.stderr,
+                        )
+                        skipped_duplicate += 1
+                        continue
 
-            # Resolve epic ID references after all records are converted
-            _resolve_beads_epic_refs(converted, epic_id_map)
-            # Apply blocks deps in reverse: A blocks B → B.blocked_by = [A]
-            _apply_blocks_deps(raw_beads, converted, epic_id_map)
-
-            existing_tasks.extend(converted)
-            imported_count = len(converted)
-
-        else:
-            # --- Plain JSONL import mode ---
-            try:
-                with open(import_path, "r", encoding="utf-8") as fh:
-                    for lineno, line in enumerate(fh, start=1):
-                        line = line.rstrip("\n")
-                        if not line:
-                            continue
-                        try:
-                            record: Dict[str, Any] = json.loads(line)
-                        except json.JSONDecodeError as exc:
-                            print(
-                                f"warning: skipping malformed JSON on line {lineno}: {exc}",
-                                file=sys.stderr,
-                            )
-                            skipped_malformed += 1
-                            continue
-
-                        crumb_id = record.get("id", "")
-                        if not crumb_id:
-                            print(
-                                f"warning: skipping record on line {lineno}: missing 'id' field",
-                                file=sys.stderr,
-                            )
-                            skipped_malformed += 1
-                            continue
-
-                        if crumb_id in existing_ids:
-                            print(
-                                f"warning: skipping duplicate ID '{crumb_id}' on line {lineno}",
-                                file=sys.stderr,
-                            )
-                            skipped_duplicate += 1
-                            continue
-
-                        existing_ids.add(crumb_id)
-                        existing_tasks.append(record)
-                        imported_count += 1
-            except OSError as exc:
-                die(f"cannot read {import_path}: {exc}")
+                    existing_ids.add(crumb_id)
+                    existing_tasks.append(record)
+                    imported_count += 1
+        except OSError as exc:
+            die(f"cannot read {import_path}: {exc}")
 
         # --- Update config counters to exceed highest imported numeric ID ---
         # Clamp to 0 so corrupt config values (e.g. 0 or missing) cannot
@@ -2202,40 +1397,9 @@ def cmd_import(args: argparse.Namespace) -> None:
 def cmd_doctor(args: argparse.Namespace) -> None:
     """Validate tasks.jsonl integrity and optionally repair issues.
 
-    Checks performed:
-    - Malformed JSON lines (reported with line numbers)
-    - Duplicate IDs (error)
-    - Dangling parent links (pointing to non-existent or non-trail IDs — error)
-    - Dangling blocked_by references (pointing to non-existent IDs — warning)
-    - Orphan crumbs (non-trail records with no parent — warning)
-
-    With --fix, removes dangling blocked_by references atomically.
-    Note: --fix is an implementation extension not documented in the
-    design spec; the spec says "optionally auto-repairs" without naming
-    the flag.
-
-    Exit code: 0 if no errors (warnings alone do not set exit code 1);
-               1 if any errors are found.
-
-    When ``--json`` is given, outputs a JSON diagnostic report to stdout
-    instead of printing to stderr.  The report has the following schema::
-
-        {
-            "ok": true,
-            "error_count": 0,
-            "warning_count": 0,
-            "errors": [],
-            "warnings": [],
-            "fixes_applied": []
-        }
-
-    ``ok`` is ``true`` when ``error_count`` is 0.  Exit code semantics are
-    unchanged: exit 1 when errors are present, exit 0 for warnings-only or
-    clean results.
-
-    Args:
-        args: Parsed arguments; args.fix enables auto-repair.
-              args.json_output controls JSON vs human-readable output.
+    Checks: malformed JSON, duplicate IDs, dangling parent/blocked_by
+    links, orphan crumbs. With --fix, removes dangling blocked_by refs.
+    Exit 1 on errors; warnings alone exit 0.
     """
     path = require_tasks_jsonl()
 
@@ -2393,22 +1557,7 @@ def cmd_doctor(args: argparse.Namespace) -> None:
 
 
 def cmd_init(args: argparse.Namespace) -> None:
-    """Bootstrap the .crumbs/ directory structure in the current directory.
-
-    Creates the following files if they do not already exist:
-      - ``.crumbs/``            — the directory itself
-      - ``.crumbs/config.json`` — prefix and counter settings
-      - ``.crumbs/tasks.jsonl`` — empty task store
-    Also appends ``.crumbs/`` to the project ``.gitignore`` when the entry
-    is not already present.
-
-    If ``.crumbs/`` already exists this command is a no-op and exits 0 so
-    it is safe to run multiple times (idempotent).
-
-    Args:
-        args: Parsed arguments.  ``args.prefix`` is the ID prefix string
-            (e.g. ``"AF"``).  Defaults to ``"AF"`` when not supplied.
-    """
+    """Bootstrap .crumbs/ directory with config.json and tasks.jsonl. Idempotent."""
     cwd = Path.cwd().resolve()
     crumbs = cwd / CRUMBS_DIR_NAME
 
@@ -2483,36 +1632,7 @@ _SLOT_RE: re.Pattern[str] = re.compile(r"\{\{([A-Z][A-Z0-9_]*)\}\}")
 
 
 def render_template(template: str, slots: Dict[str, str]) -> str:
-    """Expand ``{{SLOT_NAME}}`` placeholders in *template* with values from *slots*.
-
-    Performs a single-pass, left-to-right substitution using ``re.sub``.
-    Each slot placeholder in the template is replaced with the corresponding
-    string value from *slots*.  Replacement values are treated as plain text:
-    if a value itself contains ``{{OTHER}}``, that inner placeholder is NOT
-    expanded (single-pass guarantee).
-
-    Validation rules (checked before any substitution takes place):
-    - Every slot name found in the template must have a corresponding entry in
-      *slots* — missing slots raise :class:`SystemExit` (via :func:`die`).
-    - Every key in *slots* must appear at least once in the template — extra
-      slots that are never used raise :class:`SystemExit` (via :func:`die`).
-
-    Slots inside fenced code blocks (````` ``` ```) are expanded identically to
-    slots anywhere else in the template — there is no block-level exclusion.
-
-    Args:
-        template: Raw template text containing zero or more ``{{SLOT_NAME}}``
-            placeholders.
-        slots: Mapping of slot name to replacement value.  Keys must be
-            uppercase strings matching ``[A-Z][A-Z0-9_]*``.
-
-    Returns:
-        The rendered string with all placeholders replaced.
-
-    Raises:
-        SystemExit: If a template slot is missing from *slots*, or if *slots*
-            contains a key that does not appear in the template.
-    """
+    """Single-pass {{SLOT_NAME}} expansion. Dies on missing or extra slots."""
     # Collect every distinct slot name present in the template.
     template_slots: List[str] = list(dict.fromkeys(_SLOT_RE.findall(template)))
 
@@ -2537,23 +1657,7 @@ def render_template(template: str, slots: Dict[str, str]) -> str:
 
 
 def cmd_render_template(args: argparse.Namespace) -> None:
-    """Render a template file by expanding ``{{SLOT_NAME}}`` placeholders.
-
-    Reads the template file at *args.template*, parses ``--slot KEY=VALUE``
-    arguments into a slot mapping, validates that all template slots are
-    provided and no extra slots are given, then writes the rendered output to
-    stdout.
-
-    Args:
-        args: Parsed arguments.
-            ``args.template`` (str): Path to the template file.
-            ``args.slot`` (List[str] | None): Zero or more ``KEY=VALUE``
-                strings from repeated ``--slot`` flags.
-
-    Raises:
-        SystemExit: If the template file does not exist, a slot is missing
-            or extra, or a ``--slot`` value is malformed (no ``=`` separator).
-    """
+    """Render a template file by expanding {{SLOT_NAME}} placeholders."""
     template_path = Path(args.template)
     if not template_path.is_file():
         die(f"template not found: {args.template}")
@@ -2583,37 +1687,10 @@ def cmd_render_template(args: argparse.Namespace) -> None:
 def cmd_prune(args: argparse.Namespace) -> None:
     """Delete session directories under .crumbs/sessions/ older than --days.
 
-    Enumerates ``.crumbs/sessions/`` children, filters to those matching a
-    known session prefix (``_session-``, ``_decompose-``, ``_review-``),
-    parses the name-embedded ``YYYYMMDD-HHMMSS`` timestamp to compute age,
-    and deletes directories exceeding the retention threshold.  The age
-    comparison is inclusive: a directory exactly ``--days`` days old *is*
-    pruned (``age_days >= days``, not ``>``).  Directories modified within
-    the last ``ACTIVE_GUARD_MINUTES`` minutes are never deleted regardless
-    of age.
-
-    With ``--dry-run`` the would-be pruned and would-be retained lists are
-    printed without any deletion taking place.
-
-    **Timezone note**: Age is computed using naive local-time datetimes on
-    both sides of the comparison.  ``datetime.now()`` (below) and
-    ``_parse_session_dir_timestamp`` (which calls ``datetime.strptime``) both
-    return naive datetimes interpreted as local wall-clock time.  The
-    comparison is therefore internally consistent as long as the process runs
-    in the same timezone as the one in effect when the session directory was
-    created.  If sessions are created in one timezone and pruned in another
-    (e.g., a UTC server pruning directories stamped in UTC-8), age may be
-    off by the UTC offset, causing borderline directories to be pruned or
-    retained one day early or late.
-
-    Args:
-        args: Parsed arguments.
-            ``args.days`` (int): Retention threshold in days (default 14).
-            ``args.dry_run`` (bool): When True, list candidates but do not delete.
-
-    Raises:
-        SystemExit: If ``--days`` is negative, or on unrecoverable errors.
+    Active sessions (mtime within ACTIVE_GUARD_MINUTES) are never deleted.
     """
+    # Timezone note: age uses naive local-time datetimes on both sides,
+    # so cross-timezone pruning may be off by up to one day.
     days: int = args.days
     if days < 0:
         die(f"--days must be 0 or greater, got {days}")
@@ -2726,11 +1803,7 @@ def cmd_prune(args: argparse.Namespace) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build and return the top-level argument parser with all subcommands.
-
-    Returns:
-        Configured ArgumentParser ready to parse sys.argv[1:].
-    """
+    """Build and return the top-level argument parser with all subcommands."""
     parser = argparse.ArgumentParser(
         prog="crumb",
         description="Lightweight JSONL task tracker for ant-farm.",
@@ -2749,7 +1822,7 @@ def build_parser() -> argparse.ArgumentParser:
             "  search      Full-text search titles and descriptions\n"
             "  trail       Trail subcommands (list, show, create, close)\n"
             "  tree        Show trail/crumb hierarchy\n"
-            "  import      Bulk import from JSONL or migrate from Beads\n"
+            "  import      Bulk import from JSONL\n"
             "  doctor      Validate tasks.jsonl integrity\n"
             "  init        Bootstrap .crumbs/ directory structure\n"
             "  prune       Delete old session directories under .crumbs/sessions/\n"
@@ -2778,23 +1851,13 @@ def build_parser() -> argparse.ArgumentParser:
         default="created_at",
     )
     p_list.add_argument("--short", action="store_true")
-    p_list.add_argument(
-        "--json",
-        action="store_true",
-        dest="json_output",
-        help="Output a JSON array of crumb objects instead of human-readable text.",
-    )
+    _add_json_flag(p_list)
     p_list.set_defaults(func=cmd_list)
 
     # --- show ---
     p_show = sub.add_parser("show", help="Show full detail for a crumb or trail")
     p_show.add_argument("id", metavar="ID")
-    p_show.add_argument(
-        "--json",
-        action="store_true",
-        dest="json_output",
-        help="Output a single JSON object instead of human-readable text.",
-    )
+    _add_json_flag(p_show)
     p_show.set_defaults(func=cmd_show)
 
     # --- create ---
@@ -2805,12 +1868,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_create.add_argument("--priority", choices=VALID_PRIORITIES)
     p_create.add_argument("--type", dest="crumb_type", choices=["task", "bug", "feature"])
     p_create.add_argument("--description", metavar="TEXT")
-    p_create.add_argument(
-        "--json",
-        action="store_true",
-        dest="json_output",
-        help="Output the created crumb as a JSON object instead of a confirmation message.",
-    )
+    _add_json_flag(p_create)
     p_create.set_defaults(func=cmd_create)
 
     # --- update ---
@@ -2823,15 +1881,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_update.add_argument("--description", metavar="TEXT")
     p_update.add_argument("--from-json", dest="from_json", metavar="JSON",
                           help="Merge a JSON object into the crumb (partial update)")
-    p_update.add_argument(
-        "--json",
-        action="store_true",
-        dest="json_output",
-        help=(
-            "Output the updated crumb as a JSON object (with a 'success' field) "
-            "instead of a confirmation message."
-        ),
-    )
+    _add_json_flag(p_update)
     p_update.set_defaults(func=cmd_update)
 
     # --- close ---
@@ -2870,12 +1920,7 @@ def build_parser() -> argparse.ArgumentParser:
     # --- search ---
     p_search = sub.add_parser("search", help="Full-text search titles and descriptions")
     p_search.add_argument("query", metavar="QUERY")
-    p_search.add_argument(
-        "--json",
-        action="store_true",
-        dest="json_output",
-        help="Output a JSON array of matching crumb objects instead of human-readable text.",
-    )
+    _add_json_flag(p_search)
     p_search.set_defaults(func=cmd_search)
 
     # --- trail ---
@@ -2910,14 +1955,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_tree.set_defaults(func=cmd_tree)
 
     # --- import ---
-    p_import = sub.add_parser("import", help="Bulk import from JSONL or migrate from Beads")
+    p_import = sub.add_parser("import", help="Bulk import from JSONL")
     p_import.add_argument("file", metavar="FILE")
-    p_import.add_argument(
-        "--from-beads",
-        action="store_true",
-        dest="from_beads",
-        help="Migrate Beads issues.jsonl format",
-    )
     p_import.set_defaults(func=cmd_import)
 
     # --- doctor ---
@@ -2927,15 +1966,7 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Remove dangling blocked_by references automatically",
     )
-    p_doctor.add_argument(
-        "--json",
-        action="store_true",
-        dest="json_output",
-        help=(
-            "Output a JSON diagnostic report instead of printing to stderr. "
-            "Schema: {ok, error_count, warning_count, errors, warnings, fixes_applied}."
-        ),
-    )
+    _add_json_flag(p_doctor)
     p_doctor.set_defaults(func=cmd_doctor)
 
     # --- init ---
@@ -3006,16 +2037,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
-    """Parse arguments and dispatch to the appropriate subcommand handler.
-
-    Entry point for the ``crumb`` CLI. Cleans up stale .tmp files at startup,
-    builds the argument parser, and calls the subcommand function stored in
-    ``args.func``. If no subcommand is given, prints help and exits 0.
-
-    Raises:
-        SystemExit: On invalid arguments (argparse), missing .crumbs/, or
-            any subcommand that calls die().
-    """
+    """Parse arguments and dispatch to the appropriate subcommand handler."""
     cleanup_stale_tmp_files()
 
     parser = build_parser()
