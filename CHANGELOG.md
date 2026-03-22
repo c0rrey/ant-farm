@@ -1,5 +1,51 @@
 # Changelog
 
+## 2026-03-22 — Session 20260322-115432 (Defensive Bash Hardening & Clarity — 25-Task Sweep)
+
+### Summary
+
+Session executed 25 tasks across two phases: a 20-task Wave 1 targeting defensive correctness, naming clarity, and comment quality across four scripts (`build-review-prompts.sh`, `setup.sh`, `parse-progress-log.sh`, `generate-agent-catalog.sh`) and their test files, followed by a 5-task fix cycle addressing all issues raised by the Round 1 Nitpicker team. Key behavioral fixes include bash 3.2–safe array expansion, atomic temp-file rename, cleanup trap race-window closure, unrecognized-step-key warnings, and loud-exit on invariant violation. Round 1 review found 0 P1 / 1 P2 / 4 P3 issues (all auto-fixed); Round 2 confirmed full convergence with 0 findings. 23 commits total.
+
+### Implementation (Wave 1 — 20 tasks)
+
+- **ant-farm-8kds**: no-op — fill_slot function already removed; temp file leak impossible in current codebase (N/A)
+- **AF-110**: fix: update sync_claude_block header comment to mention create/append/replace (`ad965be`)
+- **AF-154**: fix: add RETURN trap for temp file cleanup in sync_claude_block (`f22b8cb`)
+- **AF-181**: refactor: rename resolve_arg to expand_at_file_arg for clarity (`7cc1789`)
+- **AF-182**: fix: add readability check to expand_at_file_arg for @file arguments (`c33acf0`)
+- **AF-183**: fix: add explanatory comments on non-obvious bash constructs (`8206bb2`)
+- **AF-184**: fix: add EXIT trap for test temp directory cleanup on assertion failure (`eccd362`)
+- **AF-185**: fix: clean up scratch-pad comment in Test 13 and add source comment for magic string in Test 7 (`3e011dc`)
+- **AF-187**: fix: filter blank lines before sort in CHANGED_FILES pipeline (`c1029fc`)
+- **AF-188**: fix: replace printf '%b' with literal newlines for expected_paths construction (`34f263c`)
+- **AF-203**: fix: move cleanup trap inside map_init before mkdir calls (`0300937`)
+- **AF-211**: fix: create temp files in destination directory for atomic rename (`c97f46b`)
+- **AF-214**: fix: rename PROMPTDIR_COMPONENT to REPO_ROOT_ESCAPED with transformation-example comment (`8b74a5c`)
+- **AF-258**: fix: add script-level EXIT trap as safety net for temp file cleanup (`bcc5ac9`)
+- **AF-302**: fix: document classification regex and normalize keyword casing (`6286155`)
+- **AF-303**: fix: add linking comment at AGENTS_CHANGED setter in setup.sh (`ffb9431`)
+- **AF-305**: fix: strip surrounding quotes from YAML frontmatter name field (`c61bf77`)
+- **AF-306**: fix: improve first-sentence truncation to handle abbreviations (`e4301cd`)
+- **ant-farm-5nhs**: fix: add stderr warning for unrecognized step keys in parse-progress-log.sh (`4ea96ae`)
+- **ant-farm-by3g**: fix: replace silent fallback with loud error exit in unreachable branch (`79970f6`)
+
+### Review Fixes (Round 1)
+
+- **AF-411**: fix: bash 3.2-safe empty array expansion in cleanup_temp_files (`bb192c0`)
+- **AF-412**: fix: rename REPO_ROOT_ESCAPED to REPO_ROOT_SLUG in setup.sh (`495d03c`)
+- **AF-413**: fix: use part1_clarity consistently in both test partition assertions (`adcda8b`)
+- **AF-414**: fix: add output directory existence check in generate-agent-catalog.sh (`4b2bdea`)
+- **AF-415**: fix: update stale setup.sh:L509 line reference to L515 — combined with AF-411 (`bb192c0`)
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 6 files, 20 tasks | 0 | 1 | 4 | PASS WITH ISSUES — auto-fix |
+| 2 | 5 fix commits | 0 | 0 | 0 | PASS — CONVERGED |
+
+5 root causes consolidated (1 merge: CL-1 + CL-2 → RC-2). All P2 and P3 findings fixed this session.
+
 ## 2026-03-22 — Session 20260321-213359 (Documentation & Tooling Hygiene — 40-Task Sweep)
 
 ### Summary
