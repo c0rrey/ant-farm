@@ -83,7 +83,7 @@ step_label() {
         WAVE_VERIFIED)    echo "Wave Verified: Verify (WWD + CMVCC)" ;;
         REVIEW_COMPLETE)  echo "Review Complete: Review (Nitpicker team)" ;;
         REVIEW_TRIAGED)   echo "Review Triaged: Triage (P1/P2 decision)" ;;
-        DOCS_COMMITTED)   echo "Docs Committed: Documentation (CHANGELOG/README/CLAUDE.md)" ;;
+        DOCS_COMMITTED)   echo "Docs Committed: Documentation (README/CLAUDE.md)" ;;
         XREF_VERIFIED)    echo "Xref Verified: Cross-reference verification" ;;
         SCRIBE_COMPLETE)  echo "Scribe Complete: Step 5b (Scribe exec summary)" ;;
         ESV_PASS)         echo "ESV Pass: Step 5c (Exec Summary Verification)" ;;
@@ -101,8 +101,8 @@ step_resume_action() {
         WAVE_VERIFIED)    echo "Re-run WAVE_VERIFIED: re-spawn Pest Control for WWD/CMVCC on any unverified waves." ;;
         REVIEW_COMPLETE)  echo "Re-run REVIEW_COMPLETE: re-spawn the Nitpicker team (check for existing review reports first)." ;;
         REVIEW_TRIAGED)   echo "Re-run REVIEW_TRIAGED: re-read the Big Head summary and re-present findings to the user." ;;
-        DOCS_COMMITTED)   echo "Re-run DOCS_COMMITTED: update CHANGELOG, README, CLAUDE.md in a single commit." ;;
-        XREF_VERIFIED)    echo "Re-run XREF_VERIFIED: verify cross-references and CHANGELOG entries for all tasks." ;;
+        DOCS_COMMITTED)   echo "Re-run DOCS_COMMITTED: update README and CLAUDE.md in a single commit." ;;
+        XREF_VERIFIED)    echo "Re-run XREF_VERIFIED: verify cross-references for all tasks." ;;
         SCRIBE_COMPLETE)  echo "Resume at Step 5b (Scribe): re-spawn the Scribe agent to generate the exec summary." ;;
         ESV_PASS)         echo "Resume at Step 5c (ESV): re-run Exec Summary Verification against the existing exec summary." ;;
         SESSION_COMPLETE) echo "Re-run SESSION_COMPLETE: git pull --rebase, git push." ;;
