@@ -387,6 +387,8 @@ log "Checking for old unprefixed agent files to migrate ..."
 migrate_old_agents
 
 log "Installing agent definitions → ~/.claude/agents/ ..."
+# AGENTS_CHANGED is consumed at end of script (~L694) to emit a
+# "restart Claude Code" warning when agent files are new or modified.
 AGENTS_CHANGED=false
 agents_installed=0
 
