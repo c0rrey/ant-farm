@@ -262,11 +262,7 @@ Let's get to work on: <task-ids>
 IMPORTANT: Before spawning any agents:
 1. Spawn the Scout subagent to gather all task metadata (do NOT run crumb show directly as Queen)
 2. Analyze file conflicts (create file modification matrix)
-3. Present 2-3 execution strategies (Serial/Balanced/Parallel)
-4. Wait for my approval
-5. Then spawn agents per approved strategy
-
-Do NOT spawn agents until I approve the strategy.
+3. Present execution strategy (SSV gate validates mechanically — auto-proceeds on PASS)
 ```
 
 **Problem: Claude reads too many implementation files**
