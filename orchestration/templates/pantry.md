@@ -155,6 +155,8 @@ Do NOT fix adjacent issues you notice.
 
 ### Step 3: Write Combined Prompt Previews
 
+> **Note**: This step covers implementation-mode previews only. Review-mode preview generation was formerly handled here but is now deprecated. Review prompt generation is handled by `scripts/build-review-prompts.sh`. See the Appendix at the end of this file for historical reference.
+
 **MANDATORY OUTPUT**: Every task that produced a task brief in Step 2 MUST also produce a preview file in this step. Preview files are hard requirements — not optional. Do NOT proceed to Step 4 until every preview file is written and verified.
 
 1. Read `~/.claude/orchestration/templates/crumb-gatherer-skeleton.md`.
