@@ -193,7 +193,7 @@ If `NOT_ON_PATH`:
 > export PATH="$HOME/.local/bin:$PATH"
 > ```
 
-## Step 8 — Agent Type Suggestion
+## Step 8a — Agent Type Suggestion
 
 Based on the language detected in Step 1, suggest appropriate agent types for task execution:
 
