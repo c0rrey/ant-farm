@@ -56,23 +56,23 @@ For each trail in the output, compute:
 
 Store as a list of `(trail_id, title, TRAIL_CLOSED, TRAIL_TOTAL)` tuples. If the command returns no trails or fails, store an empty list and set `HAS_TRAILS=false`. Otherwise set `HAS_TRAILS=true`.
 
-To get per-trail counts, use `crumb list --json` piped through `jq` for structured counting:
+To get per-trail counts, use `jq` on the tasks JSONL file for structured counting:
 
 ```bash
 # Total crumbs in trail (type != "trail", with matching parent link)
-crumb list --json | jq '[.[] | select(.type != "trail" and .links.parent == "<TRAIL_ID>")] | length'
+jq -s '[.[] | select(.type != "trail" and .links.parent == "<TRAIL_ID>")] | length' .crumbs/tasks.jsonl
 # Closed crumbs in trail
-crumb list --json | jq '[.[] | select(.type != "trail" and .links.parent == "<TRAIL_ID>" and .status == "closed")] | length'
+jq -s '[.[] | select(.type != "trail" and .links.parent == "<TRAIL_ID>" and .status == "closed")] | length' .crumbs/tasks.jsonl
 ```
 
 Repeat for each trail.
 
 ## Step 2 — Gather Crumb Status Summary
 
-Collect status counts across all crumbs using `crumb list --json` piped through `jq`. Exclude trail records (`type == "trail"`) — only count crumbs.
+Collect status counts across all crumbs using `jq` on the tasks JSONL file. Exclude trail records (`type == "trail"`) — only count crumbs.
 
 ```bash
-crumb list --json | jq '
+jq -s '
   [.[] | select(.type != "trail")] |
   {
     open:        [.[] | select(.status == "open")] | length,
@@ -80,7 +80,7 @@ crumb list --json | jq '
     in_progress: [.[] | select(.status == "in_progress")] | length,
     closed:      [.[] | select(.status == "closed")] | length
   }
-'
+' .crumbs/tasks.jsonl
 ```
 
 Parse the JSON output and store results as:
@@ -257,8 +257,8 @@ If `HAS_LITE_SESSIONS=false`, omit the `LITE MODE SESSIONS` section entirely.
 | No trails, no crumbs, no sessions | Show minimal "no tasks" message with `/ant-farm-plan` hint |
 | Hook file missing from project tree | Show `not installed` in HOOKS section — informational only, not a hard stop |
 | `crumb trail list` fails | Set `HAS_TRAILS=false`, render `(no trails)` |
-| `crumb list --json` or `jq` fails | Fall back to `crumb list --short 2>/dev/null \| wc -l` for counts |
-| `crumb list --json` returns empty array or fails | Set all counts to `0`, set `HAS_CRUMBS=false` |
+| `jq` fails on `.crumbs/tasks.jsonl` | Fall back to `crumb list --short 2>/dev/null \| wc -l` for counts |
+| `.crumbs/tasks.jsonl` is empty or `jq` returns empty array | Set all counts to `0`, set `HAS_CRUMBS=false` |
 | No exec-summary files in `.crumbs/sessions/` | Set `HAS_SESSION=false`, render `(no sessions completed yet)` |
 | exec-summary file found but unreadable | Set `HAS_SESSION=false`, render `(no sessions completed yet)` |
 | `grep` for lite-mode sessions fails or finds none | Set `HAS_LITE_SESSIONS=false`, omit `LITE MODE SESSIONS` section |

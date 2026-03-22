@@ -62,7 +62,7 @@ STEP_KEYS=(
     "SESSION_INIT"
     "SCOUT_COMPLETE"
     "WAVE_SPAWNED"
-    "WAVE_WWD_PASS"
+    "WAVE_SCOPE_VERIFY_PASS"
     "WAVE_VERIFIED"
     "REVIEW_COMPLETE"
     "REVIEW_TRIAGED"
@@ -78,7 +78,7 @@ step_label() {
         SESSION_INIT)     echo "Session Init: Session setup" ;;
         SCOUT_COMPLETE)   echo "Recon Planner Complete: Recon (Recon Planner + startup-check gate)" ;;
         WAVE_SPAWNED)     echo "Wave Spawned: Spawn (Prompt Composer + CCO + Implementers)" ;;
-        WAVE_WWD_PASS)    echo "Wave WWD Passed: WWD verification passed" ;;
+        WAVE_SCOPE_VERIFY_PASS)    echo "Wave Scope Verify Passed: scope-verify verification passed" ;;
         WAVE_VERIFIED)    echo "Wave Verified: Verify (WWD + CMVCC)" ;;
         REVIEW_COMPLETE)  echo "Review Complete: Review (Reviewer team)" ;;
         REVIEW_TRIAGED)   echo "Review Triaged: Triage (P1/P2 decision)" ;;
@@ -96,7 +96,7 @@ step_resume_action() {
         SESSION_INIT)     echo "Re-run SESSION_INIT to regenerate SESSION_ID and SESSION_DIR (fresh start recommended)." ;;
         SCOUT_COMPLETE)   echo "Re-run SCOUT_COMPLETE: check for existing briefing.md; if absent, re-spawn the Recon Planner." ;;
         WAVE_SPAWNED)     echo "Re-run WAVE_SPAWNED: re-read briefing.md and re-spawn Prompt Composer + Implementers for unfinished waves." ;;
-        WAVE_WWD_PASS)    echo "Proceed to CMVCC verification: WWD already passed; re-spawn Checkpoint Auditor for CMVCC only." ;;
+        WAVE_SCOPE_VERIFY_PASS)    echo "Proceed to claims-vs-code verification: scope-verify already passed; re-spawn Checkpoint Auditor for claims-vs-code only." ;;
         WAVE_VERIFIED)    echo "Re-run WAVE_VERIFIED: re-spawn Checkpoint Auditor for WWD/CMVCC on any unverified waves." ;;
         REVIEW_COMPLETE)  echo "Re-run REVIEW_COMPLETE: re-spawn the Reviewer team (check for existing review reports first)." ;;
         REVIEW_TRIAGED)   echo "Re-run REVIEW_TRIAGED: re-read the Review Consolidator summary and re-present findings to the user." ;;

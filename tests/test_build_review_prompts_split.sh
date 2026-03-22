@@ -17,7 +17,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SCRIPT="$REPO_ROOT/scripts/build-review-prompts.sh"
 NITPICKER_SKELETON="$REPO_ROOT/orchestration/templates/nitpicker-skeleton.md"
-BIG_HEAD_SKELETON="$REPO_ROOT/orchestration/templates/big-head-skeleton.md"
+BIG_HEAD_SKELETON="$REPO_ROOT/orchestration/templates/review-consolidator-skeleton.md"
 
 PASS=0
 FAIL=0
