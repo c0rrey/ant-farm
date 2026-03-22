@@ -1,15 +1,15 @@
-<!-- Reader: build-review-prompts.sh (extracts inline prompts and protocol). The Queen does NOT read this file directly. -->
+<!-- Reader: build-review-prompts.sh (extracts inline prompts and protocol). The Orchestrator does NOT read this file directly. -->
 # Quality Review Protocol
 
 ## Transition Gate Checklist
 
-**When**: After all Crumb Gatherers from Step 3 complete across ALL trails, BEFORE launching the Reviewers.
+**When**: After all Implementers from Step 3 complete across ALL trails, BEFORE launching the Reviewers.
 
 Verify all 4 criteria before proceeding to team launch. These checks span ALL trails worked in this session:
 
-1. **All Crumb Gatherers completed across ALL trails** — none stuck or errored (check the Queen's state file for every trail)
+1. **All Implementers completed across ALL trails** — none stuck or errored (check the Orchestrator's state file for every trail)
 2. **claims-vs-code PASS for every agent** — verify at least one artifact exists at `{session-dir}/pc/pc-{TASK_ID}-claims-vs-code-*.md`. If multiple files match (e.g., after retries), select the most recent by embedded filename timestamp (YYYYMMDD-HHmmss, sorted descending). That file must contain an explicit `PASS` verdict, not merely exist
-3. **The Queen's state file updated** — all completions tracked, checkpoint results recorded for all trails
+3. **The Orchestrator's state file updated** — all completions tracked, checkpoint results recorded for all trails
 4. **Git log shows expected commits** — run `git log --oneline -N` (where N = total number of agents across all trails) to confirm commits exist
 
 **If any check fails**: Do NOT launch reviews. Investigate stuck agents, re-run failed checkpoints, or escalate to user.
@@ -18,13 +18,13 @@ Verify all 4 criteria before proceeding to team launch. These checks span ALL tr
 
 ### Pre-Spawn Directory Setup
 
-Directory creation is handled by the Queen in RULES.md Step 3b-iii. All active reviewers write to `${SESSION_DIR}/review-reports/`. Verification artifacts (`pc/`) are already created at Step 0.
+Directory creation is handled by the Orchestrator in RULES.md Step 3b-iii. All active reviewers write to `${SESSION_DIR}/review-reports/`. Verification artifacts (`pc/`) are already created at Step 0.
 
 ---
 
 ## Agent Teams Protocol
 
-After the transition gate passes, the Queen launches **the Reviewers** using **TeamCreate** (NOT the Task tool) — reviewers plus **Review Consolidator** (the consolidator) plus **Checkpoint Auditor** (checkpoint validator), all as members of the same team. Reviewers produce **reports only** and do NOT file crumbs. Review Consolidator consolidates all findings, deduplicates by root cause, and files crumbs.
+After the transition gate passes, the Orchestrator launches **the Reviewers** using **TeamCreate** (NOT the Task tool) — reviewers plus **Review Consolidator** (the consolidator) plus **Checkpoint Auditor** (checkpoint validator), all as members of the same team. Reviewers produce **reports only** and do NOT file crumbs. Review Consolidator consolidates all findings, deduplicates by root cause, and files crumbs.
 
 **CRITICAL**: Reviews MUST use Agent Teams (TeamCreate + SendMessage), NOT plain Task tool subagents. The team structure enables cross-pollination between reviewers. **Review Consolidator MUST be spawned as a team member** (not a separate Task agent) so it can receive messages from reviewers and coordinate within the team.
 
@@ -58,7 +58,7 @@ The short name is the authoritative identifier. Any template using a review type
 
 **Pre-spawn requirement**: Before creating the reviewers, run **pre-spawn-check** on all review prompts. See `templates/checkpoints/pre-spawn-check.md`.
 
-**Round 1**: the Queen creates the Reviewer team with a **variable member count** determined by `build-review-prompts.sh`'s return table. Base case is 6 members (4 reviewers + Review Consolidator + Checkpoint Auditor); when split reviewer instances occur the count increases (e.g., 8 members when 2 Clarity + 2 Drift splits are produced). Do NOT hardcode 6 members — build the list from the return table.
+**Round 1**: the Orchestrator creates the Reviewer team with a **variable member count** determined by `build-review-prompts.sh`'s return table. Base case is 6 members (4 reviewers + Review Consolidator + Checkpoint Auditor); when split reviewer instances occur the count increases (e.g., 8 members when 2 Clarity + 2 Drift splits are produced). Do NOT hardcode 6 members — build the list from the return table.
 
 **Split instance naming**: When `build-review-prompts.sh` splits a reviewer type across multiple instances, each instance is named `{review-type}-{N}` (e.g., `clarity-1`, `clarity-2`, `drift-1`, `drift-2`). The base-case single-instance names (`clarity-reviewer`, `drift-reviewer`) apply only when no split occurred. SendMessage to these members must use these exact names — never broadcast.
 
@@ -136,7 +136,7 @@ When compiling the "Task IDs for acceptance criteria" list for any review round,
 
 This prevents reviewers from being asked to verify acceptance criteria for changes they cannot see in the review scope.
 
-**The Review Consolidator is spawned as a team member using the review-consolidator-skeleton.md template**, not as a separate Task agent. The Queen fills in the skeleton placeholders and uses the result as the teammate's prompt.
+**The Review Consolidator is spawned as a team member using the review-consolidator-skeleton.md template**, not as a separate Task agent. The Orchestrator fills in the skeleton placeholders and uses the result as the teammate's prompt.
 
 ### Fallback: Sequential Reviews with File-Based Coordination (When TeamCreate Unavailable)
 
@@ -198,7 +198,7 @@ This prevents reviewers from being asked to verify acceptance criteria for chang
 
 ## Round-Aware Review Protocol
 
-The review pipeline supports multiple rounds. The Queen passes `Review round: {N}` to the Pantry. Round number determines reviewer composition, scope, and P3 handling.
+The review pipeline supports multiple rounds. The Orchestrator passes `Review round: {N}` to the Prompt Composer. Round number determines reviewer composition, scope, and P3 handling.
 
 ### Round 1 (Full Review)
 
@@ -217,7 +217,7 @@ This is the existing protocol — no changes to round 1 behavior.
 - **In-scope findings**: All severities reported
 - **Out-of-scope findings**: Only reportable if they would cause:
   - **Runtime failure**: an agent, tool call, or workflow step would crash or error
-  - **Silently wrong results**: an agent would succeed but produce incorrect output (e.g., stale cross-references pointing the Queen to the wrong section)
+  - **Silently wrong results**: an agent would succeed but produce incorrect output (e.g., stale cross-references pointing the Orchestrator to the wrong section)
 - **Not reportable out-of-scope**: naming conventions, style preferences, documentation gaps, improvement opportunities, hypothetical edge cases requiring unusual conditions
 - **P3 handling**: Review Consolidator auto-files P3s to "Future Work" trail (no user prompt)
 
@@ -226,16 +226,16 @@ This is the existing protocol — no changes to round 1 behavior.
 The review loop terminates when a round produces **zero P1 or P2 findings**. At termination:
 
 1. Review Consolidator auto-files any P3 findings to "Future Work" trail (round 2+ only)
-2. In round 1, P3s are filed via the existing "Handle P3 Issues" flow in the Queen's Step 3c below
-3. Queen then proceeds to RULES.md Step 4 (documentation — README and CLAUDE.md only)
-   - Note: CHANGELOG is authored by the Scribe at Step 5, not here
+2. In round 1, P3s are filed via the existing "Handle P3 Issues" flow in the Orchestrator's Step 3c below
+3. Orchestrator then proceeds to RULES.md Step 4 (documentation — README and CLAUDE.md only)
+   - Note: CHANGELOG is authored by the Session Scribe at Step 5, not here
 4. No user prompt needed — the loop simply ends
 
 **Escalation cap**: After round 4 with no convergence (P1 or P2 findings still present), do NOT start round 5. Instead, escalate to the user with the full round history (round numbers, finding counts per round, crumb IDs) and ask whether to continue or abort. The reduced scope + reduced reviewers + P3 auto-filing make convergence fast; if it has not converged by round 4, human judgment is required.
 
 ### Round 2+ Reviewer Instructions
 
-Correctness and Edge Cases reviewers receive this additional scope constraint in round 2+. The Pantry includes this text in each reviewer's brief:
+Correctness and Edge Cases reviewers receive this additional scope constraint in round 2+. The Prompt Composer includes this text in each reviewer's brief:
 
 > **Fix verification scope**: Review commits `{fix-start}..HEAD` only. You may read full files for context, but your mandate is: did these fixes land correctly and not break anything?
 >
@@ -267,7 +267,7 @@ Read all files in scope. For each issue, note the file, line, and what's wrong.
 Group findings into preliminary root causes where possible.
 
 ## Report (MANDATORY)
-Write your report to `{session-dir}/review-reports/clarity-review-{timestamp}.md` using the format below. (the Queen provides the exact filename in your prompt.)
+Write your report to `{session-dir}/review-reports/clarity-review-{timestamp}.md` using the format below. (the Orchestrator provides the exact filename in your prompt.)
 Do NOT file crumbs — Review Consolidator handles all crumb filing.
 
 If you find something that looks like an edge case or correctness bug, message the
@@ -302,7 +302,7 @@ Read all files in scope. For each issue, note the file, line, trigger condition,
 Group findings into preliminary root causes where possible.
 
 ## Report (MANDATORY)
-Write your report to `{session-dir}/review-reports/edge-cases-review-{timestamp}.md` using the format below. (the Queen provides the exact filename in your prompt.)
+Write your report to `{session-dir}/review-reports/edge-cases-review-{timestamp}.md` using the format below. (the Orchestrator provides the exact filename in your prompt.)
 Do NOT file crumbs — Review Consolidator handles all crumb filing.
 
 Pay special attention to:
@@ -343,7 +343,7 @@ Read all files in scope. For each issue, note the file, line, expected vs actual
 Group findings into preliminary root causes where possible.
 
 ## Report (MANDATORY)
-Write your report to `{session-dir}/review-reports/correctness-review-{timestamp}.md` using the format below. (the Queen provides the exact filename in your prompt.)
+Write your report to `{session-dir}/review-reports/correctness-review-{timestamp}.md` using the format below. (the Orchestrator provides the exact filename in your prompt.)
 Do NOT file crumbs — Review Consolidator handles all crumb filing.
 
 Review these files and their acceptance criteria:
@@ -390,7 +390,7 @@ Grep for old values. Trace callers. Check documentation references.
 Group findings into preliminary root causes where possible.
 
 ## Report (MANDATORY)
-Write your report to `{session-dir}/review-reports/drift-review-{timestamp}.md` using the format below. (the Queen provides the exact filename in your prompt.)
+Write your report to `{session-dir}/review-reports/drift-review-{timestamp}.md` using the format below. (the Orchestrator provides the exact filename in your prompt.)
 Do NOT file crumbs — Review Consolidator handles all crumb filing.
 
 For each change in scope, check:
@@ -421,7 +421,7 @@ If a review finds 0 issues:
 
 ## Reviewer Report Format (All Reviewers)
 
-Every reviewer MUST write their report to `{session-dir}/review-reports/{review-type}-review-{timestamp}.md` using this format. The Queen generates the timestamp once per review cycle and provides the exact output path in each reviewer's prompt.
+Every reviewer MUST write their report to `{session-dir}/review-reports/{review-type}-review-{timestamp}.md` using this format. The Orchestrator generates the timestamp once per review cycle and provides the exact output path in each reviewer's prompt.
 
 ```markdown
 # Report: {review-type} Review
@@ -514,7 +514,7 @@ reviews.md and review-consolidator-skeleton.md (Review Consolidator template) us
 | Step 3 | Step 8 | Write consolidated summary to output path |
 | Step 4 | Steps 9–10 | SendMessage to Checkpoint Auditor, await verdict, file crumbs on PASS |
 | Step 5 | Step 11 | P3 auto-filing to Future Work trail (round 2+ only) |
-| Step 6 | Step 12 | Send crumb list handoff message to Queen (all rounds) |
+| Step 6 | Step 12 | Send crumb list handoff message to Orchestrator (all rounds) |
 
 ### Verification Pipeline Design Rationale
 
@@ -585,7 +585,7 @@ case "$REVIEW_ROUND" in
     echo "PLACEHOLDER ERROR: REVIEW_ROUND was not substituted by build-review-prompts.sh (got: $REVIEW_ROUND)"
     echo "This brief was delivered with an unresolved {{REVIEW_ROUND}} placeholder."
     echo "Root cause: build-review-prompts.sh was bypassed or failed during prompt composition."
-    echo "Do NOT proceed. Return this error to the Queen immediately."
+    echo "Do NOT proceed. Return this error to the Orchestrator immediately."
     exit 1
     ;;
 esac
@@ -599,7 +599,7 @@ esac
 # --- Timing constants (document rationale, not just values) ---
 # 60 seconds (30 iterations × 2s): enough for a slow reviewer to write its
 # report under typical load; short enough to return a clear error rather than
-# block the Queen indefinitely. If reviewers consistently time out, the Queen
+# block the Orchestrator indefinitely. If reviewers consistently time out, the Orchestrator
 # should re-spawn Review Consolidator rather than increasing this timeout.
 POLL_TIMEOUT_SECS=60
 # 2 seconds: balances responsiveness against unnecessary busy-polling.
@@ -610,10 +610,10 @@ ELAPSED=0
 # The consolidation brief's expected_paths list is authoritative. Typical counts:
 # Round 1:  correctness, edge-cases, clarity, drift (4 paths, or more if split instances)
 # Round 2+: correctness, edge-cases only (2 paths, or more if split instances)
-# The Pantry writes the exact file paths (with timestamp) into this brief.
+# The Prompt Composer writes the exact file paths (with timestamp) into this brief.
 # Use [ -f "$EXACT_PATH" ] — no globs. Globs match stale reports from prior rounds.
 
-# Placeholder substitution guard: verify the Pantry replaced all template placeholders
+# Placeholder substitution guard: verify the Prompt Composer replaced all template placeholders
 # before entering the polling loop. Unsubstituted placeholders (angle brackets or curly
 # braces) in file paths cause every [ -f ] test to fail silently, producing a misleading
 # timeout error instead of a clear diagnosis.
@@ -626,16 +626,16 @@ PLACEHOLDER_ERROR=0
 for _path in {{EXPECTED_REPORT_PATHS}}; do
   if [ -z "$_path" ]; then
     echo "PLACEHOLDER ERROR: path resolved to empty string (SESSION_DIR or timestamp unset)"
-    echo "Root cause: unset or empty shell variable in Pantry prompt composition."
-    echo "Do NOT proceed. Return this error to the Queen immediately."
+    echo "Root cause: unset or empty shell variable in Prompt Composer prompt composition."
+    echo "Do NOT proceed. Return this error to the Orchestrator immediately."
     PLACEHOLDER_ERROR=1
   fi
   case "$_path" in
     *'<'*|*'>'*|*'{'*|*'}'*)
-      echo "PLACEHOLDER ERROR: path was not substituted by Pantry: $_path"
+      echo "PLACEHOLDER ERROR: path was not substituted by Prompt Composer: $_path"
       echo "This brief was delivered with unresolved template placeholders."
-      echo "Root cause: upstream substitution failure in Pantry prompt composition."
-      echo "Do NOT proceed. Return this error to the Queen immediately."
+      echo "Root cause: upstream substitution failure in Prompt Composer prompt composition."
+      echo "Do NOT proceed. Return this error to the Orchestrator immediately."
       PLACEHOLDER_ERROR=1
       ;;
   esac
@@ -679,7 +679,7 @@ fi
 
 **Error return (if timeout exceeded):**
 
-If timeout is reached and any reports are still missing, IMMEDIATELY return an error to the Queen:
+If timeout is reached and any reports are still missing, IMMEDIATELY return an error to the Orchestrator:
 
 ```markdown
 # Review Consolidator Consolidation - BLOCKED: Missing Reviewer Reports
@@ -699,7 +699,7 @@ e.g., clarity-1-review-{timestamp}.md, drift-2-review-{timestamp}.md.)
 
 Review Consolidator cannot proceed with consolidation without all expected reports present. The prerequisite gate (Step 0) FAILED.
 
-**Action required from Queen:**
+**Action required from Orchestrator:**
 1. Check review agent logs for errors or crashes
 2. Verify all Reviewer team members completed their reviews
 3. Confirm reports were written to: `{session-dir}/review-reports/`
@@ -715,7 +715,7 @@ Spawn Review Consolidator again with all expected report paths provided in the c
 
 Once the error is returned:
 - Return the error message and STOP (do not continue to Steps 1-4)
-- The Queen receives this error and must decide: retry with fresh Reviewer spawn, or abort session
+- The Orchestrator receives this error and must decide: retry with fresh Reviewer spawn, or abort session
 
 ### Step 1: Read All Reports
 
@@ -784,7 +784,7 @@ if ! crumb list --open --short > "$_OPEN_CRUMBS_TMP" 2>/dev/null; then
 fi
 ```
 
-If the bash block above exits with code 1, stop immediately. Do NOT proceed to consolidation or crumb filing. Use the SendMessage tool to notify the Queen: "Review Consolidator FAILED: crumb list infrastructure error during cross-session dedup. Crumb filing aborted to prevent duplicates. Consolidated output written to {CONSOLIDATED_OUTPUT_PATH}. Please check crumb status and re-spawn Review Consolidator when ready." Then end your turn.
+If the bash block above exits with code 1, stop immediately. Do NOT proceed to consolidation or crumb filing. Use the SendMessage tool to notify the Orchestrator: "Review Consolidator FAILED: crumb list infrastructure error during cross-session dedup. Crumb filing aborted to prevent duplicates. Consolidated output written to {CONSOLIDATED_OUTPUT_PATH}. Please check crumb status and re-spawn Review Consolidator when ready." Then end your turn.
 <!-- NOTE: {CONSOLIDATED_OUTPUT_PATH} in the SendMessage text above is a template placeholder substituted by build-review-prompts.sh at build time — a real filesystem path appears in its place when Review Consolidator receives this prompt. Consistent with the bash-block comment in review-consolidator-skeleton.md. -->
 
 For each root cause group, compare against existing crumb titles (from `$_OPEN_CRUMBS_TMP`):
@@ -873,7 +873,7 @@ SendMessage(
   )
   ```
   Then end your turn again and await the reply.
-- If still no response after 2 more non-Checkpoint-Auditor incoming messages following the retry, **escalate to the Queen immediately**:
+- If still no response after 2 more non-Checkpoint-Auditor incoming messages following the retry, **escalate to the Orchestrator immediately**:
   ```bash
   cat > "{CONSOLIDATED_OUTPUT_PATH%.md}-pc-timeout.md" << 'EOF'
   # Review Consolidator Consolidation — BLOCKED: Checkpoint Auditor Timeout
@@ -883,9 +883,9 @@ SendMessage(
   **Recovery**: Re-spawn Checkpoint Auditor manually and provide the consolidated report path, or accept consolidated findings without checkpoint validation.
   EOF
   ```
-  Then send to Queen:
+  Then send to Orchestrator:
   ```
-  Review Consolidator checkpoint escalation to Queen:
+  Review Consolidator checkpoint escalation to Orchestrator:
   - Checkpoint Auditor verdict: UNAVAILABLE (no response after 2 attempts, 4 turns total)
   - Consolidated report path: {CONSOLIDATED_OUTPUT_PATH}
   - Timeout failure artifact: {CONSOLIDATED_OUTPUT_PATH%.md}-pc-timeout.md
@@ -895,10 +895,10 @@ SendMessage(
   Do NOT file any crumbs when escalating due to Checkpoint Auditor timeout.
 
 - **PASS**: File ONE crumb per root cause. See crumb filing instructions below.
-- **FAIL**: Review Consolidator MUST escalate to the Queen with specifics. File crumbs ONLY for findings that passed. Do NOT file crumbs for flagged findings. Use this escalation format:
+- **FAIL**: Review Consolidator MUST escalate to the Orchestrator with specifics. File crumbs ONLY for findings that passed. Do NOT file crumbs for flagged findings. Use this escalation format:
 
 ```
-Review Consolidator checkpoint escalation to Queen:
+Review Consolidator checkpoint escalation to Orchestrator:
 - Checkpoint Auditor verdict: FAIL
 - Findings that failed validation: {list with reasons per finding}
 - Findings that passed: {list}
@@ -998,16 +998,16 @@ print(json.dumps({'type': 'bug', 'priority': 'P3', 'title': title, 'description'
    | {id} | {title} | Future Work |
    ~~~
 
-4. Do NOT include P3 findings in the fix-or-defer prompt to the Queen. They appear only in the consolidated summary for the record.
+4. Do NOT include P3 findings in the fix-or-defer prompt to the Orchestrator. They appear only in the consolidated summary for the record.
 
-**Round 1**: P3s are NOT auto-filed by Review Consolidator. They follow the existing "Handle P3 Issues" flow in the Queen's Step 3c below.
+**Round 1**: P3s are NOT auto-filed by Review Consolidator. They follow the existing "Handle P3 Issues" flow in the Orchestrator's Step 3c below.
 
-## The Queen's Checklists
+## The Orchestrator's Checklists
 
 ### Reviewer Checklist (verify before launching team)
 
 Before launching the review agent team, confirm:
-- [ ] Review round number passed to Pantry (`Review round: {N}`)
+- [ ] Review round number passed to Prompt Composer (`Review round: {N}`)
 - [ ] Round 1: All 4 Reviewer prompts include review scope; Round 2+: 2 prompts (Correctness, Edge Cases)
 - [ ] Each Reviewer has focus areas specific to their review type
 - [ ] Round 2+ reviewers include out-of-scope finding bar instructions from the Round 2+ Reviewer Instructions section
@@ -1030,7 +1030,7 @@ Before filing crumbs, confirm Review Consolidator has:
 - [ ] Received Checkpoint Auditor verdict (PASS or FAIL + specifics)
 - [ ] On PASS: filed ONE crumb per root cause with all affected surfaces listed
 - [ ] Round 2+ on PASS: P3 crumbs auto-filed to "Future Work" trail (not presented to user)
-- [ ] On FAIL: escalated failed findings to Queen; filed crumbs only for validated findings
+- [ ] On FAIL: escalated failed findings to Orchestrator; filed crumbs only for validated findings
 
 ## After Consolidation Complete
 
@@ -1038,10 +1038,10 @@ Before filing crumbs, confirm Review Consolidator has:
 
 The Review Consolidator writes the consolidated summary to `{session-dir}/review-reports/review-consolidated-{timestamp}.md`.
 
-This section documents the Queen's Step 3c (User Triage) workflow. **The Queen owns this step**, not the review agents.
-The Queen reads the Review Consolidator's consolidated summary and follows the procedures below.
+This section documents the Orchestrator's Step 3c (User Triage) workflow. **The Orchestrator owns this step**, not the review agents.
+The Orchestrator reads the Review Consolidator's consolidated summary and follows the procedures below.
 
-## Queen's Step 3c: User Triage on P1/P2 Issues
+## Orchestrator's Step 3c: User Triage on P1/P2 Issues
 
 **Prerequisite**: review-integrity PASS + consolidated summary written by Review Consolidator
 
@@ -1050,41 +1050,41 @@ The Queen reads the Review Consolidator's consolidated summary and follows the p
 If the consolidated summary shows zero P1 and zero P2 findings, the review loop has converged:
 
 1. **Round 2+**: Review Consolidator has already auto-filed any P3 findings to "Future Work" trail — no action needed
-2. **Round 1**: P3 findings follow the existing "Handle P3 Issues" flow below — the Queen files them to Future Work
-3. Queen updates session state: `Termination: terminated (round N: 0 P1/P2)`
+2. **Round 1**: P3 findings follow the existing "Handle P3 Issues" flow below — the Orchestrator files them to Future Work
+3. Orchestrator updates session state: `Termination: terminated (round N: 0 P1/P2)`
 4. Proceed to RULES.md Step 4 (Documentation — update README and CLAUDE.md only)
-   - Scribe authors the session CHANGELOG entry at Step 5
+   - Session Scribe authors the session CHANGELOG entry at Step 5
 
 No user prompt needed — the loop simply ends.
 
 ### If P1 or P2 issues found:
 
-The Queen determines the fix action based on RULES.md Step 3c decision tree:
+The Orchestrator determines the fix action based on RULES.md Step 3c decision tree:
 - **Auto-fix** (round 1, ≤10 root causes): proceed directly to Fix Workflow below
 - **Escalation** (round 1, >10 root causes): present to user, await decision
 - **User prompt** (round 2+): present to user, "Fix now or defer?"
-- **Defer**: P1/P2 crumbs stay open; document deferred items for the Scribe (Step 5 CHANGELOG); proceed to Step 4
+- **Defer**: P1/P2 crumbs stay open; document deferred items for the Session Scribe (Step 5 CHANGELOG); proceed to Step 4
 
 ### Fix Workflow
 
 Triggered by auto-fix (round 1) or user choosing "fix now" (round 2+). Fix agents spawn **into the persistent reviewer team** (not as standalone Task agents) using the Task tool with `team_name: "reviewer-team"` so they can communicate directly with reviewers and iterate within the team via SendMessage.
 
-#### Fix-Cycle Scout and Auto-Approval
+#### Fix-Cycle Recon Planner and Auto-Approval
 
-Before spawning fix agents, the Queen runs a fix-cycle Scout to plan the fix strategy (which crumbs to fix, wave grouping, file conflict analysis).
+Before spawning fix agents, the Orchestrator runs a fix-cycle Recon Planner to plan the fix strategy (which crumbs to fix, wave grouping, file conflict analysis).
 
-**Auto-approval**: The fix-cycle Scout strategy is auto-approved — no user confirmation gate. The Scout's output feeds directly into fix agent spawning.
+**Auto-approval**: The fix-cycle Recon Planner strategy is auto-approved — no user confirmation gate. The Recon Planner's output feeds directly into fix agent spawning.
 
-**startup-check gate**: startup-check still runs as a mechanical safety net on the Scout's strategy:
+**startup-check gate**: startup-check still runs as a mechanical safety net on the Recon Planner's strategy:
 - startup-check PASS → proceed to fix agent spawning
-- startup-check FAIL → re-run Scout with violations listed, max 1 retry; if still failing, escalate to user
+- startup-check FAIL → re-run Recon Planner with violations listed, max 1 retry; if still failing, escalate to user
 
-#### Pantry and pre-spawn-check Skip Rationale
+#### Prompt Composer and pre-spawn-check Skip Rationale
 
-Fix briefs do **not** go through Pantry or pre-spawn-check. Reason:
+Fix briefs do **not** go through Prompt Composer or pre-spawn-check. Reason:
 
-- **Pantry skipped**: The Review Consolidator crumbs already contain root cause, affected surfaces, fix suggestion, and acceptance criteria — validated by review-integrity. The crumb IS the brief. Re-composing it through Pantry adds no value and wastes a round-trip.
-- **pre-spawn-check skipped**: The crumb content passed review-integrity and the Scout's fix strategy passed startup-check. Two independent mechanical gates have already validated correctness. A third pre-spawn-check pass would be redundant.
+- **Prompt Composer skipped**: The Review Consolidator crumbs already contain root cause, affected surfaces, fix suggestion, and acceptance criteria — validated by review-integrity. The crumb IS the brief. Re-composing it through Prompt Composer adds no value and wastes a round-trip.
+- **pre-spawn-check skipped**: The crumb content passed review-integrity and the Recon Planner's fix strategy passed startup-check. Two independent mechanical gates have already validated correctness. A third pre-spawn-check pass would be redundant.
 
 Fix agents receive the crumb ID directly as their source of truth.
 
@@ -1094,7 +1094,7 @@ Fix agents spawn into the Reviewer team with the following naming convention:
 
 | Role | Round 1 name | Round 2+ name |
 |---|---|---|
-| Fix Crumb Gatherer N | `fix-cg-1`, `fix-cg-2`, ... | `fix-cg-r2-1`, `fix-cg-r2-2`, ... |
+| Fix Implementer N | `fix-cg-1`, `fix-cg-2`, ... | `fix-cg-r2-1`, `fix-cg-r2-2`, ... |
 | Fix PC — Scope Verify | `fix-pc-scope-verify` | `fix-pc-scope-verify-r2` |
 | Fix PC — Claims vs Code | `fix-pc-claims-vs-code` | `fix-pc-claims-vs-code-r2` |
 
@@ -1102,10 +1102,10 @@ Round suffix (`-r2`, `-r3`, etc.) increments with each review round to avoid nam
 
 #### Fix CG Prompt Structure
 
-Fix Crumb Gatherers receive a lean prompt. The crumb is the source of truth — the CG does not need a full brief composed by the Queen.
+Fix Implementers receive a lean prompt. The crumb is the source of truth — the CG does not need a full brief composed by the Orchestrator.
 
 ```
-You are fix-cg-N, a fix Crumb Gatherer in the Reviewer team.
+You are fix-cg-N, a fix Implementer in the Reviewer team.
 
 Your task crumb: {crumb-id}
 Run: crumb show <crumb-id>
@@ -1136,15 +1136,15 @@ fix-cg-N  -->  [commit]  -->  SendMessage(fix-pc-scope-verify)
                           |                   |
                     fix-pc-claims-vs-code  fix-cg-N iterates (max 2 retries total)
                     runs claims-vs-code        |
-                          |             if retry limit hit → SendMessage(Queen) to escalate
+                          |             if retry limit hit → SendMessage(Orchestrator) to escalate
                  PASS ----+---- FAIL
                   |              |
               fix-cg-N       SendMessage(fix-cg-N) with specifics
               goes idle       fix-cg-N iterates (max 2 retries total)
-                              if retry limit hit → SendMessage(Queen) to escalate
+                              if retry limit hit → SendMessage(Orchestrator) to escalate
 ```
 
-**Retry limit**: Each fix CG has a maximum of 2 retries total across both scope-verify and claims-vs-code failures. On the third failure, the CG sends a message to the Queen with the failure details and goes idle. The Queen escalates to the user.
+**Retry limit**: Each fix CG has a maximum of 2 retries total across both scope-verify and claims-vs-code failures. On the third failure, the CG sends a message to the Orchestrator with the failure details and goes idle. The Orchestrator escalates to the user.
 
 **fix-pc-scope-verify** (Haiku): Lightweight scope check — verifies the commit touches only the files listed in the crumb, no stray edits, and the commit message is well-formed. Fast and cheap.
 
@@ -1200,7 +1200,7 @@ After all fix agents complete and SendMessage round-transition messages are sent
 - review-integrity PASS + zero P1/P2 → loop ends; proceed to RULES.md Step 4
 - review-integrity PASS + P1/P2 remain → return to "If P1 or P2 issues found" above (user prompt for round 2+)
 
-### Handle P3 Issues (Queen's Step 3c)
+### Handle P3 Issues (Orchestrator's Step 3c)
 
 > **Round 1 only.** In round 2+, P3s are auto-filed by Review Consolidator during consolidation (see "P3 Auto-Filing" above). This section applies only when round 1 terminates with P3 findings.
 
@@ -1218,4 +1218,4 @@ crumb trail create --title "Future Work" --description "Low-priority polish and 
 - No immediate action required — they're queued for later
 
 After handling P3 issues, proceed to RULES.md Step 4 (Documentation — update README and CLAUDE.md only).
-The Scribe authors the session CHANGELOG entry at Step 5.
+The Session Scribe authors the session CHANGELOG entry at Step 5.
