@@ -252,13 +252,13 @@ Session summary: {session-dir}/session-summary.md
 
 ---
 
-## Section 2: Review Mode Preconditions
+## Section 2: Review Mode Preconditions [DEPRECATED]
 
-When the Pantry is invoked for review brief composition, validate all inputs before composing briefs.
-These checks mirror the authoritative validation in `RULES-review.md` 3b-i.5 and ensure invalid inputs
-never pass through silently.
+> **STOP: DO NOT USE THIS SECTION FOR REVIEW BRIEF COMPOSITION.** This section is deprecated. Review prompt generation is now handled by `scripts/build-review-prompts.sh`. For the current review protocol and Big Head consolidation workflow, see `orchestration/templates/reviews.md`.
 
-### Precondition Checks
+The precondition checks below are retained as reference only. They mirror the authoritative validation in `RULES-review.md` 3b-i.5.
+
+### Precondition Checks (reference only)
 
 1. **Commit range format**: Must be non-empty and match `<ref>..<ref>` format (e.g., `abc1234..HEAD`).
    - If empty or malformed: halt and return `ERROR: commit range is missing or malformed (got: '{value}'). Expected format: <commit-hash>..<commit-hash|HEAD>.`
