@@ -614,12 +614,12 @@ ELAPSED=0
 # braces) in file paths cause every [ -f ] test to fail silently, producing a misleading
 # timeout error instead of a clear diagnosis.
 PLACEHOLDER_ERROR=0
-# Validate paths for reports expected in ALL rounds (correctness + edge-cases).
+# Validate all expected report paths from the consolidation brief's expected_paths.
+# EXPECTED_REPORT_PATHS is populated by build-review-prompts.sh with the actual
+# paths for this round (includes split-instance paths like clarity-1-review-*.md).
 # Note: REVIEW_ROUND corruption is caught above in the case statement before we
 # reach this block, so REVIEW_ROUND is guaranteed to be a valid integer here.
-for _path in \
-  "{session-dir}/review-reports/correctness-review-{timestamp}.md" \
-  "{session-dir}/review-reports/edge-cases-review-{timestamp}.md"; do
+for _path in {{EXPECTED_REPORT_PATHS}}; do
   if [ -z "$_path" ]; then
     echo "PLACEHOLDER ERROR: path resolved to empty string (SESSION_DIR or timestamp unset)"
     echo "Root cause: unset or empty shell variable in Pantry prompt composition."
@@ -636,31 +636,6 @@ for _path in \
       ;;
   esac
 done
-# Validate round-1-only paths (clarity + drift). Pantry only substitutes these
-# paths in round-1 briefs; round-2+ briefs leave these as literal angle-bracket
-# placeholders (they are not in ACTIVE_REVIEW_TYPES for round 2+). Checking them
-# unconditionally in round 2+ would always trigger a false PLACEHOLDER_ERROR.
-if [ "$REVIEW_ROUND" -eq 1 ]; then
-for _path in \
-  "{session-dir}/review-reports/clarity-review-{timestamp}.md" \
-  "{session-dir}/review-reports/drift-review-{timestamp}.md"; do
-  if [ -z "$_path" ]; then
-    echo "PLACEHOLDER ERROR: path resolved to empty string (SESSION_DIR or timestamp unset)"
-    echo "Root cause: unset or empty shell variable in Pantry prompt composition."
-    echo "Do NOT proceed. Return this error to the Queen immediately."
-    PLACEHOLDER_ERROR=1
-  fi
-  case "$_path" in
-    *'<'*|*'>'*|*'{'*|*'}'*)
-      echo "PLACEHOLDER ERROR: path was not substituted by Pantry: $_path"
-      echo "This brief was delivered with unresolved template placeholders."
-      echo "Root cause: upstream substitution failure in Pantry prompt composition."
-      echo "Do NOT proceed. Return this error to the Queen immediately."
-      PLACEHOLDER_ERROR=1
-      ;;
-  esac
-done
-fi
 if [ $PLACEHOLDER_ERROR -eq 1 ]; then
   exit 1
 fi
@@ -669,15 +644,11 @@ REPORTS_FOUND=0  # set to 1 when all expected reports are present
 while [ $ELAPSED -le $POLL_TIMEOUT_SECS ]; do
   ALL_FOUND=1
 
-  # Always expected (both rounds):
-  [ -f "{session-dir}/review-reports/correctness-review-{timestamp}.md" ] || ALL_FOUND=0
-  [ -f "{session-dir}/review-reports/edge-cases-review-{timestamp}.md" ] || ALL_FOUND=0
-
-  # Round 1 only: clarity and drift reports are also expected.
-  if [ "$REVIEW_ROUND" -eq 1 ]; then
-  [ -f "{session-dir}/review-reports/clarity-review-{timestamp}.md" ] || ALL_FOUND=0
-  [ -f "{session-dir}/review-reports/drift-review-{timestamp}.md" ] || ALL_FOUND=0
-  fi
+  # Check all expected report paths (handles both unsplit and split-instance names).
+  # EXPECTED_REPORT_PATHS was validated above; paths are exact (no globs).
+  for _path in {{EXPECTED_REPORT_PATHS}}; do
+    [ -f "$_path" ] || ALL_FOUND=0
+  done
 
   if [ $ALL_FOUND -eq 1 ]; then
     REPORTS_FOUND=1
@@ -714,11 +685,11 @@ If timeout is reached and any reports are still missing, IMMEDIATELY return an e
 
 ## Missing Reports
 
-The following expected Reviewer report files were not found:
-- Clarity review report (clarity-review-{timestamp}.md) — MISSING
-- Edge cases review report (edge-cases-review-{timestamp}.md) — MISSING [or: FOUND at {path}]
-- Correctness review report (correctness-review-{timestamp}.md) — MISSING [or: FOUND at {path}]
-- Drift review report (drift-review-{timestamp}.md) — MISSING [or: FOUND at {path}]
+The following expected Reviewer report files were not found.
+List each path from EXPECTED_REPORT_PATHS with its status:
+- {type}-review-{timestamp}.md — MISSING [or: FOUND at {path}]
+(In split-instance sessions, paths use the pattern {type}-{N}-review-{timestamp}.md,
+e.g., clarity-1-review-{timestamp}.md, drift-2-review-{timestamp}.md.)
 
 ## Remediation
 
@@ -746,13 +717,19 @@ Once the error is returned:
 
 Read all expected reports from `{session-dir}/review-reports/` using the exact paths provided in the consolidation brief's `expected_paths` list. The count varies based on how many reviewers were spawned.
 
-Round 1 typical paths (may include additional paths for split reviewer instances):
+Round 1 typical paths (unsplit base case):
 - `clarity-review-{timestamp}.md`
 - `edge-cases-review-{timestamp}.md`
 - `correctness-review-{timestamp}.md`
 - `drift-review-{timestamp}.md`
 
-Round 2+ typical paths (may include additional paths for split reviewer instances):
+Round 1 split-instance paths (when file count exceeds REVIEW_SPLIT_THRESHOLD):
+- `clarity-1-review-{timestamp}.md`, `clarity-2-review-{timestamp}.md`, ...
+- `edge-cases-review-{timestamp}.md` (never split)
+- `correctness-review-{timestamp}.md` (never split)
+- `drift-1-review-{timestamp}.md`, `drift-2-review-{timestamp}.md`, ...
+
+Round 2+ typical paths (split instances not re-tasked in round 2+):
 - `correctness-review-{timestamp}.md`
 - `edge-cases-review-{timestamp}.md`
 
