@@ -8,13 +8,13 @@ This skill governs the `/ant-farm-plan` slash command. It accepts a spec file pa
 
 There are three input modes:
 
-| Mode | Invocation | Surveyor | Notes |
+| Mode | Invocation | Spec Writer | Notes |
 |------|-----------|----------|-------|
-| Freeform | `/ant-farm-plan <idea text>` | Yes | Surveyor asks clarifying questions and writes spec.md |
-| Structured spec | `/ant-farm-plan path/to/spec.md` | No | Spec written verbatim; user may optionally run Foragers |
-| PRD import | `/ant-farm-plan --prd path/to/prd.md` | No | PRD extracted into spec.md format; user confirms before Foragers |
+| Freeform | `/ant-farm-plan <idea text>` | Yes | Spec Writer asks clarifying questions and writes spec.md |
+| Structured spec | `/ant-farm-plan path/to/spec.md` | No | Spec written verbatim; user may optionally run Researchers |
+| PRD import | `/ant-farm-plan --prd path/to/prd.md` | No | PRD extracted into spec.md format; user confirms before Researchers |
 
-Use `--prd` when you have an existing Product Requirements Document you want decomposed directly. The Surveyor is skipped; the PRD Importer agent reads the file, extracts requirements into spec.md format, and asks you to confirm before spawning Foragers. Use standard invocation (freeform or structured spec) when you are starting from scratch or from a lightweight outline.
+Use `--prd` when you have an existing Product Requirements Document you want decomposed directly. The Spec Writer is skipped; the PRD Importer agent reads the file, extracts requirements into spec.md format, and asks you to confirm before spawning Researchers. Use standard invocation (freeform or structured spec) when you are starting from scratch or from a lightweight outline.
 
 ## Trigger Conditions
 
@@ -82,7 +82,7 @@ If the user invoked `/ant-farm-plan` with no argument and no inline text (and no
 >
 > - `/ant-farm-plan path/to/spec.md` — decompose a spec file
 > - `/ant-farm-plan <inline text>` — decompose inline specification text
-> - `/ant-farm-plan --prd path/to/prd.md` — import a PRD file and skip the Surveyor
+> - `/ant-farm-plan --prd path/to/prd.md` — import a PRD file and skip the Spec Writer
 >
 > Provide a file path, paste your spec text directly, or use `--prd` to import a PRD.
 

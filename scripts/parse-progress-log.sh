@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # parse-progress-log.sh — Parse a session progress log and write a structured resume plan.
 #
-# Called by the Queen at session startup (Step 0) when a prior session's SESSION_DIR is
+# Called by the Orchestrator at session startup (Step 0) when a prior session's SESSION_DIR is
 # detected. Reads progress.log, determines which steps completed, identifies the resume
-# point, and writes a resume-plan.md the Queen presents to the user for approval.
+# point, and writes a resume-plan.md the Orchestrator presents to the user for approval.
 #
 # Usage:
 #   parse-progress-log.sh <SESSION_DIR>
@@ -13,7 +13,7 @@
 #                 should be parsed (e.g. .crumbs/sessions/_session-abc123)
 #
 # Output:
-#   Writes {SESSION_DIR}/resume-plan.md — a structured markdown plan the Queen reads
+#   Writes {SESSION_DIR}/resume-plan.md — a structured markdown plan the Orchestrator reads
 #   and presents verbatim to the user.
 #
 # Exit codes:
@@ -76,15 +76,15 @@ STEP_KEYS=(
 step_label() {
     case "$1" in
         SESSION_INIT)     echo "Session Init: Session setup" ;;
-        SCOUT_COMPLETE)   echo "Scout Complete: Recon (Scout + SSV gate)" ;;
-        WAVE_SPAWNED)     echo "Wave Spawned: Spawn (Pantry + CCO + Crumb Gatherers)" ;;
+        SCOUT_COMPLETE)   echo "Recon Planner Complete: Recon (Recon Planner + startup-check gate)" ;;
+        WAVE_SPAWNED)     echo "Wave Spawned: Spawn (Prompt Composer + CCO + Implementers)" ;;
         WAVE_WWD_PASS)    echo "Wave WWD Passed: WWD verification passed" ;;
         WAVE_VERIFIED)    echo "Wave Verified: Verify (WWD + CMVCC)" ;;
-        REVIEW_COMPLETE)  echo "Review Complete: Review (Nitpicker team)" ;;
+        REVIEW_COMPLETE)  echo "Review Complete: Review (Reviewer team)" ;;
         REVIEW_TRIAGED)   echo "Review Triaged: Triage (P1/P2 decision)" ;;
         DOCS_COMMITTED)   echo "Docs Committed: Documentation (README/CLAUDE.md)" ;;
         XREF_VERIFIED)    echo "Xref Verified: Cross-reference verification" ;;
-        SCRIBE_COMPLETE)  echo "Scribe Complete: Step 5b (Scribe exec summary)" ;;
+        SCRIBE_COMPLETE)  echo "Session Scribe Complete: Step 5b (Session Scribe exec summary)" ;;
         ESV_PASS)         echo "ESV Pass: Step 5c (Exec Summary Verification)" ;;
         SESSION_COMPLETE) echo "Session Complete: Land the plane (git push)" ;;
         *)                echo "$1" ;;
@@ -94,16 +94,16 @@ step_label() {
 step_resume_action() {
     case "$1" in
         SESSION_INIT)     echo "Re-run SESSION_INIT to regenerate SESSION_ID and SESSION_DIR (fresh start recommended)." ;;
-        SCOUT_COMPLETE)   echo "Re-run SCOUT_COMPLETE: check for existing briefing.md; if absent, re-spawn the Scout." ;;
-        WAVE_SPAWNED)     echo "Re-run WAVE_SPAWNED: re-read briefing.md and re-spawn Pantry + Crumb Gatherers for unfinished waves." ;;
-        WAVE_WWD_PASS)    echo "Proceed to CMVCC verification: WWD already passed; re-spawn Pest Control for CMVCC only." ;;
-        WAVE_VERIFIED)    echo "Re-run WAVE_VERIFIED: re-spawn Pest Control for WWD/CMVCC on any unverified waves." ;;
-        REVIEW_COMPLETE)  echo "Re-run REVIEW_COMPLETE: re-spawn the Nitpicker team (check for existing review reports first)." ;;
-        REVIEW_TRIAGED)   echo "Re-run REVIEW_TRIAGED: re-read the Big Head summary and re-present findings to the user." ;;
+        SCOUT_COMPLETE)   echo "Re-run SCOUT_COMPLETE: check for existing briefing.md; if absent, re-spawn the Recon Planner." ;;
+        WAVE_SPAWNED)     echo "Re-run WAVE_SPAWNED: re-read briefing.md and re-spawn Prompt Composer + Implementers for unfinished waves." ;;
+        WAVE_WWD_PASS)    echo "Proceed to CMVCC verification: WWD already passed; re-spawn Checkpoint Auditor for CMVCC only." ;;
+        WAVE_VERIFIED)    echo "Re-run WAVE_VERIFIED: re-spawn Checkpoint Auditor for WWD/CMVCC on any unverified waves." ;;
+        REVIEW_COMPLETE)  echo "Re-run REVIEW_COMPLETE: re-spawn the Reviewer team (check for existing review reports first)." ;;
+        REVIEW_TRIAGED)   echo "Re-run REVIEW_TRIAGED: re-read the Review Consolidator summary and re-present findings to the user." ;;
         DOCS_COMMITTED)   echo "Re-run DOCS_COMMITTED: update README and CLAUDE.md in a single commit." ;;
         XREF_VERIFIED)    echo "Re-run XREF_VERIFIED: verify cross-references for all tasks." ;;
-        SCRIBE_COMPLETE)  echo "Resume at Step 5b (Scribe): re-spawn the Scribe agent to generate the exec summary." ;;
-        ESV_PASS)         echo "Resume at Step 5c (ESV): re-run Exec Summary Verification against the existing exec summary." ;;
+        SCRIBE_COMPLETE)  echo "Resume at Step 5b (Session Scribe): re-spawn the Session Scribe agent to generate the exec summary." ;;
+        ESV_PASS)         echo "Resume at Step 5c: re-run Exec Summary Verification against the existing exec summary." ;;
         SESSION_COMPLETE) echo "Re-run SESSION_COMPLETE: git pull --rebase, git push." ;;
         *)                echo "Resume from this step." ;;
     esac

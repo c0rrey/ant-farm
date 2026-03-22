@@ -28,7 +28,7 @@
 # Outputs:
 #   {SESSION_DIR}/prompts/review-{type}.md           — filled review prompts
 #   {SESSION_DIR}/previews/review-{type}-preview.md  — combined previews
-#   {SESSION_DIR}/prompts/review-big-head-consolidation.md — Big Head brief
+#   {SESSION_DIR}/prompts/review-big-head-consolidation.md — Review Consolidator brief
 #   {SESSION_DIR}/review-reports/                    — directory created for reports
 #
 # Exit codes:
@@ -300,13 +300,13 @@ fi
 
 # ---------------------------------------------------------------------------
 # Preflight: team-size check.
-# Total expected team members = reviewer instances + Big Head + Pest Control.
+# Total expected team members = reviewer instances + Review Consolidator + Checkpoint Auditor.
 # Claude Code supports at most 15 concurrent agents; exceeding this silently
 # drops agents. Error early rather than silently under-review.
 # ---------------------------------------------------------------------------
 EXPECTED_TEAM_SIZE=$(( ${#ACTIVE_REVIEW_TYPES[@]} + 2 ))
 if [ "$EXPECTED_TEAM_SIZE" -gt 15 ]; then
-    echo "ERROR: Team size check failed: expected_team_size=${EXPECTED_TEAM_SIZE} (${#ACTIVE_REVIEW_TYPES[@]} reviewer instances + Big Head + Pest Control) exceeds the 15-agent ceiling." >&2
+    echo "ERROR: Team size check failed: expected_team_size=${EXPECTED_TEAM_SIZE} (${#ACTIVE_REVIEW_TYPES[@]} reviewer instances + Review Consolidator + Checkpoint Auditor) exceeds the 15-agent ceiling." >&2
     echo "Reduce REVIEW_SPLIT_THRESHOLD or limit the number of changed files per session." >&2
     exit 1
 fi
@@ -362,7 +362,7 @@ extract_focus_block() {
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
-# Helper: build a filled review prompt for one Nitpicker review type.
+# Helper: build a filled review prompt for one Reviewer review type.
 #
 # Reads the master nitpicker-skeleton.md, extracts the agent-facing section,
 # converts placeholders, and delegates all slot substitution to
@@ -428,7 +428,7 @@ build_nitpicker_prompt() {
         echo ""
         echo "**Timestamp**: {{TIMESTAMP}}"
         echo ""
-        echo "Do NOT file crumbs — Big Head handles all crumb filing."
+        echo "Do NOT file crumbs — Review Consolidator handles all crumb filing."
     } > "$tmp_template" || {
         echo "ERROR: Failed to write template file: $tmp_template" >&2
         exit 1
@@ -465,7 +465,7 @@ build_nitpicker_prompt() {
 }
 
 # ---------------------------------------------------------------------------
-# Helper: build the filled Big Head consolidation brief.
+# Helper: build the filled Review Consolidator consolidation brief.
 #
 # Delegates all slot substitution to crumb render-template.
 # Orchestration logic (expected_paths construction) remains in shell.
@@ -503,7 +503,7 @@ build_big_head_prompt() {
     # shellcheck disable=SC2064
     trap "rm -f '$tmp_template'" RETURN
     {
-        printf '<!-- Big Head prompt | Built by build-review-prompts.sh -->\n'
+        printf '<!-- Review Consolidator prompt | Built by build-review-prompts.sh -->\n'
         echo ""
         echo "$body"
         echo ""
@@ -536,7 +536,7 @@ build_big_head_prompt() {
         exit 1
     }
 
-    echo "  Big Head brief: $out_file"
+    echo "  Review Consolidator brief: $out_file"
     echo "  Consolidated output will be: $consolidated_output"
 }
 
@@ -584,7 +584,7 @@ for review_type in "${ACTIVE_REVIEW_TYPES[@]}"; do
 done
 
 if [ ! -f "${SESSION_DIR}/prompts/review-big-head-consolidation.md" ]; then
-    echo "ERROR: Big Head consolidation brief not found: ${SESSION_DIR}/prompts/review-big-head-consolidation.md" >&2
+    echo "ERROR: Review Consolidator consolidation brief not found: ${SESSION_DIR}/prompts/review-big-head-consolidation.md" >&2
     ALL_OK=false
 fi
 
@@ -617,7 +617,7 @@ for f in "${SCAN_FILES[@]}"; do
     # Check for unfilled {{UPPERCASE}} double-brace slots (applies to all output files).
     # These are the crumb render-template slot tokens — none should survive substitution.
     # Note: angle-bracket path placeholders (<session-dir>, <timestamp>) are NOT
-    # scanned here because both Nitpicker templates (e.g. <task-id>) and the Big Head
+    # scanned here because both Reviewer templates (e.g. <task-id>) and the Review Consolidator
     # template (e.g. <P>, <title>, <new-crumb-id>) contain intentional angle-bracket
     # tokens in instructional examples that are meant to reach the agent verbatim.
     # Those tokens are documented in the template source note added to reviews.md.
@@ -647,5 +647,5 @@ for review_type in "${ACTIVE_REVIEW_TYPES[@]}"; do
     echo "| ${review_type} | ${SESSION_DIR}/prompts/review-${review_type}.md | ${SESSION_DIR}/previews/review-${review_type}-preview.md | ${SESSION_DIR}/review-reports/${review_type}-review-${TIMESTAMP}.md |"
 done
 echo ""
-echo "Big Head consolidation data: ${SESSION_DIR}/prompts/review-big-head-consolidation.md"
-echo "Big Head consolidated output: ${SESSION_DIR}/review-reports/review-consolidated-${TIMESTAMP}.md"
+echo "Review Consolidator consolidation data: ${SESSION_DIR}/prompts/review-big-head-consolidation.md"
+echo "Review Consolidator consolidated output: ${SESSION_DIR}/review-reports/review-consolidated-${TIMESTAMP}.md"

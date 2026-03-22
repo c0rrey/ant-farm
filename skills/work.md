@@ -1,10 +1,10 @@
 ---
-description: This skill should be used when the user invokes "/ant-farm-work", says "let's get to work", "start execution", "run the pipeline", "execute tasks", or asks to begin running crumbs or executing queued tasks. Triggers the ant-farm execution workflow: reads .crumbs/tasks.jsonl, runs a startup coherence check, creates a SESSION_DIR, then launches the Queen orchestration pipeline (RULES.md).
+description: This skill should be used when the user invokes "/ant-farm-work", says "let's get to work", "start execution", "run the pipeline", "execute tasks", or asks to begin running crumbs or executing queued tasks. Triggers the ant-farm execution workflow: reads .crumbs/tasks.jsonl, runs a startup coherence check, creates a SESSION_DIR, then launches the Orchestrator orchestration pipeline (RULES.md).
 ---
 
 # /ant-farm-work — Execution Session Skill
 
-This skill governs the `/ant-farm-work` slash command. It reads `.crumbs/tasks.jsonl`, runs a startup coherence check, and launches the Queen orchestration pipeline defined in `orchestration/RULES.md`.
+This skill governs the `/ant-farm-work` slash command. It reads `.crumbs/tasks.jsonl`, runs a startup coherence check, and launches the Orchestrator orchestration pipeline defined in `orchestration/RULES.md`.
 
 ## Trigger Conditions
 
@@ -68,7 +68,7 @@ Stop. Do not proceed.
 
 ## Step 1 — Execution Startup Coherence Check
 
-Run this lightweight check before spawning the Scout. It catches structural issues caused by manual edits to `.crumbs/tasks.jsonl` between decomposition and execution sessions. Surface results as **warnings** (not hard blocks) — the user decides whether to fix or proceed.
+Run this lightweight check before spawning the Recon Planner. It catches structural issues caused by manual edits to `.crumbs/tasks.jsonl` between decomposition and execution sessions. Surface results as **warnings** (not hard blocks) — the user decides whether to fix or proceed.
 
 ### Check 1: blocked_by references resolve
 
@@ -81,7 +81,7 @@ echo "${DOCTOR_OUTPUT}" | grep -i "dangling blocked_by" || echo "OK"
 
 If dangling references are found:
 
-> **Warning**: Some `blocked_by` references point to non-existent IDs: `[list them]`. The Scout will treat these as resolved (following `crumb ready` semantics). Fix with `crumb link <id> --remove-blocked-by <missing-id>` if this is unintentional.
+> **Warning**: Some `blocked_by` references point to non-existent IDs: `[list them]`. The Recon Planner will treat these as resolved (following `crumb ready` semantics). Fix with `crumb link <id> --remove-blocked-by <missing-id>` if this is unintentional.
 
 ### Check 2: parent links resolve
 
@@ -109,7 +109,7 @@ If any in_progress crumbs are found:
 
 > **Warning**: The following crumbs are still marked `in_progress` from a previous session: `[list them]`. This may indicate a crashed or abandoned session. Options:
 > - Reset to open: `crumb update <id> --status open` (recommended if the work was not completed)
-> - Keep as-is: the Scout will skip these and work around them
+> - Keep as-is: the Recon Planner will skip these and work around them
 
 Wait for user decision before proceeding if in_progress crumbs are found.
 
@@ -126,9 +126,9 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SESSION_INIT|complete|session_dir=${SESSION
 
 Store `SESSION_ID` and `SESSION_DIR` in context. Pass `SESSION_DIR` explicitly to every downstream agent.
 
-## Step 3 — Launch Queen Orchestration
+## Step 3 — Launch Orchestrator
 
-Read `orchestration/RULES.md`. Follow its workflow from **Step 1** (Recon / Scout spawn) onward. The Scout reads `.crumbs/tasks.jsonl` via the `crumb` CLI.
+Read `orchestration/RULES.md`. Follow its workflow from **Step 1** (Recon / Recon Planner spawn) onward. The Recon Planner reads `.crumbs/tasks.jsonl` via the `crumb` CLI.
 
 All other orchestration rules from `orchestration/RULES.md` apply without exception: wave management, concurrency limits, hard gates (startup-check, pre-spawn-check, scope-verify, claims-vs-code, session-complete), model assignments, and landing-the-plane protocol.
 
