@@ -145,7 +145,7 @@ After 2 rounds, proceed with the current state and note any unresolved concerns.
 
 ### Step 5: Write spec.md
 
-Write `{DECOMPOSE_DIR}/spec.md` using the **identical format and fields** as the Surveyor's
+Write `{DECOMPOSE_DIR}/spec.md` using the **identical format and fields** as the Spec Writer's
 output (downstream agents must not be able to distinguish the source):
 
 ```
@@ -187,7 +187,7 @@ user deferred flagged ACs or left revision notes.}
 
 ---
 
-### Step 6: Handle Class B and Class C PRDs (Surveyor fallback)
+### Step 6: Handle Class B and Class C PRDs (Spec Writer fallback)
 
 **Class B — Narrative PRD (no testable AC)**:
 
@@ -197,7 +197,7 @@ Do NOT write a spec.md. Instead, report to the user:
 > a narrative requirements document. Without concrete pass/fail criteria, automatic
 > extraction would produce an incomplete spec.
 >
-> I'll hand this off to the Surveyor, which will use your PRD as context, ask targeted
+> I'll hand this off to the Spec Writer, which will use your PRD as context, ask targeted
 > clarifying questions, and produce a complete spec with testable criteria."
 
 Then return to the Planner with the fallback signal:
@@ -205,7 +205,7 @@ Then return to the Planner with the fallback signal:
 PRD_IMPORT|fallback_to_surveyor|prd_context={PRD_PATH}|reason=no_testable_ac
 ```
 
-The Planner will spawn the Surveyor with the PRD content included in `{FEATURE_REQUEST}`.
+The Planner will spawn the Spec Writer with the PRD content included in `{FEATURE_REQUEST}`.
 
 **Class C — Invalid PRD (not a requirements document)**:
 
@@ -235,7 +235,7 @@ If text is ambiguous, flag it for the user in Step 4 rather than interpreting it
 ### Output format compatibility
 
 The generated spec.md MUST use the exact same sections and field labels as the
-Surveyor-produced spec.md. Downstream agents (Foragers, Architect) read spec.md
+Spec Writer-produced spec.md. Downstream agents (Researchers, Task Decomposer) read spec.md
 without knowing its source. Any format deviation breaks the pipeline.
 
 ### Vague criteria — flag, do not fix
@@ -262,11 +262,11 @@ Non-requirements: {N stated / "not specified"}
 Open questions: {N} (0 if section omitted)
 ```
 
-After a Surveyor fallback (Class B), return:
+After a Spec Writer fallback (Class B), return:
 
 ```
 PRD_IMPORT|fallback_to_surveyor
 PRD context: {PRD_PATH}
 Reason: No testable acceptance criteria found
-Next step: Spawn Surveyor with PRD content as FEATURE_REQUEST
+Next step: Spawn Spec Writer with PRD content as FEATURE_REQUEST
 ```

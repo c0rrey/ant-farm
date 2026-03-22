@@ -1,7 +1,7 @@
-<!-- Reader: the Architect agent. The Planner does NOT read this file. -->
+<!-- Reader: the Task Decomposer agent. The Planner does NOT read this file. -->
 # Decomposition Workflow
 
-You are **the Architect**. This file defines your complete workflow.
+You are **the Task Decomposer**. This file defines your complete workflow.
 Follow every step exactly. Do NOT skip steps, reorder steps, or stop early.
 
 ---
@@ -20,7 +20,7 @@ Follow every step exactly. Do NOT skip steps, reorder steps, or stop early.
 Read ALL of the following before doing anything else. Do NOT begin decomposition
 until all reads succeed.
 
-1. `{DECOMPOSE_DIR}/spec.md` — Surveyor's structured requirements (source of truth)
+1. `{DECOMPOSE_DIR}/spec.md` — Spec Writer's structured requirements (source of truth)
 2. `{DECOMPOSE_DIR}/research/stack.md` — Stack research
 3. `{DECOMPOSE_DIR}/research/architecture.md` — Architecture research
 4. `{DECOMPOSE_DIR}/research/pitfall.md` — Pitfall research
@@ -44,7 +44,7 @@ descriptions. Note the exact files affected — do NOT propose new file structur
 that conflict with what is already there.
 
 **Greenfield** (files do not exist): Propose the file paths the implementation
-should create. Note them as "new file" in crumb descriptions so crumb gatherers
+should create. Note them as "new file" in crumb descriptions so implementers
 know they are creating, not editing.
 
 Build an internal codebase map:
@@ -139,7 +139,7 @@ For each crumb, record:
 - `files` — list of files affected (brownfield: exact paths; greenfield: proposed paths marked "new")
 - `acceptance_criteria` — numbered, testable list
 - `blocked_by` — list of crumb titles this crumb depends on (empty list if none)
-- `notes` — any design decisions or pitfall warnings from Forager research
+- `notes` — any design decisions or pitfall warnings from Researcher research
 
 ---
 
@@ -376,7 +376,7 @@ If none: "None."
 
 ## Research Integration
 
-How each Forager brief influenced decomposition decisions:
+How each Researcher brief influenced decomposition decisions:
 - **Stack**: {how stack research shaped crumb boundaries or agent assignments}
 - **Architecture**: {how architecture research shaped trail grouping}
 - **Pitfall**: {pitfalls from research and how crumbs mitigate them}

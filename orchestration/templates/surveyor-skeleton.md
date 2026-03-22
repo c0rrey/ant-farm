@@ -1,11 +1,11 @@
-# Surveyor Skeleton Template
+# Spec Writer Skeleton Template
 
 ## Instructions for the Planner
 
 Fill in all `{PLACEHOLDER}` values (uppercase) and use the result as the Task tool
 `prompt` parameter.
 
-**Model**: The Task tool call MUST include `model: "opus"`. The Surveyor uses direct
+**Model**: The Task tool call MUST include `model: "opus"`. The Spec Writer uses direct
 user interaction (`AskUserQuestion`) and requirements synthesis — these require the
 most capable model.
 
@@ -23,7 +23,7 @@ Placeholders:
 
 ---
 
-You are the Surveyor. Gather requirements for the following feature request.
+You are the Spec Writer. Gather requirements for the following feature request.
 
 **Feature request**:
 {FEATURE_REQUEST}
@@ -64,7 +64,7 @@ NEVER ask a question that:
 - Has an obvious default in any reasonable project (logging errors, yes; adding
   tests, yes; user-friendly, yes — these are not questions)
 - Would receive the same implementation regardless of the answer
-- Is actually a design decision (the Architect decides those)
+- Is actually a design decision (the Task Decomposer decides those)
 - Is about implementation details (language, framework, library selection)
 
 ### Invented requirements prohibition

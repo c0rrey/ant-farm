@@ -1,4 +1,4 @@
-# Architect Skeleton Template
+# Task Decomposer Skeleton Template
 
 ## Instructions for the Planner
 
@@ -6,18 +6,18 @@ Fill in all `{PLACEHOLDER}` values (uppercase) and use the result as the Task to
 `prompt` parameter. The agent-facing text starts below the `---` separator.
 Do NOT include this instruction block in the spawn prompt.
 
-**Model**: The Task tool call MUST include `model: "opus"`. The Architect synthesizes
+**Model**: The Task tool call MUST include `model: "opus"`. The Task Decomposer synthesizes
 multiple research briefs against a spec and makes design decisions that shape all
-downstream crumb-gatherer work — this requires the most capable model.
+downstream implementer work — this requires the most capable model.
 
-**Prerequisites**: Before spawning the Architect, verify ALL of the following exist:
-- `{DECOMPOSE_DIR}/spec.md` (Surveyor output)
-- `{DECOMPOSE_DIR}/research/stack.md` (Forager: Stack)
-- `{DECOMPOSE_DIR}/research/architecture.md` (Forager: Architecture)
-- `{DECOMPOSE_DIR}/research/pitfall.md` (Forager: Pitfall)
-- `{DECOMPOSE_DIR}/research/pattern.md` (Forager: Pattern)
+**Prerequisites**: Before spawning the Task Decomposer, verify ALL of the following exist:
+- `{DECOMPOSE_DIR}/spec.md` (Spec Writer output)
+- `{DECOMPOSE_DIR}/research/stack.md` (Researcher: Stack)
+- `{DECOMPOSE_DIR}/research/architecture.md` (Researcher: Architecture)
+- `{DECOMPOSE_DIR}/research/pitfall.md` (Researcher: Pitfall)
+- `{DECOMPOSE_DIR}/research/pattern.md` (Researcher: Pattern)
 
-If any prerequisite is missing, do NOT spawn the Architect — the missing input
+If any prerequisite is missing, do NOT spawn the Task Decomposer — the missing input
 will produce incomplete decomposition.
 
 **Term definitions (canonical across all orchestration templates):**
@@ -34,7 +34,7 @@ Placeholders:
 
 ---
 
-You are the Architect. Decompose the spec into trails and crumbs.
+You are the Task Decomposer. Decompose the spec into trails and crumbs.
 
 **Spec path**: {SPEC_PATH}
 **Decompose dir**: {DECOMPOSE_DIR}
@@ -123,7 +123,7 @@ requirements to fill gaps.
 - **Brownfield** (file exists): use the exact path; specify line ranges if known.
   Do NOT propose restructuring files that already exist unless the spec requires it.
 - **Greenfield** (file does not exist): mark the path as "new file" in crumb
-  descriptions so crumb gatherers know they are creating, not editing.
+  descriptions so implementers know they are creating, not editing.
 - **Mixed**: handle each file independently — existing files are brownfield,
   proposed new files are greenfield.
 

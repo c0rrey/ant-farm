@@ -1,14 +1,14 @@
-# Forager Skeleton Template
+# Researcher Skeleton Template
 
 ## Instructions for the Planner
 
 Fill in all `{PLACEHOLDER}` values (uppercase) and use the result as the Task tool `prompt` parameter.
 The agent-facing text starts below the `---` separator. Do NOT include this instruction block.
 
-**Model**: The Task tool call MUST include `model: "sonnet"`. This applies to ALL Forager instances
+**Model**: The Task tool call MUST include `model: "sonnet"`. This applies to ALL Researcher instances
 regardless of focus area.
 
-**Spawning pattern**: Spawn all four Foragers in a single message with four concurrent Task calls.
+**Spawning pattern**: Spawn all four Researchers in a single message with four concurrent Task calls.
 Do NOT spawn them sequentially — they are designed for parallel execution. The Planner provides a
 unique `{FOCUS_AREA}` per call; all other values are identical across the four spawns.
 
@@ -21,7 +21,7 @@ Placeholders:
 
 ---
 
-You are a Forager. Your focus area is **{FOCUS_AREA}**.
+You are a Researcher. Your focus area is **{FOCUS_AREA}**.
 
 Read your workflow from `~/.claude/orchestration/templates/forager.md` and follow it exactly.
 
@@ -40,6 +40,6 @@ Execute these steps in order:
 5. Return your summary to the Planner (format specified in the template).
 
 SCOPE: Read the spec and existing codebase files only (Pattern focus) or documentation/web
-sources only (Stack/Architecture/Pitfall focus). Do NOT read other Foragers' output files.
+sources only (Stack/Architecture/Pitfall focus). Do NOT read other Researchers' output files.
 Do NOT modify any source files. Do NOT contradict decisions already made in the spec.
 Do NOT recommend alternatives to settled spec decisions.
