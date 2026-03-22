@@ -156,8 +156,8 @@ Skipping Step 3b is a critical workflow violation.
             or any other `crumb` commands — the Scout handles all task discovery and metadata gathering.
             WAIT for the Scout to return its briefing verdict (written to `{SESSION_DIR}/briefing.md`).
 
-**Step 1b:** startup-check gate — After Scout writes `{SESSION_DIR}/briefing.md`, spawn Checkpoint Auditor
-            (`ant-farm-checkpoint-auditor`, `model: "haiku"`) for Scout Strategy Verification (startup-check).
+**Step 1b:** startup-check (SSV) gate — After Scout writes `{SESSION_DIR}/briefing.md`, spawn Checkpoint Auditor
+            (`ant-farm-checkpoint-auditor`, `model: "haiku"`) for Scout Strategy Verification (SSV / startup-check).
             Pass `Session directory: <value of SESSION_DIR>` and the paths `orchestration/templates/checkpoints/common.md`
             and `orchestration/templates/checkpoints/startup-check.md` as its instruction files. Checkpoint Auditor reads `{SESSION_DIR}/briefing.md` itself and runs all three
             mechanical checks (file overlap within waves, file list match against crumbs, intra-wave dependency
@@ -221,7 +221,7 @@ Skipping Step 3b is a critical workflow violation.
             `orchestration/templates/checkpoints/common.md` + `orchestration/templates/checkpoints/claims-vs-code.md` + task-metadata/ + git diffs itself).
             Failed claims-vs-code → resume agent (max 2 retries).
             **Progress log (after claims-vs-code PASS for each wave):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_VERIFIED|wave=<N>|claims_vs_code=pass|tasks_verified=<ids>|commits=<hashes>|next_step=REVIEW_3B" >> ${SESSION_DIR}/progress.log`
-            Note: For non-final waves, use `next_step=NEXT_WAVE` instead. The Position Check (see below) uses this value to confirm the correct next action.
+            Note: For non-final waves, use `next_step=NEXT_WAVE` instead. The Position Check (see above) uses this value to confirm the correct next action.
 
 **Step 3b:** Review (round 1: Clarity, Edge Cases, Correctness, Drift; round 2+: Correctness, Edge Cases only) — Read `orchestration/RULES-review.md` now for the full Step 3b workflow.
             **Prerequisite**: Before composing review briefs, validate commit range format and file list completeness

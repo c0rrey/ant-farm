@@ -53,12 +53,11 @@ if [ ! -r "$PROGRESS_LOG" ]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Step definitions: ordered list of all workflow milestones.
-# Each entry: "step_key|display_label|description"
-# step_key must match the second field of progress.log pipe-delimited lines.
+# Step definitions: ordered list of bare step keys for all workflow milestones.
+# Each key must match the second field of progress.log pipe-delimited lines.
+# Human-readable labels and resume actions are provided by the helper
+# functions step_label() and step_resume_action() defined below.
 # ---------------------------------------------------------------------------
-
-# Ordered step definitions: step_key | display_label | description
 STEP_KEYS=(
     "SESSION_INIT"
     "SCOUT_COMPLETE"

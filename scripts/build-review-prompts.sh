@@ -352,6 +352,11 @@ build_nitpicker_prompt() {
     local out_prompt="${SESSION_DIR}/prompts/review-${review_type}.md"
     local out_preview="${SESSION_DIR}/previews/review-${review_type}-preview.md"
     local report_output_path="${SESSION_DIR}/review-reports/${review_type}-review-${TIMESTAMP}.md"
+    # The data file the agent reads IS the prompt file itself -- the Review
+    # Brief section (appended below in step 4) embeds all review inputs inline
+    # in the prompt. This self-referential assignment is safe because crumb
+    # render-template reads from a temp file and writes to stdout; $out_prompt
+    # is the render destination, not the source, so no read/write conflict.
     local data_file_path="${out_prompt}"
 
     # Resolve the file list for this review type.
