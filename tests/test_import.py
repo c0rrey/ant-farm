@@ -195,7 +195,7 @@ class TestImportPlain:
 # ---------------------------------------------------------------------------
 
 
-def _make_update_args_import(**kwargs: Any) -> argparse.Namespace:
+def _make_update_args(**kwargs: Any) -> argparse.Namespace:
     """Return a minimal Namespace for cmd_update with sane defaults."""
     defaults: Dict[str, Any] = {
         "id": None,
@@ -241,7 +241,7 @@ class TestFromJsonNoop:
         same_payload = json.dumps(
             {"title": "Existing title", "description": "Existing description"}
         )
-        cmd_update(_make_update_args_import(id="AF-1", from_json=same_payload))
+        cmd_update(_make_update_args(id="AF-1", from_json=same_payload))
 
         captured = capsys.readouterr()
         assert "updated" not in captured.out, (
@@ -270,7 +270,7 @@ class TestFromJsonNoop:
         tasks_path.write_text(json.dumps(record) + "\n", encoding="utf-8")
 
         new_payload = json.dumps({"title": "New title"})
-        cmd_update(_make_update_args_import(id="AF-1", from_json=new_payload))
+        cmd_update(_make_update_args(id="AF-1", from_json=new_payload))
 
         captured = capsys.readouterr()
         assert "updated AF-1" in captured.out
@@ -298,7 +298,7 @@ class TestFromJsonNoop:
 
         # Pass the same nested dict value — no real change.
         same_payload = json.dumps({"scope": {"agent_type": "python-pro"}})
-        cmd_update(_make_update_args_import(id="AF-1", from_json=same_payload))
+        cmd_update(_make_update_args(id="AF-1", from_json=same_payload))
 
         captured = capsys.readouterr()
         assert "updated" not in captured.out, (
