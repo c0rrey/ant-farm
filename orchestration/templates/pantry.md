@@ -151,7 +151,10 @@ Do NOT fix adjacent issues you notice.
 
 **MANDATORY OUTPUT**: Every task that produced a task brief in Step 2 MUST also produce a preview file in this step. Preview files are hard requirements — not optional. Do NOT proceed to Step 4 until every preview file is written and verified.
 
-1. Read `~/.claude/orchestration/templates/crumb-gatherer-skeleton.md`
+1. Read `~/.claude/orchestration/templates/crumb-gatherer-skeleton.md`.
+   **File existence check**: If the skeleton file is absent or unreadable, halt immediately and return:
+   `INFRASTRUCTURE FAILURE: crumb-gatherer-skeleton.md not found at ~/.claude/orchestration/templates/crumb-gatherer-skeleton.md — cannot compose previews. Verify orchestration setup.`
+   Do NOT proceed with preview composition if the skeleton is missing.
 2. For each task, construct a combined prompt preview:
    a. Take the skeleton template text (below the `---` separator)
    b. Fill in `{UPPERCASE}` placeholders with the task's values
