@@ -46,7 +46,7 @@ for filepath in "$AGENTS_DIR"/*.md; do
     if [ "$in_frontmatter" -eq 1 ]; then
       # Extract name field
       if echo "$line" | grep -q "^name:"; then
-        name=$(echo "$line" | sed 's/^name:[[:space:]]*//')
+        name=$(echo "$line" | sed "s/^name:[[:space:]]*//; s/^['\"]//; s/['\"]$//")
       fi
       # Extract description field (single-line only; these agents all use single-line descriptions)
       if echo "$line" | grep -q "^description:"; then
