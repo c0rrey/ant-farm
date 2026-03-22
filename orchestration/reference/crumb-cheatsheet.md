@@ -75,6 +75,17 @@ crumb doctor [--fix]
 crumb doctor --fix
 ```
 
+**ready** — List crumbs with no blocking dependencies (ready to start)
+```
+crumb ready [--limit N] [--sort priority|created_at|status]
+crumb ready --limit 5 --sort priority
+```
+
+**blocked** — List crumbs that have unsatisfied blockers
+```
+crumb blocked
+```
+
 ---
 
 ## Gotchas
