@@ -17,7 +17,7 @@ When running any checkpoint:
 2. Read every artifact you're asked to audit (previews, diffs, summary docs, reports)
 3. Evaluate each criterion independently — do not let a strong showing in one area excuse weakness in another
 4. Write a structured report with PASS/FAIL per criterion, evidence for each, and an overall verdict
-5. Return the verdict table to the Queen
+5. Return the verdict table to the Orchestrator
 
 Watch for these failure patterns:
 - Agents claiming 4 "distinct" approaches that are cosmetic variations of one idea

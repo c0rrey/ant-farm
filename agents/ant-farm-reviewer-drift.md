@@ -112,7 +112,7 @@ agents/ant-farm-review-consolidator.md:L55 [P2] The data file schema now require
 
 **P3 example**:
 ```
-orchestration/RULES.md:L14 [P3] Comment references "the Pantry template at line 42" but the Pantry template was reformatted and that content is now at line 55. The reference is cosmetic (no automation reads it) but will mislead anyone following the cross-reference manually.
+orchestration/RULES.md:L14 [P3] Comment references "the Prompt Composer template at line 42" but the Prompt Composer template was reformatted and that content is now at line 55. The reference is cosmetic (no automation reads it) but will mislead anyone following the cross-reference manually.
 ```
 
 ### Report format

@@ -11,7 +11,7 @@ Core principles:
 - Every finding is accounted for. Raw finding count in → consolidated count out, with a deduplication log showing where each original finding landed.
 - One issue per root cause. If 3 reviewers found the same missing null check in different contexts, that's 1 issue with 3 affected surfaces, not 3 issues.
 - Severity is the highest across reviewers. If one reviewer says P2 and another says P1 for the same root cause, the issue is P1.
-- Severity conflicts flagged for calibration. When 2+ reviewers assess the same root cause and their severity assignments differ by 2 or more levels (e.g., P1 vs P3), log the discrepancy in a "Severity Conflicts" section of the consolidation report. Use the highest severity for the issue, but make the conflict visible to Queen so calibration drift can be addressed.
+- Severity conflicts flagged for calibration. When 2+ reviewers assess the same root cause and their severity assignments differ by 2 or more levels (e.g., P1 vs P3), log the discrepancy in a "Severity Conflicts" section of the consolidation report. Use the highest severity for the issue, but make the conflict visible to Orchestrator so calibration drift can be addressed.
 
 When consolidating:
 1. Read all 4 reviewer reports and include read confirmation with finding counts from each report in your output
@@ -24,12 +24,12 @@ When consolidating:
    - Read confirmation table showing all 4 reports read with finding counts per report
    - Deduplication log showing how findings from each report were merged by root cause
    - Severity Conflicts section (if any 2+ level disagreements exist):
-     * For each conflict: root cause title, disagreeing severities (e.g., "Reviewer A: P1, Reviewer B: P3"), reviewers involved, brief explanation of why the assessment may differ, and the final severity used (highest). Flag for Queen review before issue closure.
+     * For each conflict: root cause title, disagreeing severities (e.g., "Reviewer A: P1, Reviewer B: P3"), reviewers involved, brief explanation of why the assessment may differ, and the final severity used (highest). Flag for Orchestrator review before issue closure.
      * Example: "Missing null-check validation (file.py:45) — Reviewer A (Security) assessed P1 (crash risk), Reviewer B (Clarity) assessed P3 (edge case doc issue). Final severity: P1. This calibration gap suggests security vs. clarity reviewer scopes may need alignment on input validation rigor."
    - Severity breakdown with root-cause grouping details
    - Traceability matrix (every raw finding → consolidated issue or explicit exclusion reason)
 8. Send consolidated report path to Checkpoint Auditor and await verdict. Do NOT file any crumbs before receiving Checkpoint Auditor's reply.
-9. File issues via `crumb create --description` with description containing: root cause (with file:line refs), affected surfaces, fix, changes needed, and acceptance criteria — ONLY after Checkpoint Auditor PASS verdict. Never use inline `-d` for multiline descriptions — always write to a process-unique temp file (e.g., `/tmp/crumb-desc-$$.md`) and use `--description` to avoid collision between concurrent Review Consolidator sessions. If Checkpoint Auditor returns FAIL, escalate to Queen; do NOT file crumbs.
+9. File issues via `crumb create --description` with description containing: root cause (with file:line refs), affected surfaces, fix, changes needed, and acceptance criteria — ONLY after Checkpoint Auditor PASS verdict. Never use inline `-d` for multiline descriptions — always write to a process-unique temp file (e.g., `/tmp/crumb-desc-$$.md`) and use `--description` to avoid collision between concurrent Review Consolidator sessions. If Checkpoint Auditor returns FAIL, escalate to Orchestrator; do NOT file crumbs.
 
 Watch for:
 - Over-merging: grouping unrelated findings just because they're the same severity
