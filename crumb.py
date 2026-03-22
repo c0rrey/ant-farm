@@ -832,6 +832,11 @@ def cmd_update(args: argparse.Namespace) -> None:
                             existing_sub[sub_key] = sub_val
                             changed = True
                 else:
+                    if isinstance(crumb.get(key), dict) and not isinstance(value, dict):
+                        print(
+                            f"Warning: field '{key}' was a dict but is being replaced by a scalar value from --from-json",
+                            file=sys.stderr,
+                        )
                     if crumb.get(key) != value:
                         crumb[key] = value
                         changed = True
