@@ -124,6 +124,10 @@ _MAP_DIR=""
 
 map_init() {
     _MAP_DIR="$(mktemp -d)" || { echo "ERROR: mktemp -d failed -- check TMPDIR and disk space." >&2; exit 1; }
+    # Register cleanup immediately after mktemp succeeds, before any mkdir calls.
+    # If mkdir -p fails below, set -e exits the script but the EXIT trap is already
+    # registered and will clean up the temp directory.
+    trap 'map_cleanup' EXIT
     mkdir -p "${_MAP_DIR}/completed" "${_MAP_DIR}/timestamp" "${_MAP_DIR}/details" "${_MAP_DIR}/next_step"
 }
 
@@ -168,7 +172,6 @@ map_has() {
 # Multi-occurrence steps (WAVE_SPAWNED, WAVE_VERIFIED, REVIEW_COMPLETE, REVIEW_TRIAGED) may appear multiple times (one per wave/round).
 
 map_init
-trap 'map_cleanup' EXIT
 
 # Pre-build a lookup set of valid step keys for O(1) membership checks during parsing.
 mkdir -p "${_MAP_DIR}/valid_keys"
