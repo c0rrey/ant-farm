@@ -101,6 +101,10 @@ Spot-check 2 merged groups by reading the actual code at each finding's location
 - Report: "Group '<title>' merges N findings across files {list}. Common pattern: {yes/no — explanation}. CONFIRMED / SUSPECT"
 
 ## Check 7: Crumb Provenance Audit
+**Input guard**: If `{SESSION_START_DATE}` still appears as the literal text `{SESSION_START_DATE}` (curly braces present), is blank, or does not match ISO 8601 date format (`YYYY-MM-DD`), abort Check 7 and return the following message:
+
+"review-integrity Check 7 ABORTED: SESSION_START_DATE placeholder was not substituted before spawning review-integrity (got: '{SESSION_START_DATE}'). Root cause: upstream substitution failure — the Queen did not replace `{SESSION_START_DATE}` in the review-integrity prompt before dispatch. Fix: ensure the Queen fills in SESSION_START_DATE as an ISO 8601 date (e.g. `2026-02-20`) before spawning the Checkpoint Auditor."
+
 Run `crumb list --open --after {SESSION_START_DATE}` and cross-reference against the consolidated summary's "Crumbs filed" list.
 - `{SESSION_START_DATE}`: the Queen-supplied session start date (ISO 8601 format, e.g., `2026-02-20`). This scopes results to crumbs filed during this session only and prevents pulling thousands of unrelated open crumbs from earlier sessions.
 - Every open crumb from this session should trace back to the consolidation step
