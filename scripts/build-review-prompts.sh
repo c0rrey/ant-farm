@@ -458,18 +458,12 @@ build_big_head_prompt() {
     local consolidated_output="${SESSION_DIR}/review-reports/review-consolidated-${TIMESTAMP}.md"
 
     # Build the expected report paths list (round-appropriate)
-    # Assumption: SESSION_DIR and TIMESTAMP must not contain tab characters.
-    # Each path is embedded in a markdown list line.
+    # Each path is embedded in a markdown list line, joined by literal newlines.
     local expected_paths=""
     for rt in "${ACTIVE_REVIEW_TYPES[@]}"; do
-        expected_paths="${expected_paths}- ${SESSION_DIR}/review-reports/${rt}-review-${TIMESTAMP}.md\n"
+        [[ -n "$expected_paths" ]] && expected_paths="${expected_paths}"$'\n'
+        expected_paths="${expected_paths}- ${SESSION_DIR}/review-reports/${rt}-review-${TIMESTAMP}.md"
     done
-    # The loop appends a literal two-character sequence "\n" (backslash + n) to
-    # $expected_paths — not a real newline. printf '%b' is used here deliberately
-    # to interpret those backslash-escape sequences and convert each "\n" into an
-    # actual newline character. sed '/^$/d' then strips the blank line that results
-    # from the trailing "\n" appended after the last loop iteration.
-    expected_paths="$(printf '%b' "$expected_paths" | sed '/^$/d')"
 
     # 1. Extract agent-facing section from master template
     local body
