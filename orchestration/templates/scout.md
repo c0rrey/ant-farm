@@ -112,7 +112,7 @@ your Step 2.5 catalog. Consider in order:
 
 **Tie-breaking on equal scores**: If criteria 1-3 result in a tie (multiple agents equally match), apply this two-step tie-breaking:
 - **Step A (Deep Read)**: For ONLY the tied candidates, read their full `.md` files (from the file paths recorded in Step 2.5). Re-evaluate the match against task root cause, title, and acceptance criteria using full descriptions.
-- **Step B (Explicit Fallback)**: If tie persists after Step A, record the agent type as: `PICK ONE: [type-a | type-b]` (pipe-separated list of tied types). This signals to the Queen that multiple agents are equally suitable for this task.
+- **Step B (Explicit Fallback)**: If tie persists after Step A, record the agent type as: `PICK ONE: type-a OR type-b` (OR-separated list of tied types). This signals to the Queen that multiple agents are equally suitable for this task.
 
 **Important**: Do NOT read full agent `.md` files unless a tie occurs. Catalog-only reads are the default path, keeping context usage minimal for the common case.
 
@@ -163,9 +163,9 @@ Each strategy MUST include:
 - **Risk assessment**: overall risk level and what could go wrong
 - **Coverage**: verify all tasks (ready + blocked) are assigned to exactly one wave
 
-**Presenting tied agents**: When a task's agent type is `PICK ONE: [type-a | type-b]`, list it in the strategy with the full PICK ONE notation. Example:
+**Presenting tied agents**: When a task's agent type is `PICK ONE: type-a OR type-b`, list it in the strategy with the full PICK ONE notation. Example:
 ```
-**Wave 1** (6 agents): ant-farm-xyz (python-pro), ant-farm-abc (PICK ONE: [debugger | performance-engineer]), ant-farm-def (typescript-pro), ...
+**Wave 1** (6 agents): ant-farm-xyz (python-pro), ant-farm-abc (PICK ONE: debugger OR performance-engineer), ant-farm-def (typescript-pro), ...
 ```
 This makes it explicit to the Queen which tasks have agent ambiguity and what the alternatives are.
 
