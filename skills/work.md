@@ -32,7 +32,7 @@ Stop. Do not proceed.
 ### Error: No tasks found
 
 ```bash
-crumb list --type=task --short 2>/dev/null | wc -l
+crumb list --type=task --short 2>/dev/null | grep -c . || echo 0
 ```
 
 If the file exists but contains zero crumbs (trails only, or empty):
@@ -44,7 +44,7 @@ Stop. Do not proceed.
 ### Error: All tasks closed
 
 ```bash
-crumb list --open --short 2>/dev/null | wc -l
+crumb list --open --short 2>/dev/null | grep -c . || echo 0
 ```
 
 If all crumbs are closed (open count = 0):
