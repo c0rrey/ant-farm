@@ -83,7 +83,7 @@ Timestamp format: `YYYYMMDD-HHmmss` (UTC).
 
 ## Modifying Agent Templates
 
-Templates live in `orchestration/templates/`. Each template has a specific reader -- the Queen never reads most of them directly.
+Templates live in `orchestration/templates/`. Each template has a specific reader (see inventory below). The Queen reads five templates directly (`crumb-gatherer-skeleton.md`, `reviewer-skeleton.md`, `review-consolidator-skeleton.md`, `scribe-skeleton.md`, `queen-state.md`); all others are read by subagents or scripts.
 
 ### Template inventory
 
