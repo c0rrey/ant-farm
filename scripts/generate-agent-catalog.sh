@@ -9,6 +9,13 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 AGENTS_DIR="$REPO_ROOT/agents"
 OUTPUT="$REPO_ROOT/orchestration/agent-catalog.md"
 
+# Verify output directory exists before writing
+OUTPUT_DIR="$(dirname "$OUTPUT")"
+if [ ! -d "$OUTPUT_DIR" ]; then
+  echo "Error: output directory does not exist: $OUTPUT_DIR" >&2
+  exit 1
+fi
+
 # Write catalog header
 {
   echo "# Agent Catalog"
