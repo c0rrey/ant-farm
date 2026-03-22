@@ -281,16 +281,16 @@ run_test "files_lc_all_c_sorted_before_partitioning" '
     # With threshold=4, 10 files → 3 partitions.
     # LC_ALL=C sort: q.sh r.sh s.sh t.sh | u.sh v.sh w.sh x.sh | y.sh z.sh
     # Partition 1 (clarity-1) must contain q.sh, r.sh, s.sh, t.sh only.
-    part1="$session/prompts/review-clarity-1.md"
+    part1_clarity="$session/prompts/review-clarity-1.md"
     for expected_file in q.sh r.sh s.sh t.sh; do
-        if ! grep -qF "$expected_file" "$part1"; then
+        if ! grep -qF "$expected_file" "$part1_clarity"; then
             echo "ASSERTION FAILED: clarity-1 missing expected file: $expected_file" >&2
             exit 1
         fi
     done
     # Partition 1 must NOT contain files from partition 2+
     for unexpected_file in u.sh v.sh w.sh x.sh y.sh z.sh; do
-        if grep -qF "$unexpected_file" "$part1"; then
+        if grep -qF "$unexpected_file" "$part1_clarity"; then
             echo "ASSERTION FAILED: clarity-1 contains out-of-partition file: $unexpected_file" >&2
             exit 1
         fi
