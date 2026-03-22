@@ -10,7 +10,7 @@ It is not an open-ended autonomous coding agent. It is a constrained orchestrati
 >
 > - Decomposes specs into dependency-aware tasks, then executes them in parallel waves
 > - Six verification checkpoints block progression if agents cut corners or drift out of scope
-> - The orchestrator (the Queen) never reads source code. It reads briefings, verdicts, and commit messages. Everything else is delegated.
+> - The Orchestrator never reads source code. It reads briefings, verdicts, and commit messages. Everything else is delegated.
 > - Four parallel code reviewers (with automatic split-instancing for large file sets) consolidate findings by root cause, file fix tasks, and re-review until convergence
 > - Every session produces a full artifact trail: metadata, prompts, summaries, review reports, checkpoint audits, exec summary, and CHANGELOG entry
 > - If something goes wrong, the system escalates to you with context instead of retrying forever
@@ -27,11 +27,11 @@ The core idea is **constrained delegation**. Work is split across specialist age
 ```
 Planning Workflow                    Execution Workflow
 
-  Spec Writer                          Scout (recon)
+  Spec Writer                          Recon Planner
      |                                    |
   Researchers (4x parallel)            startup-check gate
      |                                    |
-  User approval gate                   Pantry (prompt composition)
+  User approval gate                   Prompt Composer
      |                                    |
   Task Decomposer (decomposition)      pre-spawn-check gate (prompt audit)
      |                                    |
@@ -54,17 +54,17 @@ Four layers, each with a clear job.
 
 **1. Task and artifact layer.** `crumb.py` stores tasks and trails in `.crumbs/tasks.jsonl`. Sessions write durable artifacts (metadata, prompts, summaries, review reports, checkpoint audits) under `.crumbs/sessions/`.
 
-**2. Two orchestrators.** The Planner handles decomposition (Spec Writer, Researchers, Task Decomposer). The Queen handles execution (Scout, Pantry, Crumb Gatherers, Reviewers, Review Consolidator, Scribe). They have different permissions, different state models, and different agent teams.
+**2. Two orchestrators.** The Planner handles decomposition (Spec Writer, Researchers, Task Decomposer). The Orchestrator handles execution (Recon Planner, Prompt Composer, Implementers, Reviewers, Review Consolidator, Session Scribe). They have different permissions, different state models, and different agent teams.
 
 **3. Specialist agents.** Claude Code agent definitions in `agents/` cover recon, prompt composition, implementation, review, consolidation, verification, and documentation.
 
 **4. Verification layer.** The Checkpoint Auditor runs seven checkpoint types (startup-check, pre-spawn-check, scope-verify, claims-vs-code, review-integrity, session-complete, tdv) that mechanically block progression. It operates both as a standalone checkpoint runner and as a member of the Reviewer team.
 
-### The Queen's Information Diet
+### The Orchestrator's Information Diet
 
-The Queen never reads source code, tests, configs, or implementation templates. It reads the Scout's briefing, agent notifications, commit messages, and verdict tables. That's it.
+The Orchestrator never reads source code, tests, configs, or implementation templates. It reads the Recon Planner's briefing, agent notifications, commit messages, and verdict tables. That's it.
 
-Every other agent absorbs its own context cost so the Queen's window stays clean. The target: finish a 40+ task session with >50% of a 1M context window remaining.
+Every other agent absorbs its own context cost so the Orchestrator's window stays clean. The target: finish a 40+ task session with >50% of a 1M context window remaining.
 
 If your orchestrator is spending tokens reading `utils.py`, it is not orchestrating.
 
@@ -74,7 +74,7 @@ Nothing progresses until these pass.
 
 | Gate | Historical Acronym | What it blocks | Model |
 |------|--------------------|---------------|-------|
-| **startup-check** | SSV (Scout Strategy Verification) | Pantry spawn | haiku |
+| **startup-check** | SSV | Prompt Composer spawn | haiku |
 | **pre-spawn-check** | CCO (Colony Cartography Office) | Agent spawn | haiku |
 | **scope-verify** | WWD (Wandering Worker Detection) | Next agent in wave | haiku |
 | **claims-vs-code** | CMVCC (Crumbs Moved vs Crumbs Claimed) | Task closure | sonnet |
@@ -129,7 +129,7 @@ Then tell Claude Code:
 Let's get to work on: ant-farm-XXXX
 ```
 
-The Queen spawns the Scout for recon, verifies the strategy via startup-check, and auto-proceeds to spawn implementation agents. You don't approve the strategy. The checkpoint does.
+The Orchestrator spawns the Recon Planner for recon, verifies the strategy via startup-check, and auto-proceeds to spawn implementation agents. You don't approve the strategy. The checkpoint does.
 
 ## Project Structure
 
@@ -146,7 +146,7 @@ ant-farm/
 │   ├── ant-farm-spec-writer.md
 │   └── ant-farm-session-scribe.md
 ├── orchestration/
-│   ├── RULES.md             # Queen's execution workflow steps and gates
+│   ├── RULES.md             # Orchestrator's execution workflow steps and gates
 │   ├── RULES-decompose.md   # Planner's decomposition workflow
 │   ├── RULES-review.md      # Review-phase-specific rules
 │   ├── SETUP.md             # How to wire orchestration into a new project
@@ -184,11 +184,11 @@ Triggered by saying **"let's get to work"** in any project wired up per `orchest
 
 ### Step 0: Session Setup
 
-Generate a session ID, create the session directory, and initialize the artifact layout. If a prior session directory is supplied, the Queen can recover from `progress.log` via `scripts/parse-progress-log.sh`.
+Generate a session ID, create the session directory, and initialize the artifact layout. If a prior session directory is supplied, the Orchestrator can recover from `progress.log` via `scripts/parse-progress-log.sh`.
 
 ### Step 1: Recon
 
-The Queen spawns the Scout, an opus subagent that:
+The Orchestrator spawns the Recon Planner, an opus subagent that:
 
 1. Discovers tasks (from epic, explicit list, or natural-language filter)
 2. Separates ready vs. blocked tasks
@@ -198,14 +198,14 @@ The Queen spawns the Scout, an opus subagent that:
 6. Proposes 2-3 execution strategies with wave groupings
 7. Writes `{session-dir}/briefing.md`
 
-After startup-check PASS, the Queen auto-proceeds. Strategy approval is mechanical, not conversational.
+After startup-check PASS, the Orchestrator auto-proceeds. Strategy approval is mechanical, not conversational.
 
 ### Step 2: Spawn Implementation Agents
 
-The Queen delegates prompt composition to the Pantry, which reads templates, extracts per-task context, and writes combined prompt previews to disk. The Checkpoint Auditor audits the previews against the pre-spawn-check checkpoint. Only agents with PASS verdicts are spawned.
+The Orchestrator delegates prompt composition to the Prompt Composer, which reads templates, extracts per-task context, and writes combined prompt previews to disk. The Checkpoint Auditor audits the previews against the pre-spawn-check checkpoint. Only agents with PASS verdicts are spawned.
 
 ```
-Queen                          Pantry                    Checkpoint Auditor
+Orchestrator                   Prompt Composer            Checkpoint Auditor
   │                              │                           │
   ├──spawn────────────────────►  │                           │
   │  "compose Wave N prompts"    │                           │
@@ -220,10 +220,10 @@ Queen                          Pantry                    Checkpoint Auditor
   │                                                          ├─audit each preview
   │  ◄──return verdict table─────────────────────────────────┤
   │                                                          │
-  ├──spawn Crumb Gatherers (up to 7 parallel)──►              │
+  ├──spawn Implementers (up to 7 parallel)──►                │
 ```
 
-Each Crumb Gatherer executes 6 mandatory steps:
+Each Implementer executes 6 mandatory steps:
 
 1. **Claim** the task
 2. **Design** 4+ genuinely distinct approaches with tradeoffs
@@ -245,7 +245,7 @@ Failed claims-vs-code means the agent is resumed with specific gaps, re-verified
 
 ### Step 3b: Quality Review
 
-After all implementation and claims-vs-code checks pass, the Queen enters a mandatory review phase with a Reviewer team (4+ parallel reviewers + Review Consolidator + Checkpoint Auditor):
+After all implementation and claims-vs-code checks pass, the Orchestrator enters a mandatory review phase with a Reviewer team (4+ parallel reviewers + Review Consolidator + Checkpoint Auditor):
 
 | Review | Severity Focus | Model |
 |--------|---------------|-------|
@@ -256,7 +256,7 @@ After all implementation and claims-vs-code checks pass, the Queen enters a mand
 
 When the changed-file count exceeds `REVIEW_SPLIT_THRESHOLD` (default 8), Clarity and Drift are split into multiple instances (e.g., `clarity-1`, `clarity-2`) with partitioned file subsets. Correctness and Edge Cases always receive the full file list.
 
-Review Consolidator reads all reports, merges duplicates by root cause, and files one issue per root cause. Checkpoint Auditor runs claims-vs-code + review-integrity inside the team before results return to the Queen.
+Review Consolidator reads all reports, merges duplicates by root cause, and files one issue per root cause. Checkpoint Auditor runs claims-vs-code + review-integrity inside the team before results return to the Orchestrator.
 
 If P1/P2 issues are found, the system enters a review/fix/re-review loop until convergence, deferral, or the round cap.
 
@@ -309,7 +309,7 @@ Documented in `orchestration/reference/known-failures.md`. Two incidents shaped 
 
 **Agents skipped the hard parts.** During Epic 3, agents bypassed mandatory design and correctness review steps. They claimed "4 approaches considered" without actually considering them. claims-vs-code now verifies substance, not just completion claims. It reads the git diff and checks whether the summary matches reality.
 
-**Three agents trampled the same file.** During Epic 74g, three agents worked on the same file without line-level boundaries. Each one "helpfully" fixed adjacent issues and introduced conflicts. This produced scope-verify (scope verification), enhanced pre-spawn-check (requiring line-number specificity in prompts), anti-scope-creep template language, and pre-flight conflict risk assessment in the Scout.
+**Three agents trampled the same file.** During Epic 74g, three agents worked on the same file without line-level boundaries. Each one "helpfully" fixed adjacent issues and introduced conflicts. This produced scope-verify (scope verification), enhanced pre-spawn-check (requiring line-number specificity in prompts), anti-scope-creep template language, and pre-flight conflict risk assessment in the Recon Planner.
 
 Most orchestration problems are trust problems wearing a concurrency costume.
 
@@ -334,29 +334,29 @@ All file paths in this document use repo-root relative format. At runtime, agent
 |------|---------|---------|
 | `orchestration/templates/claude-block.md` | `setup.sh`, `/ant-farm-init` | Canonical orchestration block (triggers + session completion) |
 | `agents/*.md` | Claude Code (at startup) | Custom agent type definitions |
-| `orchestration/RULES.md` | The Queen | Execution workflow steps, hard gates, concurrency rules |
+| `orchestration/RULES.md` | The Orchestrator | Execution workflow steps, hard gates, concurrency rules |
 | `orchestration/RULES-decompose.md` | The Planner | Decomposition workflow steps and gates |
-| `orchestration/RULES-review.md` | The Queen (review phase) | Review-specific workflow rules |
+| `orchestration/RULES-review.md` | The Orchestrator (review phase) | Review-specific workflow rules |
 | `orchestration/SETUP.md` | User | How to wire orchestration into a new project |
 | `orchestration/GLOSSARY.md` | Reference | Term definitions used across orchestration docs |
-| `orchestration/templates/implementation.md` | The Pantry | Agent prompt template with 6 mandatory steps |
+| `orchestration/templates/implementation.md` | The Prompt Composer | Agent prompt template with 6 mandatory steps |
 | `orchestration/templates/checkpoints/` | Checkpoint Auditor | Per-checkpoint definitions (common.md preamble + one file per checkpoint type) |
 | `orchestration/templates/reviews.md` | `build-review-prompts.sh` | Review protocol, 4 review types, Review Consolidator consolidation |
-| `orchestration/templates/pantry.md` | The Pantry | Pantry's own instructions |
-| `orchestration/templates/scout.md` | The Scout | Pre-flight recon instructions |
+| `orchestration/templates/pantry.md` | The Prompt Composer | Prompt Composer's own instructions |
+| `orchestration/templates/scout.md` | The Recon Planner | Pre-flight recon instructions |
 | `orchestration/templates/surveyor.md` | The Spec Writer | Requirements gathering instructions |
 | `orchestration/templates/forager.md` | The Researcher | Parallel research instructions |
 | `orchestration/templates/decomposition.md` | The Task Decomposer | Decomposition workflow instructions |
-| `orchestration/templates/crumb-gatherer-skeleton.md` | The Queen | Minimal agent spawn template |
-| `orchestration/templates/reviewer-skeleton.md` | The Queen | Minimal review agent spawn template |
-| `orchestration/templates/review-consolidator-skeleton.md` | The Queen | Review Consolidator spawn template |
-| `orchestration/templates/scribe-skeleton.md` | The Queen | Session Scribe spawn template |
+| `orchestration/templates/crumb-gatherer-skeleton.md` | The Orchestrator | Minimal agent spawn template |
+| `orchestration/templates/reviewer-skeleton.md` | The Orchestrator | Minimal review agent spawn template |
+| `orchestration/templates/review-consolidator-skeleton.md` | The Orchestrator | Review Consolidator spawn template |
+| `orchestration/templates/scribe-skeleton.md` | The Orchestrator | Session Scribe spawn template |
 | `orchestration/templates/surveyor-skeleton.md` | The Planner | Spec Writer spawn template |
 | `orchestration/templates/forager-skeleton.md` | The Planner | Researcher spawn template |
 | `orchestration/templates/architect-skeleton.md` | The Planner | Task Decomposer spawn template |
-| `orchestration/templates/queen-state.md` | The Queen | Session state template |
+| `orchestration/templates/queen-state.md` | The Orchestrator | Session state template |
 | `orchestration/templates/SESSION_PLAN_TEMPLATE.md` | User | Session planning template |
-| `orchestration/reference/dependency-analysis.md` | The Scout | Pre-flight conflict analysis |
+| `orchestration/reference/dependency-analysis.md` | The Recon Planner | Pre-flight conflict analysis |
 | `orchestration/reference/known-failures.md` | Post-mortem reference | Past failures and fixes applied |
 
 </details>

@@ -28,7 +28,7 @@ Body text: the agent's system prompt. Instructions, principles, workflow steps.
 - `tools` -- subset of: `Bash`, `Read`, `Write`, `Edit`, `Glob`, `Grep`
 
 **Optional frontmatter fields:**
-- `model` -- e.g. `sonnet`, `haiku`. If omitted, the model is set by the Queen at spawn time via the `model` parameter on the Task tool call. See `orchestration/reference/model-assignments.md`.
+- `model` -- e.g. `sonnet`, `haiku`. If omitted, the model is set by the Orchestrator at spawn time via the `model` parameter on the Task tool call. See `orchestration/reference/model-assignments.md`.
 
 ### Restart requirement
 
@@ -38,8 +38,8 @@ Claude Code loads agent files once at startup. Adding or editing an agent file r
 
 1. **`README.md`** -- add the agent to the "Custom agents" table
 2. **`orchestration/reference/agent-types.md`** and **`orchestration/reference/model-assignments.md`** -- add the agent to the Agent Types table and Model Assignments table
-3. **`orchestration/templates/scout.md`** -- the Scout discovers agents dynamically by scanning `~/.claude/agents/`, so no template change is needed unless you want to add heuristic rules for when to recommend the new agent
-4. **`orchestration/GLOSSARY.md`** -- add the agent to the "Ant Metaphor Roles" table (the `## Ant Metaphor Roles` section)
+3. **`orchestration/templates/scout.md`** -- the Recon Planner discovers agents dynamically by scanning `~/.claude/agents/`, so no template change is needed unless you want to add heuristic rules for when to recommend the new agent
+4. **`orchestration/GLOSSARY.md`** -- add the agent to the "Agent Roles" table (the `## Agent Roles` section)
 
 ### One-TeamCreate-per-session constraint
 
@@ -83,24 +83,26 @@ Timestamp format: `YYYYMMDD-HHmmss` (UTC).
 
 ## Modifying Agent Templates
 
-Templates live in `orchestration/templates/`. Each template has a specific reader (see inventory below). The Queen reads five templates directly (`crumb-gatherer-skeleton.md`, `reviewer-skeleton.md`, `review-consolidator-skeleton.md`, `scribe-skeleton.md`, `queen-state.md`); all others are read by subagents or scripts.
+Templates live in `orchestration/templates/`. Each template has a specific reader (see inventory below). The Orchestrator reads five templates directly (`crumb-gatherer-skeleton.md`, `reviewer-skeleton.md`, `review-consolidator-skeleton.md`, `scribe-skeleton.md`, `queen-state.md`); all others are read by subagents or scripts.
 
 ### Template inventory
 
 | Template | Read by | Purpose |
 |----------|---------|---------|
-| `scout.md` | Scout (self-read) | Pre-flight recon instructions |
-| `pantry.md` | Pantry (self-read) | Prompt composition instructions |
-| `implementation.md` | Crumb Gatherer (via Pantry composition) | Agent prompt template with 6 mandatory steps |
-| `implementation-summary.md` | Pantry | Condensed extract of implementation.md read by Pantry during prompt composition |
+| `scout.md` | Recon Planner (self-read) | Pre-flight recon instructions |
+| `pantry.md` | Prompt Composer (self-read) | Prompt composition instructions |
+| `implementation.md` | Implementer (via Prompt Composer composition) | Agent prompt template with 6 mandatory steps |
+| `implementation-summary.md` | Prompt Composer | Condensed extract of implementation.md read by Prompt Composer during prompt composition |
 | `checkpoints/` | Checkpoint Auditor | Per-checkpoint definitions (common.md + one per type) |
 | `reviews.md` | `build-review-prompts.sh` | Review protocol, report format |
-| `crumb-gatherer-skeleton.md` | Queen | Minimal agent spawn template |
-| `reviewer-skeleton.md` | Queen, `build-review-prompts.sh` | Review agent spawn template |
-| `review-consolidator-skeleton.md` | Queen, `build-review-prompts.sh` | Review Consolidator spawn template |
-| `queen-state.md` | Queen | Session state file schema |
-| `scribe-skeleton.md` | Queen | Session Scribe spawn template |
+| `crumb-gatherer-skeleton.md` | Orchestrator | Minimal agent spawn template |
+| `reviewer-skeleton.md` | Orchestrator, `build-review-prompts.sh` | Review agent spawn template |
+| `nitpicker-skeleton.md` | Orchestrator, `build-review-prompts.sh` | Reviewer spawn template (alternative skeleton) |
+| `review-consolidator-skeleton.md` | Orchestrator, `build-review-prompts.sh` | Review Consolidator spawn template |
+| `queen-state.md` | Orchestrator | Session state file schema |
+| `scribe-skeleton.md` | Orchestrator | Session Scribe spawn template |
 | `review-focus-areas.md` | `build-review-prompts.sh` | Per-type focus blocks for Reviewer prompts |
+| `prd-import.md` | Planner | PRD import and requirements extraction instructions |
 | `surveyor.md` | Spec Writer (self-read) | Requirements gathering instructions |
 | `surveyor-skeleton.md` | Planner | Spec Writer spawn template |
 | `forager.md` | Researcher (self-read) | Parallel research instructions |
@@ -111,7 +113,7 @@ Templates live in `orchestration/templates/`. Each template has a specific reade
 
 ### Placeholder conventions
 
-Templates use `{PLACEHOLDER}` (single braces) for values filled by the Queen or Pantry at spawn time. Review skeletons use `{{SLOT_NAME}}` (double braces) for values filled by `build-review-prompts.sh`.
+Templates use `{PLACEHOLDER}` (single braces) for values filled by the Orchestrator or Prompt Composer at spawn time. Review skeletons use `{{SLOT_NAME}}` (double braces) for values filled by `build-review-prompts.sh`.
 
 Common placeholders:
 - `{TASK_ID}`, `{TASK_SUFFIX}` -- crumb identifiers
@@ -121,10 +123,10 @@ Common placeholders:
 
 ### What to watch when editing templates
 
-- **`implementation.md`** defines the 6 mandatory steps that every Crumb Gatherer must follow. If you change a step, update the corresponding pre-spawn-check rule in `checkpoints/pre-spawn-check.md` (pre-spawn-check Check 4 verifies all 6 steps are present).
+- **`implementation.md`** defines the 6 mandatory steps that every Implementer must follow. If you change a step, update the corresponding pre-spawn-check rule in `checkpoints/pre-spawn-check.md` (pre-spawn-check Check 4 verifies all 6 steps are present).
 - **`reviews.md`** defines review types and report format. Changes here must stay in sync with `build-review-prompts.sh` (which reads `reviews.md` to build review prompts) and the review-integrity checks in `checkpoints/review-integrity.md` (which verify report structure).
 - **`reviewer-skeleton.md`** and **`review-consolidator-skeleton.md`** are read by `build-review-prompts.sh` to produce filled prompt files. If you change their structure, verify the script still parses them correctly.
-- **`crumb-gatherer-skeleton.md`** is what the Queen uses to spawn agents. If you add fields, the Pantry's task briefs must include the corresponding data.
+- **`crumb-gatherer-skeleton.md`** is what the Orchestrator uses to spawn agents. If you add fields, the Prompt Composer's task briefs must include the corresponding data.
 
 ## Testing Changes
 
@@ -145,7 +147,7 @@ Common placeholders:
 
 4. **Verify the workflow reaches the gate you modified.** For example:
    - Changed `checkpoints/pre-spawn-check.md` pre-spawn-check rules? Verify the pre-spawn-check report in `{SESSION_DIR}/pc/` reflects the new check.
-   - Changed `implementation.md`? Verify the Crumb Gatherer's summary doc follows the updated steps.
+   - Changed `implementation.md`? Verify the Implementer's summary doc follows the updated steps.
    - Changed `reviews.md`? Verify the review previews in `{SESSION_DIR}/previews/` contain the expected content.
 
 ### Script validation
@@ -235,7 +237,7 @@ Changes to one file often require updates to others. This table lists the critic
 |------------------|----------------|
 | `reviewer-skeleton.md` structure | `build-review-prompts.sh` (parses this file) |
 | `review-consolidator-skeleton.md` structure | `build-review-prompts.sh` (parses this file) |
-| `crumb-gatherer-skeleton.md` fields | `pantry.md` (Pantry must produce matching task brief data) |
+| `crumb-gatherer-skeleton.md` fields | `pantry.md` (Prompt Composer must produce matching task brief data) |
 | Slot marker names (`{{...}}`) | `build-review-prompts.sh` (fills the markers) |
 
 ### Agent file dependencies
@@ -260,8 +262,8 @@ Changes to one file often require updates to others. This table lists the critic
 
 | If you change... | Also update... |
 |------------------|----------------|
-| pre-spawn-check (CCO) gate rules | Ensure RULES-lite.md Step 2 still references the correct checkpoint files |
-| claims-vs-code (CMVCC) gate rules | Ensure RULES-lite.md Step 4 still references the correct checkpoint files |
+| pre-spawn-check gate rules | Ensure RULES-lite.md Step 2 still references the correct checkpoint files |
+| claims-vs-code gate rules | Ensure RULES-lite.md Step 4 still references the correct checkpoint files |
 | Progress log step key names | `scripts/parse-progress-log.sh` STEP_KEYS array (lite mode reuses full-mode step keys) |
 | When lite mode is appropriate | Update the "Use lite mode when" section in RULES-lite.md and the Lite Mode section in SETUP.md |
 | Lite mode glossary terms | `orchestration/GLOSSARY.md` (lite mode and self-review entries) |
