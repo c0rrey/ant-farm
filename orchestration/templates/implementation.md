@@ -130,7 +130,7 @@ Focus: {specific guidance for this file/component}
 **Template** (insert after Context section, before Step 1):
 
 ```markdown
-## 🚨 CRITICAL SCOPE BOUNDARY 🚨
+## CRITICAL SCOPE BOUNDARY
 
 Your task is ONLY to {specific task description}.
 
