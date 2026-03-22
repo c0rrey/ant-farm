@@ -154,6 +154,7 @@ All files audited. All files use the Tiered convention correctly. When updating 
 | `SETUP.md` | None | `{name}` (in skills install path); kickoff statement examples using `<angle-bracket>` preserved as CLI examples | None | None | No | PASS |
 | `GLOSSARY.md` | None | `{id}` (session directory path pattern), `{task-suffix}` (summary doc path) | None | None | No | PASS |
 | `RULES-review.md` | `{SESSION_DIR}` (shell variable in bash blocks) | `{commit-range}`, `{changed-files}`, `{task-IDs}`, `{timestamp}`, `{round}`, `{N}`, `{crumb-id}`, `{hash}`, `{list}`, `{N+1}`; CLI examples using `<angle-bracket>` preserved as-is | `${SESSION_DIR}` (bash code blocks) | None | No | PASS |
+| `review-focus-areas.md` | None | `{type}` (HTML comment delimiters `<!-- FOCUS: {type} -->` / `<!-- /FOCUS: {type} -->`, used by `build-review-prompts.sh` for awk extraction) | None | None | No | PASS |
 | `reference/dependency-analysis.md` | None (no placeholders found) | None | None | None | No | PASS |
 | `reference/known-failures.md` | None (no placeholders found) | None | None | None | No | PASS |
 
