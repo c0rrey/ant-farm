@@ -89,6 +89,8 @@ For each task ID in the input list:
    | {id}    | —          | —          | —            | FAILED: {reason} |
    ```
 
+   > **Note — file existence on disk**: The fail-fast checks above validate metadata *content* (non-empty, complete, no placeholders) but do NOT verify that the files listed in `**Affected Files**` exist on disk. This is by design — file existence is verified downstream by Nitpickers at review time, when the actual file content is read and diffed. If a listed file is missing at that point, the Nitpicker reports the discrepancy.
+
    (Pre-extracted by the Scout. Do NOT run `crumb show` — the metadata is already there.)
 
 2. For successful tasks (Status: success), read and extract:
