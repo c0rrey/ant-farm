@@ -14,7 +14,7 @@ For extraction algorithm details and edge-case examples, see `orchestration/refe
 
 Two labels classify failure modes across orchestration templates:
 
-- **INFRASTRUCTURE FAILURE** — The agent cannot proceed because a system-level dependency is missing or broken: a required file is absent or unreadable, a CLI tool returned an error, or a subprocess exited with a non-zero code for a non-content reason. Recovery typically requires re-running upstream tooling (e.g., re-spawning Scout) rather than fixing content.
+- **INFRASTRUCTURE FAILURE** — The agent cannot proceed because a system-level dependency is missing or broken: a required file is absent or unreadable, a CLI tool returned an error, or a subprocess exited with a non-zero code for a non-content reason. Recovery typically requires re-running upstream tooling (e.g., re-spawning Recon Planner) rather than fixing content.
 
 - **SUBSTANCE FAILURE** — The agent has all required inputs but the content is invalid: required metadata sections are absent or empty, placeholder text was not substituted, or data fails a content-level validation rule. Recovery requires human review or correction of the underlying data.
 

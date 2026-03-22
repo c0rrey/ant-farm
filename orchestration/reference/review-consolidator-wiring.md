@@ -1,6 +1,6 @@
 # Review Consolidator Wiring Instructions
 
-Queen-facing instructions for spawning the Review Consolidator via TeamCreate.
+Orchestrator-facing instructions for spawning the Review Consolidator via TeamCreate.
 Extracted from `orchestration/templates/review-consolidator-skeleton.md` (formerly lines 1–71).
 
 ## Overview
@@ -36,7 +36,7 @@ Replace `{PLACEHOLDER}` values (uppercase) in the agent-facing template below:
 > unavailable), re-spawn it with a **fresh `{TIMESTAMP}` value** — do NOT reuse the original timestamp.
 > A fresh timestamp produces a new `{CONSOLIDATED_OUTPUT_PATH}`, so the old `-FAILED` artifact and the
 > new success artifact coexist in `review-reports/` by design. This is expected behavior, not an error.
-> The Queen should verify results against the artifact with the most recent timestamp.
+> The Orchestrator should verify results against the artifact with the most recent timestamp.
 
 ### Step 2 — Create the reviewer team
 
@@ -44,7 +44,7 @@ Pass the filled-in template text (everything below the `---` separator in `revie
 
 **Round 1**: Review Consolidator is the 5th member in the base case (6 total); Checkpoint Auditor is always the last member. The consolidation brief's `expected_paths` list is authoritative for how many report paths Review Consolidator must wait for.
 
-**Dynamic member list**: The Queen reads the return table from `build-review-prompts.sh` to determine which reviewer slots were filled and how many split instances were produced. Do NOT use a fixed 6-member list. Instead, build the `members` array from the return table:
+**Dynamic member list**: The Orchestrator reads the return table from `build-review-prompts.sh` to determine which reviewer slots were filled and how many split instances were produced. Do NOT use a fixed 6-member list. Instead, build the `members` array from the return table:
 - Base case (no splits): 4 reviewers (`clarity-reviewer`, `edge-cases-reviewer`, `correctness-reviewer`, `drift-reviewer`)
 - Split Clarity: replace `clarity-reviewer` with `clarity-1`, `clarity-2` (and `clarity-3` if 3-way split); each gets its own filled reviewer template with `REVIEW_TYPE=clarity`
 - Split Drift: replace `drift-reviewer` with `drift-1`, `drift-2`, etc.

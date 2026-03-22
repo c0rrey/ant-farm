@@ -61,7 +61,7 @@ Before spawning any agents:
 3. **Build file modification matrix** — map which tasks touch which files
 4. **Assess conflict risk** — use Decision Matrix below
 5. **Estimate agent load** — target balanced workload (±50%), max 7 tasks/agent
-6. **Return briefing to the Queen** — the Queen auto-proceeds to SSV and then spawns Pantry on PASS
+6. **Return briefing to the Orchestrator** — the Orchestrator auto-proceeds to SSV and then spawns Prompt Composer on PASS
 
 ## Decision Matrix
 
@@ -158,8 +158,8 @@ Typical wave pattern: P1 wave (7 tasks) → P2 wave (6 agents, file-grouped) →
 
 ## Subagent Type Mapping
 
-Agent type selection is performed dynamically by the Scout (Step 2.5 of
-`scout.md`). The Scout scans `~/.claude/agents/*.md` and `.claude/agents/*.md`,
+Agent type selection is performed dynamically by the Recon Planner (Step 2.5 of
+`scout.md`). The Recon Planner scans `~/.claude/agents/*.md` and `.claude/agents/*.md`,
 reads frontmatter descriptions, and recommends the best match per task.
 
 Legacy defaults retained for reference:
@@ -170,9 +170,9 @@ Legacy defaults retained for reference:
 | Build system changes | `python-pro` | Build scripts are Python |
 | CSS/HTML implementation | `nextjs-developer` or `javascript-pro` | Frontend expertise |
 | Build verification | `debugger` | Diagnostic and troubleshooting focus |
-| Nitpickers — Correctness, Edge Cases | `code-reviewer` / `opus` | Higher-judgment reviews |
-| Nitpickers — Clarity, Drift | `code-reviewer` / `sonnet` | Lower-judgment reviews |
-| Big Head (consolidation) | `opus` | Cross-report judgment, dedup, priority calibration |
+| Reviewers — Correctness, Edge Cases | `code-reviewer` / `opus` | Higher-judgment reviews |
+| Reviewers — Clarity, Drift | `code-reviewer` / `sonnet` | Lower-judgment reviews |
+| Review Consolidator (consolidation) | `opus` | Cross-report judgment, dedup, priority calibration |
 | General implementation | Match specialist to primary file type | Best domain expertise |
 
 ## Red Flags

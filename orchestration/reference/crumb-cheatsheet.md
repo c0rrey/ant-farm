@@ -109,5 +109,5 @@ crumb blocked
 - **link positional arg order: the crumb being described comes first.**
   `crumb link AF-142 --blocked-by AF-141` means AF-142 is blocked by AF-141.
 
-- **crumb show, crumb ready, crumb list, crumb blocked** are Scout-only reads.
-  The Queen must not call these directly — let the Scout digest them.
+- **crumb show, crumb ready, crumb list, crumb blocked** are Recon Planner-only reads.
+  The Orchestrator must not call these directly — let the Recon Planner digest them.

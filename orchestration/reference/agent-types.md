@@ -2,10 +2,10 @@
 
 | Agent | subagent_type | Rationale |
 |-------|---------------|-----------|
-| Scout | `ant-farm-recon-planner` | Custom agent: agent-organizer + Bash for crumb CLI |
-| Pantry (impl) | `ant-farm-prompt-composer` | Custom agent: CCO-aligned implementation prompt composer |
+| Recon Planner | `ant-farm-recon-planner` | Custom agent: agent-organizer + Bash for crumb CLI |
+| Prompt Composer (impl) | `ant-farm-prompt-composer` | Custom agent: CCO-aligned implementation prompt composer |
 | Checkpoint Auditor | `ant-farm-checkpoint-auditor` | Custom agent: verification auditor, catches fabrication + scope creep |
-| Crumb Gatherers | from Pantry verdict table | Specialist per task — Scout recommends via dynamic agent discovery, Pantry passes through |
+| Implementers | from Prompt Composer verdict table | Specialist per task — Recon Planner recommends via dynamic agent discovery, Prompt Composer passes through |
 | Reviewer — Clarity | `ant-farm-reviewer-clarity` | Custom agent: prose clarity, naming, and readability review |
 | Reviewer — Edge Cases | `ant-farm-reviewer-edge-cases` | Custom agent: boundary conditions and untested scenarios review |
 | Reviewer — Correctness | `ant-farm-reviewer-correctness` | Custom agent: logic correctness and algorithmic accuracy review |
