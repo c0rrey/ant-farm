@@ -2731,6 +2731,7 @@ def build_parser() -> argparse.ArgumentParser:
             "  import      Bulk import from JSONL or migrate from Beads\n"
             "  doctor      Validate tasks.jsonl integrity\n"
             "  init        Bootstrap .crumbs/ directory structure\n"
+            "  prune       Delete old session directories under .crumbs/sessions/\n"
             "  render-template  Expand {{SLOT_NAME}} placeholders in a template file\n"
         ),
     )
