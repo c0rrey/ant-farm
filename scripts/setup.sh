@@ -447,7 +447,7 @@ if [ -d "$REPO_ROOT/orchestration" ]; then
 
             # Detect .local override: if a .local variant exists at the destination,
             # print a notice. setup.sh never creates, modifies, or deletes .local files.
-            local_dst="${dst%.*}.local.${dst##*.}"
+            local_dst="${dst%.*}.local.${dst##*.}"  # e.g. RULES.md → RULES.local.md
             if [ -f "$local_dst" ]; then
                 log "Notice: .local override active: $local_dst (overrides $dst)"
             fi
@@ -545,8 +545,9 @@ remove_claude_block "$GLOBAL_CLAUDE_DST"
 #   The block previously lived in the per-project prompt-dir. It now lives in
 #   the repo's own CLAUDE.md (Step 6c). Clean up the old location.
 # ---------------------------------------------------------------------------
-PROMPTDIR_COMPONENT="$(printf '%s' "$REPO_ROOT" | tr '/' '-')"
-PROMPTDIR_CLAUDE="${HOME}/.claude/projects/${PROMPTDIR_COMPONENT}/CLAUDE.md"
+# Transform repo root path to projects subdir name: /Users/x/my-repo → -Users-x-my-repo
+REPO_ROOT_ESCAPED="$(printf '%s' "$REPO_ROOT" | tr '/' '-')"
+PROMPTDIR_CLAUDE="${HOME}/.claude/projects/${REPO_ROOT_ESCAPED}/CLAUDE.md"
 log "Checking for stale ant-farm block in prompt-dir ${PROMPTDIR_CLAUDE} ..."
 remove_claude_block "$PROMPTDIR_CLAUDE"
 
