@@ -73,15 +73,20 @@ The Queen's window is restricted to prevent context bloat, but certain files are
             Run BEFORE generating a new SESSION_ID.
             Check whether the user's message contains a session directory path
             (e.g. `.crumbs/sessions/_session-<id>`). If a prior SESSION_DIR is
-            supplied or you can identify an incomplete session from context:
+            supplied or you can identify an incomplete session from context,
+            set a variable for the prior path:
+            ```bash
+            PRIOR_SESSION_DIR="<path from user message>"
+            ```
+            Then:
             1. Verify the session directory exists:
                ```bash
-               [ -d "<prior_SESSION_DIR>" ] || echo "Session directory not found: <prior_SESSION_DIR>"
+               [ -d "${PRIOR_SESSION_DIR}" ] || echo "Session directory not found: ${PRIOR_SESSION_DIR}"
                ```
                If the directory does not exist, surface the message to the user and await instruction.
                Do NOT proceed to run `parse-progress-log.sh` on a missing directory.
-            2. Run `bash scripts/parse-progress-log.sh <prior_SESSION_DIR>`
-            3. On exit 0: read `<prior_SESSION_DIR>/resume-plan.md` and present it verbatim to the user.
+            2. Run `bash scripts/parse-progress-log.sh "${PRIOR_SESSION_DIR}"`
+            3. On exit 0: read `{PRIOR_SESSION_DIR}/resume-plan.md` and present it verbatim to the user.
                Wait for the user to reply `resume` or `fresh start` before taking any further action.
                - `resume`: restore SESSION_DIR to the prior value and continue from the indicated step.
                - `fresh start`: generate a new SESSION_ID and proceed normally.
