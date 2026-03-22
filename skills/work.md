@@ -29,6 +29,18 @@ If `.crumbs/tasks.jsonl` or `.crumbs/config.json` does not exist:
 
 Stop. Do not proceed.
 
+### Error: crumb CLI not found
+
+```bash
+command -v crumb >/dev/null 2>&1 || echo "CRUMB_NOT_INSTALLED"
+```
+
+If `crumb` is not installed:
+
+> **Error**: `crumb` CLI not found. Run `/ant-farm-init` to install it.
+
+Stop. Do not proceed.
+
 ### Error: No tasks found
 
 ```bash
