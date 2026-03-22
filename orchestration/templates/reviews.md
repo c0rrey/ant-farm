@@ -577,14 +577,14 @@ If any report file is missing after the initial check, do NOT wait indefinitely.
 # IMPORTANT: This entire block must execute in a single Bash invocation.
 # Shell state (variables) does not persist across separate Bash tool calls.
 
-# REVIEW_ROUND is filled in by fill-review-slots.sh before this brief is delivered.
+# REVIEW_ROUND is filled in by build-review-prompts.sh before this brief is delivered.
 # It is a shell integer (1, 2, 3, ...) used to gate round-1-only checks below.
 REVIEW_ROUND={{REVIEW_ROUND}}
 case "$REVIEW_ROUND" in
   *'{'*|*'}'*)
-    echo "PLACEHOLDER ERROR: REVIEW_ROUND was not substituted by fill-review-slots.sh (got: $REVIEW_ROUND)"
+    echo "PLACEHOLDER ERROR: REVIEW_ROUND was not substituted by build-review-prompts.sh (got: $REVIEW_ROUND)"
     echo "This brief was delivered with an unresolved {{REVIEW_ROUND}} placeholder."
-    echo "Root cause: fill-review-slots.sh was bypassed or failed during prompt composition."
+    echo "Root cause: build-review-prompts.sh was bypassed or failed during prompt composition."
     echo "Do NOT proceed. Return this error to the Queen immediately."
     exit 1
     ;;
@@ -675,7 +675,7 @@ EOF
 fi
 ```
 
-**Script responsibility**: `fill-review-slots.sh` substitutes `{{REVIEW_ROUND}}` with the actual round integer before delivering this brief to Review Consolidator. The `if [ "$REVIEW_ROUND" -eq 1 ]; then ... fi` blocks execute in shell — they do not depend on LLM interpretation. Round 2+ behavior is reliable regardless of whether an LLM reads the template.
+**Script responsibility**: `build-review-prompts.sh` substitutes `{{REVIEW_ROUND}}` with the actual round integer before delivering this brief to Review Consolidator. The `if [ "$REVIEW_ROUND" -eq 1 ]; then ... fi` blocks execute in shell — they do not depend on LLM interpretation. Round 2+ behavior is reliable regardless of whether an LLM reads the template.
 
 **Error return (if timeout exceeded):**
 
