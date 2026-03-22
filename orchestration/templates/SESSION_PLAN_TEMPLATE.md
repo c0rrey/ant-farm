@@ -42,9 +42,9 @@ graph TD
 
 ### Conflict Risk Assessment
 
-- 🔴 **HIGH RISK:** build.py (3 tasks, overlapping sections)
-- 🟡 **MEDIUM RISK:** site.yaml (2 tasks, schema change + usage)
-- 🟢 **LOW RISK:** templates (independent files)
+- **HIGH RISK:** build.py (3 tasks, overlapping sections)
+- **MEDIUM RISK:** site.yaml (2 tasks, schema change + usage)
+- **LOW RISK:** templates (independent files)
 
 ---
 
@@ -58,20 +58,15 @@ graph TD
 1. **build.py group** (3 tasks: xxx-001, xxx-002, xxx-005)
    - Agent: python-pro
    - Execution: Sequential within agent
-   - Estimated time: 45 min
 
 2. **site.yaml group** (2 tasks: xxx-003, xxx-004)
    - Agent: refactoring-specialist
    - Execution: Sequential within agent
-   - Estimated time: 20 min
 
 3. **templates group** (1 task: xxx-006)
    - Agent: refactoring-specialist
    - Execution: Immediate
-   - Estimated time: 15 min
-
-**Total estimated time:** 80 minutes
-**Conflict risk:** 🟢 Very Low
+**Conflict risk:** Very Low
 **Parallelization:** Minimal (only independent files)
 
 ### Option B: Balanced (Recommended)
@@ -87,8 +82,7 @@ graph TD
 - Agent 4: xxx-002, xxx-005 (build.py - depends on xxx-001)
 - Agent 5: xxx-004 (site.yaml - depends on xxx-003)
 
-**Total estimated time:** 35-45 minutes
-**Conflict risk:** 🟡 Low-Medium (managed via dependencies)
+**Conflict risk:** Low-Medium (managed via dependencies)
 **Parallelization:** High (3 agents → 2 agents)
 
 ### Option C: Maximum Speed (Parallel + Rebase)
@@ -102,8 +96,7 @@ graph TD
 - Agent 4: xxx-003, xxx-004 (site.yaml batched)
 - Agent 5: xxx-006 (templates)
 
-**Total estimated time:** 20-30 minutes
-**Conflict risk:** 🟡 Medium (multiple agents → build.py)
+**Conflict risk:** Medium (multiple agents touching build.py)
 **Parallelization:** Maximum (5 concurrent agents)
 **Requires:** Experienced with git rebase conflict resolution
 
@@ -123,12 +116,11 @@ graph TD
 > **I recommend Option B (Balanced):**
 > - Wave 1: 3 agents in parallel (foundational changes)
 > - Wave 2: 2 agents after Wave 1 (dependent changes)
-> - Estimated time: 35-45 minutes
 > - Conflict risk: Low-Medium (managed via dependencies)
 >
 > Alternative options:
-> - Option A: Serial execution (safer, 80 min)
-> - Option C: Full parallel (faster, 20-30 min, higher conflict risk)
+> - Option A: Serial execution (safer, higher confidence)
+> - Option C: Full parallel (faster, higher conflict risk)
 >
 > Which strategy would you prefer?
 
