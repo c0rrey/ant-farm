@@ -122,6 +122,10 @@ expand_at_file_arg() {
             echo "ERROR: @file argument not found: $fpath" >&2
             exit 1
         fi
+        if [ ! -r "$fpath" ]; then
+            echo "ERROR: @file argument not readable: $fpath" >&2
+            exit 1
+        fi
         cat "$fpath"
     else
         printf '%s' "$val"
