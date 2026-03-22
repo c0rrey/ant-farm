@@ -48,7 +48,7 @@ Do NOT execute the prompt — only verify its contents.
    - Step 6: Write summary doc to `{SESSION_DIR}/summaries/`
 5. **Scope boundaries**: Contains explicit limits on which files to read (not open-ended "explore the codebase")
 6. **Commit instructions**: Includes `git pull --rebase` before commit
-7. **Line number specificity** (NEW - prevents scope creep): File paths include specific line ranges or section markers
+7. **Line number specificity**: File paths include specific line ranges or section markers
    - ✅ PASS: "Edit templates/macros/jsonld.html lines 23-24 (image property only)"
    - ⚠️ WARN: "Edit templates/macros/jsonld.html (image property)" — file-level scope, acceptable if small file (<100 lines)
    - ❌ FAIL: "Edit templates/macros/jsonld.html" — vague, high scope creep risk

@@ -119,7 +119,6 @@ Where:
 - `{SESSION_DIR}`: session artifact directory (e.g., `.crumbs/sessions/_session-abc123`)
 - timestamp: format defined in **Timestamp format** (Checkpoint Auditor Overview)
 
-**CRITICAL FIX**: The timestamp ensures each review-integrity audit is preserved. Previous versions used static filename `consolidation-audit.md` which caused overwrites on repeated consolidations. Now each audit has a unique timestamped filename, preserving complete audit history.
 ```
 
 ### The Queen's Response
