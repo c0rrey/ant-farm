@@ -2583,6 +2583,17 @@ def cmd_prune(args: argparse.Namespace) -> None:
     With ``--dry-run`` the would-be pruned and would-be retained lists are
     printed without any deletion taking place.
 
+    **Timezone note**: Age is computed using naive local-time datetimes on
+    both sides of the comparison.  ``datetime.now()`` (below) and
+    ``_parse_session_dir_timestamp`` (which calls ``datetime.strptime``) both
+    return naive datetimes interpreted as local wall-clock time.  The
+    comparison is therefore internally consistent as long as the process runs
+    in the same timezone as the one in effect when the session directory was
+    created.  If sessions are created in one timezone and pruned in another
+    (e.g., a UTC server pruning directories stamped in UTC-8), age may be
+    off by the UTC offset, causing borderline directories to be pruned or
+    retained one day early or late.
+
     Args:
         args: Parsed arguments.
             ``args.days`` (int): Retention threshold in days (default 14).
@@ -2602,6 +2613,7 @@ def cmd_prune(args: argparse.Namespace) -> None:
         print("nothing to prune (no sessions directory)")
         return
 
+    # Naive local-time datetime; see timezone note in docstring.
     now = datetime.now()
     now_ts = time.time()
 
