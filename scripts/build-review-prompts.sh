@@ -311,6 +311,13 @@ if [ ! -f "$FOCUS_AREAS_FILE" ] || [ ! -r "$FOCUS_AREAS_FILE" ]; then
     exit 1
 fi
 
+# Extract the focus-area block for a given review type from the focus areas file.
+# The file uses paired HTML comment markers to delimit each review type's block:
+#   <!-- FOCUS: <type> -->
+#   ... focus area content ...
+#   <!-- /FOCUS: <type> -->
+# These markers are invisible in rendered Markdown but machine-parseable by awk,
+# allowing a single focus-areas file to contain blocks for all review types.
 extract_focus_block() {
     local review_type="$1"
     # Strip trailing -N suffix from split instance names (e.g., clarity-1 -> clarity,
@@ -568,8 +575,11 @@ fi
 # Catches cases where a --slot argument was omitted from crumb render-template
 # or a new template placeholder was added without a corresponding --slot.
 # Patterns checked:
-#   {{UPPERCASE}} — double-brace template slots used by crumb render-template;
-#     none should survive substitution in any output file
+#   {{UPPERCASE}} — double-brace template slots used by crumb render-template.
+#     Double braces are required because crumb render-template uses {{KEY}}
+#     syntax to distinguish template slots from shell $variables, single-brace
+#     constructs, and Markdown content. No double-brace slot should survive
+#     substitution in any output file.
 # ---------------------------------------------------------------------------
 
 echo "build-review-prompts.sh: scanning for unfilled placeholders..."
