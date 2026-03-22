@@ -65,9 +65,18 @@ for filepath in "$AGENTS_DIR"/*.md; do
 
   # Classify type: orchestration agents coordinate/spawn other agents;
   # implementation agents perform direct work.
-  # Detection: grep description for orchestration-role keywords.
+  # Detection: grep description (case-insensitive) for orchestration-role keywords:
+  #   orchestrat   — matches "orchestration", "orchestrator"
+  #   spawn        — agents that launch sub-agents
+  #   decomposit   — task decomposition / breakdown roles
+  #   recon        — reconnaissance / scouting roles
+  #   consolidat   — agents that merge/consolidate results
+  #   scribe       — session scribes / documentation writers
+  #   gather       — information-gathering agents
+  #   review specialist.*team — agents that assemble review teams
+  #   parallel research       — agents coordinating parallel research
   agent_type="implementation"
-  if echo "$description" | grep -qi "orchestrat\|spawn\|decomposit\|recon\|consolidat\|Scribe\|gather\|review specialist.*team\|parallel research"; then
+  if echo "$description" | grep -qi "orchestrat\|spawn\|decomposit\|recon\|consolidat\|scribe\|gather\|review specialist.*team\|parallel research"; then
     agent_type="orchestration"
   fi
   # Scout (recon-planner), Spec Writer (spec-writer), Task Decomposer (task-decomposer),
