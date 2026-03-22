@@ -12,7 +12,7 @@ Usage:
                [--discovered] [--after DATE] [--limit N]
                [--sort FIELD] [--short]
     crumb show <ID>
-    crumb create --title "..." [--from-json '...']
+    crumb create --title "..." [--from-json '...'] [--from-file PATH]
     crumb update <ID> [--status STATUS] [--note "..."] [FIELD=VALUE ...]
     crumb close <ID> [<ID> ...]
     crumb reopen <ID>
@@ -35,7 +35,12 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import fcntl
+
+try:
+    import fcntl
+except ImportError:
+    fcntl = None  # type: ignore[assignment]  # Windows — FileLock.die()s at use
+
 import json
 import os
 import re
@@ -45,7 +50,7 @@ import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Set, Tuple
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -125,18 +130,6 @@ def find_crumbs_dir() -> Path:
         current = parent
 
 
-def crumbs_dir() -> Path:
-    """Return the .crumbs/ directory, exiting if not found.
-
-    Returns:
-        Absolute path to the .crumbs/ directory.
-
-    Raises:
-        SystemExit: If no .crumbs/ directory is found in any ancestor.
-    """
-    return find_crumbs_dir()
-
-
 def tasks_path() -> Path:
     """Return path to tasks.jsonl, exiting if .crumbs/ not found.
 
@@ -146,7 +139,7 @@ def tasks_path() -> Path:
     Raises:
         SystemExit: If no .crumbs/ directory is found in any ancestor.
     """
-    return crumbs_dir() / TASKS_FILE
+    return find_crumbs_dir() / TASKS_FILE
 
 
 def config_path() -> Path:
@@ -158,7 +151,7 @@ def config_path() -> Path:
     Raises:
         SystemExit: If no .crumbs/ directory is found in any ancestor.
     """
-    return crumbs_dir() / CONFIG_FILE
+    return find_crumbs_dir() / CONFIG_FILE
 
 
 def lock_path() -> Path:
@@ -170,7 +163,7 @@ def lock_path() -> Path:
     Raises:
         SystemExit: If no .crumbs/ directory is found in any ancestor.
     """
-    return crumbs_dir() / LOCK_FILE
+    return find_crumbs_dir() / LOCK_FILE
 
 
 # ---------------------------------------------------------------------------
@@ -286,12 +279,11 @@ def write_tasks(path: Path, records: List[Dict[str, Any]]) -> None:
                 for record in records:
                     fh.write(json.dumps(record, separators=(",", ":")) + "\n")
             os.rename(str(tmp_path), str(path))
-        except:  # noqa: E722
+        except Exception:
             tmp_path.unlink(missing_ok=True)
             raise
     except OSError as exc:
         die(f"cannot write {path.name}: {exc}")
-
 
 
 # ---------------------------------------------------------------------------
@@ -336,6 +328,8 @@ class FileLock:
             SystemExit: If the lock file cannot be created/opened, or if the
                 lock cannot be acquired within ``_LOCK_TIMEOUT_SECS`` seconds.
         """
+        if fcntl is None:
+            die("file locking requires fcntl (Unix-only); Windows is not supported")
         path = lock_path()
         try:
             path.touch()
@@ -357,6 +351,10 @@ class FileLock:
                         f"be running"
                     )
                 time.sleep(_LOCK_RETRY_INTERVAL)
+            except OSError as exc:
+                self._lock_file.close()
+                self._lock_file = None
+                die(f"cannot acquire lock: {exc}")
         return self
 
     def __exit__(self, *_: Any) -> None:
@@ -376,11 +374,16 @@ class FileLock:
 # ---------------------------------------------------------------------------
 
 
+_STALE_TMP_AGE_SECS: float = 5.0
+
+
 def cleanup_stale_tmp_files() -> None:
     """Remove any leftover .tmp files from a previous crashed write.
 
-    Called at startup before any command runs. Silent — does not print
-    unless an unexpected error occurs.
+    Called at startup before any command runs.  Only deletes files whose
+    mtime is older than ``_STALE_TMP_AGE_SECS`` seconds to avoid racing
+    with a concurrent ``write_tasks`` call that may still be using its
+    temp file.
     """
     # Walk up from cwd silently (do not use die() / find_crumbs_dir() here
     # to avoid printing errors during startup before help is displayed).
@@ -399,11 +402,19 @@ def cleanup_stale_tmp_files() -> None:
     if crumbs is None:
         return
 
+    now = time.time()
     for tmp_file in crumbs.glob("*.tmp"):
         try:
+            # Skip recently-modified files — they may belong to a
+            # concurrent write_tasks call that has not yet renamed them.
+            if now - tmp_file.stat().st_mtime < _STALE_TMP_AGE_SECS:
+                continue
             tmp_file.unlink()
-        except OSError:
-            pass  # Best-effort; ignore errors during cleanup
+        except OSError as exc:
+            print(
+                f"warning: could not remove stale temp file {tmp_file}: {exc}",
+                file=sys.stderr,
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -752,6 +763,14 @@ def cmd_list(args: argparse.Namespace) -> None:
         ]
 
     if args.after:
+        # Validate YYYY-MM-DD format: regex enforces zero-padded digits,
+        # strptime rejects invalid calendar dates like 2026-02-30.
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", args.after):
+            die(f"invalid --after date '{args.after}': expected YYYY-MM-DD format")
+        try:
+            datetime.strptime(args.after, "%Y-%m-%d")
+        except ValueError:
+            die(f"invalid --after date '{args.after}': not a valid calendar date")
         # Compare ISO 8601 strings lexicographically (created_at is stored as full ISO 8601)
         after_str = args.after
         results = [
@@ -920,17 +939,6 @@ def cmd_create(args: argparse.Namespace) -> None:
                 die(f"invalid JSON in --from-json: {exc}")
             if not isinstance(payload, dict):
                 die("--from-json must be a JSON object, not a list or scalar")
-
-            # Merge explicit --title / --priority / --type / --description
-            # CLI flags override JSON payload fields
-            if args.title:
-                payload["title"] = args.title
-            if args.priority:
-                payload["priority"] = args.priority
-            if args.crumb_type:
-                payload["type"] = args.crumb_type
-            if args.description:
-                payload["description"] = args.description
         elif args.from_file:
             file_path = Path(args.from_file)
             if not file_path.exists():
@@ -943,27 +951,26 @@ def cmd_create(args: argparse.Namespace) -> None:
                 die(f"cannot read --from-file: {exc}")
             if not isinstance(payload, dict):
                 die("--from-file must contain a JSON object, not a list or scalar")
-
-            # Merge explicit --title / --priority / --type / --description
-            # CLI flags override JSON payload fields
-            if args.title:
-                payload["title"] = args.title
-            if args.priority:
-                payload["priority"] = args.priority
-            if args.crumb_type:
-                payload["type"] = args.crumb_type
-            if args.description:
-                payload["description"] = args.description
         else:
             if not args.title:
                 die("--title is required unless --from-json or --from-file is provided")
             payload = {"title": args.title}
-            if args.priority:
-                payload["priority"] = args.priority
-            if args.crumb_type:
-                payload["type"] = args.crumb_type
-            if args.description:
-                payload["description"] = args.description
+
+        # Merge explicit CLI flags over payload — applies to all input modes.
+        # For --title-only the args.title override is idempotent; for
+        # --from-json / --from-file it lets CLI flags win over JSON fields.
+        if args.title:
+            payload["title"] = args.title
+        if args.priority:
+            payload["priority"] = args.priority
+        if args.crumb_type:
+            payload["type"] = args.crumb_type
+        if args.description:
+            payload["description"] = args.description
+
+        # Reject empty or whitespace-only titles
+        if not payload.get("title", "").strip():
+            die("title must not be empty")
 
         # Reject trail creation via crumb create; use 'crumb trail create' instead
         if payload.get("type") == "trail":
@@ -1129,9 +1136,10 @@ def cmd_update(args: argparse.Namespace) -> None:
             if not isinstance(extra, dict):
                 die("--from-json must be a JSON object, not a list or scalar")
             # Merge fields; skip protected keys that have dedicated flags or
-            # guarded transitions.  "status" must go through --status (which
-            # enforces the closed→open gate).  "closed_at" is managed by
-            # close/reopen and must not be set directly.
+            # guarded transitions.  "id" and "created_at" are immutable
+            # identifiers set once at creation time.  "status" must go through
+            # --status (which enforces the closed->open gate).  "closed_at" is
+            # managed by close/reopen and must not be set directly.
             protected = {"id", "created_at", "status", "closed_at"}
             for key, value in extra.items():
                 if key in protected:
@@ -1203,6 +1211,9 @@ def cmd_close(args: argparse.Namespace) -> None:
 
         for crumb_id in args.ids:
             crumb = _find_crumb(tasks, crumb_id)
+            # Invariant: pre-validation loop above (under same FileLock)
+            # guarantees every ID exists — _find_crumb cannot return None here.
+            assert crumb is not None, f"invariant violated: '{crumb_id}' pre-validated but not found"
 
             if crumb.get("status") == "closed":
                 skipped.append(crumb_id)
@@ -1748,14 +1759,12 @@ def cmd_tree(args: argparse.Namespace) -> None:
 
     # Full tree: all trails with children, then orphans
     trails = [t for t in tasks if t.get("type") == "trail"]
-    # Build set of IDs claimed by trails (children are those with links.parent)
-    all_trail_ids = {t.get("id") for t in trails if t.get("id")}
 
     # Collect all non-trail records and find orphans
     non_trails = [t for t in tasks if t.get("type") != "trail"]
 
     # Build a set of non-trail IDs that have a valid parent link
-    child_ids: set = set()
+    child_ids: Set[str] = set()
 
     for trail in trails:
         tid = trail.get("id", "?")
@@ -2046,7 +2055,7 @@ def cmd_import(args: argparse.Namespace) -> None:
             existing_tasks = []
             path.parent.mkdir(parents=True, exist_ok=True)
 
-        existing_ids: set = {t.get("id") for t in existing_tasks if t.get("id")}
+        existing_ids: Set[str] = {t.get("id") for t in existing_tasks if t.get("id")}
         config = read_config()
 
         imported_count = 0
@@ -2269,7 +2278,7 @@ def cmd_doctor(args: argparse.Namespace) -> None:
                 id_to_record[rec_id] = record
 
         # Build set of all trail IDs for parent validation
-        trail_ids: set = {
+        trail_ids: Set[str] = {
             rid for rid, rec in id_to_record.items() if rec.get("type") == "trail"
         }
 
@@ -2578,7 +2587,8 @@ def cmd_prune(args: argparse.Namespace) -> None:
     and deletes directories exceeding the retention threshold.  The age
     comparison is inclusive: a directory exactly ``--days`` days old *is*
     pruned (``age_days >= days``, not ``>``).  Directories modified within
-    the last 60 minutes are never deleted regardless of age.
+    the last ``ACTIVE_GUARD_MINUTES`` minutes (currently 60) are never
+    deleted regardless of age.
 
     With ``--dry-run`` the would-be pruned and would-be retained lists are
     printed without any deletion taking place.
@@ -2606,8 +2616,8 @@ def cmd_prune(args: argparse.Namespace) -> None:
     if days < 0:
         die(f"--days must be 0 or greater, got {days}")
 
-    crumbs_dir = find_crumbs_dir()
-    sessions_dir = crumbs_dir / "sessions"
+    crumbs_path = find_crumbs_dir()
+    sessions_dir = crumbs_path / "sessions"
 
     if not sessions_dir.is_dir():
         print("nothing to prune (no sessions directory)")
@@ -2680,6 +2690,15 @@ def cmd_prune(args: argparse.Namespace) -> None:
 
     pruned_names: List[str] = []
     for dir_path, _age in to_prune:
+        # Re-check active-session guard immediately before deletion (TOCTOU
+        # mitigation: directory may have become active since enumeration).
+        if _is_active_session(dir_path, time.time()):
+            print(
+                f"warning: skipping {dir_path.name}: became active since "
+                f"enumeration (mtime within {ACTIVE_GUARD_MINUTES} minutes)",
+                file=sys.stderr,
+            )
+            continue
         try:
             shutil.rmtree(dir_path)
             pruned_names.append(dir_path.name)

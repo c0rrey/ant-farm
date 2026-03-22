@@ -309,6 +309,41 @@ class TestCreate:
         with pytest.raises(SystemExit):
             cmd_create(args)
 
+    def test_create_from_json_empty_title_exits(
+        self, crumbs_env: Path
+    ) -> None:
+        """cmd_create --from-json with empty title raises SystemExit."""
+        args = _make_create_args(from_json=json.dumps({"title": ""}))
+        with pytest.raises(SystemExit):
+            cmd_create(args)
+
+    def test_create_from_json_whitespace_title_exits(
+        self, crumbs_env: Path
+    ) -> None:
+        """cmd_create --from-json with whitespace-only title raises SystemExit."""
+        args = _make_create_args(from_json=json.dumps({"title": "   "}))
+        with pytest.raises(SystemExit):
+            cmd_create(args)
+
+    def test_create_from_json_missing_title_exits(
+        self, crumbs_env: Path
+    ) -> None:
+        """cmd_create --from-json with no title key raises SystemExit."""
+        args = _make_create_args(from_json=json.dumps({"priority": "P1"}))
+        with pytest.raises(SystemExit):
+            cmd_create(args)
+
+    def test_create_from_json_valid_title_succeeds(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_create --from-json with a valid title creates the crumb."""
+        args = _make_create_args(from_json=json.dumps({"title": "Valid task"}))
+        cmd_create(args)
+        tasks_file = crumbs_env / "tasks.jsonl"
+        tasks = read_tasks(tasks_file)
+        assert len(tasks) == 1
+        assert tasks[0]["title"] == "Valid task"
+
     def test_create_from_file_creates_crumb(
         self, crumbs_env: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:

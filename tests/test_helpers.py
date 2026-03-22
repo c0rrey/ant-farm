@@ -9,7 +9,9 @@ Tests are ordered to mirror the helper sections in crumb.py:
 from __future__ import annotations
 
 import json
+import os
 import re
+import time
 from pathlib import Path
 
 import pytest
@@ -319,6 +321,9 @@ def test_cleanup_stale_removes_tmp_files(tmp_path: Path, monkeypatch: pytest.Mon
     crumbs_dir.mkdir()
     tmp_file = crumbs_dir / "tasks.jsonl.tmp"
     tmp_file.write_text("leftover", encoding="utf-8")
+    # Backdate mtime so the file is considered stale (older than threshold)
+    old_time = time.time() - 10
+    os.utime(tmp_file, (old_time, old_time))
     monkeypatch.chdir(tmp_path)
     cleanup_stale_tmp_files()
     assert not tmp_file.exists()
@@ -348,8 +353,11 @@ def test_cleanup_stale_removes_multiple_tmp_files(tmp_path: Path, monkeypatch: p
     crumbs_dir = tmp_path / ".crumbs"
     crumbs_dir.mkdir()
     files = [crumbs_dir / f"file{i}.tmp" for i in range(3)]
+    # Backdate mtime so files are considered stale (older than threshold)
+    old_time = time.time() - 10
     for f in files:
         f.write_text("stale", encoding="utf-8")
+        os.utime(f, (old_time, old_time))
     monkeypatch.chdir(tmp_path)
     cleanup_stale_tmp_files()
     for f in files:

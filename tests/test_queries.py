@@ -348,6 +348,35 @@ class TestList:
         assert "AF-2" not in out
         assert "AF-3" not in out
 
+    def test_after_filter_rejects_non_iso_date(
+        self, crumbs_env: Path
+    ) -> None:
+        """--after with non-zero-padded date (2026-3-1) exits non-zero."""
+        _write(crumbs_env, [_task("AF-1", "Task")])
+        with pytest.raises(SystemExit):
+            cmd_list(_list_args(after="2026-3-1"))
+
+    def test_after_filter_rejects_garbage_string(
+        self, crumbs_env: Path
+    ) -> None:
+        """--after with non-date string exits non-zero."""
+        _write(crumbs_env, [_task("AF-1", "Task")])
+        with pytest.raises(SystemExit):
+            cmd_list(_list_args(after="not-a-date"))
+
+    def test_after_filter_accepts_valid_iso_date(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """--after with valid YYYY-MM-DD continues to work correctly."""
+        _write(crumbs_env, [
+            _task("AF-1", "Old task", created_at="2025-12-01T00:00:00Z"),
+            _task("AF-2", "New task", created_at="2026-06-01T00:00:00Z"),
+        ])
+        cmd_list(_list_args(after="2026-01-01"))
+        out = capsys.readouterr().out
+        assert "AF-1" not in out
+        assert "AF-2" in out
+
 
 # ---------------------------------------------------------------------------
 # TestReady
