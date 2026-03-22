@@ -74,7 +74,7 @@ Review Consolidator consolidates all reports, groups findings by root cause, and
 
 Review scope: commits {first-commit} through {last-commit} ({N} commits total, across trails: {trail-list})
 Files to review: {deduplicated list of ALL files changed across all trails}
-Task IDs for acceptance criteria: {list of all task IDs worked this session}
+Task IDs for acceptance criteria: {list of all task IDs with commits in the review range — see Task ID Scoping section}
 
 1. Clarity Review (P3) — see prompt below; model: sonnet
 2. Edge Cases Review (P2) — see prompt below; model: opus
@@ -96,7 +96,7 @@ Review Consolidator consolidates all reports, groups findings by root cause, and
 
 Review scope: commits {first-commit} through {last-commit} ({N} commits total, across trails: {trail-list})
 Files to review: {deduplicated list of ALL files changed across all trails}
-Task IDs for acceptance criteria: {list of all task IDs worked this session}
+Task IDs for acceptance criteria: {list of all task IDs with commits in the review range — see Task ID Scoping section}
 
 1. Clarity Review part 1 (P3) — clarity-1; file subset A from return table; model: sonnet
 2. Clarity Review part 2 (P3) — clarity-2; file subset B from return table; model: sonnet
@@ -115,7 +115,7 @@ Re-tasking message fields for each reviewer (named-member SendMessage — no bro
 ~~~markdown
 Review scope: fix commits only — {first-fix-commit} through HEAD
 Files to review: {files changed in fix commits only}
-Task IDs for acceptance criteria: {list of fix task IDs}
+Task IDs for acceptance criteria: {list of fix task IDs with commits in the fix range — see Task ID Scoping section}
 Review round: {N+1}
 Report output path: {reviewer-specific path from Round Transition section}
 
@@ -127,6 +127,14 @@ Report output path: {reviewer-specific path from Round Transition section}
 Clarity and Drift reviewers (including split instances clarity-1, clarity-2, drift-1, drift-2, etc.) are NOT
 re-tasked — they remain idle. Do NOT send them messages in round 2+.
 ~~~
+
+### Task ID Scoping (Commit-Range Filtering)
+
+When compiling the "Task IDs for acceptance criteria" list for any review round, **exclude tasks whose fix commits fall outside the review commit range**. A task whose fix commit predates `{first-commit}` (Round 1) or `{first-fix-commit}` (Round 2+) cannot be verified by the reviewer because the relevant changes are not in the diff.
+
+**Filtering rule**: For each candidate task ID, verify that at least one commit attributed to that task appears in `git log --oneline {first-commit}..{last-commit}`. If none of the task's commits fall within the range, exclude it from the task ID list.
+
+This prevents reviewers from being asked to verify acceptance criteria for changes they cannot see in the review scope.
 
 **The Review Consolidator is spawned as a team member using the review-consolidator-skeleton.md template**, not as a separate Task agent. The Queen fills in the skeleton placeholders and uses the result as the teammate's prompt.
 
