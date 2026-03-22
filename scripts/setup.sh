@@ -196,7 +196,9 @@ sync_claude_block() {
     # Replace block using awk with exact string matching.
     # New block content is read from a temp file (not -v) to avoid BSD awk
     # silently dropping multi-line strings passed via -v assignment.
-    local blockfile tmpfile
+    local blockfile="" tmpfile=""
+    # Clean up temp files on any exit path (including set -e failures)
+    trap 'rm -f "${blockfile:-}" "${tmpfile:-}" 2>/dev/null' RETURN
     blockfile="$(mktemp)"; TEMP_FILES+=("$blockfile")
     tmpfile="$(mktemp)"; TEMP_FILES+=("$tmpfile")
     printf '%s\n' "$block" > "$blockfile"
@@ -211,14 +213,13 @@ sync_claude_block() {
         !skip { print }
     ' "$dst" > "$tmpfile"; then
         mv "$tmpfile" "$dst"
+        tmpfile=""  # Already moved — prevent RETURN trap from removing destination
         log "Updated ant-farm block in: $dst"
         INSTALLED_FILES+=("$dst")
     else
-        rm -f "$tmpfile" "$blockfile"
         echo "[ant-farm] ERROR: awk replacement failed for $dst — backup at $bak" >&2
         return 1
     fi
-    rm -f "$blockfile"
 }
 
 # remove_claude_block DST
