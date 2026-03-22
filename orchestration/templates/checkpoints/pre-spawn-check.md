@@ -106,7 +106,7 @@ Round 1: 4 prompts (clarity, edge-cases, correctness, drift).
 Round 2+: 2 prompts (correctness, edge-cases only).
 Do NOT execute the prompts — only verify their contents.
 
-Round 1 — paste all 4 prompts:
+Round 1 — also paste these 2 round-1-only prompts:
 <prompt_clarity>
 {paste clarity review prompt — round 1 only}
 </prompt_clarity>

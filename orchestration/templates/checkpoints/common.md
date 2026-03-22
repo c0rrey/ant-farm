@@ -82,7 +82,7 @@ All checkpoints use the following verdict states:
 | **pre-spawn-check (Crumb Gatherers)** | Check 7 WARN allowed if file < 100 lines | First-listed section/function | WARN does not block; Queen approves before spawn |
 | **pre-spawn-check (Reviewers)** | All round-active prompts identical file list (round 1: 4; round 2+: 2) | (No tie-breaking) | FAIL blocks spawn |
 | **scope-verify** | Small file = <100 lines | First-listed changed file | WARN does not block queue; FAIL blocks queue |
-| **claims-vs-code (Crumb Gatherers)** | Pick 2 criteria: first-listed OR identified-as-critical OR all if <2 | First-listed acceptance criterion | PARTIAL allows resubmission; FAIL escalates |
+| **claims-vs-code (Crumb Gatherers)** | Pick 2 criteria: first-listed OR identified-as-critical (or all, if fewer than 2 total) | First-listed acceptance criterion | PARTIAL allows resubmission; FAIL escalates |
 | **claims-vs-code (Reviewers)** | Sample size = min(N, max(3, min(5, ceil(N/3)))) — see Check 1 for worked examples | Include highest-severity + all tiers | PARTIAL allows resubmission; FAIL escalates |
 | **review-integrity** | Finding count must reconcile to 100% | Earliest-filed crumb per root cause | PARTIAL: fix and re-run; FAIL blocks user presentation |
 | **session-complete** | All 6 checks must pass | First-listed violation per check | FAIL blocks git push; one Scribe retry allowed before escalation |
@@ -95,7 +95,7 @@ All checkpoints use the following verdict states:
 
 **pre-spawn-check Verdict Specifics:**
 - PASS: All 7 checks pass
-- WARN: Check 7 is WARN (file-level scope) + file <100 lines + prompt has context. Acceptable.
+- WARN: Check 7 is WARN (file-level scope: path given but no line numbers specified) + file <100 lines + prompt has context. Acceptable.
 - FAIL: Any check fails, or Check 7 is WARN + file ≥100 lines
 
 **scope-verify Verdict Specifics:**

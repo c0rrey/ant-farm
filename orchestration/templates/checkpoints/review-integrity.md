@@ -28,7 +28,7 @@ Round 2+:
 - `{SESSION_DIR}/review-reports/correctness-review-{timestamp}.md`
 - `{SESSION_DIR}/review-reports/edge-cases-review-{timestamp}.md`
 
-Read all documents (round 1: 5 total = 4 reports + consolidated; round 2+: 3 total = 2 reports + consolidated), then perform these 9 checks (numbered 0-7 plus 3b -- the spot-check was inserted after Check 3 without renumbering subsequent checks):
+Read all documents (round 1: 5 total = 4 reports + consolidated; round 2+: 3 total = 2 reports + consolidated), then perform these 9 checks (numbered 0–8):
 
 ## Check 0: Report Existence Verification
 Verify that every report file listed in **Individual reports** above exists at its path. The expected count depends on the review round (round 1: 4 files; round 2+: 2 files).
@@ -39,7 +39,7 @@ If any expected file is missing, FAIL immediately — consolidation should not h
 Count total findings across all individual reports (4 in round 1, 2 in round 2+).
 Count total findings referenced in the consolidated summary.
 Every finding must be accounted for — either standalone, merged into a group, or explicitly marked as duplicate in the deduplication log.
-Report the math: "Round 1: Clarity: N, Edge Cases: N, Correctness: N, Drift: N = TOTAL total. Round 2+: Correctness: N, Edge Cases: N = TOTAL total. Consolidated references TOTAL findings across N root causes. N findings merged as duplicates. RECONCILED / NOT RECONCILED — {list orphaned findings}"
+Report the math: "Round 1: Clarity: N, Edge Cases: N, Correctness: N, Drift: N = N total. Round 2+: Correctness: N, Edge Cases: N = N total. Consolidated references N findings across N root causes. N findings merged as duplicates. RECONCILED / NOT RECONCILED — {list orphaned findings}"
 
 ## Check 2: Crumb Existence Check
 For each crumb ID in the consolidated summary, run `crumb show <id>`.
@@ -54,7 +54,8 @@ For each filed crumb, verify its description contains:
 - Suggested fix
 Flag any crumbs missing these elements. List which elements are missing.
 
-## Check 3b: Root Cause Spot-Check
+## Check 4: Root Cause Spot-Check
+<!-- Historical: was "Check 3b" prior to sequential renumbering (inserted after Check 3 in the original scheme). -->
 
 Select up to 2 crumbs for deep validation. Prioritize P1 crumbs first; if fewer than 2 P1 crumbs exist, fill remaining slots with the highest-surface-count P2 crumbs (most file:line references).
 
@@ -78,19 +79,19 @@ For each selected crumb:
 
 Report: "Spot-checked {N} crumb(s): {list titles}. Result: {CONFIRMED / SUSPECT — minor / SUSPECT — material}. {brief explanation per crumb}"
 
-## Check 4: Priority Calibration
+## Check 5: Priority Calibration
 Read P1 crumb descriptions. Do they describe genuinely blocking issues (crashes, data loss, security vulnerabilities, broken functionality)?
 Or are they style preferences or minor improvements mislabeled as P1?
 Flag any suspicious priority assignments with reasoning.
 
-## Check 5: Traceability Matrix
+## Check 6: Traceability Matrix
 Build a matrix: Finding → Root Cause Group → Crumb ID.
 For every finding from every report, trace it to either:
 - A crumb ID (via root cause group), OR
 - An explicit entry in the dedup log marking it as merged/duplicate
 Report any orphaned findings (not traceable to a crumb or dedup entry).
 
-## Check 6: Deduplication Correctness
+## Check 7: Deduplication Correctness
 For each merged group of 3+ findings:
 - Verify the merged findings share at least one common file or function
 - If findings span unrelated code areas with no shared pattern, flag for review
@@ -100,10 +101,10 @@ Spot-check 2 merged groups by reading the actual code at each finding's location
 - Do the findings genuinely share a root cause, or were unrelated issues incorrectly merged?
 - Report: "Group '<title>' merges N findings across files {list}. Common pattern: {yes/no — explanation}. CONFIRMED / SUSPECT"
 
-## Check 7: Crumb Provenance Audit
-**Input guard**: If `{SESSION_START_DATE}` still appears as the literal text `{SESSION_START_DATE}` (curly braces present), is blank, or does not match ISO 8601 date format (`YYYY-MM-DD`), abort Check 7 and return the following message:
+## Check 8: Crumb Provenance Audit
+**Input guard**: If `{SESSION_START_DATE}` still appears as the literal text `{SESSION_START_DATE}` (curly braces present), is blank, or does not match ISO 8601 date format (`YYYY-MM-DD`), abort Check 8 and return the following message:
 
-"review-integrity Check 7 ABORTED: SESSION_START_DATE placeholder was not substituted before spawning review-integrity (got: '{SESSION_START_DATE}'). Root cause: upstream substitution failure — the Queen did not replace `{SESSION_START_DATE}` in the review-integrity prompt before dispatch. Fix: ensure the Queen fills in SESSION_START_DATE as an ISO 8601 date (e.g. `2026-02-20`) before spawning the Checkpoint Auditor."
+"review-integrity Check 8 ABORTED: SESSION_START_DATE placeholder was not substituted before spawning review-integrity (got: '{SESSION_START_DATE}'). Root cause: upstream substitution failure — the Queen did not replace `{SESSION_START_DATE}` in the review-integrity prompt before dispatch. Fix: ensure the Queen fills in SESSION_START_DATE as an ISO 8601 date (e.g. `2026-02-20`) before spawning the Checkpoint Auditor."
 
 Run `crumb list --open --after {SESSION_START_DATE}` and cross-reference against the consolidated summary's "Crumbs filed" list.
 - `{SESSION_START_DATE}`: the Queen-supplied session start date (ISO 8601 format, e.g., `2026-02-20`). This scopes results to crumbs filed during this session only and prevents pulling thousands of unrelated open crumbs from earlier sessions.
@@ -112,7 +113,7 @@ Run `crumb list --open --after {SESSION_START_DATE}` and cross-reference against
 - Verify crumb count matches the consolidated summary's count
 
 ## Verdict
-- **PASS** — All 9 checks (0-7 plus 3b) confirm consolidation integrity
+- **PASS** — All 9 checks (0–8) confirm consolidation integrity
 - **PARTIAL: <list checks that failed with evidence>**
 - **FAIL: <list all failures with evidence>**
 
