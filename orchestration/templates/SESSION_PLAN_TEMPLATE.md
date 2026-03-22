@@ -104,6 +104,8 @@ graph TD
 
 ## User Approval Checkpoint
 
+> **Note:** The current automated workflow (RULES.md Step 1b) auto-proceeds after startup-check PASS — no manual user approval step. This section is retained for reference when manual review is desired.
+
 **Present to user:**
 
 > I analyzed the 6 tasks you requested. Here's what I found:

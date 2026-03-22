@@ -125,7 +125,7 @@ Focus: {specific guidance for this file/component}
 
 **Why**: Agents are helpful by nature and will fix adjacent problems they notice ("while I'm here..."). This creates work attribution scrambling and misleading audit trails.
 
-**Known failure mode**: Epic 74g Wave 1 — agents 74g.6, 74g.7, and 74g.4 did each other's work because no explicit boundaries prevented "helpful" adjacent fixes.
+**Known failure mode**: When multiple agents touch the same file without explicit scope boundaries, they tend to fix each other's work ("while I'm here..."), scrambling attribution and creating misleading audit trails.
 
 **Template** (insert after Context section, before Step 1):
 
