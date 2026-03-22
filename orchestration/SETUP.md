@@ -4,7 +4,7 @@
 
 The orchestration system uses custom Claude Code agent types defined in `agents/`. These are installed to `~/.claude/agents/` by `scripts/setup.sh`.
 
-**First-time setup:** See the Quick Setup and Full Setup sections below for installation, backup, and uninstall documentation.
+**First-time setup:** See the Quick Setup and Full Setup sections below for installation details.
 
 Quick reference:
 ```bash
@@ -38,8 +38,7 @@ Re-run `setup.sh` after pulling upstream changes to update installed files. Use 
 review pipeline) is a custom Claude Code agent. It is NOT deployed by `setup.sh` because it
 lives in the user's global `~/.claude/agents/` directory, not in this repo's `agents/` folder. If you
 are setting up this orchestration system on a new machine, you must copy or create
-`~/.claude/agents/code-reviewer.md` manually. You can find the source file in the original
-repository's `~/.claude/agents/code-reviewer.md` on the machine where the system was first configured.
+`~/.claude/agents/code-reviewer.md` manually. You can find the source file at `~/.claude/agents/code-reviewer.md` on the machine where the system was first configured.
 Without this file, the Nitpicker team members will fail to spawn (Claude Code will not recognize the
 `code-reviewer` agent type). `setup.sh` automatically checks for this file at the end of setup (Step 8:
 Preflight checks) and emits a visible warning if it is absent.
