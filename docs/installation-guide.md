@@ -1,6 +1,6 @@
 # Installation Guide
 
-This guide covers installing and managing the ant-farm orchestration system. The setup script (`scripts/setup.sh`) installs agent definitions, orchestration files, skills, the `crumb` CLI, and `CLAUDE.md` to their runtime locations.
+This guide covers installing and managing the ant-farm orchestration system. The setup script (`scripts/setup.sh`) installs agent definitions, orchestration files, skills, and the `crumb` CLI to their runtime locations, and writes the orchestration block to the project's `CLAUDE.md`.
 
 ## Table of Contents
 
