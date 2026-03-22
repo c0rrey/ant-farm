@@ -114,7 +114,7 @@ done
 # Resolve @file arguments for multiline values
 # ---------------------------------------------------------------------------
 
-resolve_arg() {
+expand_at_file_arg() {
     local val="$1"
     if [[ "$val" == @* ]]; then
         local fpath="${val:1}"
@@ -128,8 +128,8 @@ resolve_arg() {
     fi
 }
 
-CHANGED_FILES="$(resolve_arg "$CHANGED_FILES_RAW")" || { echo "ERROR: resolve_arg failed for CHANGED_FILES_RAW='${CHANGED_FILES_RAW}'" >&2; exit 1; }
-TASK_IDS="$(resolve_arg "$TASK_IDS_RAW")" || { echo "ERROR: resolve_arg failed for TASK_IDS_RAW='${TASK_IDS_RAW}'" >&2; exit 1; }
+CHANGED_FILES="$(expand_at_file_arg "$CHANGED_FILES_RAW")" || { echo "ERROR: expand_at_file_arg failed for CHANGED_FILES_RAW='${CHANGED_FILES_RAW}'" >&2; exit 1; }
+TASK_IDS="$(expand_at_file_arg "$TASK_IDS_RAW")" || { echo "ERROR: expand_at_file_arg failed for TASK_IDS_RAW='${TASK_IDS_RAW}'" >&2; exit 1; }
 if [[ -z "${TASK_IDS//[[:space:]]/}" ]]; then
     echo "ERROR: TASK_IDS is empty (got: '${TASK_IDS_RAW}')." >&2
     exit 1
