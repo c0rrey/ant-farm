@@ -1,4 +1,4 @@
-<!-- Reader: Checkpoint Auditor. The Queen does NOT read this file. -->
+<!-- Reader: Checkpoint Auditor. The Orchestrator does NOT read this file. -->
 
 ## Review Integrity: Consolidation Audit
 
@@ -15,8 +15,8 @@ You are the **Checkpoint Auditor**, the verification subagent. Your role is to a
 Audit the review consolidation for completeness, accuracy, and traceability.
 
 **Consolidated summary**: `{SESSION_DIR}/review-reports/review-consolidated-{timestamp}.md`
-**Individual reports**: (the Queen provides exact filenames and the review round number in the consolidation prompt.)
-**Session start date**: `{SESSION_START_DATE}` (ISO 8601 date, e.g., `2026-02-20` — Queen-supplied; used to scope crumb list in Check 7)
+**Individual reports**: (the Orchestrator provides exact filenames and the review round number in the consolidation prompt.)
+**Session start date**: `{SESSION_START_DATE}` (ISO 8601 date, e.g., `2026-02-20` — Orchestrator-supplied; used to scope crumb list in Check 7)
 
 Round 1:
 - `{SESSION_DIR}/review-reports/clarity-review-{timestamp}.md`
@@ -71,10 +71,10 @@ For each selected crumb:
 
 **Material Spot-Check Escalation Path:**
 1. Set review-integrity verdict to PARTIAL and include a `context-degradation-suspected` flag in the verdict line.
-2. The Queen shuts down the current Review Consolidator instance.
-3. The Queen spawns a fresh Review Consolidator with a handoff brief describing which crumbs failed spot-check and why.
+2. The Orchestrator shuts down the current Review Consolidator instance.
+3. The Orchestrator spawns a fresh Review Consolidator with a handoff brief describing which crumbs failed spot-check and why.
 4. Fresh Review Consolidator performs a full crumb review (re-reads source files, corrects or re-files affected crumbs).
-5. Queen re-runs review-integrity.
+5. Orchestrator re-runs review-integrity.
 6. If the re-run review-integrity still returns SUSPECT on any spot-checked crumb, escalate to the user with the review-integrity report attached.
 
 Report: "Spot-checked {N} crumb(s): {list titles}. Result: {CONFIRMED / SUSPECT — minor / SUSPECT — material}. {brief explanation per crumb}"
@@ -104,10 +104,10 @@ Spot-check 2 merged groups by reading the actual code at each finding's location
 ## Check 8: Crumb Provenance Audit
 **Input guard**: If `{SESSION_START_DATE}` still appears as the literal text `{SESSION_START_DATE}` (curly braces present), is blank, or does not match ISO 8601 date format (`YYYY-MM-DD`), abort Check 8 and return the following message:
 
-"review-integrity Check 8 ABORTED: SESSION_START_DATE placeholder was not substituted before spawning review-integrity (got: '{SESSION_START_DATE}'). Root cause: upstream substitution failure — the Queen did not replace `{SESSION_START_DATE}` in the review-integrity prompt before dispatch. Fix: ensure the Queen fills in SESSION_START_DATE as an ISO 8601 date (e.g. `2026-02-20`) before spawning the Checkpoint Auditor."
+"review-integrity Check 8 ABORTED: SESSION_START_DATE placeholder was not substituted before spawning review-integrity (got: '{SESSION_START_DATE}'). Root cause: upstream substitution failure — the Orchestrator did not replace `{SESSION_START_DATE}` in the review-integrity prompt before dispatch. Fix: ensure the Orchestrator fills in SESSION_START_DATE as an ISO 8601 date (e.g. `2026-02-20`) before spawning the Checkpoint Auditor."
 
 Run `crumb list --open --after {SESSION_START_DATE}` and cross-reference against the consolidated summary's "Crumbs filed" list.
-- `{SESSION_START_DATE}`: the Queen-supplied session start date (ISO 8601 format, e.g., `2026-02-20`). This scopes results to crumbs filed during this session only and prevents pulling thousands of unrelated open crumbs from earlier sessions.
+- `{SESSION_START_DATE}`: the Orchestrator-supplied session start date (ISO 8601 format, e.g., `2026-02-20`). This scopes results to crumbs filed during this session only and prevents pulling thousands of unrelated open crumbs from earlier sessions.
 - Every open crumb from this session should trace back to the consolidation step
 - Flag any crumbs that were filed during the review phase (not consolidation) — these are unauthorized
 - Verify crumb count matches the consolidated summary's count
@@ -126,7 +126,7 @@ Where:
 
 ```
 
-### The Queen's Response
+### The Orchestrator's Response
 
 **On PASS**: Proceed to present results to user.
 

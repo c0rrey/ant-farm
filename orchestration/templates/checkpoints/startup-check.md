@@ -1,18 +1,18 @@
-<!-- Reader: Checkpoint Auditor. The Queen does NOT read this file. -->
+<!-- Reader: Checkpoint Auditor. The Orchestrator does NOT read this file. -->
 
 ## Startup Check: Pre-Implementation Strategy Audit
 
-**When**: After Scout returns `{SESSION_DIR}/briefing.md` and BEFORE spawning Pantry (Step 2 in RULES.md)
+**When**: After Recon Planner returns `{SESSION_DIR}/briefing.md` and BEFORE spawning Prompt Composer (Step 2 in RULES.md)
 **Model**: `haiku` (pure set comparisons — no judgment required)
 
-**Why**: The Scout's strategy (wave groupings, task-to-wave assignments, file conflict analysis) is currently validated only by human approval, which misses mechanical errors like file/task mismatches or intra-wave dependency violations. A lightweight automated check before Pantry is spawned catches strategy defects at the cheapest possible point — before any implementation prompts are composed.
+**Why**: The Recon Planner's strategy (wave groupings, task-to-wave assignments, file conflict analysis) is currently validated only by human approval, which misses mechanical errors like file/task mismatches or intra-wave dependency violations. A lightweight automated check before Prompt Composer is spawned catches strategy defects at the cheapest possible point — before any implementation prompts are composed.
 
 **Why haiku**: All three checks are set comparisons and dependency graph traversals with no ambiguity. No judgment or code comprehension is required. Haiku handles this class of verification faster and cheaper than sonnet.
 
 ```markdown
-**Checkpoint Auditor verification - startup-check (Scout Strategy Verification)**
+**Checkpoint Auditor verification - startup-check (Recon Planner Strategy Verification)**
 
-You are the **Checkpoint Auditor**, the verification subagent. Your role is to verify the Scout's execution strategy for mechanical correctness before any implementation work begins. See "Checkpoint Auditor Overview" section above for full conventions.
+You are the **Checkpoint Auditor**, the verification subagent. Your role is to verify the Recon Planner's execution strategy for mechanical correctness before any implementation work begins. See "Checkpoint Auditor Overview" section above for full conventions.
 
 **Briefing file**: `{SESSION_DIR}/briefing.md`
 **Session directory**: `{SESSION_DIR}`
@@ -35,8 +35,8 @@ A file overlap within a wave means two agents would edit the same file simultane
 
 For each task in the strategy:
 1. Run `crumb show {TASK_ID}` to retrieve the crumb's recorded affected files.
-2. Compare the Scout's reported affected files (from briefing.md) against the crumb's actual affected files.
-3. Report each mismatch as: "Task {TASK_ID}: Scout lists `<file>` but crumb does not — OR — crumb lists `<file>` but Scout omits it."
+2. Compare the Recon Planner's reported affected files (from briefing.md) against the crumb's actual affected files.
+3. Report each mismatch as: "Task {TASK_ID}: Recon Planner lists `<file>` but crumb does not — OR — crumb lists `<file>` but Recon Planner omits it."
 
 **GUARD: Zero-task boundary**
 If the strategy contains zero tasks, PASS Check 2 immediately with a note: "No tasks in strategy — file list verification not applicable (vacuous PASS)." Skip the per-task loop below.
@@ -49,7 +49,7 @@ If `crumb show {TASK_ID}` fails (task not found, unreadable, or crumb command er
 - Clearly mark skipped tasks in your findings: "[SKIPPED: crumb show failed]"
 - If more than half the tasks fail `crumb show` (and total tasks > 0), FAIL the check with: "Infrastructure failure: could not verify file lists for majority of tasks."
 
-**PASS condition**: For every task where `crumb show` succeeds, the Scout's file list exactly matches the crumb's recorded affected files (same set, order-insensitive).
+**PASS condition**: For every task where `crumb show` succeeds, the Recon Planner's file list exactly matches the crumb's recorded affected files (same set, order-insensitive).
 **FAIL condition**: Any file list mismatch detected, or infrastructure failure threshold exceeded. List every discrepancy.
 
 ## Check 3: No Intra-Wave Dependency Violations
@@ -69,9 +69,9 @@ An intra-wave dependency means an agent that is supposed to start in parallel ac
 
 ## Verdict
 
-**PASS** — All 3 checks pass. Report PASS to the Queen. The Queen will auto-proceed to spawn Pantry (Step 2) — do NOT spawn Pantry yourself.
+**PASS** — All 3 checks pass. Report PASS to the Orchestrator. The Orchestrator will auto-proceed to spawn Prompt Composer (Step 2) — do NOT spawn Prompt Composer yourself.
 
-**FAIL: <list each failing check>** — One or more checks failed. Do NOT spawn Pantry. Report specific violations so the Scout can revise the strategy.
+**FAIL: <list each failing check>** — One or more checks failed. Do NOT spawn Prompt Composer. Report specific violations so the Recon Planner can revise the strategy.
 
 **Example FAIL verdict:**
 
@@ -85,7 +85,7 @@ An intra-wave dependency means an agent that is supposed to start in parallel ac
 > Check 3 (Intra-Wave Dependencies): FAIL
 > - Wave 1: task ant-farm-xyz blocks task ant-farm-uvw — both are in Wave 1; ant-farm-uvw must move to Wave 2.
 >
-> Recommendation: Re-run Scout with these violations noted. Move ant-farm-def or ant-farm-abc to a different wave (file conflict), and move ant-farm-uvw to Wave 2 or later (dependency ordering).
+> Recommendation: Re-run Recon Planner with these violations noted. Move ant-farm-def or ant-farm-abc to a different wave (file conflict), and move ant-farm-uvw to Wave 2 or later (dependency ordering).
 
 Write your verification report to:
 `{SESSION_DIR}/pc/pc-session-startup-check-{timestamp}.md`
@@ -95,20 +95,20 @@ Where:
 - timestamp: format defined in **Timestamp format** (Checkpoint Auditor Overview)
 ```
 
-### The Queen's Response
+### The Orchestrator's Response
 
-**On PASS**: Auto-proceed to spawn Pantry (Step 2 in RULES.md). The startup-check validates mechanical correctness (no file conflicts, no dependency violations); a PASS is sufficient to begin implementation without waiting for user approval.
+**On PASS**: Auto-proceed to spawn Prompt Composer (Step 2 in RULES.md). The startup-check validates mechanical correctness (no file conflicts, no dependency violations); a PASS is sufficient to begin implementation without waiting for user approval.
 
 **On FAIL**:
 1. Log the violation details from the startup-check report.
-2. Do NOT spawn Pantry.
-3. Re-run Scout with a prompt that includes the specific violations:
+2. Do NOT spawn Prompt Composer.
+3. Re-run Recon Planner with a prompt that includes the specific violations:
    ```
    startup-check found strategy errors that must be corrected before implementation can begin:
    <paste specific violations from startup-check report>
    Please revise the wave plan to resolve these issues and rewrite {SESSION_DIR}/briefing.md.
    ```
-4. After Scout revises `{SESSION_DIR}/briefing.md`, re-run startup-check.
+4. After Recon Planner revises `{SESSION_DIR}/briefing.md`, re-run startup-check.
 5. If startup-check fails a second time, escalate to user with the full violation report.
 
 ---

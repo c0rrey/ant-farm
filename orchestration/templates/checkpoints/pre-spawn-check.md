@@ -1,8 +1,8 @@
-<!-- Reader: Checkpoint Auditor. The Queen does NOT read this file. -->
+<!-- Reader: Checkpoint Auditor. The Orchestrator does NOT read this file. -->
 
 ## Pre-Spawn Check: Pre-Spawn Prompt Audit
 
-### Crumb Gatherers
+### Implementers
 
 **When**: After orchestrator composes agent prompt(s), BEFORE spawning
 **Model**: `haiku` (mechanical checklist — cheap, fast)
@@ -17,7 +17,7 @@
 - Check 7 is WARN instead of PASS, AND
 - The file in question is "small": fewer than 100 lines, AND
 - The prompt includes specific context about what the agent should modify (e.g., "update the error message on line 15")
-- Example WARN: "Edit config.json (update API endpoint)" is WARN if config.json is 45 lines. The Queen reviews and approves.
+- Example WARN: "Edit config.json (update API endpoint)" is WARN if config.json is 45 lines. The Orchestrator reviews and approves.
 - Example FAIL: "Edit templates/macros/jsonld.html" is FAIL because it provides no line specificity and the file is likely >100 lines. Needs rewrite.
 
 **FAIL verdict**: Any check fails without WARN exception, or Check 7 is WARN but the file is large (≥100 lines) or lacks context.
@@ -27,7 +27,7 @@
 
 You are the **Checkpoint Auditor**, the verification subagent. Your role is to audit the composed agent prompt before spawn. See "Checkpoint Auditor Overview" section above for full conventions.
 
-Audit the following Crumb Gatherer prompt for completeness and correctness.
+Audit the following Implementer prompt for completeness and correctness.
 Do NOT execute the prompt — only verify its contents.
 
 <prompt>
@@ -55,7 +55,7 @@ Do NOT execute the prompt — only verify its contents.
 
 ## Verdict
 - **PASS** — All 7 checks pass
-- **WARN** — Check 7 is WARN but file is small (<100 lines) and has context. Queen reviews and approves before spawn.
+- **WARN** — Check 7 is WARN but file is small (<100 lines) and has context. Orchestrator reviews and approves before spawn.
 - **FAIL** — One or more checks fail, or Check 7 is WARN and file is large (≥100 lines). Rewrite prompt.
 
 **Example FAIL verdict:**
@@ -73,11 +73,11 @@ Do NOT execute the prompt — only verify its contents.
 Write your verification report to:
 
 **Batch mode (most common):** `{SESSION_DIR}/pc/pc-session-pre-spawn-check-impl-{timestamp}.md`
-- Use when the Queen runs pre-spawn-check over all Crumb Gatherer prompts for a wave in a single audit.
+- Use when the Orchestrator runs pre-spawn-check over all Implementer prompts for a wave in a single audit.
 - The suffix `impl` distinguishes this artifact from the Reviewer pre-spawn-check (`pre-spawn-check-review`) in the same session.
 
 **Per-task mode (single-prompt audit):** `{SESSION_DIR}/pc/pc-{TASK_SUFFIX}-pre-spawn-check-{timestamp}.md`
-- Use only when auditing a single Crumb Gatherer prompt in isolation.
+- Use only when auditing a single Implementer prompt in isolation.
 - Example: `{SESSION_DIR}/pc/pc-74g1-pre-spawn-check-{timestamp}.md`
 
 Where:
@@ -99,7 +99,7 @@ You are the **Checkpoint Auditor**, the verification subagent. Your role is to a
 **Review round**: {REVIEW_ROUND}
 **Input guard**: If {REVIEW_ROUND} still appears as the literal text `{REVIEW_ROUND}` (curly braces present), or is missing, blank, or non-numeric (not a positive integer), return the following message and do NOT proceed with the audit:
 
-"pre-spawn-check ABORTED: REVIEW_ROUND placeholder was not substituted before spawning pre-spawn-check (got: '{REVIEW_ROUND}'). Root cause: upstream substitution failure — the Queen or Pantry did not replace `{REVIEW_ROUND}` in the pre-spawn-check prompt before dispatch. Fix: ensure the prompt-composition step fills in REVIEW_ROUND as a plain integer (e.g. `1`) before spawning the Checkpoint Auditor."
+"pre-spawn-check ABORTED: REVIEW_ROUND placeholder was not substituted before spawning pre-spawn-check (got: '{REVIEW_ROUND}'). Root cause: upstream substitution failure — the Orchestrator or Prompt Composer did not replace `{REVIEW_ROUND}` in the pre-spawn-check prompt before dispatch. Fix: ensure the prompt-composition step fills in REVIEW_ROUND as a plain integer (e.g. `1`) before spawning the Checkpoint Auditor."
 
 Audit the following reviewer prompts for completeness and consistency.
 Round 1: 4 prompts (clarity, edge-cases, correctness, drift).
@@ -126,8 +126,8 @@ Both rounds — paste these 2 prompts:
 
 ## Verify each item (PASS or FAIL with evidence):
 
-1. **File list matches git diff**: the Queen provides the commit range (`<first-commit>..<last-commit>`) in the spawn prompt — use those exact values. This is session-wide, spanning all trails. Run `git diff --name-only <first-commit>..<last-commit>` and verify the prompt file list matches exactly. Every file in the diff must appear in the prompt, and every file in the prompt must appear in the diff. If there is a mismatch, FAIL with the list of missing/extra files.
-   > **Known limitation**: The commit range is Queen-provided. If the Queen passes incorrect commit hashes (e.g., too narrow or too broad), this check validates against wrong ground truth. There is no independent way for the Checkpoint Auditor to derive the "correct" commit range. Mitigation: scope-verify (Post-Commit Scope Verification) independently validates per-task scope after each agent commits, catching scope errors that slip through here.
+1. **File list matches git diff**: the Orchestrator provides the commit range (`<first-commit>..<last-commit>`) in the spawn prompt — use those exact values. This is session-wide, spanning all trails. Run `git diff --name-only <first-commit>..<last-commit>` and verify the prompt file list matches exactly. Every file in the diff must appear in the prompt, and every file in the prompt must appear in the diff. If there is a mismatch, FAIL with the list of missing/extra files.
+   > **Known limitation**: The commit range is Orchestrator-provided. If the Orchestrator passes incorrect commit hashes (e.g., too narrow or too broad), this check validates against wrong ground truth. There is no independent way for the Checkpoint Auditor to derive the "correct" commit range. Mitigation: scope-verify (Post-Commit Scope Verification) independently validates per-task scope after each agent commits, catching scope errors that slip through here.
 2. **Same file list**: All prompts contain the same set of files to review (not different subsets)
 3. **Same commit range**: All prompts reference the same commit range
 4. **Correct focus areas**: Each prompt has focus areas specific to its review type:
@@ -152,7 +152,7 @@ Where:
 - timestamp: format defined in **Timestamp format** (Checkpoint Auditor Overview)
 ```
 
-### The Queen's Response
+### The Orchestrator's Response
 
 **On PASS**: Proceed to spawn the agent(s) or create the team.
 

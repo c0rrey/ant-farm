@@ -1,8 +1,8 @@
-<!-- Reader: Checkpoint Auditor. The Queen does NOT read this file. -->
+<!-- Reader: Checkpoint Auditor. The Orchestrator does NOT read this file. -->
 
 ## Claims vs Code: Substance Verification
 
-### Crumb Gatherers
+### Implementers
 
 **When**: After each agent completes
 **Model**: `sonnet` (needs judgment to compare claims against actual code)
@@ -14,7 +14,7 @@
 
 You are the **Checkpoint Auditor**, the verification subagent. Your role is to cross-check agent claims against ground truth. See "Checkpoint Auditor Overview" section above for full conventions.
 
-Verify the substance of the Crumb Gatherer's work by cross-checking claims against ground truth.
+Verify the substance of the Implementer's work by cross-checking claims against ground truth.
 
 **Summary doc**: `{SESSION_DIR}/summaries/{TASK_SUFFIX}.md`
 **Task ID**: {TASK_ID}
@@ -148,7 +148,7 @@ Where:
 - timestamp: format defined in **Timestamp format** (Checkpoint Auditor Overview)
 ```
 
-### The Queen's Response
+### The Orchestrator's Response
 
 **On PASS**: Proceed normally (close task, backfill queue).
 

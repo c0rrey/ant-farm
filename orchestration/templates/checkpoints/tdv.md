@@ -1,11 +1,11 @@
-<!-- Reader: Checkpoint Auditor. The Queen does NOT read this file. -->
+<!-- Reader: Checkpoint Auditor. The Orchestrator does NOT read this file. -->
 
 ## Trail Decomposition Verification (TDV): Post-Decomposition Structure Audit
 
-**When**: After Architect completes trail decomposition and writes crumbs to the crumb store, BEFORE handoff to the implementation wave
+**When**: After Task Decomposer completes trail decomposition and writes crumbs to the crumb store, BEFORE handoff to the implementation wave
 **Model**: `haiku` (set comparisons, graph traversals, field existence checks — no judgment required)
 
-**Why**: The Architect produces a decomposition (trail + crumbs) that defines all downstream implementation work. Structural defects here — missing fields, circular dependencies, broken trail linkage — cannot be caught by the implementing agents and cascade into incorrect or conflicting work. A lightweight automated check immediately after decomposition catches defects at the cheapest possible point.
+**Why**: The Task Decomposer produces a decomposition (trail + crumbs) that defines all downstream implementation work. Structural defects here — missing fields, circular dependencies, broken trail linkage — cannot be caught by the implementing agents and cascade into incorrect or conflicting work. A lightweight automated check immediately after decomposition catches defects at the cheapest possible point.
 
 **Why haiku**: All four structural checks are set comparisons, graph traversals, and field presence validations with no ambiguity. The two heuristic warnings require pattern matching but no code comprehension. Haiku handles this class of verification faster and cheaper than sonnet.
 
@@ -16,15 +16,15 @@
 | **Name** | Trail Decomposition Verification (TDV) |
 | **Run by** | Checkpoint Auditor |
 | **Model** | `haiku` |
-| **When** | After Architect completes decomposition, before implementation wave |
+| **When** | After Task Decomposer completes decomposition, before implementation wave |
 | **Blocks** | Handoff to implementation wave (FAIL blocks; PASS proceeds) |
-| **Max retries** | 2 (Architect retries); escalate to user after second failure |
+| **Max retries** | 2 (Task Decomposer retries); escalate to user after second failure |
 | **Checks** | 4 structural (blockers) + 2 heuristic (warnings only) |
 
 ```markdown
 **Checkpoint Auditor verification - TDV (Trail Decomposition Verification)**
 
-You are the **Checkpoint Auditor**, the verification subagent. Your role is to verify the Architect's trail decomposition for structural correctness before any implementation work begins. See "Checkpoint Auditor Overview" section above for full conventions.
+You are the **Checkpoint Auditor**, the verification subagent. Your role is to verify the Task Decomposer's trail decomposition for structural correctness before any implementation work begins. See "Checkpoint Auditor Overview" section above for full conventions.
 
 **Trail ID**: `{TRAIL_ID}`
 **Session directory**: `{SESSION_DIR}`
@@ -94,7 +94,7 @@ If `crumb show <id>` fails (ID not found, unreadable, or crumb command error):
 
 ## Heuristic Warnings (Non-Blocking)
 
-The following two checks produce **WARN** verdicts only — they do not block handoff. Report them separately after the four structural checks. The Queen reviews and uses judgment to act or proceed.
+The following two checks produce **WARN** verdicts only — they do not block handoff. Report them separately after the four structural checks. The Orchestrator reviews and uses judgment to act or proceed.
 
 ### Warning 1: Acceptance Criteria Quality
 
@@ -113,9 +113,9 @@ If any crumb's dependency chain (the longest path from it to a root crumb) excee
 
 ## Verdict
 
-**PASS** — All 4 structural checks pass (heuristic warnings may be present). Report PASS to the Queen. The Queen will proceed to implementation handoff — do NOT begin handoff yourself.
+**PASS** — All 4 structural checks pass (heuristic warnings may be present). Report PASS to the Orchestrator. The Orchestrator will proceed to implementation handoff — do NOT begin handoff yourself.
 
-**FAIL: <list each failing structural check>** — One or more structural checks failed. Do NOT proceed to handoff. Report specific violations so the Architect can revise the decomposition.
+**FAIL: <list each failing structural check>** — One or more structural checks failed. Do NOT proceed to handoff. Report specific violations so the Task Decomposer can revise the decomposition.
 
 **Example FAIL verdict:**
 
@@ -135,7 +135,7 @@ If any crumb's dependency chain (the longest path from it to a root crumb) excee
 > Warnings:
 > - WARN — Crumb `ant-farm-abc`: 2 of 3 acceptance criteria are vague (e.g., "Works as expected").
 >
-> Recommendation: Resume Architect with these violations. Architect must add `scope.agent_type` and `acceptance_criteria` to missing crumbs, and remove the non-existent dependency reference, then rewrite the decomposition before re-running TDV.
+> Recommendation: Resume Task Decomposer with these violations. Task Decomposer must add `scope.agent_type` and `acceptance_criteria` to missing crumbs, and remove the non-existent dependency reference, then rewrite the decomposition before re-running TDV.
 
 Write your verification report to:
 `{SESSION_DIR}/pc/pc-session-tdv-{timestamp}.md`
@@ -146,18 +146,18 @@ Where:
 - timestamp: format defined in **Timestamp format** (Checkpoint Auditor Overview)
 ```
 
-### The Queen's Response
+### The Orchestrator's Response
 
 **On PASS**: Proceed to implementation handoff. Heuristic warnings (if any) are advisory — note them in queen-state.md and use judgment about whether to act on them before spawning implementation agents.
 
 **On FAIL**:
 1. Log the failing check details from the TDV report.
 2. Do NOT proceed to implementation handoff.
-3. Resume the Architect with a prompt that includes the specific violations:
+3. Resume the Task Decomposer with a prompt that includes the specific violations:
    ```
    TDV found decomposition errors that must be corrected before implementation can begin:
    <paste specific violations from TDV report>
    Please revise the decomposition to resolve these issues and update the crumbs in the crumb store.
    ```
-4. After Architect revises the decomposition, re-run TDV.
-5. If TDV fails a second time, escalate to user with the full violation report — do NOT attempt a third Architect retry automatically.
+4. After Task Decomposer revises the decomposition, re-run TDV.
+5. If TDV fails a second time, escalate to user with the full violation report — do NOT attempt a third Task Decomposer retry automatically.

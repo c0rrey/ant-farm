@@ -1,24 +1,24 @@
-<!-- Reader: Checkpoint Auditor. The Queen does NOT read this file. -->
+<!-- Reader: Checkpoint Auditor. The Orchestrator does NOT read this file. -->
 
 ## Session Complete: Pre-Push Session Output Audit
 
-**When**: After Scribe writes `{SESSION_DIR}/exec-summary.md` and CHANGELOG.md, BEFORE `git push` (Step 6 in RULES.md)
+**When**: After Session Scribe writes `{SESSION_DIR}/exec-summary.md` and CHANGELOG.md, BEFORE `git push` (Step 6 in RULES.md)
 **Model**: `haiku` (mechanical counting and set comparisons — no judgment required)
 
-**Why**: The Scribe produces an exec summary and CHANGELOG entry that are the permanent record of the session. Errors here (missed tasks, phantom commits, stale crumb statuses) mislead future sessions and create audit gaps. A lightweight automated check before push catches output defects at zero implementation cost — the session is already complete, so no rework cascades.
+**Why**: The Session Scribe produces an exec summary and CHANGELOG entry that are the permanent record of the session. Errors here (missed tasks, phantom commits, stale crumb statuses) mislead future sessions and create audit gaps. A lightweight automated check before push catches output defects at zero implementation cost — the session is already complete, so no rework cascades.
 
 **Why haiku**: All six checks are set comparisons, count reconciliations, and status lookups with no ambiguity. No judgment or code comprehension is required. Haiku handles this class of verification faster and cheaper than sonnet.
 
 ```markdown
 **Checkpoint Auditor verification - session-complete (Exec Summary Verification)**
 
-You are the **Checkpoint Auditor**, the verification subagent. Your role is to verify the Scribe's session output for correctness before the session is pushed to remote. See "Checkpoint Auditor Overview" section above for full conventions.
+You are the **Checkpoint Auditor**, the verification subagent. Your role is to verify the Session Scribe's session output for correctness before the session is pushed to remote. See "Checkpoint Auditor Overview" section above for full conventions.
 
 **Exec summary**: `{SESSION_DIR}/exec-summary.md`
 **Session directory**: `{SESSION_DIR}`
-**Session start commit**: `{SESSION_START_COMMIT}` (Queen-supplied; first commit of this session, used to scope git log)
-**Session end commit**: `{SESSION_END_COMMIT}` (Queen-supplied; final commit before push)
-**Session start date**: `{SESSION_START_DATE}` (ISO 8601, e.g., `2026-02-22` — Queen-supplied; used to scope crumb list)
+**Session start commit**: `{SESSION_START_COMMIT}` (Orchestrator-supplied; first commit of this session, used to scope git log)
+**Session end commit**: `{SESSION_END_COMMIT}` (Orchestrator-supplied; final commit before push)
+**Session start date**: `{SESSION_START_DATE}` (ISO 8601, e.g., `2026-02-22` — Orchestrator-supplied; used to scope crumb list)
 
 Read the exec summary first. Then run all six checks below.
 
@@ -70,7 +70,7 @@ If `crumb show <id>` fails (task not found, unreadable, or crumb command error):
 
 ## Check 4: CHANGELOG Derivation Fidelity
 
-1. Run `head -n 50 CHANGELOG.md` to read the top of the file (the new entry is always at the top; reading the full file wastes context tokens on irrelevant history). Identify the new entry written by the Scribe for this session.
+1. Run `head -n 50 CHANGELOG.md` to read the top of the file (the new entry is always at the top; reading the full file wastes context tokens on irrelevant history). Identify the new entry written by the Session Scribe for this session.
 2. Read the exec summary's task IDs and commit hashes.
 3. Verify that every task ID and commit hash present in the exec summary also appears in the CHANGELOG entry.
 4. Report each missing item as: "Task ID `{TASK_ID}` in exec summary but absent from CHANGELOG entry." or "Commit `{HASH}` in exec summary but absent from CHANGELOG entry."
@@ -119,9 +119,9 @@ Check 5 (Section Completeness): PASS / FAIL — {evidence or "All 5 sections pre
 Check 6 (Metric Consistency): PASS / FAIL — {evidence or "All counts consistent"}
 ```
 
-**PASS** — All 6 checks pass. Report PASS to the Queen. The Queen may proceed with `git push`.
+**PASS** — All 6 checks pass. Report PASS to the Orchestrator. The Orchestrator may proceed with `git push`.
 
-**FAIL: <list each failing check with evidence>** — One or more checks failed. Do NOT push. Re-spawn Scribe with specific violations.
+**FAIL: <list each failing check with evidence>** — One or more checks failed. Do NOT push. Re-spawn Session Scribe with specific violations.
 
 **Example FAIL verdict:**
 
@@ -142,7 +142,7 @@ Check 6 (Metric Consistency): PASS / FAIL — {evidence or "All counts consisten
 > Check 6 (Metric Consistency): FAIL
 > - At a Glance says "Tasks completed: 4" but Work Completed section lists 3 tasks.
 >
-> Recommendation: Re-spawn Scribe with these violations. Scribe must update exec-summary.md and CHANGELOG to resolve Check 2, Check 3, and Check 6 before re-running session-complete.
+> Recommendation: Re-spawn Session Scribe with these violations. Session Scribe must update exec-summary.md and CHANGELOG to resolve Check 2, Check 3, and Check 6 before re-running session-complete.
 
 Write your verification report to:
 `{SESSION_DIR}/pc/pc-session-session-complete-{timestamp}.md`
@@ -152,20 +152,20 @@ Where:
 - timestamp: format defined in **Timestamp format** (Checkpoint Auditor Overview)
 ```
 
-### The Queen's Response
+### The Orchestrator's Response
 
 **On PASS**: Proceed with `git push` (Step 7 in RULES.md).
 
 **On FAIL**:
 1. Log the failing check details from the session-complete report.
 2. Do NOT push to remote.
-3. Re-spawn Scribe with a prompt that includes the specific violations:
+3. Re-spawn Session Scribe with a prompt that includes the specific violations:
    ```
    session-complete found errors in the exec summary or CHANGELOG that must be corrected before push:
    <paste specific failures from session-complete report>
    Please update {SESSION_DIR}/exec-summary.md and CHANGELOG.md to resolve these issues.
    ```
-4. After Scribe updates the outputs, re-run session-complete.
+4. After Session Scribe updates the outputs, re-run session-complete.
 5. If session-complete fails a second time, escalate to user — present the failed session-complete report and ask whether to fix manually or push as-is. Do NOT push with undisclosed failures.
 
 ---

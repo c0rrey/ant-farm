@@ -1,4 +1,4 @@
-<!-- Reader: Checkpoint Auditor. The Queen does NOT read this file. -->
+<!-- Reader: Checkpoint Auditor. The Orchestrator does NOT read this file. -->
 
 ## Scope Verify: Post-Commit Scope Verification
 
@@ -6,7 +6,7 @@
 - **Serial mode**: After each individual agent commits, BEFORE spawning the next agent in the wave. Agents were spawned one at a time; true per-agent gating is possible.
 - **Batch mode**: After ALL agents in the wave have committed (agents were spawned in parallel in a single message, so per-agent serial gating is mechanically impossible). One scope-verify instance per committed task, run concurrently. All scope-verify reports must PASS before claims-vs-code runs.
 
-**Mode selection rule**: If the Queen spawned agents in a single message (parallel wave), use batch mode. If the Queen spawned agents individually in separate messages, use serial mode. (Authoritative source: RULES.md Step 3.)
+**Mode selection rule**: If the Orchestrator spawned agents in a single message (parallel wave), use batch mode. If the Orchestrator spawned agents individually in separate messages, use serial mode. (Authoritative source: RULES.md Step 3.)
 **Model**: `haiku` (mechanical file list comparison — cheap, fast)
 
 **Why**: Catches scope creep in real-time between agents, before claims-vs-code runs. Prevents cascading work attribution errors when multiple agents work on related files.
@@ -38,22 +38,22 @@ You are the **Checkpoint Auditor**, the verification subagent. Your role is to v
 
 **PASS verdict**: All changed files are in the expected scope (from `crumb show {TASK_ID}`), or any extra files are clearly legitimate build outputs (e.g., HTML regenerated from template change, CSS compiled from SASS).
 
-**WARN verdict**: Extra files changed that need the Queen's judgment before continuing to the next task in the wave. Does NOT block the queue — only requires Queen review.
+**WARN verdict**: Extra files changed that need the Orchestrator's judgment before continuing to the next task in the wave. Does NOT block the queue — only requires Orchestrator review.
 - Examples: template changes that cascade into multiple HTML files, configuration changes affecting derived docs
-- Queen decision: approve as legitimate build artifact, or escalate to user if suspicious
+- Orchestrator decision: approve as legitimate build artifact, or escalate to user if suspicious
 
 **FAIL verdict**: Scope creep detected — agent edited files outside the expected scope (different feature, unrelated config, cross-trail work). Indicates a real work attribution problem that needs correction.
 
 ## Verdict
 - **PASS** — Files match expected scope (or extra files are legitimate build outputs)
-- **WARN: <list extra files with rationale>** — Extra files need the Queen's review but do NOT block queue continuation. Queen approves and proceeds, or escalates if suspicious.
+- **WARN: <list extra files with rationale>** — Extra files need the Orchestrator's review but do NOT block queue continuation. Orchestrator approves and proceeds, or escalates if suspicious.
 - **FAIL: <list unexpected files>** — Agent edited files outside task scope (scope creep detected). Blocks queue progression until documented.
 
 Write your verification report to:
 `{SESSION_DIR}/pc/pc-{TASK_SUFFIX}-scope-verify-{timestamp}.md`
 ```
 
-### The Queen's Response
+### The Orchestrator's Response
 
 **On PASS**: Continue normally (run claims-vs-code, backfill queue).
 
@@ -61,7 +61,7 @@ Write your verification report to:
 - Review the extra files within 30 seconds of receiving this report
 - If legitimate (e.g., HTML rebuild from template, derived artifact), log approval and continue immediately
 - If suspicious, escalate to user for decision before spawning next agent in wave
-- Queue does NOT pause while Queen reviews — this is a soft gate (concurrent review is acceptable)
+- Queue does NOT pause while Orchestrator reviews — this is a soft gate (concurrent review is acceptable)
 
 **On FAIL (scope creep detected)** (blocks queue progression):
 1. Log the violation in queen-state.md immediately
