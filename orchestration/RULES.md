@@ -174,7 +174,8 @@ Skipping Step 3b is a critical workflow violation.
             after one re-Scout run, do NOT re-run Scout a second time. Surface the startup-check violations to
             the user and await instruction.
 
-            **Progress log (after startup-check PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SCOUT_COMPLETE|briefing=${SESSION_DIR}/briefing.md|startup_check=pass|tasks_accepted=<N>|next_step=STEP_2_PANTRY" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after startup-check PASS):** The `SCOUT_COMPLETE` milestone covers both Step 1 (Scout recon) and Step 1b (startup-check). Step 1 does not log a separate milestone — the Scout phase is considered complete only after startup-check PASS.
+            `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SCOUT_COMPLETE|briefing=${SESSION_DIR}/briefing.md|startup_check=pass|tasks_accepted=<N>|next_step=STEP_2_PANTRY" >> ${SESSION_DIR}/progress.log`
             where `<N>` is the count of tasks in the briefing task list after startup-check PASS (N=0 is not logged — it is caught by the zero-task guard earlier in Step 1b).
 
 **Step 2:** Spawn — Spawn the Prompt Composer (`ant-farm-prompt-composer`, `model: "opus"`) for task briefs + combined previews

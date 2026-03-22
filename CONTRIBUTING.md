@@ -154,7 +154,7 @@ For changes to the review pipeline script:
 # Test build-review-prompts.sh:
 # Requires a session dir to write output into
 ./scripts/build-review-prompts.sh <SESSION_DIR> \
-  "abc1234..HEAD" "file1.py\nfile2.py" "task-1 task-2" \
+  "abc1234..HEAD" $'file1.py\nfile2.py' "task-1 task-2" \
   "$(date +%Y%m%d-%H%M%S)" 1 \
   ~/.claude/orchestration/templates/reviewer-skeleton.md \
   ~/.claude/orchestration/templates/review-consolidator-skeleton.md
@@ -170,7 +170,7 @@ The orchestration framework runs from `~/.claude/`, not from the repo. Changes i
 
 `scripts/setup.sh` installs:
 - `agents/*.md` to `~/.claude/agents/`
-- `orchestration/` to `~/.claude/orchestration/` (existing files in the target that are not in the source are preserved)
+- `orchestration/` to `~/.claude/orchestration/` (existing files in the target that are not in the source are preserved; this means stale files accumulate in `~/.claude/orchestration/` when source files are renamed or deleted -- remove orphaned target files manually)
 - `scripts/build-review-prompts.sh` to `~/.claude/orchestration/scripts/`
 - `skills/*.md` to `~/.claude/skills/ant-farm-<name>/SKILL.md`
 - `crumb.py` to `~/.local/bin/crumb`
