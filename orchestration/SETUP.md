@@ -41,7 +41,8 @@ are setting up this orchestration system on a new machine, you must copy or crea
 `~/.claude/agents/code-reviewer.md` manually. You can find the source file at `~/.claude/agents/code-reviewer.md` on the machine where the system was first configured.
 Without this file, the Reviewer team members will fail to spawn (Claude Code will not recognize the
 `code-reviewer` agent type). `setup.sh` automatically checks for this file at the end of setup (Step 8:
-Preflight checks) and emits a visible warning if it is absent.
+Preflight checks) and emits a visible warning if it is absent:
+`[ant-farm] WARNING: ~/.claude/agents/code-reviewer.md is missing.`
 
 **Step 2: Install orchestration triggers into the project's CLAUDE.md**
 
