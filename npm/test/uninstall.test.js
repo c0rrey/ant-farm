@@ -22,6 +22,12 @@ const { writeInstalledManifest, readInstalledManifest } = require('../lib/manife
 const { pathExists } = require('../lib/file-ops');
 const { DryRunCollector } = require('../lib/dry-run');
 const { registerMcp, unregisterMcp, MCP_SERVER_NAME, MCP_COMMAND, MCP_ARGS } = require('../lib/mcp-registration');
+const {
+  registerHooks,
+  unregisterHooks,
+  STATUSLINE_COMMAND,
+  SCOPE_ADVISOR_COMMAND,
+} = require('../lib/hooks-registration');
 
 // ---------------------------------------------------------------------------
 // Helper: create a temporary directory and clean it up after the test.
@@ -306,6 +312,156 @@ test('uninstall flow: unregisterMcp dry-run does not delete settings entry', asy
     assert.ok(
       settings.mcpServers && settings.mcpServers[MCP_SERVER_NAME],
       'mcpServers.crumb entry must remain after dry-run unregisterMcp'
+    );
+
+    // Collector should have recorded an update op
+    const updateOps = collector._ops.filter(o => o.op === 'update');
+    assert.ok(updateOps.length > 0, 'Dry-run collector should record an update op');
+  });
+});
+
+// ===========================================================================
+// Test: unregisterHooks called during uninstall flow
+// ===========================================================================
+
+test('uninstall flow: unregisterHooks removes statusLine and PreToolUse entries from settings.json', async () => {
+  await withTmpDir(async (tmpDir) => {
+    const settingsPath = path.join(tmpDir, 'settings.json');
+
+    // First, register the hooks as the installer would
+    await registerHooks({ dryRun: false, collector: null, settingsPath });
+
+    // Verify both entries were written
+    const before = JSON.parse(await fs.readFile(settingsPath, 'utf8'));
+    assert.ok(
+      before.statusLine && before.statusLine.command === STATUSLINE_COMMAND,
+      'statusLine entry should be present before unregister'
+    );
+    assert.ok(
+      before.hooks &&
+      Array.isArray(before.hooks.PreToolUse) &&
+      before.hooks.PreToolUse.some(
+        (group) =>
+          Array.isArray(group.hooks) &&
+          group.hooks.some((h) => h.command === SCOPE_ADVISOR_COMMAND)
+      ),
+      'PreToolUse scope advisor entry should be present before unregister'
+    );
+
+    // Now unregister, as the uninstaller would
+    const { warnings } = await unregisterHooks({ dryRun: false, collector: null, settingsPath });
+
+    assert.deepEqual(warnings, [], 'No warnings should be returned on clean unregister');
+
+    const after = JSON.parse(await fs.readFile(settingsPath, 'utf8'));
+
+    // statusLine entry should be gone
+    assert.ok(
+      !after.statusLine,
+      'statusLine entry should be absent after unregisterHooks'
+    );
+
+    // PreToolUse scope advisor entry should be gone
+    const remainingGroups = (after.hooks && after.hooks.PreToolUse) || [];
+    const scopeAdvisorStillPresent = remainingGroups.some(
+      (group) =>
+        Array.isArray(group.hooks) &&
+        group.hooks.some((h) => h.command === SCOPE_ADVISOR_COMMAND)
+    );
+    assert.ok(
+      !scopeAdvisorStillPresent,
+      'PreToolUse scope advisor entry should be absent after unregisterHooks'
+    );
+  });
+});
+
+test('uninstall flow: unregisterHooks is a no-op when hook entries are absent', async () => {
+  await withTmpDir(async (tmpDir) => {
+    const settingsPath = path.join(tmpDir, 'settings.json');
+
+    // settings.json absent — should not throw
+    await assert.doesNotReject(
+      () => unregisterHooks({ dryRun: false, collector: null, settingsPath }),
+      'unregisterHooks should not throw when settings.json does not exist'
+    );
+  });
+});
+
+test('uninstall flow: unregisterHooks preserves other hook entries', async () => {
+  await withTmpDir(async (tmpDir) => {
+    const settingsPath = path.join(tmpDir, 'settings.json');
+
+    // Pre-populate settings.json with both ant-farm hooks and a user-owned hook group
+    const initial = {
+      statusLine: { type: 'command', command: STATUSLINE_COMMAND },
+      hooks: {
+        PreToolUse: [
+          {
+            matcher: SCOPE_ADVISOR_COMMAND,
+            hooks: [{ type: 'command', command: SCOPE_ADVISOR_COMMAND }],
+          },
+          {
+            matcher: 'Bash',
+            hooks: [{ type: 'command', command: 'node ~/.claude/hooks/my-hook.js' }],
+          },
+        ],
+      },
+    };
+    await fs.writeFile(settingsPath, JSON.stringify(initial, null, 2) + '\n', 'utf8');
+
+    await unregisterHooks({ dryRun: false, collector: null, settingsPath });
+
+    const raw = await fs.readFile(settingsPath, 'utf8');
+    const settings = JSON.parse(raw);
+
+    // ant-farm statusLine should be gone
+    assert.ok(!settings.statusLine, 'statusLine should be removed after unregisterHooks');
+
+    // User-owned hook group must be preserved
+    assert.ok(
+      settings.hooks && Array.isArray(settings.hooks.PreToolUse),
+      'hooks.PreToolUse array should remain after unregisterHooks'
+    );
+    const userGroup = settings.hooks.PreToolUse.find(
+      (group) =>
+        Array.isArray(group.hooks) &&
+        group.hooks.some((h) => h.command === 'node ~/.claude/hooks/my-hook.js')
+    );
+    assert.ok(userGroup, 'User-owned PreToolUse hook group must be preserved after unregisterHooks');
+    assert.equal(userGroup.matcher, 'Bash', 'User hook group matcher must remain unchanged');
+  });
+});
+
+test('uninstall flow: unregisterHooks dry-run does not delete settings entries', async () => {
+  await withTmpDir(async (tmpDir) => {
+    const settingsPath = path.join(tmpDir, 'settings.json');
+
+    // Register the hooks first
+    await registerHooks({ dryRun: false, collector: null, settingsPath });
+
+    const collector = new DryRunCollector();
+    await unregisterHooks({ dryRun: true, collector, settingsPath });
+
+    // Both entries must still be present — dry-run writes nothing
+    const raw = await fs.readFile(settingsPath, 'utf8');
+    const settings = JSON.parse(raw);
+
+    assert.ok(
+      settings.statusLine && settings.statusLine.command === STATUSLINE_COMMAND,
+      'statusLine entry must remain after dry-run unregisterHooks'
+    );
+
+    const scopeAdvisorStillPresent =
+      settings.hooks &&
+      Array.isArray(settings.hooks.PreToolUse) &&
+      settings.hooks.PreToolUse.some(
+        (group) =>
+          Array.isArray(group.hooks) &&
+          group.hooks.some((h) => h.command === SCOPE_ADVISOR_COMMAND)
+      );
+    assert.ok(
+      scopeAdvisorStillPresent,
+      'PreToolUse scope advisor entry must remain after dry-run unregisterHooks'
     );
 
     // Collector should have recorded an update op

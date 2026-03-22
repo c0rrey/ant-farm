@@ -24,6 +24,12 @@ const { copyWithBackup, writeSentinel, removeSentinel, pathExists, sha256File } 
 const { DryRunCollector } = require('../lib/dry-run');
 const { syncClaudeMdBlock } = require('../lib/claude-md');
 const { registerMcp, MCP_SERVER_NAME, MCP_COMMAND, MCP_ARGS } = require('../lib/mcp-registration');
+const {
+  registerHooks,
+  STATUSLINE_COMMAND,
+  SCOPE_ADVISOR_COMMAND,
+  SCOPE_ADVISOR_MATCHER,
+} = require('../lib/hooks-registration');
 
 // ---------------------------------------------------------------------------
 // Helper: create a temporary directory and clean it up after the test.
@@ -597,5 +603,166 @@ test('install flow: registerMcp preserves existing non-ant-farm mcpServers entri
 
     // The crumb entry should also be present
     assert.ok(settings.mcpServers[MCP_SERVER_NAME], 'crumb entry should be added alongside existing entries');
+  });
+});
+
+// ===========================================================================
+// Test: registerHooks called during install flow
+// ===========================================================================
+
+test('install flow: registerHooks writes statusLine and PreToolUse entries to settings.json', async () => {
+  await withTmpDir(async (tmpDir) => {
+    const settingsPath = path.join(tmpDir, 'settings.json');
+
+    // settings.json absent before install — registerHooks should create it
+    const exists = await pathExists(settingsPath);
+    assert.ok(!exists, 'settings.json should not exist before install');
+
+    const { warnings } = await registerHooks({ dryRun: false, collector: null, settingsPath });
+
+    // No warnings expected on a fresh registration
+    assert.deepEqual(warnings, [], 'No warnings should be returned on fresh hooks registration');
+
+    // settings.json should now exist
+    const written = await pathExists(settingsPath);
+    assert.ok(written, 'registerHooks should create settings.json when it does not exist');
+
+    // Parse the written file and verify both hook entries
+    const raw = await fs.readFile(settingsPath, 'utf8');
+    const settings = JSON.parse(raw);
+
+    // statusLine entry must be present with the correct command
+    assert.ok(
+      settings.statusLine && typeof settings.statusLine === 'object',
+      'settings.json should have a statusLine object after registerHooks'
+    );
+    assert.equal(
+      settings.statusLine.command,
+      STATUSLINE_COMMAND,
+      'statusLine.command should match the expected ant-farm statusline command'
+    );
+
+    // PreToolUse entry must be present with the scope advisor command
+    assert.ok(
+      settings.hooks && Array.isArray(settings.hooks.PreToolUse),
+      'settings.json should have a hooks.PreToolUse array after registerHooks'
+    );
+    const scopeAdvisorGroup = settings.hooks.PreToolUse.find(
+      (group) =>
+        Array.isArray(group.hooks) &&
+        group.hooks.some((h) => h.command === SCOPE_ADVISOR_COMMAND)
+    );
+    assert.ok(
+      scopeAdvisorGroup,
+      'hooks.PreToolUse should contain a group with the ant-farm scope advisor command'
+    );
+    assert.equal(
+      scopeAdvisorGroup.matcher,
+      SCOPE_ADVISOR_MATCHER,
+      'PreToolUse group matcher should match the expected SCOPE_ADVISOR_MATCHER value'
+    );
+  });
+});
+
+test('install flow: registerHooks is idempotent on re-install', async () => {
+  await withTmpDir(async (tmpDir) => {
+    const settingsPath = path.join(tmpDir, 'settings.json');
+
+    // First install
+    await registerHooks({ dryRun: false, collector: null, settingsPath });
+
+    // Second install (re-run)
+    const { warnings } = await registerHooks({ dryRun: false, collector: null, settingsPath });
+
+    assert.deepEqual(warnings, [], 'No warnings should be returned on idempotent re-install');
+
+    // Both entries should still be present — not duplicated
+    const raw = await fs.readFile(settingsPath, 'utf8');
+    const settings = JSON.parse(raw);
+
+    assert.ok(
+      settings.statusLine && settings.statusLine.command === STATUSLINE_COMMAND,
+      'statusLine entry should still be present after idempotent re-install'
+    );
+
+    const preToolUse = settings.hooks && settings.hooks.PreToolUse;
+    assert.ok(Array.isArray(preToolUse), 'hooks.PreToolUse should remain an array after re-install');
+
+    // Verify no duplicate scope advisor groups were added
+    const matchingGroups = preToolUse.filter(
+      (group) =>
+        Array.isArray(group.hooks) &&
+        group.hooks.some((h) => h.command === SCOPE_ADVISOR_COMMAND)
+    );
+    assert.equal(
+      matchingGroups.length,
+      1,
+      'Idempotent re-install must not add duplicate PreToolUse groups'
+    );
+  });
+});
+
+test('install flow: registerHooks dry-run records update op without writing files', async () => {
+  await withTmpDir(async (tmpDir) => {
+    const settingsPath = path.join(tmpDir, 'settings.json');
+    const collector = new DryRunCollector();
+
+    const { warnings } = await registerHooks({ dryRun: true, collector, settingsPath });
+
+    assert.deepEqual(warnings, [], 'No warnings should be returned in dry-run mode');
+
+    // settings.json must NOT be created in dry-run
+    const exists = await pathExists(settingsPath);
+    assert.ok(!exists, 'registerHooks dry-run must not write settings.json');
+
+    // Collector should have recorded an update op for settings.json
+    const updateOps = collector._ops.filter(o => o.op === 'update');
+    assert.ok(
+      updateOps.length > 0,
+      'Dry-run collector should record an update op for settings.json'
+    );
+    const targetsSettings = updateOps.some(o => o.dst === settingsPath || o.src === settingsPath);
+    assert.ok(targetsSettings, 'Recorded update op should reference the settings.json path');
+  });
+});
+
+test('install flow: registerHooks preserves existing non-ant-farm hook entries', async () => {
+  await withTmpDir(async (tmpDir) => {
+    const settingsPath = path.join(tmpDir, 'settings.json');
+
+    // Pre-populate settings.json with a user-owned PreToolUse hook group
+    const initial = {
+      hooks: {
+        PreToolUse: [
+          {
+            matcher: 'Bash',
+            hooks: [{ type: 'command', command: 'node ~/.claude/hooks/my-custom-hook.js' }],
+          },
+        ],
+      },
+    };
+    await fs.writeFile(settingsPath, JSON.stringify(initial, null, 2) + '\n', 'utf8');
+
+    await registerHooks({ dryRun: false, collector: null, settingsPath });
+
+    const raw = await fs.readFile(settingsPath, 'utf8');
+    const settings = JSON.parse(raw);
+
+    // The user's hook group must be preserved
+    const userGroup = settings.hooks.PreToolUse.find(
+      (group) =>
+        Array.isArray(group.hooks) &&
+        group.hooks.some((h) => h.command === 'node ~/.claude/hooks/my-custom-hook.js')
+    );
+    assert.ok(userGroup, 'User-owned PreToolUse hook group must be preserved after registerHooks');
+    assert.equal(userGroup.matcher, 'Bash', 'User hook group matcher must remain unchanged');
+
+    // The ant-farm scope advisor entry should also be present
+    const scopeAdvisorGroup = settings.hooks.PreToolUse.find(
+      (group) =>
+        Array.isArray(group.hooks) &&
+        group.hooks.some((h) => h.command === SCOPE_ADVISOR_COMMAND)
+    );
+    assert.ok(scopeAdvisorGroup, 'ant-farm scope advisor group should be added alongside user hook group');
   });
 });
