@@ -30,6 +30,10 @@ Based on input mode:
   the MCP server is available) to grab the 20 highest-priority unblocked tasks.
   Use this when the user says "let's get to work" without specifying an epic,
   task list, or filter.
+  **Truncation warning**: If exactly 20 results are returned, additional ready
+  tasks may exist beyond the limit. Add a note to the briefing (Step 6):
+  "Showing 20 of potentially more ready tasks. Re-run with a higher limit or
+  filter by epic for complete coverage."
 - **`epic <epic-id>`**: Run `crumb trail show <epic-id>`, extract child task IDs
 - **`tasks <id1>, <id2>, ...`**: Use the provided list directly
 - **`filter <description>`**: Translate the description into `crumb list` flags
