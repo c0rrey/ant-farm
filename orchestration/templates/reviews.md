@@ -513,8 +513,8 @@ reviews.md and review-consolidator-skeleton.md (Review Consolidator template) us
 | Step 2.5 | Step 7 | Cross-session dedup against existing open crumbs |
 | Step 3 | Step 8 | Write consolidated summary to output path |
 | Step 4 | Steps 9–10 | SendMessage to Checkpoint Auditor, await verdict, file crumbs on PASS |
-| (round 2+ only) | Step 11 | P3 auto-filing to Future Work trail |
-| (all rounds) | Step 12 | Send crumb list handoff message to Queen |
+| Step 5 | Step 11 | P3 auto-filing to Future Work trail (round 2+ only) |
+| Step 6 | Step 12 | Send crumb list handoff message to Queen (all rounds) |
 
 ### Verification Pipeline Design Rationale
 
