@@ -1,5 +1,59 @@
 # Changelog
 
+## 2026-03-21 — Session 195300 (AF-T59 P3 Template Polish Sweep)
+
+### Summary
+
+Completed all 20 tasks in AF-T59, a P3 bug sweep targeting documentation correctness across orchestration template files (pantry.md, RULES.md, SESSION_PLAN_TEMPLATE.md, scout.md, and checkpoint files). All tasks ran in a single wave (5 agents). Round 1 review found 0 P1s and 3 P2s (error suppression, missing input guard, missing `signals` directory); all were auto-fixed and verified clean in Round 2. The 13 P3 root causes from Round 1 were repaired inline via 4 lightweight agents and verified clean in Round 3. 26 commits across 11 files.
+
+### Implementation (Wave 1 — AF-T59, 20 tasks)
+
+- **ant-farm-gf80**: fix: add file existence verification note to Pantry fail-fast checks (`orchestration/templates/pantry.md`) (`697b56d`)
+- **ant-farm-m47x**: fix: add skeleton file existence check to Pantry Step 3 (`orchestration/templates/pantry.md`) (`f90befc`)
+- **ant-farm-5d9x**: fix: use consistent shell variable syntax in crash recovery dir-check (`orchestration/RULES.md`) (`db2b8cf`)
+- **ant-farm-5vs8**: fix: remove emoji risk labels and time estimate fields from SESSION_PLAN_TEMPLATE (`orchestration/templates/SESSION_PLAN_TEMPLATE.md`) (`5d0fdb0`)
+- **ant-farm-8qgy**: fix: label pseudocode as conceptual in SESSION_PLAN_TEMPLATE (`orchestration/templates/SESSION_PLAN_TEMPLATE.md`) (`91e09ed`)
+- **ant-farm-oluh**: fix: clarify partial verdict table runs once after all tasks, not per-failure (`orchestration/templates/pantry.md`) (`d5955fa`)
+- **ant-farm-sycy**: fix: document sequential-check invariant for failure artifact path collision (`orchestration/templates/pantry.md`) (`be63d21`)
+- **ant-farm-xdw3**: fix: replace misleading 'Halt' wording with skip-to-next-task semantics (`orchestration/templates/pantry.md`) (`1efefba`)
+- **ant-farm-yufy**: fix: add STOP banner and forward-references to deprecated Pantry Section 2 (`orchestration/templates/pantry.md`) (`5b74678`)
+- **AF-202**: fix: document local-FS synchronous-flush assumption at Pantry read sites (`orchestration/templates/pantry.md`) (`c54a5bd`)
+- **AF-207**: fix: renumber sections for sequential numbering, move deprecated content to appendix (`orchestration/templates/pantry.md`) (`aff9aba`)
+- **ant-farm-pxsk**: fix: replace stale hardcoded values in SESSION_PLAN_TEMPLATE (`orchestration/templates/SESSION_PLAN_TEMPLATE.md`) (`4435216`)
+- **ant-farm-t8cg**: fix: replace bracket-pipe syntax with plain English OR connectors in scout.md (`orchestration/templates/scout.md`) (`468de47`)
+- **AF-121**: fix: handle zero-task boundary in SSV Check 2 and add scout truncation warning (`orchestration/templates/checkpoints/startup-check.md`, `orchestration/templates/scout.md`) (`1b3fcd2`)
+- **AF-201**: fix: add scout truncation count and replace wc -l with grep -c in work.md (`orchestration/templates/scout.md`, `skills/work.md`) (`37a2362`)
+- **ant-farm-roqb**: fix: update stale check count from 8 to 9 after Check 3b addition (`orchestration/templates/checkpoints/review-integrity.md`, `orchestration/templates/checkpoints/common.md`) (`08e34cd`)
+- **ant-farm-omwi**: fix: extract policy text from placeholder list into separate subsection (`orchestration/templates/crumb-gatherer-skeleton.md`) (`a43513a`)
+- **AF-67**: fix: remove emoji from scope boundary template heading (`orchestration/templates/implementation.md`) (`ec5ccc3`)
+- **AF-312**: fix: common.md Quantitative Threshold column label → Threshold / Condition (`orchestration/templates/checkpoints/common.md`) (`57027c1`)
+- **ant-farm-w1dn**: fix: remove development artifacts from production checkpoint templates (`orchestration/templates/checkpoints/pre-spawn-check.md`, `orchestration/templates/checkpoints/review-integrity.md`) (`563a691`)
+
+### Review Fixes (Round 1 P2 Auto-fixes)
+
+- **AF-396**: fix: resolve error suppression and add signals dir to session mkdir — exit-code-checked crumb CLI calls; `2>/dev/null` patterns removed (`skills/work.md`) (`39a46a5`)
+- **AF-398**: fix: add signals subdirectory to session mkdir — aligned with RULES.md canonical mkdir (`skills/work.md`) (`39a46a5`)
+- **AF-397**: fix: add SESSION_START_DATE input guard to review-integrity checkpoint (`orchestration/templates/checkpoints/review-integrity.md`) (`b121acb`)
+
+### P3 Polish (Round 1 inline, 4 agents)
+
+- fix: P3 polish — position check promotion, term expansion, xxd portability, mkdir guard (RULES.md) (`340d12e`)
+- fix: P3 polish — wc-l consistency, opaque epic ref, approval checkpoint caveat (scout, impl, template) (`148a17b`)
+- fix: P3 polish — clarify curly-brace semantics, tighten placeholder regex (pantry.md) (`1f9aed4`)
+- fix: P3 polish — term clarity, threshold wording, check renumbering, typo fix, heading accuracy (checkpoints) (`d56d8e5`)
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 11 files, 20 tasks | 0 | 3 | 13 | PASS WITH ISSUES |
+| 2 | 2 files, 3 fix tasks | 0 | 0 | 0 | PASS — CLEAN |
+| 3 | 8 files, 13 P3 root causes | 0 | 0 | 0 | PASS — CLEAN |
+
+16 root causes consolidated (3 merges). All P2s auto-fixed same session; all P3s repaired inline. No deferred issues.
+
+# Changelog
+
 ## 2026-03-21 — Session 20260321-180235 (Safety-Fix Propagation and RULES.md Clarity Sweep)
 
 ### Summary
