@@ -1,9 +1,9 @@
-<!-- Reader: the Pantry (implementation mode). Condensed extract of implementation.md. -->
-# Crumb Gatherer Workflow — Pantry Reference
+<!-- Reader: the Prompt Composer (implementation mode). Condensed extract of implementation.md. -->
+# Implementer Workflow — Prompt Composer Reference
 
 ## The 6-Step Workflow
 
-Every crumb gatherer executes these steps in order. Task briefs you compose must instruct agents to follow them exactly:
+Every implementer executes these steps in order. Task briefs you compose must instruct agents to follow them exactly:
 
 1. **Claim** — `crumb show <id>` + `crumb update <id> --status=in_progress`
 2. **Design (MANDATORY)** — 4+ genuinely distinct approaches with pros/cons; document choice before coding
@@ -27,7 +27,7 @@ Task briefs must reference all of these sections:
 
 - **Step 2 (Design)**: Prevents agents from jumping to the first solution. Distinct approaches must differ in algorithm, data structure, or architectural pattern — not just cosmetic variations.
 - **Step 4 (Correctness Review)**: Catching issues before commit is cheaper than review-round fixes. The assumptions audit (3 specific failure scenarios) is required — generic risks do not count.
-- **Step 6 (Summary Doc)**: Incomplete summaries are rejected. Review Consolidator and Pest Control depend on the summary for traceability.
+- **Step 6 (Summary Doc)**: Incomplete summaries are rejected. Review Consolidator and Checkpoint Auditor depend on the summary for traceability.
 
 ## Scope Boundary Principle
 

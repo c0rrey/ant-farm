@@ -1,11 +1,11 @@
-# Crumb Gatherer Skeleton Template
+# Implementer Skeleton Template
 
-## Instructions for the Queen
+## Instructions for the Orchestrator
 
 Fill in all `{PLACEHOLDER}` values (uppercase) and use the result as the Task tool `prompt` parameter.
 The agent-facing text starts below the `---` separator. Do NOT include this instruction block.
 
-**Model**: The Task tool call MUST include `model: "sonnet"`. This applies to ALL Crumb Gatherers regardless of their `subagent_type` (python-pro, typescript-pro, general-purpose, etc.).
+**Model**: The Task tool call MUST include `model: "sonnet"`. This applies to ALL Implementers regardless of their `subagent_type` (python-pro, typescript-pro, general-purpose, etc.).
 
 **Term definitions (canonical across all orchestration templates):**
 - `{TASK_ID}` — full crumb ID including project prefix (e.g., `ant-farm-9oa`)
@@ -13,18 +13,18 @@ The agent-facing text starts below the `---` separator. Do NOT include this inst
 - `{SESSION_DIR}` — session artifact directory path (e.g., `.crumbs/sessions/_session-abc123`)
 
 Placeholders:
-- {TASK_TYPE}: crumb type (bug/feature/task) — from the Scout's briefing
+- {TASK_TYPE}: crumb type (bug/feature/task) — from the Recon Planner's briefing
 - {TASK_ID}: full crumb ID including project prefix (e.g., ant-farm-9oa)
 - {TASK_SUFFIX}: suffix only, no prefix (e.g., 9oa)
-- {AGENT_TYPE}: subagent_type for Task tool — from the Pantry verdict table (Agent Type column). See **Agent Type Selection Policy** below.
-- {DATA_FILE_PATH}: from the Pantry verdict table
+- {AGENT_TYPE}: subagent_type for Task tool — from the Prompt Composer verdict table (Agent Type column). See **Agent Type Selection Policy** below.
+- {DATA_FILE_PATH}: from the Prompt Composer verdict table
 - {SUMMARY_OUTPUT_PATH}: {SESSION_DIR}/summaries/{TASK_SUFFIX}.md
 
 ### Agent Type Selection Policy
 
-**Authority chain**: Scout recommends → Pantry passes through unchanged → Queen may override.
+**Authority chain**: Recon Planner recommends → Prompt Composer passes through unchanged → Orchestrator may override.
 
-**Queen override**: Allowed only when Scout metadata is demonstrably wrong (e.g., wrong domain, agent type unavailable). Document the override reason in the Queen's state file before spawning. Do NOT override based on preference or guesswork.
+**Orchestrator override**: Allowed only when Recon Planner metadata is demonstrably wrong (e.g., wrong domain, agent type unavailable). Document the override reason in the Orchestrator's state file before spawning. Do NOT override based on preference or guesswork.
 
 ## Template (send everything below this line)
 
@@ -57,4 +57,4 @@ COMMIT: {commit-hash|none}
 FILES: {comma-separated changed files}
 SUMMARY: {one-line task description}" > "{SESSION_DIR}/signals/{TASK_SUFFIX}.done"
 ```
-This file signals completion to the Queen. Do NOT skip this step.
+This file signals completion to the Orchestrator. Do NOT skip this step.

@@ -5,7 +5,7 @@ Use this template for planning multi-agent orchestration sessions.
 ## Session Overview
 
 **Date:** YYYY-MM-DD
-**Queen:** [Model name]
+**Orchestrator:** [Model name]
 **User Request:** [Paste original request here]
 **Task IDs:** [List all task IDs]
 **Epic:** [If applicable]
@@ -210,7 +210,7 @@ Reviews run as a single parallel Reviewer team spawned via TeamCreate (per RULES
 Per RULES-review.md Step 3c — triage is root-cause-based, not raw-issue-count-based:
 
 **If zero P1 and zero P2 findings:** Proceed directly to Step 4 (documentation — README and CLAUDE.md only).
-The Scribe authors the session CHANGELOG at Step 5.
+The Session Scribe authors the session CHANGELOG at Step 5.
 
 **Auto-fix (round 1, <=10 root causes):** Spawn fix tasks automatically without user prompt. After fixes, re-run reviews at round N+1.
 
@@ -228,9 +228,9 @@ See RULES-review.md Step 3c for the complete triage decision tree including sess
 
 Files to update after all work completes:
 
-- [ ] **CHANGELOG.md** - Authored by the Scribe at Step 5 (not the Queen at Step 4)
-  - Scribe derives entries from exec-summary.md: task descriptions, bug fix summaries, new features, breaking changes
-  - Queen commits the Scribe's CHANGELOG.md output at Step 7 before pushing
+- [ ] **CHANGELOG.md** - Authored by the Session Scribe at Step 5 (not the Orchestrator at Step 4)
+  - Session Scribe derives entries from exec-summary.md: task descriptions, bug fix summaries, new features, breaking changes
+  - Orchestrator commits the Session Scribe's CHANGELOG.md output at Step 7 before pushing
 
 - [ ] **README.md** - Update if needed
   - New scripts or tools
@@ -271,7 +271,7 @@ Before declaring session complete:
 
 ### Documentation Complete
 
-- [ ] CHANGELOG.md authored by Scribe (Step 5) and committed by Queen (Step 7)
+- [ ] CHANGELOG.md authored by Session Scribe (Step 5) and committed by Orchestrator (Step 7)
 - [ ] README.md updated (if needed)
 - [ ] CLAUDE.md updated (if needed)
 - [ ] All cross-references verified (no broken links)
@@ -314,9 +314,9 @@ Before declaring session complete:
 - Strategy changes mid-session: ___
 
 **Context Preservation:**
-- Implementation files read in Queen window: ___ (target: <10)
+- Implementation files read in Orchestrator window: ___ (target: <10)
 - Token budget remaining: ___K (target: >100K)
-- Queen stayed focused: Yes / No
+- Orchestrator stayed focused: Yes / No
 
 ---
 

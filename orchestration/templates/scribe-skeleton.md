@@ -1,13 +1,13 @@
-# Scribe Skeleton Template
+# Session Scribe Skeleton Template
 
-## Instructions for the Queen
+## Instructions for the Orchestrator
 
 Fill in all `{PLACEHOLDER}` values (uppercase) and use the result as the Task tool `prompt` parameter.
 The agent-facing text starts below the `---` separator. Do NOT include this instruction block.
 
 **Model**: The Task tool call MUST include `model: "sonnet"`. subagent_type: `ant-farm-session-scribe`.
 
-Read term definitions from `orchestration/reference/terms.md` for `{TASK_ID}`, `{TASK_SUFFIX}`, and `{SESSION_DIR}`. Scribe-specific placeholders used in this template:
+Read term definitions from `orchestration/reference/terms.md` for `{TASK_ID}`, `{TASK_SUFFIX}`, and `{SESSION_DIR}`. Session Scribe-specific placeholders used in this template:
 - `{SESSION_ID}` — short session identifier (e.g., `abc123` — the hex suffix of the session dir)
 - `{COMMIT_RANGE}` — git range for the session (e.g., `abc1234..HEAD`)
 - `{OPEN_CRUMB_IDS}` — space-separated list of crumb IDs still open from the session (e.g., `ant-farm-9oa ant-farm-x3b`)

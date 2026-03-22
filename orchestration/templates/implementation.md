@@ -1,9 +1,9 @@
-<!-- Reader: the Pantry (implementation mode). The Queen does NOT read this file. -->
-# Crumb Gatherer Templates
+<!-- Reader: the Prompt Composer (implementation mode). The Orchestrator does NOT read this file. -->
+# Implementer Templates
 
 ## Agent Prompt Template
 
-⚠️ (MANDATORY): Every spawned Crumb Gatherer MUST receive ALL sections below. All 6 steps are required — skipping Step 2 (Design), Step 4 (Correctness Review), or Step 6 (Summary Doc) is a process failure. Copy this template verbatim and fill in the placeholders.
+⚠️ (MANDATORY): Every spawned Implementer MUST receive ALL sections below. All 6 steps are required — skipping Step 2 (Design), Step 4 (Correctness Review), or Step 6 (Summary Doc) is a process failure. Copy this template verbatim and fill in the placeholders.
 
 ```markdown
 Execute {task-type} for {file-or-component}:
@@ -63,7 +63,7 @@ After implementation, review EVERY file you changed or created:
 
 ## Step 6: Write Summary Doc (MANDATORY)
 Write a structured summary to `{session-dir}/summaries/{TASK_ID}.md` using the Write tool.
-(the Queen creates this directory at session start.)
+(the Orchestrator creates this directory at session start.)
 The summary MUST contain ALL of these sections — incomplete summaries will be rejected:
 
 ```markdown
@@ -113,7 +113,7 @@ For each file changed:
 After all tasks in this batch:
 - Run `git pull --rebase` to stack commits cleanly
 - Close all tasks: `crumb close <id1> <id2> ...`
-- DO NOT push to remote (the Queen handles this)
+- DO NOT push to remote (the Orchestrator handles this)
 - DO NOT modify documentation files (CHANGELOG, README, CLAUDE.md)
 
 Focus: {specific guidance for this file/component}
@@ -121,7 +121,7 @@ Focus: {specific guidance for this file/component}
 
 ## Scope Boundary Insert
 
-**When to use**: For all Crumb Gatherers, especially when multiple tasks touch the same file.
+**When to use**: For all Implementers, especially when multiple tasks touch the same file.
 
 **Why**: Agents are helpful by nature and will fix adjacent problems they notice ("while I'm here..."). This creates work attribution scrambling and misleading audit trails.
 
@@ -149,7 +149,7 @@ Your task is ONLY to {specific task description}.
 If you find other issues during your work:
 1. Document them in your summary doc under "Adjacent Issues Found"
 2. DO NOT FIX THEM
-3. Let the Queen create separate tasks
+3. Let the Orchestrator create separate tasks
 
 **Acceptance criterion**: ONLY the files and line ranges listed in Step 3 may be edited. Any additional changes are a scope violation.
 ```
@@ -159,7 +159,7 @@ If you find other issues during your work:
 - Add file-specific boundaries (e.g., "Edit lines 23-24 only" or "Only modify the sameAs field")
 - List specific off-limit areas if needed (e.g., "Do NOT edit foundingDate, @id, or defensive guards")
 
-## The Queen's Pre-Spawn Checklist
+## The Orchestrator's Pre-Spawn Checklist
 
 Before sending any agent prompt, confirm it includes:
 - [ ] **Context section** with exact files/lines from crumb (pre-digested, not "discover the problem")
@@ -189,12 +189,12 @@ Every crumb description includes:
 - ✅ **Fix description** - High-level approach (agents still design 4+ detailed approaches)
 - ✅ **Acceptance criteria** - Testable success conditions
 
-### The Queen's Extraction Pattern
+### The Orchestrator's Extraction Pattern
 
 Before spawning an agent, extract this info from `crumb show <id>`:
 
 ```bash
-crumb show <task-id>  # Read ONCE in the Queen's window
+crumb show <task-id>  # Read ONCE in the Orchestrator's window
 
 # Extract and provide to agent:
 # - Affected files/lines from "Affected surfaces:" section
@@ -254,7 +254,7 @@ Your task: Design 4+ approaches to add these 3 fields to validation, select best
 ### Benefits:
 - Eliminates 2-5 minute prompt composition delay between waves
 - Catches prompt defects early (before wave is ready to start)
-- Keeps the Queen's context focused on monitoring during active waves
+- Keeps the Orchestrator's context focused on monitoring during active waves
 - Reduces total session time by 20-30%
 
 ### Example:

@@ -1,6 +1,6 @@
-# Nitpicker Skeleton Template
+# Reviewer Skeleton Template
 
-## Instructions for the Queen
+## Instructions for the Orchestrator
 
 Fill in all `{PLACEHOLDER}` values (uppercase) and use the result as the Task tool `prompt` parameter.
 The agent-facing text starts below the `---` separator. Do NOT include this instruction block.
@@ -31,7 +31,7 @@ Your workflow:
 2. Catalog findings with file:line references and severity (P1/P2/P3)
 3. Group findings into preliminary root causes
 4. Write your report to {REPORT_OUTPUT_PATH}
-5. Message relevant Nitpickers if you find cross-domain issues
+5. Message relevant Reviewers if you find cross-domain issues
 
 **Cross-review messaging protocol**:
 When you find something that clearly belongs to another reviewer's domain, message them:
@@ -50,4 +50,4 @@ Your report MUST include these sections (see brief for full format):
 - **Coverage Log**: every scoped file listed, even those with no issues found
 - **Overall Assessment**: score out of 10 + verdict (PASS / PASS WITH ISSUES / NEEDS WORK)
 
-Do NOT file crumbs (`crumb create`) — Big Head handles all crumb filing.
+Do NOT file crumbs (`crumb create`) — Review Consolidator handles all crumb filing.
