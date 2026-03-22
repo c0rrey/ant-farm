@@ -117,7 +117,7 @@ extract_block() {
 }
 
 # sync_claude_block SRC DST
-#   Inserts or replaces the ant-farm block in DST using content from SRC.
+#   Creates, appends, or replaces the ant-farm block in DST using content from SRC.
 #   The block is delimited by sentinel comments so user content is preserved.
 #   Always backs up DST before modifying (unless unchanged).
 sync_claude_block() {
