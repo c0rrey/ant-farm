@@ -831,24 +831,6 @@ class TestSearch:
 
 
 # ---------------------------------------------------------------------------
-# Helper for cmd_show direct-call tests
-# ---------------------------------------------------------------------------
-
-
-def _show_args(task_id: str, json_output: bool = False) -> Namespace:
-    """Build a Namespace matching cmd_show's expected attributes.
-
-    Args:
-        task_id: The crumb ID to look up.
-        json_output: Whether to request JSON output mode.
-
-    Returns:
-        Namespace with ``id`` and ``json_output`` set.
-    """
-    return Namespace(id=task_id, json_output=json_output)
-
-
-# ---------------------------------------------------------------------------
 # TestListJSON
 # ---------------------------------------------------------------------------
 
@@ -946,6 +928,24 @@ class TestListJSON:
         assert out.strip().startswith("AF-1")
         # Must not be a JSON array
         assert not out.strip().startswith("[")
+
+
+# ---------------------------------------------------------------------------
+# Helper for cmd_show direct-call tests
+# ---------------------------------------------------------------------------
+
+
+def _show_args(task_id: str, json_output: bool = False) -> Namespace:
+    """Build a Namespace matching cmd_show's expected attributes.
+
+    Args:
+        task_id: The crumb ID to look up.
+        json_output: Whether to request JSON output mode.
+
+    Returns:
+        Namespace with ``id`` and ``json_output`` set.
+    """
+    return Namespace(id=task_id, json_output=json_output)
 
 
 # ---------------------------------------------------------------------------
