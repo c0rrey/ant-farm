@@ -38,6 +38,22 @@
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
+# Script-level temp file cleanup (AF-258).
+# Functions use trap RETURN for immediate cleanup on normal return, but RETURN
+# traps do not fire when set -e exits the script mid-function. This EXIT trap
+# provides a safety net: each function registers its temp file here, and
+# cleanup_temp_files runs on any script exit. rm -f is idempotent, so
+# double-removal (RETURN + EXIT) is harmless.
+# ---------------------------------------------------------------------------
+_TEMP_FILES_TO_CLEAN=()
+cleanup_temp_files() {
+    for f in "${_TEMP_FILES_TO_CLEAN[@]}"; do
+        rm -f "$f"
+    done
+}
+trap cleanup_temp_files EXIT
+
+# ---------------------------------------------------------------------------
 # Locate crumb binary — context-aware fallback (AF-248).
 #
 # Resolution order:
@@ -383,6 +399,7 @@ build_nitpicker_prompt() {
     #    crumb render-template will expand all markers in a single pass.
     local tmp_template
     tmp_template="$(mktemp)"
+    _TEMP_FILES_TO_CLEAN+=("$tmp_template")
     # shellcheck disable=SC2064
     trap "rm -f '$tmp_template'" RETURN
     {
@@ -482,6 +499,7 @@ build_big_head_prompt() {
     # is the render destination, not the source, so no read/write conflict.
     local tmp_template
     tmp_template="$(mktemp)"
+    _TEMP_FILES_TO_CLEAN+=("$tmp_template")
     # shellcheck disable=SC2064
     trap "rm -f '$tmp_template'" RETURN
     {
