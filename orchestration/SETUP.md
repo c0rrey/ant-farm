@@ -39,6 +39,7 @@ review pipeline) is a built-in Claude Code agent. It is NOT deployed by `setup.s
 lives in the user's global `~/.claude/agents/` directory, not in this repo's `agents/` folder. If you
 are setting up this orchestration system on a new machine, you must copy or create
 `~/.claude/agents/code-reviewer.md` manually. You can find the source file at `~/.claude/agents/code-reviewer.md` on the machine where the system was first configured.
+If you do not have access to that machine, ask the repository owner for the file or run `claude init` on a fresh Claude Code installation to generate it.
 Without this file, the Reviewer team members will fail to spawn (Claude Code will not recognize the
 `code-reviewer` agent type). `setup.sh` automatically checks for this file at the end of setup (Step 8:
 Preflight checks) and emits a visible warning if it is absent:
