@@ -189,7 +189,7 @@ When setup.sh detects an ant-farm block in `~/.claude/CLAUDE.md`, it backs up th
 Format: `<filename>.af-bak.<YYYYMMDDTHHMMSS>`
 
 **When**: Only when setup.sh removes an ant-farm block from `~/.claude/CLAUDE.md`.
-**Why**: If the block removal has an unintended side effect, you can restore the pre-removal state from the backup
+**Why**: If the block removal has an unintended side effect, you can restore the pre-removal state from the backup.
 
 **How to Restore**:
 
