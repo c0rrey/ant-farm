@@ -1,5 +1,76 @@
 # Changelog
 
+## 2026-03-22 — Session 20260321-213359 (Documentation & Tooling Hygiene — 40-Task Sweep)
+
+### Summary
+
+Session executed 40 implementation tasks across epics AF-T60 and AF-T61, covering documentation accuracy, stale comment removal, shell script hardening, and cross-reference correctness in orchestration templates, scripts, and skills. Seven parallel Crumb Gatherer agents (Opus for 6, Sonnet for 1) completed all 40 tasks in a single wave. Two Nitpicker review rounds ran post-implementation: Round 1 (4 reviewers) found 0 P1s / 4 P2s / 7 P3s and issued an auto-fix directive; Round 2 (2 reviewers) found 1 P1 in the AF-400 fix (wrong merge-conflict side kept), fixed directly by the Queen as AF-410. All 5 P1/P2 findings fixed. 7 P3 findings deferred as open crumbs. 41 commits total.
+
+### Implementation (Wave 1 — 36 commits; 4 no-commit tasks)
+
+- **ant-farm-sf3v**: fix: remove stale "user approval" from SCOUT_COMPLETE step label in parse-progress-log.sh (`9d7bc98`)
+- **ant-farm-dxia**: fix: SETUP.md intro and code-reviewer path self-contradictions resolved (`66c2288`)
+- **ant-farm-ix7m**: fix: remove stale CHANGELOG references from DOCS_COMMITTED and XREF_VERIFIED labels in parse-progress-log.sh (`66f40d7`)
+- **ant-farm-d1rx**: fix: polling loop off-by-one in reviews.md — `-lt` changed to `-le` for full timeout boundary coverage (`66dd239`)
+- **ant-farm-nuc1**: fix: consistent formatting for prohibition bullets, reviewer names, and sub-step labels across CLAUDE.md, RULES.md, scout.md (`ffc3df0`)
+- **ant-farm-t3k0**: fix: standalone documentation polish — SSV acronym expansion, ANSI-C shell quoting, GLOSSARY severity wording, rsync stale-file warning (`2325579`)
+- **ant-farm-kzz6**: docs: terminology, wording, and cross-reference polish across reviews.md, pantry.md, RULES.md (`9d1c472`)
+- **ant-farm-6t89**: no-op — deprecated artifact references already resolved in prior session; no files modified
+- **ant-farm-wk1a**: fix: align nitpicker-skeleton.md Round 2+ scope instructions with reviews.md (`9ab0b65`)
+- **ant-farm-z8lq**: fix: add commit-range filtering section to review task ID scoping in reviews.md (`279ae7e`)
+- **AF-30**: crumb metadata only — corrected AF-15 AC text for priority sort key (99→5) and now_iso format (+00:00→Z); no commit
+- **AF-63**: fix: update stale code-reviewer agent description in SETUP.md (`5ad55a8`)
+- **AF-64**: fix: update status skill to read exec-summaries from .crumbs/sessions/ (`ea9fcdb`)
+- **AF-65**: fix: update reader comment to reference build-review-prompts.sh in parse-progress-log.sh (`a3e3d56`)
+- **AF-66**: docs: add rationale comments for extract_focus_block and double-bracing in build-review-prompts.sh (`b8109dd`)
+- **AF-73**: fix: remove --type=task filter from work skill pre-flight check (`c13261d`)
+- **AF-74**: fix: add review-focus-areas.md row to PLACEHOLDER_CONVENTIONS audit table (`1f02be7`)
+- **AF-92**: fix: document naive datetime assumption in crumb.py cmd_prune docstring and call site (stash anomaly: landed in `66dd239`)
+- **AF-95**: fix: add prune to build_parser epilog in crumb --help output (`2c3d3bd`)
+- **AF-108**: fix: remove stale manual-approval instructions from troubleshooting kickoff in RULES.md (`7261f62`)
+- **AF-109**: fix: update installation-guide.md intro sentence to reflect CLAUDE.md orchestration-block write (`f1f40bb`)
+- **AF-111**: fix: rename Step 8 to Step 8a in RULES.md to pair with existing Step 8b (`340d80b`)
+- **AF-114**: fix: add minimum length check to prefix validation rules in crumb.py (`12b0a12`)
+- **AF-124**: fix: add preflight warning text to code-reviewer note in SETUP.md (`f60af14`)
+- **AF-146**: fix: correct stale comments in parse-progress-log.sh, build-review-prompts.sh, RULES.md (`a0daa45`)
+- **AF-150**: crumb metadata only — corrected AF-141 AC#2 "trail status" → "trail show"; no commit
+- **AF-153**: fix: align Big Head sed regex in build-review-prompts.sh with nitpicker pattern to include digits (`b7366c2`)
+- **AF-175**: fix: add crumb ready and crumb blocked entries to crumb-cheatsheet.md Commands section (`a05edf7`)
+- **AF-186**: fix: update polling code to iterate EXPECTED_REPORT_PATHS for split-instance review support (`ff5dd28`)
+- **AF-204**: fix: update stale RULES.md table references and Pantry read target in CONTRIBUTING.md (`74d7839`)
+- **AF-205**: fix: update stale checkpoints.md reference to checkpoints/common.md in audit table (`c2e2ad0`)
+- **AF-210**: fix: document --force flag in SETUP.md setup.sh usage line (`e07b45c`)
+- **AF-216**: fix: add code-reviewer.md new-machine workaround to SETUP.md (`08bfe95`)
+- **AF-218**: fix: add rationale for Partial+PASS status in reviewer-skeleton.md audit row (`fc64ae6`)
+- **AF-255**: fix: add missing trailing period on Why sentence in backup section (`95842ae`)
+- **AF-260**: fix: strip blank lines from CHANGED_FILES_SORTED pipeline in build-review-prompts.sh (`ba0e32f`)
+- **AF-297**: fix: replace imprecise Queen template read claim with explicit file enumeration in RULES.md (`84ec572`)
+- **AF-299**: docs: add cross-reference comments to inline reviewer prompt blocks in reviews.md (`0a149f6`)
+- **AF-300**: fix: assign explicit step numbers to cross-reference table rows in reviews.md (`3e55dfd`)
+- **AF-307**: fix: add crumb CLI installation check before stderr-suppressed invocation in build-review-prompts.sh (`67668b0`)
+
+### Review Fixes (Round 1 — P2 auto-fix)
+
+- **AF-399**: fix: replace stale fill-review-slots.sh references in reviews.md (4 occurrences) (`65994c8`)
+- **AF-400**: fix: resolve merge conflict markers in docs/installation-guide.md (`2a90f2a`)
+- **AF-401**: fix: add history fallback to status.md exec-summary lookup (`20aed8e`)
+- **AF-402**: fix: use array for CRUMB and strip whitespace-only lines in build-review-prompts.sh file filter (`3fdb5de`)
+
+### Review Fixes (Round 2 — P1 Queen direct fix)
+
+- **AF-410**: fix: correct installation-guide.md to describe repo CLAUDE.md model — re-resolved 5 conflict blocks to "Updated upstream" side; fixed /ant-farm:init → /ant-farm-init at 2 occurrences (`622c5fe`)
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 36 commits, 40 tasks, 4 reviewers (Clarity/Edge Cases/Correctness/Drift) | 0 | 4 | 7 | PASS WITH ISSUES |
+| 2 | 4 fix commits (AF-399–402), 2 reviewers (Correctness/Edge Cases) | 1 | 0 | 0 | FAIL → PASS after AF-410 |
+
+11 root causes consolidated in Round 1 (2 skipped as cross-session duplicates: AF-379, AF-345; 4 excluded as no-fix-needed). Round 2 single P1 fixed directly by Queen. 7 P3 root causes deferred as open crumbs (AF-403–AF-409).
+
+# Changelog
+
 ## 2026-03-21 — Session 195300 (AF-T59 P3 Template Polish Sweep)
 
 ### Summary
