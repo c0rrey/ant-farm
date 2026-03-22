@@ -1,5 +1,46 @@
 # Changelog
 
+## 2026-03-22 — Session 20260322-151004 (Metaphor Rename: Colony → Descriptive Names)
+
+### Summary
+
+Completed a full rename of all ant-colony metaphor display names (Queen, Scout, Pantry, Crumb Gatherer, Nitpicker, Big Head, Pest Control, Surveyor, Forager, Architect, Scribe) to descriptive equivalents (Orchestrator, Recon Planner, Prompt Composer, Implementer, Reviewer, Review Consolidator, Checkpoint Auditor, Spec Writer, Researcher, Task Decomposer, Session Scribe) across 66+ files in 3 parallel waves covering 13 crumbs across epics AF-T65, AF-T66, and AF-T67. One review round produced 22 raw findings consolidated to 10 root causes; 4 P1/P2s were auto-fixed, 5 P3s deferred to crumbs, and 1 skipped as a pre-existing duplicate. 15 commits total.
+
+### Implementation (Wave 1 — RULES, templates, agents)
+
+- **AF-421**: refactor: rename old metaphor display names in RULES core files — RULES.md, RULES-review.md, RULES-decompose.md, RULES-lite.md; parenthetical acronyms removed (`65137dc`)
+- **AF-422**: refactor: rename old metaphor display names in reviews, pantry, scout templates — reviews.md, pantry.md, scout.md; ~126 replacements (`d1cccef`)
+- **AF-423**: refactor: rename old metaphor names in planning/design templates — forager.md, forager-skeleton.md, decomposition.md, architect-skeleton.md, surveyor.md, surveyor-skeleton.md, prd-import.md (`3a62fc7`)
+- **AF-424**: refactor: rename old metaphor names in execution and skeleton templates — 8 skeleton/implementation templates; NITPICKER ABORTED and SCRIBE_COMPLETE identifiers preserved (`10b0d90`)
+- **AF-425**: refactor: rename old metaphor names in checkpoint templates — 8 files under orchestration/templates/checkpoints/ (`8452e51`)
+- **AF-426**: refactor: rename old metaphor names in orchestration support files — queen-state.md, claude-block.md, PLACEHOLDER_CONVENTIONS.md, SETUP.md, agent-catalog.md (`df2fd69`)
+- **AF-427**: refactor: rename old metaphor names to descriptive names in agent files — 7 agents/*.md; YAML frontmatter preserved (`5b3bd7f`)
+
+### Implementation (Wave 2 — docs, reference, scripts, skills, tests)
+
+- **AF-428**: docs: rename metaphor names to descriptive names in top-level docs — README.md, CONTRIBUTING.md, CLAUDE.md, GLOSSARY.md; agent table restructured; historical names blockquote added (`3b782bc`)
+- **AF-429**: refactor: rename old metaphor names in orchestration reference docs — 8 files under orchestration/reference/ (`37cdab1`)
+- **AF-430**: refactor: rename old metaphor display names in scripts and skills — build-review-prompts.sh, parse-progress-log.sh, skills/work.md, skills/plan.md (`bdb2e92`)
+- **AF-432**: test: add RULES-lite, hook, and PRD import structural tests — RULES-lite.md added to cross-reference coverage; hook existence and PRD placeholder tests added; test count 23 → 25 (`0081dae`)
+- **AF-433**: feat/fix: add hook-status reporting and JSON output to status skill — hook detection step added; Steps 1–2 use crumb list --json; CMVCC fix applied (`dd50bbe`, `e127c0c`)
+
+### Implementation (Wave 3 — verification sweep)
+
+- **AF-431**: refactor: fix straggler old metaphor names across 10 files — agents/, README.md, scripts/, tests/, docs/installation-guide.md (`0b96d23`)
+
+### Review Fixes (Round 1 auto-fix)
+
+- **RC-1/RC-2/RC-9/RC-10**: fix: address P1/P2 review findings — fixed stale BIG_HEAD_SKELETON test path variables, reverted crumb list --json to direct jq, updated WAVE_WWD_PASS key to WAVE_SCOPE_VERIFY_PASS, corrected CLAUDE.md step number (`3f1b898`)
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 66 files, 13 tasks | 3 | 1 | 5 | PASS WITH ISSUES |
+
+10 root causes consolidated (1 skipped as duplicate of AF-388). P1/P2s auto-fixed; P3s deferred to 5 new crumbs.
+
+
 ## Decision Record: Use `mcp` Python Package for MCP Server
 
 **Date**: 2026-03-22
