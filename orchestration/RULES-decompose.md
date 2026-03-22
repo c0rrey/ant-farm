@@ -1,7 +1,7 @@
 # Decomposition Workflow Rules
 
 > This is the Planner's workflow document for `/ant-farm-plan`. The Planner reads THIS file alone
-> and follows it exactly. Do NOT read `orchestration/RULES.md` — it governs the Queen's
+> and follows it exactly. Do NOT read `orchestration/RULES.md` — it governs the Orchestrator's
 > implementation session workflow, which is separate from decomposition.
 
 ## Path Reference Convention
@@ -30,23 +30,23 @@ accessible at `~/.claude/orchestration/`. To translate repo paths to runtime pat
 
 ## Planner Orchestrator Profile
 
-The Planner is a distinct orchestrator from the Queen. Understanding this distinction prevents
-misapplying Queen patterns to decomposition sessions.
+The Planner is a distinct orchestrator from the Orchestrator. Understanding this distinction prevents
+misapplying Orchestrator patterns to decomposition sessions.
 
-### Distinction from Queen
+### Distinction from Orchestrator
 
-| Dimension | Planner | Queen |
+| Dimension | Planner | Orchestrator |
 |-----------|---------|-------|
 | Trigger | `/ant-farm-plan` command | "let's get to work" message |
 | Purpose | Decompose a feature into trails and crumbs | Execute a prepared work session |
 | Workflow file | `orchestration/RULES-decompose.md` (this file) | `orchestration/RULES.md` |
 | Read permissions | `spec.md` and `decomposition-brief.md` only | `queen-state.md`, task files, git diffs |
 | State tracking | Step number + per-agent retry count (in context only) | `queen-state.md` written to disk |
-| Primary agents | Spec Writer, Researcher x4, Task Decomposer | Scout, Pantry, Checkpoint Auditor, Reviewer |
+| Primary agents | Spec Writer, Researcher x4, Task Decomposer | Recon Planner, Prompt Composer, Checkpoint Auditor, Reviewer |
 | Context budget target | 15–20% of context window | Not separately specified |
-| `crumb` CLI usage | Prohibited — only the Task Decomposer calls `crumb` | Queen calls `crumb` directly |
+| `crumb` CLI usage | Prohibited — only the Task Decomposer calls `crumb` | Orchestrator calls `crumb` directly |
 
-The Planner MUST NOT read `orchestration/RULES.md`. The Queen MUST NOT read this file. They are
+The Planner MUST NOT read `orchestration/RULES.md`. The Orchestrator MUST NOT read this file. They are
 separate orchestrators with non-overlapping roles.
 
 ### State Tracking
@@ -62,7 +62,7 @@ State tracked:
   - Per-Researcher retry count (max 1 each)
   - Task Decomposer retry count (max 2)
 
-The Planner does NOT use `queen-state.md`. That file belongs to the Queen's implementation
+The Planner does NOT use `queen-state.md`. That file belongs to the Orchestrator's implementation
 workflow. Writing a state file during decomposition would be a scope violation.
 
 **Recovery**: If the Planner's context is lost mid-session, the `progress.log` serves as a
@@ -515,7 +515,7 @@ Trails: <N>
 Crumbs: <N>
 Coverage: <N>/<N> requirements — PASS
 
-To start implementation: use "let's get to work" (Queen session) targeting
+To start implementation: use "let's get to work" (Orchestrator session) targeting
 the trails or crumbs created in this decomposition.
 ```
 

@@ -3,7 +3,7 @@
 
 ## What Is Lite Mode
 
-Lite mode is a single-crumb execution path designed for small, isolated changes where the full pipeline overhead (Scout wave analysis, Pantry pre-digestion, Nitpicker review team) is unnecessary. It preserves the quality gates that matter for any change — prompt auditing (pre-spawn-check / CCO), substance verification (claims-vs-code / CMVCC), atomic commits, and crumb tracking — while eliminating the multi-agent orchestration scaffolding.
+Lite mode is a single-crumb execution path designed for small, isolated changes where the full pipeline overhead (Recon Planner wave analysis, Prompt Composer pre-digestion, Reviewer review team) is unnecessary. It preserves the quality gates that matter for any change — prompt auditing (pre-spawn-check), substance verification (claims-vs-code), atomic commits, and crumb tracking — while eliminating the multi-agent orchestration scaffolding.
 
 **Use lite mode when:**
 - Exactly one crumb is being worked
@@ -12,7 +12,7 @@ Lite mode is a single-crumb execution path designed for small, isolated changes 
 
 **Do NOT use lite mode when:**
 - Multiple crumbs are being worked concurrently
-- Tasks share files (conflict analysis requires the Scout)
+- Tasks share files (conflict analysis requires the Recon Planner)
 - The change needs peer review (use full-mode RULES.md instead)
 
 ## What Lite Mode Does NOT Include
@@ -21,13 +21,13 @@ The following full-mode components are intentionally absent:
 
 | Omitted component | Reason |
 |-------------------|--------|
-| Scout (recon planner) | No wave analysis needed for a single crumb |
-| startup-check (SSV) | startup-check verifies Scout wave groupings — no Scout, no startup-check |
-| Pantry (prompt composer) | The Queen passes the task brief directly; no pre-digestion step |
-| Nitpicker review team | Peer review is replaced by a mandatory self-review step |
-| review-integrity (CCB) | review-integrity verifies the Nitpicker team's output — no team, no check |
-| session-complete (ESV) | session-complete verifies the Scribe's exec summary — lite mode has no Scribe |
-| Scribe (session scribe) | Lite mode omits the exec summary; session narrative is the commit message |
+| Recon Planner (recon planner) | No wave analysis needed for a single crumb |
+| startup-check | startup-check verifies Recon Planner wave groupings — no Recon Planner, no startup-check |
+| Prompt Composer (prompt composer) | The Orchestrator passes the task brief directly; no pre-digestion step |
+| Reviewer review team | Peer review is replaced by a mandatory self-review step |
+| review-integrity | review-integrity verifies the Reviewer team's output — no team, no check |
+| session-complete | session-complete verifies the Session Scribe's exec summary — lite mode has no Session Scribe |
+| Session Scribe (session scribe) | Lite mode omits the exec summary; session narrative is the commit message |
 
 ## Path Reference Convention
 
@@ -36,12 +36,12 @@ All file paths in this document use **repo-root relative** format: `orchestratio
 At runtime, orchestration files are accessible at `~/.claude/orchestration/`. To translate:
 - Replace `orchestration/` with `~/.claude/orchestration/`
 
-## Queen Prohibitions
+## Orchestrator Prohibitions
 
 - **NEVER** read source code, tests, project data files, or config files — the implementer agent does this
 - **NEVER** read agent instruction files (implementation.md, checkpoints/*.md, etc.) — pass the path to the agent
-- **NEVER** skip the pre-spawn-check (CCO) gate — even a single-agent spawn must be audited
-- **NEVER** skip the claims-vs-code (CMVCC) gate — the self-review step does not replace CMVCC
+- **NEVER** skip the pre-spawn-check gate — even a single-agent spawn must be audited
+- **NEVER** skip the claims-vs-code gate — the self-review step does not replace CMVCC
 
 ## Workflow: Lite Mode Execution
 
@@ -63,9 +63,9 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SESSION_INIT|complete|mode=lite|session_dir
 
 **Step 1:** Task selection — identify the single crumb to work. Run `crumb show <TASK_ID>` to read the task's title, description, acceptance criteria, and affected files. Store the task ID and acceptance criteria in context.
 
-> **Note**: In lite mode the Queen reads the crumb directly. There is no Scout subagent. The Queen's context budget is protected by the single-crumb scope — there is no wave analysis or briefing doc to read.
+> **Note**: In lite mode the Orchestrator reads the crumb directly. There is no Recon Planner subagent. The Orchestrator's context budget is protected by the single-crumb scope — there is no wave analysis or briefing doc to read.
 
-**Step 2:** Compose and audit the implementer prompt — write the task brief for the implementer agent, then spawn the Checkpoint Auditor (CCO / pre-spawn-check) to audit it before spawning.
+**Step 2:** Compose and audit the implementer prompt — write the task brief for the implementer agent, then spawn the Checkpoint Auditor to audit it before spawning.
 
 The task brief MUST include:
 - Real task ID (e.g., `my-project-abc`)
@@ -76,15 +76,15 @@ The task brief MUST include:
 - `git pull --rebase` before commit instruction
 - `Session directory: ${SESSION_DIR}` so the implementer writes artifacts to the correct path
 
-The implementer reads the task file(s) directly — there is no Pantry pre-digestion step. Pass the crumb's acceptance criteria and affected file list verbatim in the prompt.
+The implementer reads the task file(s) directly — there is no Prompt Composer pre-digestion step. Pass the crumb's acceptance criteria and affected file list verbatim in the prompt.
 
-Spawn Checkpoint Auditor for pre-spawn-check (CCO):
+Spawn Checkpoint Auditor for pre-spawn-check:
 
 ```
 Task(
   subagent_type="ant-farm-checkpoint-auditor",
   model="haiku",
-  prompt="pre-spawn-check (lite mode — single Crumb Gatherer prompt).
+  prompt="pre-spawn-check (lite mode — single Implementer prompt).
           Session directory: ${SESSION_DIR}.
           Read orchestration/templates/checkpoints/common.md and
           orchestration/templates/checkpoints/pre-spawn-check.md for full instructions.
@@ -100,7 +100,7 @@ Task(
 echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_SPAWNED|wave=1|mode=lite|task=${TASK_ID}|pre_spawn_check=pass|next_step=STEP_3_IMPLEMENT" >> ${SESSION_DIR}/progress.log
 ```
 
-**Step 3:** Implementation — write the scope sidecar, then spawn the implementer agent (Crumb Gatherer).
+**Step 3:** Implementation — write the scope sidecar, then spawn the implementer agent (Implementer).
 
 **Write .ant-farm-scope.json atomically (temp file + rename) before spawning:**
 
@@ -140,11 +140,11 @@ The implementer executes the standard 6 mandatory steps:
 1. **Claim**: `crumb show <TASK_ID>` + `crumb update <TASK_ID> --status=in_progress`
 2. **Design**: 4+ genuinely distinct approaches with tradeoffs; document chosen approach before coding
 3. **Implement**: Write clean, minimal code satisfying the acceptance criteria
-4. **Self-review** (MANDATORY): Re-read every changed file. For each file, verify the acceptance criteria are met. Document the review in the summary doc with file-specific notes — generic "looks clean" language fails claims-vs-code Check 4. This self-review step replaces the Nitpicker team; it must be substantive.
+4. **Self-review** (MANDATORY): Re-read every changed file. For each file, verify the acceptance criteria are met. Document the review in the summary doc with file-specific notes — generic "looks clean" language fails claims-vs-code Check 4. This self-review step replaces the Reviewer team; it must be substantive.
 5. **Commit**: `git pull --rebase && git add <changed-files> && git commit -m "<type>: <description> (<TASK_ID>)"`
 6. **Summary doc**: Write to `${SESSION_DIR}/summaries/<TASK_SUFFIX>.md` with all required sections (approaches considered, selected approach, implementation description, correctness review per-file, build/test validation, acceptance criteria checklist)
 
-**Step 4:** Verify — spawn the Checkpoint Auditor for claims-vs-code (CMVCC).
+**Step 4:** Verify — spawn the Checkpoint Auditor for claims-vs-code.
 
 ```
 Task(
@@ -187,8 +187,8 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SESSION_COMPLETE|mode=lite|task=${TASK_ID}|
 
 | Gate | Blocks | Artifact |
 |------|--------|----------|
-| pre-spawn-check (CCO) PASS | Implementer spawn | `${SESSION_DIR}/pc/pc-session-pre-spawn-check-impl-{timestamp}.md` |
-| claims-vs-code (CMVCC) PASS | Crumb close and push | `${SESSION_DIR}/pc/pc-{TASK_SUFFIX}-claims-vs-code-{timestamp}.md` |
+| pre-spawn-check PASS | Implementer spawn | `${SESSION_DIR}/pc/pc-session-pre-spawn-check-impl-{timestamp}.md` |
+| claims-vs-code PASS | Crumb close and push | `${SESSION_DIR}/pc/pc-{TASK_SUFFIX}-claims-vs-code-{timestamp}.md` |
 
 ## Progress Log Format
 

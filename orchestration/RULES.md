@@ -12,10 +12,10 @@ accessible at `~/.claude/orchestration/templates/scout.md`. To translate repo pa
 
 **In-document shorthand** (e.g., "templates/scout.md") is informal and always refers to the repo-root path with the `orchestration/` prefix implied.
 
-## Queen Prohibitions (read FIRST)
+## Orchestrator Prohibitions (read FIRST)
 
 - **PREFER RULES.local.md** — If `RULES.local.md` exists in the same directory as this file, read and follow it instead of (or in addition to) this file. Local overrides take precedence.
-- **NEVER** run `crumb show`, `crumb ready`, `crumb list`, `crumb blocked`, or any `crumb` query command — the Scout does this
+- **NEVER** run `crumb show`, `crumb ready`, `crumb list`, `crumb blocked`, or any `crumb` query command — the Recon Planner does this
 - **NEVER** read source code, tests, project data files, or config files — agents do this
 - **NEVER** read agent **instruction files** (scout.md, pantry.md, implementation.md, checkpoints/*.md, reviews.md, etc.) — pass the path to the agent, let it read its own instructions
 - **NEVER** send `shutdown_request` to any Reviewer team member before Step 4.
@@ -23,40 +23,40 @@ accessible at `~/.claude/orchestration/templates/scout.md`. To translate repo pa
   - **Dispatch timing**: The actual `shutdown_request` is sent later, after the review loop fully converges and the session reaches Step 4+. Do NOT send shutdown_request at the Step 3c decision fork or anywhere else before convergence.
 
 Your first instinct will be to "gather context" by running `crumb show` on the task list.
-**Do not do this.** Spawn the Scout and let it gather context for you.
+**Do not do this.** Spawn the Recon Planner and let it gather context for you.
 
-## Queen Read Permissions
+## Orchestrator Read Permissions
 
-The Queen's window is restricted to prevent context bloat, but certain files are explicitly PERMITTED.
+The Orchestrator's window is restricted to prevent context bloat, but certain files are explicitly PERMITTED.
 
-**PERMITTED (Queen must read these):**
-- `{SESSION_DIR}/briefing.md` — Scout-generated strategy summary; Queen reads after startup-check PASS to confirm task count before auto-proceeding to Step 2
-- `{SESSION_DIR}/task-metadata/*.md` — Per-task scope, acceptance criteria (pre-digested by Scout)
-- `{SESSION_DIR}/previews/*.md` — Combined prompt previews (pre-digested by Pantry)
+**PERMITTED (Orchestrator must read these):**
+- `{SESSION_DIR}/briefing.md` — Recon Planner-generated strategy summary; Orchestrator reads after startup-check PASS to confirm task count before auto-proceeding to Step 2
+- `{SESSION_DIR}/task-metadata/*.md` — Per-task scope, acceptance criteria (pre-digested by Recon Planner)
+- `{SESSION_DIR}/previews/*.md` — Combined prompt previews (pre-digested by Prompt Composer)
 - `{SESSION_DIR}/review-reports/*.md` — Individual reviewer reports and Review Consolidator consolidated summary
 - Verdict tables from Prompt Composer and Checkpoint Auditor — pre-spawn-check, scope-verify, claims-vs-code, review-integrity verdicts
 - Commit messages and git status/log/diff --stat output
 - Agent notifications (as they complete)
 
-**PERMITTED (Queen reads once per phase, for context only):**
+**PERMITTED (Orchestrator reads once per phase, for context only):**
 - `orchestration/templates/crumb-gatherer-skeleton.md` — Once per implementation wave (skeleton structure; see [Glossary: wave](GLOSSARY.md#workflow-concepts))
 - `orchestration/templates/reviewer-skeleton.md` — Once per review cycle (skeleton structure)
 - `orchestration/templates/review-consolidator-skeleton.md` — Once per review cycle (skeleton structure)
-- `orchestration/templates/scribe-skeleton.md` — Once per session (read to fill placeholders before spawning the Scribe at Step 5)
+- `orchestration/templates/scribe-skeleton.md` — Once per session (read to fill placeholders before spawning the Session Scribe at Step 5)
 - Project's `CLAUDE.md` — Global project rules
-- `{SESSION_DIR}/exec-summary.md` — Scribe output; read only when session-complete checkpoint escalates to user with a failed exec summary
+- `{SESSION_DIR}/exec-summary.md` — Session Scribe output; read only when session-complete checkpoint escalates to user with a failed exec summary
 - `orchestration/reference/crumb-cheatsheet.md` — crumb CLI quick reference; read when composing agent prompts that invoke crumb commands
 
-**FORBIDDEN (agents read; Queen never reads):**
-- `orchestration/templates/scout.md` — Scout's instruction file
-- `orchestration/templates/pantry.md` — Pantry's instruction file
-- `orchestration/templates/implementation.md` — Implementation details (read by Pantry)
+**FORBIDDEN (agents read; Orchestrator never reads):**
+- `orchestration/templates/scout.md` — Recon Planner's instruction file
+- `orchestration/templates/pantry.md` — Prompt Composer's instruction file
+- `orchestration/templates/implementation.md` — Implementation details (read by Prompt Composer)
 - `orchestration/templates/checkpoints/` — Checkpoint definitions (read by Checkpoint Auditor; common.md + specific checkpoint file)
 - `orchestration/templates/reviews.md` — Review protocol (read by build-review-prompts.sh)
-- `orchestration/reference/dependency-analysis.md` — Used by Scout for conflict analysis
+- `orchestration/reference/dependency-analysis.md` — Used by Recon Planner for conflict analysis
 - `orchestration/reference/known-failures.md` — Reference material; for post-mortem only
 - Source code files, tests, project configs, application data files
-- Raw `crumb show`, `crumb ready`, `crumb blocked`, `crumb list` output (let the Scout digest this)
+- Raw `crumb show`, `crumb ready`, `crumb blocked`, `crumb list` output (let the Recon Planner digest this)
 
 ## Workflow: "Let's Get to Work"
 
@@ -125,26 +125,26 @@ Skipping Step 3b is a critical workflow violation.
 
             | next_step value | Meaning |
             |-----------------|---------|
-            | `STEP_1_SCOUT` | About to run Step 1 (Scout recon) |
-            | `STEP_2_PANTRY` | About to run Step 2 (Pantry / Prompt Composer) |
+            | `STEP_1_SCOUT` | About to run Step 1 (Recon Planner recon) |
+            | `STEP_2_PANTRY` | About to run Step 2 (Prompt Composer) |
             | `STEP_3_VERIFY` | About to run Step 3 scope-verify for the current wave |
             | `STEP_3_CLAIMS_VS_CODE` | About to run claims-vs-code for the current wave |
             | `REVIEW_3B` | About to run Step 3b (review team) — final wave complete |
             | `NEXT_WAVE` | About to spawn the next wave (non-final wave complete) |
             | `STEP_3C_TRIAGE` | About to triage review findings (Step 3c) |
-            | `FIX_SCOUT` | About to spawn fix Scout for a fix round |
-            | `FIX_AGENTS_SPAWN` | About to spawn fix Crumb Gatherers |
+            | `FIX_SCOUT` | About to spawn fix Recon Planner for a fix round |
+            | `FIX_AGENTS_SPAWN` | About to spawn fix Implementers |
             | `FIX_INNER_LOOP` | Fix agents spawned; waiting for fix-cycle scope-verify and claims-vs-code checks |
             | `ROUND_TRANSITION` | About to transition to the next review round |
             | `STEP_4_DOCS` | About to run Step 4 (doc/CHANGELOG update) |
             | `STEP_4B_XREF` | About to run Step 4b (cross-reference / issue status check) |
-            | `STEP_5_SCRIBE` | About to run Step 5 (Scribe exec summary) |
+            | `STEP_5_SCRIBE` | About to run Step 5 (Session Scribe exec summary) |
             | `STEP_6_ESV` | About to run Step 6 (session-complete checkpoint) |
             | `STEP_7_PUSH` | About to run Step 7 (git push) |
             | `DONE` | Session complete; no further steps |
 
-**Step 1:** Recon — Read `{SESSION_DIR}/briefing.md` written by the Scout's previous run, or spawn the Scout
-            (`ant-farm-recon-planner` subagent, `model: "opus"`) if this is the first session. Include in Scout's prompt:
+**Step 1:** Recon — Read `{SESSION_DIR}/briefing.md` written by the Recon Planner's previous run, or spawn the Recon Planner
+            (`ant-farm-recon-planner` subagent, `model: "opus"`) if this is the first session. Include in Recon Planner's prompt:
             (1) `Session directory: <value of SESSION_DIR>`,
             (2) `Mode: <mode>` — derive from the user's message:
                 - User specifies an epic → `epic <epic-id>`
@@ -153,11 +153,11 @@ Skipping Step 3b is a critical workflow violation.
                 - User gives no specific scope (e.g., just "let's get to work") → `ready`
             (3) the path `orchestration/templates/scout.md` as its instruction file.
             Do NOT read the scout template yourself. Do NOT run `crumb show`, `crumb ready`, `crumb blocked`,
-            or any other `crumb` commands — the Scout handles all task discovery and metadata gathering.
-            WAIT for the Scout to return its briefing verdict (written to `{SESSION_DIR}/briefing.md`).
+            or any other `crumb` commands — the Recon Planner handles all task discovery and metadata gathering.
+            WAIT for the Recon Planner to return its briefing verdict (written to `{SESSION_DIR}/briefing.md`).
 
-**Step 1b:** startup-check (SSV) gate — After Scout writes `{SESSION_DIR}/briefing.md`, spawn Checkpoint Auditor
-            (`ant-farm-checkpoint-auditor`, `model: "haiku"`) for Scout Strategy Verification (SSV / startup-check).
+**Step 1b:** startup-check gate — After Recon Planner writes `{SESSION_DIR}/briefing.md`, spawn Checkpoint Auditor
+            (`ant-farm-checkpoint-auditor`, `model: "haiku"`) for Recon Planner Strategy Verification.
             Pass `Session directory: <value of SESSION_DIR>` and the paths `orchestration/templates/checkpoints/common.md`
             and `orchestration/templates/checkpoints/startup-check.md` as its instruction files. Checkpoint Auditor reads `{SESSION_DIR}/briefing.md` itself and runs all three
             mechanical checks (file overlap within waves, file list match against crumbs, intra-wave dependency
@@ -168,13 +168,13 @@ Skipping Step 3b is a critical workflow violation.
             No complexity threshold applies; auto-approve regardless of task count.
             **Zero-task guard:** If the briefing's task count is 0, do NOT auto-proceed to Step 2.
             Escalate to the user with the zero-task briefing for review and await instruction.
-            **On startup-check FAIL**: Re-run Scout with the specific violations from the startup-check report (do NOT present
-            a failed strategy to the user). After Scout revises briefing.md, re-run startup-check.
-            **Retry cap:** The startup-check FAIL -> re-Scout cycle has a maximum of 1 retry. If startup-check fails again
-            after one re-Scout run, do NOT re-run Scout a second time. Surface the startup-check violations to
+            **On startup-check FAIL**: Re-run Recon Planner with the specific violations from the startup-check report (do NOT present
+            a failed strategy to the user). After Recon Planner revises briefing.md, re-run startup-check.
+            **Retry cap:** The startup-check FAIL -> re-Recon Planner cycle has a maximum of 1 retry. If startup-check fails again
+            after one re-Recon Planner run, do NOT re-run Recon Planner a second time. Surface the startup-check violations to
             the user and await instruction.
 
-            **Progress log (after startup-check PASS):** The `SCOUT_COMPLETE` milestone covers both Step 1 (Scout recon) and Step 1b (startup-check). Step 1 does not log a separate milestone — the Scout phase is considered complete only after startup-check PASS.
+            **Progress log (after startup-check PASS):** The `SCOUT_COMPLETE` milestone covers both Step 1 (Recon Planner recon) and Step 1b (startup-check). Step 1 does not log a separate milestone — the Recon Planner phase is considered complete only after startup-check PASS.
             `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SCOUT_COMPLETE|briefing=${SESSION_DIR}/briefing.md|startup_check=pass|tasks_accepted=<N>|next_step=STEP_2_PANTRY" >> ${SESSION_DIR}/progress.log`
             where `<N>` is the count of tasks in the briefing task list after startup-check PASS (N=0 is not logged — it is caught by the zero-task guard earlier in Step 1b).
 
@@ -183,17 +183,17 @@ Skipping Step 3b is a critical workflow violation.
             in Prompt Composer's prompt. Pass preview file paths and SESSION_DIR to Checkpoint Auditor
             (`ant-farm-checkpoint-auditor`, `model: "haiku"`) for pre-spawn-check; Checkpoint Auditor reads `orchestration/templates/checkpoints/common.md` and `orchestration/templates/checkpoints/pre-spawn-check.md` itself.
             Only after all pre-spawn-check PASS: spawn agents using skeleton
-            (→ orchestration/templates/crumb-gatherer-skeleton.md, using Agent Type from Prompt Composer verdict table, `model: "sonnet"` for all Crumb Gatherers regardless of subagent_type).
-            **Wave pipelining**: When spawning wave N Crumb Gatherers, include the wave N+1 Prompt Composer
+            (→ orchestration/templates/crumb-gatherer-skeleton.md, using Agent Type from Prompt Composer verdict table, `model: "sonnet"` for all Implementers regardless of subagent_type).
+            **Wave pipelining**: When spawning wave N Implementers, include the wave N+1 Prompt Composer
             (`ant-farm-prompt-composer`, `model: "opus"`) in the SAME message so they launch concurrently.
-            The Prompt Composer reads from task-metadata (written by Scout) and has no dependency on wave N's output.
+            The Prompt Composer reads from task-metadata (written by Recon Planner) and has no dependency on wave N's output.
             This eliminates the idle gap between waves. The flow per wave boundary:
-            1. Wave N pre-spawn-check PASS → spawn wave N Crumb Gatherers + wave N+1 Prompt Composer (in a single Task call to achieve concurrency)
+            1. Wave N pre-spawn-check PASS → spawn wave N Implementers + wave N+1 Prompt Composer (in a single Task call to achieve concurrency)
             2. Wave N+1 Prompt Composer returns → spawn wave N+1 pre-spawn-check
-            3. Wave N Crumb Gatherers finish → run scope-verify/claims-vs-code (Step 3)
-            4. Wave N+1 pre-spawn-check PASS + wave N scope-verify + claims-vs-code both PASS → spawn wave N+1 Crumb Gatherers + wave N+2 Prompt Composer
-            For the final wave (no wave N+1), skip the Pantry — just spawn Crumb Gatherers alone.
-            **Progress log (after each wave's Crumb Gatherers are spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_SPAWNED|wave=<N>|spawned=<agent-ids>|previews_dir=${SESSION_DIR}/previews|next_step=STEP_3_VERIFY" >> ${SESSION_DIR}/progress.log`
+            3. Wave N Implementers finish → run scope-verify/claims-vs-code (Step 3)
+            4. Wave N+1 pre-spawn-check PASS + wave N scope-verify + claims-vs-code both PASS → spawn wave N+1 Implementers + wave N+2 Prompt Composer
+            For the final wave (no wave N+1), skip the Prompt Composer — just spawn Implementers alone.
+            **Progress log (after each wave's Implementers are spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_SPAWNED|wave=<N>|spawned=<agent-ids>|previews_dir=${SESSION_DIR}/previews|next_step=STEP_3_VERIFY" >> ${SESSION_DIR}/progress.log`
 
 **Step 3:** Verify — Run scope-verify, then claims-vs-code, for each wave.
 
@@ -233,7 +233,7 @@ Skipping Step 3b is a critical workflow violation.
 
 **Step 3c:** User triage — Read `orchestration/RULES-review.md` now for the full Step 3c workflow.
 
-            **Progress log (after fix Scout startup-check PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_SCOUT_COMPLETE|round=<N>|startup_check=pass|fix_crumbs=<crumb-ids>|next_step=FIX_AGENTS_SPAWN" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after fix Recon Planner startup-check PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_SCOUT_COMPLETE|round=<N>|startup_check=pass|fix_crumbs=<crumb-ids>|next_step=FIX_AGENTS_SPAWN" >> ${SESSION_DIR}/progress.log`
 
             **Progress log (after fix agents spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_AGENTS_SPAWNED|round=<N>|fix_cgs=<names>|fix_pcs=fix-pc-scope-verify,fix-pc-claims-vs-code|next_step=FIX_INNER_LOOP" >> ${SESSION_DIR}/progress.log`
 
@@ -246,7 +246,7 @@ Skipping Step 3b is a critical workflow violation.
             **Progress log (after triage decision — non-fix path):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_TRIAGED|round=<N>|p1=<count>|p2=<count>|decision=<defer|terminated>|root_causes=<count>|next_step=STEP_4_DOCS" >> ${SESSION_DIR}/progress.log`
 
 **Step 4:** Documentation — update README and CLAUDE.md in single commit.
-            Note: session narrative and changelog entry are handled by the Scribe at Step 5.
+            Note: session narrative and changelog entry are handled by the Session Scribe at Step 5.
             Before committing: file issues for any remaining work; run quality gates (tests, linters,
             builds) if code changed; apply review-findings gate (if reviews found P1 issues, present
             to user before proceeding — user decides fix now or defer; do NOT push with undisclosed
@@ -257,7 +257,7 @@ Skipping Step 3b is a critical workflow violation.
             finished tasks, update in-progress items.
             **Progress log (after cross-reference check):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|XREF_VERIFIED|complete|tasks_closed=<ids>|next_step=STEP_5_SCRIBE" >> ${SESSION_DIR}/progress.log`
 
-**Step 5:** Scribe — spawn the Scribe agent to write the session exec summary and CHANGELOG entry.
+**Step 5:** Session Scribe — spawn the Session Scribe agent to write the session exec summary and CHANGELOG entry.
             ```
             Task(
               subagent_type="ant-farm-session-scribe",
@@ -267,12 +267,12 @@ Skipping Step 3b is a critical workflow violation.
                       Read orchestration/templates/scribe-skeleton.md for full instructions."
             )
             ```
-            The Scribe reads all session artifacts ({SESSION_DIR}/briefing.md, summaries/*.md,
+            The Session Scribe reads all session artifacts ({SESSION_DIR}/briefing.md, summaries/*.md,
             review-reports/review-consolidated-*.md, progress.log), runs git diff/log for the commit
             range, and produces two outputs:
             1. `{SESSION_DIR}/exec-summary.md` — canonical session record
             2. Prepends a CHANGELOG entry to `CHANGELOG.md`
-            **Progress log (after Scribe completes):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SCRIBE_COMPLETE|exec_summary=${SESSION_DIR}/exec-summary.md|next_step=STEP_6_ESV" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after Session Scribe completes):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SCRIBE_COMPLETE|exec_summary=${SESSION_DIR}/exec-summary.md|next_step=STEP_6_ESV" >> ${SESSION_DIR}/progress.log`
 
 **Step 6:** session-complete — spawn Checkpoint Auditor for Exec Summary Verification. **Hard gate: must PASS before Step 7.**
             ```
@@ -287,15 +287,15 @@ Skipping Step 3b is a critical workflow violation.
                       Read orchestration/templates/checkpoints/common.md and orchestration/templates/checkpoints/session-complete.md for full instructions."
             )
             ```
-            > **Field derivation**: `SESSION_START_COMMIT` is the first commit the Queen or any agent made this session (visible in `git log` since the pre-session HEAD). `SESSION_END_COMMIT` is the commit at HEAD immediately before Step 7's `git add CHANGELOG.md` commit. `SESSION_START_DATE` is the calendar date (UTC) when Step 0 ran (stored in queen-state.md or derivable from `SESSION_ID`).
+            > **Field derivation**: `SESSION_START_COMMIT` is the first commit the Orchestrator or any agent made this session (visible in `git log` since the pre-session HEAD). `SESSION_END_COMMIT` is the commit at HEAD immediately before Step 7's `git add CHANGELOG.md` commit. `SESSION_START_DATE` is the calendar date (UTC) when Step 0 ran (stored in queen-state.md or derivable from `SESSION_ID`).
             session-complete checks: task coverage, commit coverage, open crumb accuracy, CHANGELOG derivation
             fidelity, section completeness, metric consistency.
             Artifact written to `{SESSION_DIR}/pc/pc-session-complete-{timestamp}.md`.
-            **On session-complete FAIL**: Re-spawn Scribe with specific violations from session-complete report (max 1 retry).
+            **On session-complete FAIL**: Re-spawn Session Scribe with specific violations from session-complete report (max 1 retry).
             **On second session-complete FAIL**: Escalate to user — present failed checks, await decision.
             **Progress log (after session-complete PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SESSION_COMPLETE_PASS|artifact=${SESSION_DIR}/pc/pc-session-complete-$(date +%Y%m%d-%H%M%S).md|next_step=STEP_7_PUSH" >> ${SESSION_DIR}/progress.log`
 
-**Step 7:** Land the plane — Queen commits the Scribe's CHANGELOG.md, copies the exec summary to history (local only), then pulls and pushes. NEVER `git add` any file under `.crumbs/` — the entire directory is gitignored.
+**Step 7:** Land the plane — Orchestrator commits the Session Scribe's CHANGELOG.md, copies the exec summary to history (local only), then pulls and pushes. NEVER `git add` any file under `.crumbs/` — the entire directory is gitignored.
             ```bash
             git add CHANGELOG.md && git commit -m "docs: add session {SESSION_ID} changelog entry"
             mkdir -p .crumbs/history
@@ -336,21 +336,21 @@ Read `orchestration/reference/agent-types.md` for the full Agent Types table.
 
 ## Model Assignments
 
-Read `orchestration/reference/model-assignments.md` for the full Model Assignments table. Every `Task` tool call the Queen makes MUST include the `model` parameter — omitting it causes the agent to inherit the Queen's opus model, wasting tokens.
+Read `orchestration/reference/model-assignments.md` for the full Model Assignments table. Every `Task` tool call the Orchestrator makes MUST include the `model` parameter — omitting it causes the agent to inherit the Orchestrator's opus model, wasting tokens.
 
 ## Concurrency Rules
 
-- Max 7 Crumb Gatherers concurrent
-- Max 12 total agents (Crumb Gatherers + support agents: Pantry, Checkpoint Auditor, Scout)
+- Max 7 Implementers concurrent
+- Max 12 total agents (Implementers + support agents: Prompt Composer, Checkpoint Auditor, Recon Planner)
 - No two agents edit the same file — queue conflicting tasks sequentially
 - Each agent runs `git pull --rebase` before committing
-- Only the Queen pushes to remote
-- Only the Queen updates README; the Scribe writes CHANGELOG.md (Queen commits it at Step 7)
-- Pipeline wave N Crumb Gatherers with wave N+1 Pantry in a single message (see Step 2 wave pipelining)
+- Only the Orchestrator pushes to remote
+- Only the Orchestrator updates README; the Session Scribe writes CHANGELOG.md (Orchestrator commits it at Step 7)
+- Pipeline wave N Implementers with wave N+1 Prompt Composer in a single message (see Step 2 wave pipelining)
 
 ### Wave Management
 
-**Retry counting**: Retry spawns count against the concurrent agent limit. A failed-and-respawned Crumb Gatherer occupies a slot.
+**Retry counting**: Retry spawns count against the concurrent agent limit. A failed-and-respawned Implementer occupies a slot.
 
 **Mid-wave decision tree**:
 
@@ -374,7 +374,7 @@ At session start (Step 0), run:
 Store SESSION_DIR in your context and pass it explicitly to every agent that needs to write artifacts.
 
 **Session directory prefixes**: `crumb prune` manages directories matching any of these prefixes under `.crumbs/sessions/`:
-- `_session-` — standard work sessions (the default; used by the Queen workflow)
+- `_session-` — standard work sessions (the default; used by the Orchestrator workflow)
 - `_decompose-` — decomposition/planning sessions (used by `/ant-farm-plan`)
 - `_review-` — reserved for future use (currently unused by any workflow)
 
@@ -391,8 +391,8 @@ Store SESSION_DIR in your context and pass it explicitly to every agent that nee
 
 ## Sentinel-File Completion Protocol
 
-When the Queen spawns background subagents (`run_in_background: true`), do NOT use TaskOutput or Read
-on the agent's output file. TaskOutput returns the full JSONL session transcript, flooding the Queen's
+When the Orchestrator spawns background subagents (`run_in_background: true`), do NOT use TaskOutput or Read
+on the agent's output file. TaskOutput returns the full JSONL session transcript, flooding the Orchestrator's
 context with thousands of tokens of hook events and tool results.
 
 **Protocol**: Background agents write a sentinel file as their absolute last action:
@@ -403,7 +403,7 @@ FILES: {changed-file-list}
 SUMMARY: {one-line-description}" > "${SESSION_DIR}/signals/{TASK_SUFFIX}.done"
 ```
 
-**Queen polling**: Poll for sentinel files using Bash, not TaskOutput:
+**Orchestrator polling**: Poll for sentinel files using Bash, not TaskOutput:
 1. **Activity check**: `stat -f '%m' "${SESSION_DIR}/signals/"` (macOS) or `stat -c '%Y' "${SESSION_DIR}/signals/"` (Linux) — directory mtime changes when agents write
 2. **Completion check**: `ls "${SESSION_DIR}/signals/"*.done 2>/dev/null` — list completed agents
 3. **Read verdict**: `cat "${SESSION_DIR}/signals/{TASK_SUFFIX}.done"` — compact verdict without JSONL
@@ -417,14 +417,14 @@ SUMMARY: {one-line-description}" > "${SESSION_DIR}/signals/{TASK_SUFFIX}.done"
 | Agent skeleton for spawning (Step 2) | orchestration/templates/crumb-gatherer-skeleton.md |
 | Review skeleton for team (Step 3b) | orchestration/templates/reviewer-skeleton.md |
 | Review Consolidator skeleton for consolidation (Step 3b) | orchestration/templates/review-consolidator-skeleton.md |
-| Implementation details (read by the Pantry) | orchestration/templates/implementation.md |
+| Implementation details (read by the Prompt Composer) | orchestration/templates/implementation.md |
 | Checkpoint details (read by Checkpoint Auditor) | orchestration/templates/checkpoints/ (common.md + specific checkpoint file) |
 | Review details (read by build-review-prompts.sh) | orchestration/templates/reviews.md |
 | Focus area definitions for reviewer prompts (read by build-review-prompts.sh) | orchestration/templates/review-focus-areas.md |
 | Pre-flight recon (Step 1) | orchestration/templates/scout.md |
-| Conflict patterns (read by the Scout) | orchestration/reference/dependency-analysis.md |
+| Conflict patterns (read by the Recon Planner) | orchestration/reference/dependency-analysis.md |
 | Diagnosing a failure or post-mortem | orchestration/reference/known-failures.md |
-| Creating/recovering the Queen's state file | orchestration/templates/queen-state.md |
+| Creating/recovering the Orchestrator's state file | orchestration/templates/queen-state.md |
 | Exec summary authoring (Step 5) | orchestration/templates/scribe-skeleton.md |
 | Setting up orchestration in new project | orchestration/SETUP.md |
 
@@ -435,18 +435,18 @@ SUMMARY: {one-line-description}" > "${SESSION_DIR}/signals/{TASK_SUFFIX}.done"
 | Agent fails claims-vs-code | 2 | Escalate to user with full context |
 | review-integrity fails | 1 | Present to user with verification report attached |
 | Agent stuck (no commit within 15 turns) | 0 | Run stuck-agent diagnostic (see below); escalate to user |
-| Prompt Composer pre-spawn-check fails | 1 | Escalate to user; do not spawn Crumb Gatherers without verified prompts |
-| Scout fails or returns no tasks | 1 | Escalate to user; do not proceed to Step 2 without task list |
-| startup-check FAIL -> re-Scout cycle | 1 | Escalate to user with startup-check violations; do not re-run Scout a third time |
+| Prompt Composer pre-spawn-check fails | 1 | Escalate to user; do not spawn Implementers without verified prompts |
+| Recon Planner fails or returns no tasks | 1 | Escalate to user; do not proceed to Step 2 without task list |
+| startup-check FAIL -> re-Recon Planner cycle | 1 | Escalate to user with startup-check violations; do not re-run Recon Planner a third time |
 | Fix CG stuck/crash (no commit in team) | 0 | Run stuck-agent diagnostic; file a crumb for the failed fix; escalate to user. Do NOT re-spawn without user approval |
 | Fix PC crash (fix-pc-scope-verify or fix-pc-claims-vs-code) | 1 | Spawn replacement into team (`team_name: "reviewer-team"`); resume from last SendMessage |
 | Reviewer failure (round 2+, re-task via SendMessage fails) | 1 | Spawn fresh reviewer into team as replacement; re-send the round transition message |
 | Review Consolidator crash (before crumb filing complete) | 1 | Spawn fresh Review Consolidator into team with handoff brief describing which crumbs were filed and which remain; re-run review-integrity after |
 | review-integrity material spot-check fail | 1 | Shut down current Review Consolidator; spawn fresh Review Consolidator into team with handoff brief identifying failed crumbs; re-run full crumb review then re-run review-integrity |
-| Scribe fails session-complete | 1 | Escalate to user with session-complete report; user decides fix manually or push as-is |
+| Session Scribe fails session-complete | 1 | Escalate to user with session-complete report; user decides fix manually or push as-is |
 | Total retries per session | 5 | Pause all new spawns; triage with user |
 
-Track retry count in the Queen's state file (→ templates/queen-state.md).
+Track retry count in the Orchestrator's state file (→ templates/queen-state.md).
 
 ### Stuck-Agent Diagnostic Procedure
 
@@ -462,7 +462,7 @@ Do not re-spawn the agent or attempt a fix without user approval after the stuck
 
 ### Wave Failure Threshold
 
-If more than 50% of agents in a single wave fail (after all applicable retries are exhausted), the Queen must:
+If more than 50% of agents in a single wave fail (after all applicable retries are exhausted), the Orchestrator must:
 
 1. Stop spawning new agents for the remainder of the current wave.
 2. Collect failure summaries from all failed agents in the wave.
@@ -491,6 +491,6 @@ Project-specific overrides belong in the project's CLAUDE.md or QUALITY_PROCESS.
 ## Context Preservation Targets
 
 - Token budget: finish with >50% remaining (1M context window)
-- File reads in the Queen: <10 for 40+ task sessions
-- Concurrent agents: typical 5-6 Crumb Gatherers, max 12 total
+- File reads in the Orchestrator: <10 for 40+ task sessions
+- Concurrent agents: typical 5-6 Implementers, max 12 total
 - Commits per session: <20 (batch related work)

@@ -1,6 +1,6 @@
 # Review & Fix Workflow (Steps 3b–3c)
 
-> Continuation of the workflow defined in `orchestration/RULES.md`. The Queen reads this file when Step 3b is reached (after all implementation waves are verified).
+> Continuation of the workflow defined in `orchestration/RULES.md`. The Orchestrator reads this file when Step 3b is reached (after all implementation waves are verified).
 
 **Step 3b:** Review — fill review slots and spawn Reviewers.
 
@@ -17,12 +17,12 @@
             - **Peak**: up to 15 members in the base case (6 + 7 fix CGs + 2 fix PCs); higher with split instances. Only N+2 fix agents are active during the fix phase; the original reviewers are idle.
             - **Round 2+**: Clarity and Drift reviewers — including split instances (e.g., `clarity-1`, `clarity-2`, `drift-1`, `drift-2`) — remain idle; Correctness and Edge Cases are re-tasked via named-member SendMessage
 
-            **3b-i. Gather inputs** from the Queen's state file:
+            **3b-i. Gather inputs** from the Orchestrator's state file:
             - Review round: read from session state (default: 1)
             - Commit range: round 1 = first session commit..HEAD; round 2+ = first fix commit..HEAD
             - File list: `git diff --name-only {commit-range}` (deduplicated; exclude `.crumbs/tasks.jsonl` and other auto-generated crumbs files)
             - Task IDs: round 1 = all task IDs; round 2+ = fix task IDs only
-            - Timestamp: The Queen generates ONE timestamp at the start of Step 3b using `date +%Y%m%d-%H%M%S` format (YYYYMMDD-HHmmss). Store as `{TIMESTAMP}` (shell: `${TIMESTAMP}`):
+            - Timestamp: The Orchestrator generates ONE timestamp at the start of Step 3b using `date +%Y%m%d-%H%M%S` format (YYYYMMDD-HHmmss). Store as `{TIMESTAMP}` (shell: `${TIMESTAMP}`):
               ```bash
               TIMESTAMP=$(date +%Y%m%d-%H%M%S)
               ```
@@ -72,7 +72,7 @@
 
             **3b-iv. Spawn reviewer team** (round 1 only — team persists for round 2+):
             - Round 1: base case is 6 members (4 reviewers + Review Consolidator + Checkpoint Auditor); may be more if `build-review-prompts.sh` produces split reviewer instances
-            - **Dynamic member list**: The Queen reads the return table from `build-review-prompts.sh` to determine member count and names. Do NOT use a fixed 6-member list. The return table lists every filled slot (e.g., `clarity-1`, `clarity-2`, `drift-1`, `drift-2`) along with their prompt file paths. Build the `members` array from this table — each slot becomes one TeamCreate member entry.
+            - **Dynamic member list**: The Orchestrator reads the return table from `build-review-prompts.sh` to determine member count and names. Do NOT use a fixed 6-member list. The return table lists every filled slot (e.g., `clarity-1`, `clarity-2`, `drift-1`, `drift-2`) along with their prompt file paths. Build the `members` array from this table — each slot becomes one TeamCreate member entry.
             - **Split instance naming**: When a reviewer type is split across multiple instances, each instance is named `{review-type}-{N}` (e.g., `clarity-1`, `clarity-2`, `drift-1`, `drift-2`). The base-case single-instance names (`clarity-reviewer`, `drift-reviewer`) are used only when no split occurred.
             - Model assignments: Correctness (`model: "opus"`), Edge Cases (`model: "opus"`), Clarity and all clarity-N instances (`model: "sonnet"`), Drift and all drift-N instances (`model: "sonnet"`)
             - Round 2+: do NOT spawn a new team — re-task Correctness and Edge Cases reviewers via named-member SendMessage (see Step 3c fix workflow)
@@ -92,7 +92,7 @@
             **Progress log (after reviewer team completes round 1):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_COMPLETE|round=<N>|team=complete|report=${SESSION_DIR}/review-reports/review-consolidated-${TIMESTAMP}.md|next_step=STEP_3C_TRIAGE" >> ${SESSION_DIR}/progress.log`
 
 **Step 3c:** User triage — **after review-integrity PASS and Review Consolidator consolidation completes**:
-            1. Read the consolidated review summary (Review Consolidator sends crumb list to Queen via SendMessage — see review-consolidator-skeleton.md step 12)
+            1. Read the consolidated review summary (Review Consolidator sends crumb list to Orchestrator via SendMessage — see review-consolidator-skeleton.md step 12)
             2. Check finding counts: P1, P2, P3
             **Termination check**: If zero P1 and zero P2 findings:
             - Round 2+: P3s already auto-filed by Review Consolidator to "Future Work" epic
@@ -120,7 +120,7 @@
             - Present findings to user: "Reviews found X P1 and Y P2 issues. Fix now or defer?"
             - **If "fix now"**: proceed to Fix Workflow below, then transition to round N+1 via SendMessage
               - Update session state: increment review round, record fix commit range
-            - **If "defer"**: P1/P2 crumbs stay open; note deferred items for the Scribe to document at Step 5; proceed to Step 4
+            - **If "defer"**: P1/P2 crumbs stay open; note deferred items for the Session Scribe to document at Step 5; proceed to Step 4
 
             **Fix Workflow** (triggered by auto-fix or "fix now"):
 
@@ -128,19 +128,19 @@
             the Task tool with `team_name: "reviewer-team"` so they can communicate with reviewers and
             iterate within the team via SendMessage.
 
-            **Step 3c-i. Fix-cycle Scout** — Before spawning fix agents, run a fix-cycle Scout
+            **Step 3c-i. Fix-cycle Recon Planner** — Before spawning fix agents, run a fix-cycle Recon Planner
             (`ant-farm-recon-planner`, `model: "opus"`) to plan the fix strategy: which crumbs to fix, wave
-            grouping, and file conflict analysis. The fix-cycle Scout reads the crumb list from Review Consolidator's
+            grouping, and file conflict analysis. The fix-cycle Recon Planner reads the crumb list from Review Consolidator's
             SendMessage handoff (review-consolidator-skeleton.md step 12).
 
-            **Auto-approval**: The fix-cycle Scout's strategy is auto-approved — no user confirmation
-            gate. The Scout's strategy drives fix agent spawning directly.
+            **Auto-approval**: The fix-cycle Recon Planner's strategy is auto-approved — no user confirmation
+            gate. The Recon Planner's strategy drives fix agent spawning directly.
 
-            **startup-check gate**: startup-check runs as a mechanical safety net on the Scout's fix strategy:
+            **startup-check gate**: startup-check runs as a mechanical safety net on the Recon Planner's fix strategy:
             - startup-check PASS → proceed to fix agent spawning (auto-approved)
-            - startup-check FAIL → re-run Scout with violations listed (max 1 retry); if still failing, escalate to user
+            - startup-check FAIL → re-run Recon Planner with violations listed (max 1 retry); if still failing, escalate to user
 
-            **Progress log (after fix Scout startup-check PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_SCOUT_COMPLETE|round=<N>|startup_check=pass|fix_crumbs=<crumb-ids>|next_step=FIX_AGENTS_SPAWN" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after fix Recon Planner startup-check PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_SCOUT_COMPLETE|round=<N>|startup_check=pass|fix_crumbs=<crumb-ids>|next_step=FIX_AGENTS_SPAWN" >> ${SESSION_DIR}/progress.log`
 
             **Step 3c-ii. Spawn fix agents into team** — Prompt Composer and pre-spawn-check are skipped for fix agents
             (the Review Consolidator crumb IS the brief; crumb content passed review-integrity; startup-check independently verified the
@@ -154,7 +154,7 @@
 
             **Fix CG prompt structure**: minimal — crumb is the source of truth:
             ```
-            You are fix-cg-N, a fix Crumb Gatherer in the Reviewer team.
+            You are fix-cg-N, a fix Implementer in the Reviewer team.
             Your task crumb: {crumb-id}
             Run: crumb show <crumb-id>
             Implement the fix. Follow the acceptance criteria exactly.
@@ -178,23 +178,23 @@
                                       |                   |
                                 fix-pc-claims-vs-code fix-cg-N iterates (max 2 retries total)
                                 runs claims-vs-code       |
-                                (sonnet)        if retry limit hit → SendMessage(Queen)
+                                (sonnet)        if retry limit hit → SendMessage(Orchestrator)
                                       |
                            PASS ------+------ FAIL
                             |                  |
                         fix-cg-N           SendMessage(fix-cg-N) with specifics
                         goes idle          fix-cg-N iterates (max 2 retries total)
-                                           if retry limit hit → SendMessage(Queen)
+                                           if retry limit hit → SendMessage(Orchestrator)
             ```
 
             Retry limit: each fix CG has a maximum of 2 retries total across both scope-verify and claims-vs-code
-            failures. On the third failure, the CG sends a message to the Queen and goes idle.
-            The Queen escalates to the user.
+            failures. On the third failure, the CG sends a message to the Orchestrator and goes idle.
+            The Orchestrator escalates to the user.
 
             **Progress log (after all fix CGs verified by fix-pc-claims-vs-code):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_CLAIMS_VS_CODE_COMPLETE|round=<N>|verified_cgs=<names>|commits=<hashes>|next_step=ROUND_TRANSITION" >> ${SESSION_DIR}/progress.log`
 
             **Step 3c-iv. Round transition via SendMessage** — after all fix CGs complete and
-            fix-pc-claims-vs-code has issued PASS for each, the Queen sends messages to re-task the persistent
+            fix-pc-claims-vs-code has issued PASS for each, the Orchestrator sends messages to re-task the persistent
             team members for round N+1. Model assignments do NOT change in round 2+: Correctness and
             Edge Cases remain `opus` (they were spawned with opus in round 1; SendMessage does not change model):
             1. **Re-task Correctness reviewer** (`opus` — unchanged): SendMessage to `correctness-reviewer` with review round N+1,
@@ -215,7 +215,7 @@
             **Progress log (after round transition messages sent):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|ROUND_TRANSITION|from_round=<N>|to_round=<N+1>|fix_commits=<range>|next_step=REVIEW_3B" >> ${SESSION_DIR}/progress.log`
 
             After the round transition, the loop returns to the top of Step 3c: Review Consolidator consolidates
-            round N+1 reports, review-integrity runs inside the team, and the Queen reads the new crumb list from
+            round N+1 reports, review-integrity runs inside the team, and the Orchestrator reads the new crumb list from
             Review Consolidator's SendMessage. If zero P1/P2 → proceed to Step 4. If P1/P2 remain and round < 4
             → repeat fix workflow. If round >= 4 → escalate to user.
 
