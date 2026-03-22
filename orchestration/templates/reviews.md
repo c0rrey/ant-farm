@@ -1,4 +1,4 @@
-<!-- Reader: fill-review-slots.sh (replaces pantry-review). The Queen does NOT read this file directly. -->
+<!-- Reader: build-review-prompts.sh (extracts inline prompts and protocol). The Queen does NOT read this file directly. -->
 # Quality Review Protocol
 
 ## Transition Gate Checklist
