@@ -81,17 +81,17 @@ For each task ID in the input list:
    - Report: `TASK FAILED: {TASK_ID} — Placeholder-contaminated metadata: found unfilled placeholders: {examples}`
    - Do NOT write a task brief for this task; skip to the next task
 
-   **On any failure above**: Return a partial verdict table to the Queen showing completed and failed tasks:
-   ```
-   | Task ID | Agent Type | Task Brief | Preview File | Status |
-   |---------|------------|------------|--------------|--------|
-   | {id}    | {type}     | {path}     | {path}       | OK     |
-   | {id}    | —          | —          | —            | FAILED: {reason} |
-   ```
-
    > **Note — file existence on disk**: The fail-fast checks above validate metadata *content* (non-empty, complete, no placeholders) but do NOT verify that the files listed in `**Affected Files**` exist on disk. This is by design — file existence is verified downstream by Nitpickers at review time, when the actual file content is read and diffed. If a listed file is missing at that point, the Nitpicker reports the discrepancy.
 
    (Pre-extracted by the Scout. Do NOT run `crumb show` — the metadata is already there.)
+
+**After processing all tasks**: If any tasks failed the fail-fast checks above, return a single partial verdict table to the Queen showing completed and failed tasks. This table is produced once after the entire loop completes — not after each individual failure:
+```
+| Task ID | Agent Type | Task Brief | Preview File | Status |
+|---------|------------|------------|--------------|--------|
+| {id}    | {type}     | {path}     | {path}       | OK     |
+| {id}    | —          | —          | —            | FAILED: {reason} |
+```
 
 2. For successful tasks (Status: success), read and extract:
    - Title
