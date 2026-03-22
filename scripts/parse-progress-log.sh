@@ -77,7 +77,7 @@ STEP_KEYS=(
 step_label() {
     case "$1" in
         SESSION_INIT)     echo "Session Init: Session setup" ;;
-        SCOUT_COMPLETE)   echo "Scout Complete: Recon (Scout + SSV gate + user approval)" ;;
+        SCOUT_COMPLETE)   echo "Scout Complete: Recon (Scout + SSV gate)" ;;
         WAVE_SPAWNED)     echo "Wave Spawned: Spawn (Pantry + CCO + Crumb Gatherers)" ;;
         WAVE_WWD_PASS)    echo "Wave WWD Passed: WWD verification passed" ;;
         WAVE_VERIFIED)    echo "Wave Verified: Verify (WWD + CMVCC)" ;;
