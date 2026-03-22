@@ -60,8 +60,10 @@ for filepath in "$AGENTS_DIR"/*.md; do
     continue
   fi
 
-  # Truncate description to first sentence (up to first period)
-  first_sentence=$(echo "$description" | sed 's/\. .*/\./')
+  # Truncate description to first sentence.
+  # Match period + space + uppercase letter to identify sentence boundaries,
+  # avoiding false matches on abbreviations like "e.g." or "i.e."
+  first_sentence=$(echo "$description" | sed 's/\. [A-Z].*/\./')
 
   # Classify type: orchestration agents coordinate/spawn other agents;
   # implementation agents perform direct work.
