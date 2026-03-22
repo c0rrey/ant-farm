@@ -27,6 +27,8 @@ For each task ID in the input list:
    **FAIL-FAST CHECK**: Halt and report for any of these conditions:
    _(Failure label definitions — INFRASTRUCTURE FAILURE vs SUBSTANCE FAILURE — see `orchestration/reference/terms.md` Failure Taxonomy section.)_
 
+   > **Sequential-check invariant**: Conditions 1, 2, and 3 are evaluated in order. The first matching condition fires and skips the task — subsequent conditions are not checked. Because of this sequential waterfall, all three conditions write to the same artifact path (`task-{TASK_SUFFIX}-FAILED.md`) without collision risk. The failure type is distinguished by the artifact content: the header line (`[INFRASTRUCTURE FAILURE]` vs `[SUBSTANCE FAILURE]`) and the `**Status**` field text identify which condition fired.
+
    **Condition 1 — File missing or Scout error (INFRASTRUCTURE FAILURE)**: File is absent, unreadable, or contains `**Status**: error`.
    - **Failure artifact**: Write to `{session-dir}/prompts/task-{TASK_SUFFIX}-FAILED.md`:
      ```
