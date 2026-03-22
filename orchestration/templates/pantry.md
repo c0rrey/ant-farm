@@ -59,7 +59,7 @@ For each task ID in the input list:
    **Condition 3 — Placeholder-contaminated metadata (SUBSTANCE FAILURE)**: The metadata contains unfilled placeholder text from the Scout template.
 
    **Precise contamination patterns** (flag ONLY these):
-   - `<angle-bracket text>` — starts with `<`, ends with `>`, contains only word characters and spaces inside. Regex: `<[A-Za-z][A-Za-z0-9 _-]*>`. Examples: `<copy from crumb>`, `<list from crumb>`, `<describe here>`.
+   - `<angle-bracket text>` — starts with `<`, ends with `>`, contains only word characters and spaces inside. Regex: `<[A-Za-z][A-Za-z0-9_-]* [A-Za-z0-9 _-]+>`. Examples: `<copy from crumb>`, `<list from crumb>`, `<describe here>`. (Requires at least one space inside, which excludes valid HTML tags like `<div>` or `<span>`.)
    - `[square-bracket text]` — starts with `[`, ends with `]`, contains only word characters and spaces inside. Regex: `\[[A-Za-z][A-Za-z0-9 _-]*\]`. Examples: `[root cause here]`, `[list files]`.
 
    **Patterns that are NOT contamination** (never flag these):
@@ -140,6 +140,8 @@ Do NOT fix adjacent issues you notice.
 5. Build/Test Validation
 6. Acceptance Criteria checklist (each criterion + PASS/FAIL)
 ```
+
+> Note: `{lowercase-curly}` tokens in the template above are composition labels to be replaced during this step — they are not contamination-pattern placeholders.
 
 5. Validate the task brief has no unfilled placeholder text remaining. Unfilled placeholders are `<angle-bracket text>` or `[square-bracket text]` patterns that survived from Scout metadata. Lowercase `{curly-brace}` literals from the format template (e.g., `{from crumb description}` used as field labels inside the template above) are NOT unfilled placeholders — they will have been replaced with real values during composition.
 
