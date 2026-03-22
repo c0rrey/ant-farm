@@ -28,7 +28,7 @@ Round 2+:
 - `{SESSION_DIR}/review-reports/correctness-review-{timestamp}.md`
 - `{SESSION_DIR}/review-reports/edge-cases-review-{timestamp}.md`
 
-Read all documents (round 1: 5 total = 4 reports + consolidated; round 2+: 3 total = 2 reports + consolidated), then perform these 8 checks:
+Read all documents (round 1: 5 total = 4 reports + consolidated; round 2+: 3 total = 2 reports + consolidated), then perform these 9 checks (numbered 0-7 plus 3b -- the spot-check was inserted after Check 3 without renumbering subsequent checks):
 
 ## Check 0: Report Existence Verification
 Verify that every report file listed in **Individual reports** above exists at its path. The expected count depends on the review round (round 1: 4 files; round 2+: 2 files).
@@ -108,7 +108,7 @@ Run `crumb list --open --after {SESSION_START_DATE}` and cross-reference against
 - Verify crumb count matches the consolidated summary's count
 
 ## Verdict
-- **PASS** — All 8 checks confirm consolidation integrity
+- **PASS** — All 9 checks (0-7 plus 3b) confirm consolidation integrity
 - **PARTIAL: <list checks that failed with evidence>**
 - **FAIL: <list all failures with evidence>**
 

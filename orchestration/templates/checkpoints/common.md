@@ -109,7 +109,7 @@ All checkpoints use the following verdict states:
 - FAIL: Multiple checks fail or critical fabrication (escalate to user)
 
 **review-integrity Verdict Specifics:**
-- PASS: All 8 checks confirm (finding reconciliation, crumb quality, priority calibration, traceability, dedup correctness, provenance)
+- PASS: All 9 checks confirm (finding reconciliation, crumb quality, root cause spot-check, priority calibration, traceability, dedup correctness, provenance)
 - PARTIAL: Some checks fail (fix and re-run)
 - FAIL: Critical failures (e.g., missing reports, orphaned findings). Must resolve before presenting to user.
 
