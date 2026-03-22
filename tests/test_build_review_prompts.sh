@@ -312,7 +312,8 @@ run_test "extract_focus_block_strips_suffix" '
     run_script "$session" "$files_arg" 1 4 >/dev/null
 
     # The "## Focus" section of clarity-1 must contain the same content as the
-    # canonical clarity focus block (Readable, consistent, well-documented).
+    # canonical clarity focus block. Substring from orchestration/templates/review-focus-areas.md
+    # (clarity block).
     if ! grep -qF "Readable, consistent, well-documented" "$session/prompts/review-clarity-1.md"; then
         echo "ASSERTION FAILED: clarity-1 focus block does not match clarity focus" >&2
         exit 1
@@ -516,13 +517,8 @@ run_test "preflight_team_size_exceeds_15_errors" '
 run_test "preflight_team_size_exactly_15_passes" '
     session="$(make_session)"
     trap 'rm -rf "$session"' EXIT
-    # threshold=1, 5 files → 5 clarity + 5 drift + edge-cases + correctness = 12
-    # Hmm, 12 + 2 = 14 ≤ 15 (still under). Use threshold=1 with 6 files:
-    # 6 clarity-1..6 + 6 drift-1..6 + edge-cases + correctness = 14 types
-    # But 14 + 2 = 16 > 15 — that would fail. Need exactly 13 types.
-    # threshold=1, 5 files: 5 clarity + 5 drift + 2 = 12 types + 2 = 14 ≤ 15 → passes
-    # threshold=2, 7 files: ceil(7/2)=4, 4 clarity + 4 drift + 2 = 10 types + 2 = 12 ≤ 15 → passes
-    # Let us test threshold=1 with 5 files: ACTIVE_REVIEW_TYPES size = 5+5+2 = 12, team = 14
+    # threshold=1, 5 files: 5 Clarity + 5 Drift + 2 (correctness + edge-cases) = 12 reviewer types.
+    # Team size = 12 + 2 (Big Head + Pest Control) = 14 <= 15 -> preflight check should pass.
     files_arg="$(write_files_list "$session" a.sh b.sh c.sh d.sh e.sh)"
 
     rc=0
