@@ -16,11 +16,15 @@ Placeholders:
 - {TASK_TYPE}: crumb type (bug/feature/task) — from the Scout's briefing
 - {TASK_ID}: full crumb ID including project prefix (e.g., ant-farm-9oa)
 - {TASK_SUFFIX}: suffix only, no prefix (e.g., 9oa)
-- {AGENT_TYPE}: subagent_type for Task tool — from the Pantry verdict table (Agent Type column).
-  **Authority chain**: Scout recommends → Pantry passes through unchanged → Queen may override.
-  **Queen override**: Allowed only when Scout metadata is demonstrably wrong (e.g., wrong domain, agent type unavailable). Document the override reason in the Queen's state file before spawning. Do NOT override based on preference or guesswork.
+- {AGENT_TYPE}: subagent_type for Task tool — from the Pantry verdict table (Agent Type column). See **Agent Type Selection Policy** below.
 - {DATA_FILE_PATH}: from the Pantry verdict table
 - {SUMMARY_OUTPUT_PATH}: {SESSION_DIR}/summaries/{TASK_SUFFIX}.md
+
+### Agent Type Selection Policy
+
+**Authority chain**: Scout recommends → Pantry passes through unchanged → Queen may override.
+
+**Queen override**: Allowed only when Scout metadata is demonstrably wrong (e.g., wrong domain, agent type unavailable). Document the override reason in the Queen's state file before spawning. Do NOT override based on preference or guesswork.
 
 ## Template (send everything below this line)
 
