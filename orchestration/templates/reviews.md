@@ -243,6 +243,7 @@ Correctness and Edge Cases reviewers receive this additional scope constraint in
 
 The `[OUT-OF-SCOPE]` tag is for labeling and severity isolation. It helps Review Consolidator and human readers distinguish fix-scope findings from incidental discoveries. **Severity enforcement rule**: when merging findings into a root-cause group, `[OUT-OF-SCOPE]` findings do NOT contribute to the group's combined priority. Use only in-scope severity levels to compute the group priority. `[OUT-OF-SCOPE]` findings contribute their affected surfaces and context to the group but are excluded from severity calculation. Example: a root-cause group with an in-scope P2 finding and an `[OUT-OF-SCOPE]` P3 finding uses P2 as the group priority — the P3 does not increase it.
 
+<!-- Condensed from review-focus-areas.md (Clarity section). Keep in sync when updating focus areas. -->
 ## Review 1: Clarity (P3)
 
 **Agent Type:** `code-reviewer`
@@ -276,6 +277,7 @@ Review these files:
 {list of files changed in session}
 ```
 
+<!-- Condensed from review-focus-areas.md (Edge Cases section). Keep in sync when updating focus areas. -->
 ## Review 2: Edge Cases (P2)
 
 **Agent Type:** `code-reviewer`
@@ -314,6 +316,7 @@ Review these files:
 {list of files changed in session}
 ```
 
+<!-- Condensed from review-focus-areas.md (Correctness section). Keep in sync when updating focus areas. -->
 ## Review 3: Correctness (P1-P2)
 
 **Agent Type:** `code-reviewer`
@@ -359,6 +362,7 @@ For each completed task, verify:
 - Tests would pass (if tests exist)
 ```
 
+<!-- Condensed from review-focus-areas.md (Drift section). Keep in sync when updating focus areas. -->
 ## Review 4: Drift (P3)
 
 **Agent Type:** `code-reviewer`
