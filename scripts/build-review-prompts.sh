@@ -194,6 +194,7 @@ CHANGED_FILES_SORTED="$(printf '%s\n' "$CHANGED_FILES" | LC_ALL=C sort | sed '/^
 # Count non-empty lines in the sorted list.
 FILE_COUNT=0
 while IFS= read -r line; do
+    # || true prevents set -e exit: (( n++ )) returns exit code 1 when result is 0 (first iteration post-increment).
     [[ -n "$line" ]] && (( FILE_COUNT++ )) || true
 done <<< "$CHANGED_FILES_SORTED"
 

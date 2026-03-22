@@ -283,7 +283,9 @@ run_test "big_head_expected_paths_one_per_split_instance" '
     brief="$session/prompts/review-big-head-consolidation.md"
 
     # The expected_paths section uses "- " list items after "Expected report paths".
-    # Count those items.
+    # Count those items. The awk range pattern depends on a blank line terminating
+    # the paths list in the generated brief; if the output format changes (e.g.
+    # trailing newline removed), this extraction will capture too many/few lines.
     path_count="$(awk "/Expected report paths/,/^$/" "$brief" | grep -c "^- " || true)"
     if [ "$path_count" -ne 8 ]; then
         echo "ASSERTION FAILED: Big Head brief has $path_count expected_paths entries, want 8" >&2
