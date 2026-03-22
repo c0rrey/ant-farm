@@ -1,5 +1,25 @@
 # Changelog
 
+## Decision Record: Use `mcp` Python Package for MCP Server
+
+**Date**: 2026-03-22
+**Status**: Accepted
+
+### Decision
+
+Use the third-party `mcp` Python package (`pip install mcp`) to implement the MCP server (`mcp_server.py`) rather than building a stdlib-only JSON-RPC transport layer.
+
+### Why
+
+- The `mcp` package provides `FastMCP`, a production-ready server framework with built-in stdio transport, tool registration decorators, and JSON-RPC message framing — eliminating hundreds of lines of boilerplate that would otherwise need to be written and maintained in-house.
+- The MCP protocol specification is actively evolving; the `mcp` package tracks spec changes upstream, reducing the risk of protocol drift that a hand-rolled implementation would require manual patching to address.
+- The `mcp` package handles async lifecycle management (event loop, signal handling, graceful shutdown) correctly out of the box, which is non-trivial to implement reliably with raw `asyncio` + `json` stdlib modules.
+- All other ant-farm Python code (crumb.py, tests) remains stdlib-only. The `mcp` dependency is isolated to a single file (`mcp_server.py`) and is only required when the MCP server feature is used.
+
+### Alternatives Considered
+
+- **Stdlib-only JSON-RPC**: Implement the JSON-RPC 2.0 transport using only `json`, `asyncio`, and `sys.stdin`/`sys.stdout`. This would eliminate the external dependency but require writing and maintaining ~200-300 lines of protocol framing, error handling, and tool dispatch code. The maintenance burden was deemed disproportionate to the dependency-avoidance benefit, especially given the evolving MCP spec.
+
 ## 2026-03-22 — Simplify crumb.py (32% reduction)
 
 ### Summary

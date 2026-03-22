@@ -1,8 +1,9 @@
 """Structural integrity tests for the ant-farm orchestration system.
 
-Covers six categories:
+Covers eight categories:
 1. Cross-reference integrity — every subagent_type string in RULES.md,
-   RULES-decompose.md, and RULES-review.md resolves to an agent file.
+   RULES-decompose.md, RULES-review.md, and RULES-lite.md resolves to an
+   agent file.
 2. Frontmatter validity — every agents/*.md file has ``name``,
    ``description``, and ``tools`` YAML fields, and ``name`` matches the
    filename stem.
@@ -16,6 +17,9 @@ Covers six categories:
    in that script.
 6. Skill file mapping — every skill file path referenced in orchestration
    templates exists on disk.
+7. Hook file existence — required hook scripts under hooks/ exist on disk.
+8. PRD import template placeholders — orchestration/templates/prd-import.md
+   contains the expected {UPPERCASE} placeholder patterns.
 
 All tests are self-contained: stdlib only, no external dependencies, no LLM
 calls.  The full suite should complete in well under 2 seconds.
@@ -44,6 +48,7 @@ RULES_FILES: list[Path] = [
     REPO_ROOT / "orchestration" / "RULES.md",
     REPO_ROOT / "orchestration" / "RULES-decompose.md",
     REPO_ROOT / "orchestration" / "RULES-review.md",
+    REPO_ROOT / "orchestration" / "RULES-lite.md",
 ]
 
 # Regex that matches the Python-style agent spawn syntax used in RULES files:
@@ -111,13 +116,25 @@ def _extract_frontmatter_value(content: str, field: str) -> str | None:
 # Test 1: Cross-reference integrity
 # ---------------------------------------------------------------------------
 
+# Agent names that appear in RULES files as code-block examples rather than
+# real agent references.  These are excluded from the cross-reference check.
+# Example: RULES-lite.md uses ``subagent_type="ant-farm-general-purpose"``
+# with the comment ``# or the agent type matching the task`` — it is a
+# placeholder, not a concrete agent file that must exist on disk.
+_EXAMPLE_AGENT_NAMES: frozenset[str] = frozenset({"ant-farm-general-purpose"})
+
 
 def test_cross_reference_integrity() -> None:
     """Every subagent_type string in RULES files must match an agent file.
 
     Parses ``subagent_type="..."`` patterns from RULES.md,
-    RULES-decompose.md, and RULES-review.md.  For each unique agent name
-    found, asserts that ``agents/<name>.md`` exists in the repository.
+    RULES-decompose.md, RULES-review.md, and RULES-lite.md.  For each
+    unique agent name found, asserts that ``agents/<name>.md`` exists in the
+    repository.
+
+    Agent names listed in ``_EXAMPLE_AGENT_NAMES`` are excluded — these
+    appear in code-block examples (e.g. RULES-lite.md's ``# or the agent
+    type matching the task`` comment) and are not real agent references.
     """
     referenced: set[str] = set()
     for rules_file in RULES_FILES:
@@ -131,6 +148,8 @@ def test_cross_reference_integrity() -> None:
 
     missing: list[str] = []
     for agent_name in sorted(referenced):
+        if agent_name in _EXAMPLE_AGENT_NAMES:
+            continue
         agent_path = AGENTS_DIR / f"{agent_name}.md"
         if not agent_path.exists():
             missing.append(agent_name)
@@ -474,4 +493,79 @@ def test_skill_file_mapping() -> None:
         + "\n".join(f"  - {entry}" for entry in sorted(broken))
         + "\n\nEither create the missing skill files or update the template "
         "references to use the correct paths."
+    )
+
+
+# ---------------------------------------------------------------------------
+# Test 7: Hook file existence
+# ---------------------------------------------------------------------------
+
+# Required hook scripts that must exist under hooks/.
+_REQUIRED_HOOK_FILES: tuple[str, ...] = (
+    "ant-farm-statusline.js",
+    "ant-farm-scope-advisor.js",
+)
+
+HOOKS_DIR: Path = REPO_ROOT / "hooks"
+
+
+def test_hook_file_existence() -> None:
+    """Required hook scripts must exist on disk under hooks/.
+
+    Validates that each file listed in ``_REQUIRED_HOOK_FILES`` is present
+    in the ``hooks/`` directory.  These hooks are installed by the setup
+    pipeline and referenced by the orchestration system — missing hooks
+    would cause runtime failures in Claude Code.
+    """
+    missing: list[str] = []
+    for hook_name in _REQUIRED_HOOK_FILES:
+        hook_path = HOOKS_DIR / hook_name
+        if not hook_path.exists():
+            missing.append(hook_name)
+
+    assert not missing, (
+        "The following required hook files are missing from hooks/:\n"
+        + "\n".join(f"  - {name}  (expected at hooks/{name})" for name in missing)
+    )
+
+
+# ---------------------------------------------------------------------------
+# Test 8: PRD import template placeholders
+# ---------------------------------------------------------------------------
+
+PRD_IMPORT_FILE: Path = REPO_ROOT / "orchestration" / "templates" / "prd-import.md"
+
+# Expected {UPPERCASE} placeholders that must appear in prd-import.md.
+# These are the three user-supplied slot variables that the Planner fills
+# before spawning the PRD Importer agent.
+_REQUIRED_PRD_PLACEHOLDERS: frozenset[str] = frozenset(
+    {"DECOMPOSE_DIR", "CODEBASE_ROOT", "PRD_PATH"}
+)
+
+
+def test_prd_import_placeholders() -> None:
+    """PRD import template must contain expected placeholder patterns.
+
+    Validates that ``orchestration/templates/prd-import.md`` exists and
+    contains each of the required ``{UPPERCASE}`` placeholder tokens.
+    These placeholders are filled by the Planner at runtime; their absence
+    would break the PRD import pipeline.
+    """
+    assert PRD_IMPORT_FILE.exists(), (
+        f"PRD import template not found at {PRD_IMPORT_FILE.relative_to(REPO_ROOT)}. "
+        "Has the file been moved or renamed?"
+    )
+
+    content = PRD_IMPORT_FILE.read_text(encoding="utf-8")
+    found_placeholders: set[str] = set(_SINGLE_BRACE_SLOT_RE.findall(content))
+
+    missing_placeholders = _REQUIRED_PRD_PLACEHOLDERS - found_placeholders
+    assert not missing_placeholders, (
+        f"The following required placeholders are missing from "
+        f"{PRD_IMPORT_FILE.relative_to(REPO_ROOT)}:\n"
+        + "\n".join(
+            f"  - {{{name}}}" for name in sorted(missing_placeholders)
+        )
+        + "\n\nThese placeholders are required for the Planner to fill "
+        "before spawning the PRD Importer agent."
     )
