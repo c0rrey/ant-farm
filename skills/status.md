@@ -71,13 +71,21 @@ If all commands fail or return empty output, set all counts to `0` and set `HAS_
 
 ## Step 3 — Retrieve Last Session Summary
 
-Find the most recent exec-summary file under `.crumbs/sessions/` (full-mode sessions). Session directories are named `_session-YYYYMMDD-HHMMSS`.
+Find the most recent exec-summary file. Check session directories first (preferred), then fall back to the history archive (used when session directories have been pruned).
 
 ```bash
+# Primary: session directories
 ls -t .crumbs/sessions/*/exec-summary.md 2>/dev/null | head -1
 ```
 
-Store the path as `LAST_SUMMARY_PATH`. If no files are found, set `LAST_SUMMARY_PATH=""` and `HAS_SESSION=false`. Otherwise set `HAS_SESSION=true`.
+If the primary search returns a path, store it as `LAST_SUMMARY_PATH`. Otherwise run the fallback:
+
+```bash
+# Fallback: history archive (survives crumb prune)
+ls -t .crumbs/history/exec-summary-*.md 2>/dev/null | head -1
+```
+
+Store the result (from either source) as `LAST_SUMMARY_PATH`. If both searches return empty, set `LAST_SUMMARY_PATH=""` and `HAS_SESSION=false`. Otherwise set `HAS_SESSION=true`.
 
 If `HAS_SESSION=true`, read a brief excerpt (first 20 lines) of `LAST_SUMMARY_PATH`:
 
@@ -87,7 +95,11 @@ head -20 "${LAST_SUMMARY_PATH}"
 
 Store as `LAST_SUMMARY_EXCERPT`.
 
-Extract the session date from the directory name (e.g., `.crumbs/sessions/_session-20260313-021748/exec-summary.md` → `2026-03-13 02:17`). Store as `LAST_SESSION_DATE`.
+Extract the session date:
+- If `LAST_SUMMARY_PATH` is under `.crumbs/sessions/`, parse from the directory name (e.g., `.crumbs/sessions/_session-20260313-021748/exec-summary.md` → `2026-03-13 02:17`).
+- If `LAST_SUMMARY_PATH` is under `.crumbs/history/`, parse from the filename (e.g., `.crumbs/history/exec-summary-20260313-021748.md` → `2026-03-13 02:17`).
+
+Store as `LAST_SESSION_DATE`.
 
 **Also scan for lite-mode sessions:**
 
