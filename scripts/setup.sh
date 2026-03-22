@@ -199,8 +199,8 @@ sync_claude_block() {
     local blockfile="" tmpfile=""
     # Clean up temp files on any exit path (including set -e failures)
     trap 'rm -f "${blockfile:-}" "${tmpfile:-}" 2>/dev/null' RETURN
-    blockfile="$(mktemp)"; TEMP_FILES+=("$blockfile")
-    tmpfile="$(mktemp)"; TEMP_FILES+=("$tmpfile")
+    blockfile="$(mktemp "${dst_dir}/.af-tmp.XXXXXX")"; TEMP_FILES+=("$blockfile")
+    tmpfile="$(mktemp "${dst_dir}/.af-tmp.XXXXXX")"; TEMP_FILES+=("$tmpfile")
     printf '%s\n' "$block" > "$blockfile"
 
     if awk -v start="$ANTFARM_START" -v end="$ANTFARM_END" -v blockfile="$blockfile" '
@@ -264,8 +264,9 @@ remove_claude_block() {
 
     # Strip the block: print all lines EXCEPT those between (inclusive) the sentinels.
     # Write stripped result to a temp file, then atomically replace DST.
-    local tmpfile
-    tmpfile="$(mktemp)"; TEMP_FILES+=("$tmpfile")
+    local dst_dir tmpfile
+    dst_dir="$(dirname "$dst")"
+    tmpfile="$(mktemp "${dst_dir}/.af-tmp.XXXXXX")"; TEMP_FILES+=("$tmpfile")
 
     if awk -v start="$ANTFARM_START" -v end="$ANTFARM_END" '
         index($0, start) > 0 { skip=1; next }
