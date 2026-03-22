@@ -471,7 +471,7 @@ build_big_head_prompt() {
     body="$(extract_agent_section "$BIG_HEAD_SKELETON")"
 
     # 2. Convert {UPPERCASE} -> {{UPPERCASE}} (crumb render-template slot format)
-    body="$(printf '%s\n' "$body" | sed 's/{\([A-Z][A-Z_]*\)}/{{\1}}/g')"
+    body="$(printf '%s\n' "$body" | sed 's/{\([A-Z][A-Z_0-9]*\)}/{{\1}}/g')"
 
     # 3. Build a composite template containing the template body and the
     #    Consolidation Brief section, with {{SLOT}} markers for all variable
