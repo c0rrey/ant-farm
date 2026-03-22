@@ -76,10 +76,10 @@ All checkpoints use the following verdict states:
 
 ### Checkpoint-Specific Thresholds
 
-| Checkpoint | Quantitative Threshold | Tie-Breaking Rule | Queue Blocking |
+| Checkpoint | Threshold / Condition | Tie-Breaking Rule | Queue Blocking |
 |---|---|---|---|
 | **startup-check** | All 3 checks must pass | First-listed violation per check | FAIL blocks Pantry spawn and all downstream steps |
-| **pre-spawn-check (Crumb Gatherers)** | Small file = <100 lines | First-listed section/function | WARN does not block; Queen approves before spawn |
+| **pre-spawn-check (Crumb Gatherers)** | Check 7 WARN allowed if file < 100 lines | First-listed section/function | WARN does not block; Queen approves before spawn |
 | **pre-spawn-check (Reviewers)** | All round-active prompts identical file list (round 1: 4; round 2+: 2) | (No tie-breaking) | FAIL blocks spawn |
 | **scope-verify** | Small file = <100 lines | First-listed changed file | WARN does not block queue; FAIL blocks queue |
 | **claims-vs-code (Crumb Gatherers)** | Pick 2 criteria: first-listed OR identified-as-critical OR all if <2 | First-listed acceptance criterion | PARTIAL allows resubmission; FAIL escalates |
