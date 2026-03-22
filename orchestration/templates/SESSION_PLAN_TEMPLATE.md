@@ -5,7 +5,7 @@ Use this template for planning multi-agent orchestration sessions.
 ## Session Overview
 
 **Date:** YYYY-MM-DD
-**Queen:** Claude Opus
+**Queen:** [Model name]
 **User Request:** [Paste original request here]
 **Task IDs:** [List all task IDs]
 **Epic:** [If applicable]
@@ -296,14 +296,14 @@ Before declaring session complete:
 - Agents spawned: ___
 - Commits created: ___
 - Time elapsed: ___ minutes
-- Token budget used: ___K / 1M (___%)
+- Token budget used: ___K / ___K (___%)
 
 **Quality Metrics:**
 - P1 bugs filed: ___
 - P2 bugs filed: ___
 - P3 improvements filed: ___
 - Test coverage: ___% (if applicable)
-- Build success: ✅ / ❌
+- Build success: Yes / No
 
 **Conflict Metrics:**
 - Merge conflicts encountered: ___
@@ -314,7 +314,7 @@ Before declaring session complete:
 **Context Preservation:**
 - Implementation files read in Queen window: ___ (target: <10)
 - Token budget remaining: ___K (target: >100K)
-- Queen stayed focused: ✅ / ❌
+- Queen stayed focused: Yes / No
 
 ---
 
