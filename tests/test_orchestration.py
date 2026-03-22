@@ -320,7 +320,7 @@ BUILD_SCRIPT: Path = REPO_ROOT / "scripts" / "build-review-prompts.sh"
 
 # Skeleton templates whose slots are filled by build-review-prompts.sh.
 # Only these two are processed by that script; the other *-skeleton.md files
-# are used directly by the Queen/Planner without going through this script.
+# are used directly by the Orchestrator/Planner without going through this script.
 _BUILD_SCRIPT_SKELETONS: tuple[str, ...] = (
     "reviewer-skeleton.md",
     "review-consolidator-skeleton.md",

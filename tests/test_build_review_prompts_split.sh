@@ -7,7 +7,7 @@
 #   2. Above threshold (20 files, threshold 8): 8 prompt files, 8 return table rows.
 #   3. Concatenated clarity split file lists equal full sorted file list.
 #   4. Correctness and Edge Cases prompts contain all 20 files.
-#   5. Big Head expected_paths lists one path per split instance (8 paths for 20-file/threshold-8).
+#   5. Review Consolidator expected_paths lists one path per split instance (8 paths for 20-file/threshold-8).
 #
 # Usage:
 #   bash tests/test_build_review_prompts_split.sh
@@ -273,7 +273,7 @@ run_test "correctness_and_edge_cases_contain_all_20_files" '
 '
 
 # ---------------------------------------------------------------------------
-# Test 5: Big Head expected_paths lists one path per split instance (8 paths)
+# Test 5: Review Consolidator expected_paths lists one path per split instance (8 paths)
 # ---------------------------------------------------------------------------
 run_test "big_head_expected_paths_one_per_split_instance" '
     session="$(make_session)"
@@ -293,7 +293,7 @@ run_test "big_head_expected_paths_one_per_split_instance" '
     # trailing newline removed), this extraction will capture too many/few lines.
     path_count="$(awk "/Expected report paths/,/^$/" "$brief" | grep -c "^- " || true)"
     if [ "$path_count" -ne 8 ]; then
-        echo "ASSERTION FAILED: Big Head brief has $path_count expected_paths entries, want 8" >&2
+        echo "ASSERTION FAILED: Review Consolidator brief has $path_count expected_paths entries, want 8" >&2
         echo "Brief excerpt:" >&2
         awk "/Expected report paths/,/^$/" "$brief" >&2
         exit 1
@@ -302,7 +302,7 @@ run_test "big_head_expected_paths_one_per_split_instance" '
     # Each split instance must have its own entry in the expected paths.
     for t in clarity-1 clarity-2 clarity-3 edge-cases correctness drift-1 drift-2 drift-3; do
         if ! grep -qF "${t}-review-20260317-120000.md" "$brief"; then
-            echo "ASSERTION FAILED: Big Head brief missing expected path for $t" >&2
+            echo "ASSERTION FAILED: Review Consolidator brief missing expected path for $t" >&2
             exit 1
         fi
     done
@@ -311,7 +311,7 @@ run_test "big_head_expected_paths_one_per_split_instance" '
     for t in clarity drift; do
         # Match the exact path pattern "<type>-review-<timestamp>.md" (not clarity-1, etc.)
         if grep -qE "/${t}-review-[0-9]{8}-[0-9]{6}\.md" "$brief"; then
-            echo "ASSERTION FAILED: Big Head brief has unsplit path entry for $t" >&2
+            echo "ASSERTION FAILED: Review Consolidator brief has unsplit path entry for $t" >&2
             exit 1
         fi
     done

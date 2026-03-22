@@ -1,6 +1,6 @@
 ---
 name: ant-farm-prompt-composer
-description: Implementation prompt composer that builds pre-spawn-check-compliant task briefs and combined previews from templates and Scout metadata. Use for Step 2 implementation waves.
+description: Implementation prompt composer that builds pre-spawn-check-compliant task briefs and combined previews from templates and Recon Planner metadata. Use for Step 2 implementation waves.
 tools: Read, Write, Glob, Grep
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: ant-farm-task-decomposer
-description: Spec decomposition specialist that reads spec.md plus research briefs and the existing codebase, then creates trails and crumbs via CLI, wires dependencies, and assigns scope. Produces a decomposition-brief.md summarizing every decision made. Use for decomposition phases after Spec Writer and Forager complete.
+description: Spec decomposition specialist that reads spec.md plus research briefs and the existing codebase, then creates trails and crumbs via CLI, wires dependencies, and assigns scope. Produces a decomposition-brief.md summarizing every decision made. Use for decomposition phases after Spec Writer and Researcher complete.
 model: opus
 tools: Read, Write, Glob, Grep, Bash
 ---

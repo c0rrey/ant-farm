@@ -88,8 +88,8 @@ for filepath in "$AGENTS_DIR"/*.md; do
   if echo "$description" | grep -qi "orchestrat\|spawn\|decomposit\|recon\|consolidat\|scribe\|gather\|review specialist.*team\|parallel research"; then
     agent_type="orchestration"
   fi
-  # Scout (recon-planner), Spec Writer (spec-writer), Task Decomposer (task-decomposer),
-  # Pantry (prompt-composer), Review Consolidator (review-consolidator), Session Scribe (session-scribe),
+  # Recon Planner (recon-planner), Spec Writer (spec-writer), Task Decomposer (task-decomposer),
+  # Prompt Composer (prompt-composer), Review Consolidator (review-consolidator), Session Scribe (session-scribe),
   # and Researcher (researcher) are orchestration roles.
   # Reviewer specialists are review agents (run as parallel reviewers, not coordinators).
   # Checkpoint Auditor is review (auditor, not a spawner).

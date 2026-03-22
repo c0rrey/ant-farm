@@ -35,7 +35,7 @@ Planning Workflow                    Execution Workflow
      |                                    |
   Task Decomposer (decomposition)      pre-spawn-check gate (prompt audit)
      |                                    |
-  TDV gate                             Crumb Gatherers (up to 7 parallel)
+  TDV gate                             Implementers (up to 7 parallel)
      |                                    |
   .crumbs/tasks.jsonl                  scope-verify + claims-vs-code gates (scope + substance)
                                           |

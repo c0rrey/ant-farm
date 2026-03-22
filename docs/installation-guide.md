@@ -40,7 +40,7 @@ The script performs these steps:
 5. **Crumb CLI** -- copies `crumb.py` to `~/.local/bin/crumb` and marks it executable
 6. **CLAUDE.md** -- removes any existing ant-farm sentinel block from `~/.claude/CLAUDE.md` (migration cleanup), removes any stale block from the per-project prompt-dir file (migration cleanup), then writes the ant-farm prompt block to the repo's own `CLAUDE.md`
 7. **PATH check** -- warns if `~/.local/bin` is not in your PATH
-8. **Preflight check** -- warns if `~/.claude/agents/code-reviewer.md` is missing (required by the Nitpicker review team)
+8. **Preflight check** -- warns if `~/.claude/agents/code-reviewer.md` is missing (required by the Reviewer team)
 
 ### Step 2: Verify PATH
 
@@ -216,15 +216,18 @@ If you want to remove ant-farm from your system, follow these steps.
 
 ```bash
 # Remove agents installed by ant-farm
-rm ~/.claude/agents/ant-farm-scout-organizer.md
-rm ~/.claude/agents/ant-farm-pantry-impl.md
-rm ~/.claude/agents/ant-farm-pest-control.md
-rm ~/.claude/agents/ant-farm-nitpicker.md
-rm ~/.claude/agents/ant-farm-big-head.md
-rm ~/.claude/agents/ant-farm-architect.md
-rm ~/.claude/agents/ant-farm-forager.md
-rm ~/.claude/agents/ant-farm-surveyor.md
-rm ~/.claude/agents/ant-farm-technical-writer.md
+rm ~/.claude/agents/ant-farm-recon-planner.md
+rm ~/.claude/agents/ant-farm-prompt-composer.md
+rm ~/.claude/agents/ant-farm-checkpoint-auditor.md
+rm ~/.claude/agents/ant-farm-reviewer-clarity.md
+rm ~/.claude/agents/ant-farm-reviewer-edge-cases.md
+rm ~/.claude/agents/ant-farm-reviewer-correctness.md
+rm ~/.claude/agents/ant-farm-reviewer-drift.md
+rm ~/.claude/agents/ant-farm-review-consolidator.md
+rm ~/.claude/agents/ant-farm-task-decomposer.md
+rm ~/.claude/agents/ant-farm-researcher.md
+rm ~/.claude/agents/ant-farm-spec-writer.md
+rm ~/.claude/agents/ant-farm-session-scribe.md
 
 # Remove orchestration directory
 rm -rf ~/.claude/orchestration/
@@ -343,7 +346,7 @@ The script backs up existing files, so re-running is safe.
 
 ### Ant-Farm Instructions Not Loading
 
-**Symptom**: ant-farm instructions are not active when working in the project — the Queen does not follow Parallel Work Mode or other project-specific rules.
+**Symptom**: ant-farm instructions are not active when working in the project — the Orchestrator does not follow Parallel Work Mode or other project-specific rules.
 
 **Why**: Claude Code loads the repo's `CLAUDE.md` into the system prompt at session start. The ant-farm block must be present in `CLAUDE.md` at the repo root.
 
@@ -402,12 +405,12 @@ rm ~/.claude/CLAUDE.md.af-bak.*
 
 After installation:
 
-1. **Read orchestration/RULES.md**: Understand the Queen's workflow rules
+1. **Read orchestration/RULES.md**: Understand the Orchestrator's workflow rules
 2. **Read orchestration/templates/**: Review available agent templates for your use case
 3. **Start a session**: Use "Let's get to work on: <task-ids>" to begin collaborative work
 
 ## See Also
 
 - `orchestration/SETUP.md` -- Orchestration system overview and quick setup
-- `orchestration/RULES.md` -- Queen and subagent workflow rules
+- `orchestration/RULES.md` -- Orchestrator and subagent workflow rules
 - `scripts/setup.sh` -- Setup script source

@@ -447,7 +447,7 @@ run_test "return_table_one_row_per_split_instance" '
 '
 
 # ---------------------------------------------------------------------------
-# Test 11: Big Head expected_paths lists one path per split instance
+# Test 11: Review Consolidator expected_paths lists one path per split instance
 # ---------------------------------------------------------------------------
 run_test "big_head_expected_paths_per_split_instance" '
     session="$(make_session)"
@@ -465,14 +465,14 @@ run_test "big_head_expected_paths_per_split_instance" '
     # Count lines in the "Expected report paths" section
     path_count="$(awk "/Expected report paths/,/^$/" "$brief" | grep -c "^- " || true)"
     if [ "$path_count" -ne 8 ]; then
-        echo "ASSERTION FAILED: Big Head brief expected_paths has $path_count entries, want 8" >&2
+        echo "ASSERTION FAILED: Review Consolidator brief expected_paths has $path_count entries, want 8" >&2
         exit 1
     fi
 
     # Each split instance must have its own entry
     for t in clarity-1 clarity-2 clarity-3 drift-1 drift-2 drift-3; do
         if ! grep -qF "${t}-review-20260317-120000.md" "$brief"; then
-            echo "ASSERTION FAILED: Big Head brief missing path for $t" >&2
+            echo "ASSERTION FAILED: Review Consolidator brief missing path for $t" >&2
             exit 1
         fi
     done
@@ -487,7 +487,7 @@ run_test "preflight_team_size_exceeds_15_errors" '
     session="$(make_session)"
     trap 'rm -rf "$session"' EXIT
     # threshold=1, 14 files → 14 partitions × 2 (clarity+drift) + edge-cases + correctness = 30 types
-    # 30 + 2 (Big Head + Pest Control) = 32 > 15 → must error
+    # 30 + 2 (Review Consolidator + Checkpoint Auditor) = 32 > 15 → must error
     files_arg="$(write_files_list "$session" \
         f01.sh f02.sh f03.sh f04.sh f05.sh f06.sh f07.sh \
         f08.sh f09.sh f10.sh f11.sh f12.sh f13.sh f14.sh)"
@@ -518,7 +518,7 @@ run_test "preflight_team_size_exactly_15_passes" '
     session="$(make_session)"
     trap 'rm -rf "$session"' EXIT
     # threshold=1, 5 files: 5 Clarity + 5 Drift + 2 (correctness + edge-cases) = 12 reviewer types.
-    # Team size = 12 + 2 (Big Head + Pest Control) = 14 <= 15 -> preflight check should pass.
+    # Team size = 12 + 2 (Review Consolidator + Checkpoint Auditor) = 14 <= 15 -> preflight check should pass.
     files_arg="$(write_files_list "$session" a.sh b.sh c.sh d.sh e.sh)"
 
     rc=0
