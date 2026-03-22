@@ -107,7 +107,7 @@ orchestration/templates/claude-block.md:L42 [P1] Step 5 was renamed from "Commit
 
 **P2 example**:
 ```
-agents/ant-farm-review-consolidator.md:L55 [P2] The data file schema now requires a "review_type" field (added in commit abc1234), but the template at pantry.md:L88 still writes "type" as the key name. The review consolidator will receive data files with a missing required field and silently fall back to a default behavior.
+agents/ant-farm-review-consolidator.md:L55 [P2] The data file schema now requires a "review_type" field (added in commit abc1234), but the template at prompt-composer.md:L88 still writes "type" as the key name. The review consolidator will receive data files with a missing required field and silently fall back to a default behavior.
 ```
 
 **P3 example**:

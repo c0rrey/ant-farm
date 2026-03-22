@@ -20,7 +20,8 @@ Perform a {REVIEW_TYPE} review of the completed work.
 
 **Review round**: {REVIEW_ROUND}
 **Input guard**: If {REVIEW_ROUND} is blank or non-numeric, halt immediately and return: "NITPICKER ABORTED: REVIEW_ROUND is invalid. Expected a positive integer; got: '{REVIEW_ROUND}'." Do NOT proceed.
-If round 2+: Your scope is limited to fix commits only. You may read full files for context, but your mandate is: did these fixes land correctly and not break anything? Out-of-scope findings are only reportable if they would cause a runtime failure or silently wrong results. Do NOT report naming, style, docs, or improvement opportunities outside fix scope.
+If round 2+: **Fix verification scope**: Your scope is limited to fix commits only. You may read full files for context, but your mandate is: did these fixes land correctly and not break anything?
+**Out-of-scope findings**: If you notice something outside the fix commits that would cause a runtime failure, incorrect agent behavior, or silently wrong results (e.g., stale cross-references pointing to wrong sections), report it. Do NOT report naming conventions, style preferences, documentation gaps, or improvement opportunities outside the fix scope.
 
 Step 0: Read your full review brief from {DATA_FILE_PATH}
 (Format: markdown. Sections: Commit Range, File List, Focus Areas, Report Output Path, Crumb Filing Prohibition, Messaging Guidelines.)

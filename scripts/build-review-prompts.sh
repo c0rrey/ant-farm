@@ -8,7 +8,7 @@
 # Usage:
 #   build-review-prompts.sh <SESSION_DIR> <COMMIT_RANGE> <CHANGED_FILES_LIST> \
 #                           <TASK_IDS_LIST> <TIMESTAMP> <REVIEW_ROUND> \
-#                           <NITPICKER_SKELETON_PATH> <BIG_HEAD_SKELETON_PATH>
+#                           <REVIEWER_SKELETON_PATH> <REVIEW_CONSOLIDATOR_SKELETON_PATH>
 #
 # Arguments:
 #   SESSION_DIR              — session artifact directory
@@ -17,8 +17,8 @@
 #   TASK_IDS_LIST            — space-separated list of task IDs (or @filepath)
 #   TIMESTAMP                — review timestamp in YYYYMMDD-HHmmss format
 #   REVIEW_ROUND             — positive integer (1, 2, 3, ...)
-#   NITPICKER_SKELETON_PATH  — path to nitpicker-skeleton.md
-#   BIG_HEAD_SKELETON_PATH   — path to big-head-skeleton.md
+#   REVIEWER_SKELETON_PATH  — path to reviewer-skeleton.md
+#   REVIEW_CONSOLIDATOR_SKELETON_PATH   — path to review-consolidator-skeleton.md
 #
 # Note on CHANGED_FILES_LIST and TASK_IDS_LIST:
 #   Pass them as file paths prefixed with "@" to avoid shell quoting issues with newlines:
@@ -28,7 +28,7 @@
 # Outputs:
 #   {SESSION_DIR}/prompts/review-{type}.md           — filled review prompts
 #   {SESSION_DIR}/previews/review-{type}-preview.md  — combined previews
-#   {SESSION_DIR}/prompts/review-big-head-consolidation.md — Review Consolidator brief
+#   {SESSION_DIR}/prompts/review-consolidation.md — Review Consolidator brief
 #   {SESSION_DIR}/review-reports/                    — directory created for reports
 #
 # Exit codes:
@@ -93,7 +93,7 @@ fi
 
 if [ $# -ne 8 ]; then
     echo "ERROR: build-review-prompts.sh requires exactly 8 arguments." >&2
-    echo "Usage: $0 <SESSION_DIR> <COMMIT_RANGE> <CHANGED_FILES_LIST> <TASK_IDS_LIST> <TIMESTAMP> <REVIEW_ROUND> <NITPICKER_SKELETON_PATH> <BIG_HEAD_SKELETON_PATH>" >&2
+    echo "Usage: $0 <SESSION_DIR> <COMMIT_RANGE> <CHANGED_FILES_LIST> <TASK_IDS_LIST> <TIMESTAMP> <REVIEW_ROUND> <REVIEWER_SKELETON_PATH> <REVIEW_CONSOLIDATOR_SKELETON_PATH>" >&2
     exit 1
 fi
 
@@ -103,8 +103,8 @@ CHANGED_FILES_RAW="$3"
 TASK_IDS_RAW="$4"
 TIMESTAMP="$5"
 REVIEW_ROUND="$6"
-NITPICKER_SKELETON="$7"
-BIG_HEAD_SKELETON="$8"
+REVIEWER_SKELETON="$7"
+REVIEW_CONSOLIDATOR_SKELETON="$8"
 
 if [ -z "$SESSION_DIR" ]; then
     echo "ERROR: SESSION_DIR argument is empty." >&2
@@ -115,7 +115,7 @@ if [ ! -d "$SESSION_DIR" ]; then
     exit 1
 fi
 
-for f in "$NITPICKER_SKELETON" "$BIG_HEAD_SKELETON"; do
+for f in "$REVIEWER_SKELETON" "$REVIEW_CONSOLIDATOR_SKELETON"; do
     if [ ! -f "$f" ]; then
         echo "ERROR: Template file not found: $f" >&2
         exit 1
@@ -324,9 +324,9 @@ extract_agent_section() {
 # Helper: extract focus block for a given review type from review-focus-areas.md.
 # Extracts content between <!-- FOCUS: {type} --> and <!-- /FOCUS: {type} --> markers.
 # ---------------------------------------------------------------------------
-# review-focus-areas.md must be a sibling of nitpicker-skeleton.md in the templates directory.
+# review-focus-areas.md must be a sibling of reviewer-skeleton.md in the templates directory.
 # Both files are expected to live in the same directory (orchestration/templates/ by convention).
-FOCUS_AREAS_FILE="$(dirname "$NITPICKER_SKELETON")/review-focus-areas.md"
+FOCUS_AREAS_FILE="$(dirname "$REVIEWER_SKELETON")/review-focus-areas.md"
 if [ ! -f "$FOCUS_AREAS_FILE" ] || [ ! -r "$FOCUS_AREAS_FILE" ]; then
     echo "ERROR: Focus areas file not found or not readable: $FOCUS_AREAS_FILE" >&2
     exit 1
@@ -364,11 +364,11 @@ extract_focus_block() {
 # ---------------------------------------------------------------------------
 # Helper: build a filled review prompt for one Reviewer review type.
 #
-# Reads the master nitpicker-skeleton.md, extracts the agent-facing section,
+# Reads the master reviewer-skeleton.md, extracts the agent-facing section,
 # converts placeholders, and delegates all slot substitution to
 # crumb render-template. Orchestration/partitioning logic remains in shell.
 # ---------------------------------------------------------------------------
-build_nitpicker_prompt() {
+build_reviewer_prompt() {
     local review_type="$1"
     local out_prompt="${SESSION_DIR}/prompts/review-${review_type}.md"
     local out_preview="${SESSION_DIR}/previews/review-${review_type}-preview.md"
@@ -389,7 +389,7 @@ build_nitpicker_prompt() {
 
     # 1. Extract agent-facing section from master template
     local body
-    body="$(extract_agent_section "$NITPICKER_SKELETON")"
+    body="$(extract_agent_section "$REVIEWER_SKELETON")"
 
     # 2. Convert {UPPERCASE} -> {{UPPERCASE}} (crumb render-template slot format)
     body="$(printf '%s\n' "$body" | sed 's/{\([A-Z][A-Z_0-9]*\)}/{{\1}}/g')"
@@ -470,8 +470,8 @@ build_nitpicker_prompt() {
 # Delegates all slot substitution to crumb render-template.
 # Orchestration logic (expected_paths construction) remains in shell.
 # ---------------------------------------------------------------------------
-build_big_head_prompt() {
-    local out_file="${SESSION_DIR}/prompts/review-big-head-consolidation.md"
+build_review_consolidator_prompt() {
+    local out_file="${SESSION_DIR}/prompts/review-consolidation.md"
     local consolidated_output="${SESSION_DIR}/review-reports/review-consolidated-${TIMESTAMP}.md"
 
     # Build the expected report paths list (round-appropriate)
@@ -484,7 +484,7 @@ build_big_head_prompt() {
 
     # 1. Extract agent-facing section from master template
     local body
-    body="$(extract_agent_section "$BIG_HEAD_SKELETON")"
+    body="$(extract_agent_section "$REVIEW_CONSOLIDATOR_SKELETON")"
 
     # 2. Convert {UPPERCASE} -> {{UPPERCASE}} (crumb render-template slot format)
     body="$(printf '%s\n' "$body" | sed 's/{\([A-Z][A-Z_0-9]*\)}/{{\1}}/g')"
@@ -532,7 +532,7 @@ build_big_head_prompt() {
         --slot "TIMESTAMP=${TIMESTAMP}" \
         --slot "EXPECTED_REPORT_PATHS=${expected_paths}" \
         > "$out_file" || {
-        echo "ERROR: crumb render-template failed for big-head" >&2
+        echo "ERROR: crumb render-template failed for review-consolidator" >&2
         exit 1
     }
 
@@ -553,12 +553,12 @@ echo ""
 
 for review_type in "${ACTIVE_REVIEW_TYPES[@]}"; do
     echo "Processing: ${review_type}"
-    build_nitpicker_prompt "$review_type"
+    build_reviewer_prompt "$review_type"
     echo ""
 done
 
-echo "Processing: big-head"
-build_big_head_prompt
+echo "Processing: review-consolidator"
+build_review_consolidator_prompt
 echo ""
 
 # ---------------------------------------------------------------------------
@@ -583,8 +583,8 @@ for review_type in "${ACTIVE_REVIEW_TYPES[@]}"; do
     done
 done
 
-if [ ! -f "${SESSION_DIR}/prompts/review-big-head-consolidation.md" ]; then
-    echo "ERROR: Review Consolidator consolidation brief not found: ${SESSION_DIR}/prompts/review-big-head-consolidation.md" >&2
+if [ ! -f "${SESSION_DIR}/prompts/review-consolidation.md" ]; then
+    echo "ERROR: Review Consolidator consolidation brief not found: ${SESSION_DIR}/prompts/review-consolidation.md" >&2
     ALL_OK=false
 fi
 
@@ -610,7 +610,7 @@ SCAN_FILES=()
 for review_type in "${ACTIVE_REVIEW_TYPES[@]}"; do
     SCAN_FILES+=("${SESSION_DIR}/prompts/review-${review_type}.md")
 done
-SCAN_FILES+=("${SESSION_DIR}/prompts/review-big-head-consolidation.md")
+SCAN_FILES+=("${SESSION_DIR}/prompts/review-consolidation.md")
 
 PLACEHOLDER_FOUND=false
 for f in "${SCAN_FILES[@]}"; do
@@ -647,5 +647,5 @@ for review_type in "${ACTIVE_REVIEW_TYPES[@]}"; do
     echo "| ${review_type} | ${SESSION_DIR}/prompts/review-${review_type}.md | ${SESSION_DIR}/previews/review-${review_type}-preview.md | ${SESSION_DIR}/review-reports/${review_type}-review-${TIMESTAMP}.md |"
 done
 echo ""
-echo "Review Consolidator consolidation data: ${SESSION_DIR}/prompts/review-big-head-consolidation.md"
+echo "Review Consolidator consolidation data: ${SESSION_DIR}/prompts/review-consolidation.md"
 echo "Review Consolidator consolidated output: ${SESSION_DIR}/review-reports/review-consolidated-${TIMESTAMP}.md"

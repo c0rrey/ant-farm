@@ -64,7 +64,7 @@ Write your verification report to:
 - Queue does NOT pause while Orchestrator reviews — this is a soft gate (concurrent review is acceptable)
 
 **On FAIL (scope creep detected)** (blocks queue progression):
-1. Log the violation in queen-state.md immediately
+1. Log the violation in orchestrator-state.md immediately
 2. Do NOT spawn the next queued agent yet
 3. Investigate: check if overlapping work affects queued agents (may need to adjust scope or cancel)
 4. Document the violation and decide on next steps (escalate, adjust queue, or retry agent)

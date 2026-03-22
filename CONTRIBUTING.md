@@ -38,7 +38,7 @@ Claude Code loads agent files once at startup. Adding or editing an agent file r
 
 1. **`README.md`** -- add the agent to the "Custom agents" table
 2. **`orchestration/reference/agent-types.md`** and **`orchestration/reference/model-assignments.md`** -- add the agent to the Agent Types table and Model Assignments table
-3. **`orchestration/templates/scout.md`** -- the Recon Planner discovers agents dynamically by scanning `~/.claude/agents/`, so no template change is needed unless you want to add heuristic rules for when to recommend the new agent
+3. **`orchestration/templates/recon-planner.md`** -- the Recon Planner discovers agents dynamically by scanning `~/.claude/agents/`, so no template change is needed unless you want to add heuristic rules for when to recommend the new agent
 4. **`orchestration/GLOSSARY.md`** -- add the agent to the "Agent Roles" table (the `## Agent Roles` section)
 
 ### One-TeamCreate-per-session constraint
@@ -83,32 +83,32 @@ Timestamp format: `YYYYMMDD-HHmmss` (UTC).
 
 ## Modifying Agent Templates
 
-Templates live in `orchestration/templates/`. Each template has a specific reader (see inventory below). The Orchestrator reads five templates directly (`crumb-gatherer-skeleton.md`, `reviewer-skeleton.md`, `review-consolidator-skeleton.md`, `scribe-skeleton.md`, `queen-state.md`); all others are read by subagents or scripts.
+Templates live in `orchestration/templates/`. Each template has a specific reader (see inventory below). The Orchestrator reads five templates directly (`implementer-skeleton.md`, `reviewer-skeleton.md`, `review-consolidator-skeleton.md`, `scribe-skeleton.md`, `orchestrator-state.md`); all others are read by subagents or scripts.
 
 ### Template inventory
 
 | Template | Read by | Purpose |
 |----------|---------|---------|
-| `scout.md` | Recon Planner (self-read) | Pre-flight recon instructions |
-| `pantry.md` | Prompt Composer (self-read) | Prompt composition instructions |
+| `recon-planner.md` | Recon Planner (self-read) | Pre-flight recon instructions |
+| `prompt-composer.md` | Prompt Composer (self-read) | Prompt composition instructions |
 | `implementation.md` | Implementer (via Prompt Composer composition) | Agent prompt template with 6 mandatory steps |
 | `implementation-summary.md` | Prompt Composer | Condensed extract of implementation.md read by Prompt Composer during prompt composition |
 | `checkpoints/` | Checkpoint Auditor | Per-checkpoint definitions (common.md + one per type) |
 | `reviews.md` | `build-review-prompts.sh` | Review protocol, report format |
-| `crumb-gatherer-skeleton.md` | Orchestrator | Minimal agent spawn template |
+| `implementer-skeleton.md` | Orchestrator | Minimal agent spawn template |
 | `reviewer-skeleton.md` | Orchestrator, `build-review-prompts.sh` | Review agent spawn template |
-| `nitpicker-skeleton.md` | Orchestrator, `build-review-prompts.sh` | Reviewer spawn template (alternative skeleton) |
+| `reviewer-skeleton.md` | Orchestrator, `build-review-prompts.sh` | Reviewer spawn template (alternative skeleton) |
 | `review-consolidator-skeleton.md` | Orchestrator, `build-review-prompts.sh` | Review Consolidator spawn template |
-| `queen-state.md` | Orchestrator | Session state file schema |
+| `orchestrator-state.md` | Orchestrator | Session state file schema |
 | `scribe-skeleton.md` | Orchestrator | Session Scribe spawn template |
 | `review-focus-areas.md` | `build-review-prompts.sh` | Per-type focus blocks for Reviewer prompts |
 | `prd-import.md` | Planner | PRD import and requirements extraction instructions |
-| `surveyor.md` | Spec Writer (self-read) | Requirements gathering instructions |
-| `surveyor-skeleton.md` | Planner | Spec Writer spawn template |
-| `forager.md` | Researcher (self-read) | Parallel research instructions |
-| `forager-skeleton.md` | Planner | Researcher spawn template |
+| `spec-writer.md` | Spec Writer (self-read) | Requirements gathering instructions |
+| `spec-writer-skeleton.md` | Planner | Spec Writer spawn template |
+| `researcher.md` | Researcher (self-read) | Parallel research instructions |
+| `researcher-skeleton.md` | Planner | Researcher spawn template |
 | `decomposition.md` | Task Decomposer | Decomposition workflow instructions |
-| `architect-skeleton.md` | Planner | Task Decomposer spawn template |
+| `task-decomposer-skeleton.md` | Planner | Task Decomposer spawn template |
 | `SESSION_PLAN_TEMPLATE.md` | User (optional) | Session planning template for new projects |
 
 ### Placeholder conventions
@@ -126,7 +126,7 @@ Common placeholders:
 - **`implementation.md`** defines the 6 mandatory steps that every Implementer must follow. If you change a step, update the corresponding pre-spawn-check rule in `checkpoints/pre-spawn-check.md` (pre-spawn-check Check 4 verifies all 6 steps are present).
 - **`reviews.md`** defines review types and report format. Changes here must stay in sync with `build-review-prompts.sh` (which reads `reviews.md` to build review prompts) and the review-integrity checks in `checkpoints/review-integrity.md` (which verify report structure).
 - **`reviewer-skeleton.md`** and **`review-consolidator-skeleton.md`** are read by `build-review-prompts.sh` to produce filled prompt files. If you change their structure, verify the script still parses them correctly.
-- **`crumb-gatherer-skeleton.md`** is what the Orchestrator uses to spawn agents. If you add fields, the Prompt Composer's task briefs must include the corresponding data.
+- **`implementer-skeleton.md`** is what the Orchestrator uses to spawn agents. If you add fields, the Prompt Composer's task briefs must include the corresponding data.
 
 ## Testing Changes
 
@@ -237,7 +237,7 @@ Changes to one file often require updates to others. This table lists the critic
 |------------------|----------------|
 | `reviewer-skeleton.md` structure | `build-review-prompts.sh` (parses this file) |
 | `review-consolidator-skeleton.md` structure | `build-review-prompts.sh` (parses this file) |
-| `crumb-gatherer-skeleton.md` fields | `pantry.md` (Prompt Composer must produce matching task brief data) |
+| `implementer-skeleton.md` fields | `prompt-composer.md` (Prompt Composer must produce matching task brief data) |
 | Slot marker names (`{{...}}`) | `build-review-prompts.sh` (fills the markers) |
 
 ### Agent file dependencies
@@ -267,6 +267,31 @@ Changes to one file often require updates to others. This table lists the critic
 | Progress log step key names | `scripts/parse-progress-log.sh` STEP_KEYS array (lite mode reuses full-mode step keys) |
 | When lite mode is appropriate | Update the "Use lite mode when" section in RULES-lite.md and the Lite Mode section in SETUP.md |
 | Lite mode glossary terms | `orchestration/GLOSSARY.md` (lite mode and self-review entries) |
+
+### Hook file dependencies
+
+| If you change... | Also update... |
+|------------------|----------------|
+| `hooks/ant-farm-statusline.js` event parsing | `hooks/lib/progress-reader.js` EVENT_STEP_MAP (must match progress.log event names) |
+| `hooks/ant-farm-scope-advisor.js` scope format | `hooks/lib/scope-reader.js`, and any template that writes `.ant-farm-scope.json` |
+| Hook file paths or names | `npm/install-manifest.json` (hook entries), `npm/lib/hooks-registration.js` (settings.json paths) |
+| `ANT_FARM_DEBUG` logging behavior | `hooks/lib/debug-log.js` |
+
+### MCP server dependencies
+
+| If you change... | Also update... |
+|------------------|----------------|
+| `mcp_server.py` tool names or signatures | Any orchestration template that references MCP tools (e.g., `recon-planner.md` references `crumb_list`) |
+| crumb.py `--json` output schema | `mcp_server.py` (wraps `--json` output), any hook or script that parses JSON output |
+| MCP server file path | `npm/install-manifest.json`, `npm/lib/mcp-registration.js` (settings.json config) |
+
+### Skill file dependencies
+
+| If you change... | Also update... |
+|------------------|----------------|
+| `skills/quick.md` (lite mode skill) | `orchestration/RULES-lite.md` (workflow it triggers), `CLAUDE.md` (trigger documentation) |
+| `skills/plan.md` (`--prd` flag) | `orchestration/RULES-decompose.md` (PRD routing logic), `orchestration/templates/prd-import.md` |
+| `skills/status.md` | Verify it still reads correct progress.log format and hook status paths |
 
 ### Quick checklist for any change
 

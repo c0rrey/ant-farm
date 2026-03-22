@@ -64,15 +64,15 @@
 
 ## Source of Truth
 
-When queen-state.md conflicts with other state sources, precedence is:
+When orchestrator-state.md conflicts with other state sources, precedence is:
 
-| State Domain | Authoritative Source | queen-state.md Role |
+| State Domain | Authoritative Source | orchestrator-state.md Role |
 |--------------|---------------------|---------------------|
 | Commits (hashes, ranges, authorship) | `git log` / `git diff` | Cache — refresh from git if stale |
 | Artifact content (previews, reports, verdicts) | Artifact files on disk (`${SESSION_DIR}/...`) | Pointer — references paths, does not duplicate content |
-| Session workflow state (current step, wave, review round, retry budget, queue position) | **queen-state.md** | Authoritative — this file is the single source of truth |
+| Session workflow state (current step, wave, review round, retry budget, queue position) | **orchestrator-state.md** | Authoritative — this file is the single source of truth |
 | Task status (open, closed, blocked) | `crumb` database (via Recon Planner) | Cache — may lag behind crumb; Recon Planner re-syncs on next run |
 
-**Recovery rule**: If queen-state.md is lost or corrupted, rebuild workflow state from git log
+**Recovery rule**: If orchestrator-state.md is lost or corrupted, rebuild workflow state from git log
 (commit messages encode task IDs and step transitions) and artifact files (verdict tables encode
 checkpoint pass/fail). Task status must be re-queried via a fresh Recon Planner spawn.

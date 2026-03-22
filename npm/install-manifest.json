@@ -106,9 +106,9 @@
       "description": "Startup-check checkpoint template"
     },
     {
-      "src": "orchestration/templates/checkpoints/tdv.md",
-      "dst": "orchestration/templates/checkpoints/tdv.md",
-      "description": "TDV checkpoint template"
+      "src": "orchestration/templates/checkpoints/decomposition-check.md",
+      "dst": "orchestration/templates/checkpoints/decomposition-check.md",
+      "description": "Decomposition-check checkpoint template"
     },
     {
       "src": "orchestration/templates/claude-block.md",
@@ -126,8 +126,8 @@
       "description": "Implementation template"
     },
     {
-      "src": "orchestration/templates/pantry.md",
-      "dst": "orchestration/templates/pantry.md",
+      "src": "orchestration/templates/prompt-composer.md",
+      "dst": "orchestration/templates/prompt-composer.md",
       "description": "Pantry (Prompt Composer) template"
     },
     {
@@ -146,8 +146,8 @@
       "description": "Scribe skeleton template"
     },
     {
-      "src": "orchestration/templates/scout.md",
-      "dst": "orchestration/templates/scout.md",
+      "src": "orchestration/templates/recon-planner.md",
+      "dst": "orchestration/templates/recon-planner.md",
       "description": "Scout template"
     },
     {

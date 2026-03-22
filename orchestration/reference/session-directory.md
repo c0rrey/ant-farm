@@ -24,8 +24,8 @@ All session-scoped artifacts go here (7 subdirectories total; `review-reports/` 
 - `review-reports/` — Reviewer and Review Consolidator reports (created lazily at Step 3b-iii via `mkdir -p`, not at Step 0)
 
 Root-level artifacts in `${SESSION_DIR}`:
-- `queen-state.md` — session state for context recovery
-- `briefing.md` — written by Recon Planner (Step 1a); strategy summary read by Orchestrator after SSV PASS before auto-proceeding to Step 2
+- `orchestrator-state.md` — session state for context recovery
+- `briefing.md` — written by Recon Planner (Step 1a); strategy summary read by Orchestrator after startup-check PASS before auto-proceeding to Step 2
 - `session-summary.md` — written by Prompt Composer (optional); end-of-session narrative summary
 - `exec-summary.md` — written by Session Scribe (Step 5); canonical session record covering work completed, review findings, open issues, and narrative observations; source for the CHANGELOG derivative
 - `progress.log` — append-only milestone log; one pipe-delimited line per completed step; written by the Orchestrator at each workflow milestone; never read or overwritten during normal operation; recovery sessions read this once to determine the resume point

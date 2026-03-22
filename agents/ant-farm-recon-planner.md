@@ -26,7 +26,7 @@ The Orchestrator's spawn prompt provides two values:
 
 ## Workflow
 
-Your detailed workflow is defined in `~/.claude/orchestration/templates/scout.md`.
+Your detailed workflow is defined in `~/.claude/orchestration/templates/recon-planner.md`.
 Read that file and follow it exactly. The steps at a glance:
 
 1. **Read reference** — Load the dependency analysis reference

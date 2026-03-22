@@ -40,7 +40,7 @@ Suffix portion only, extracted from {TASK_ID} by splitting on the LAST hyphen an
 **Usage context**:
 - File paths: `{SESSION_DIR}/task-metadata/{TASK_SUFFIX}.md`
 - Directories: `{SESSION_DIR}/summaries/{TASK_SUFFIX}.md`
-- Artifact naming: `pc-{TASK_SUFFIX}-cco-{timestamp}.md`
+- Artifact naming: `pc-{TASK_SUFFIX}-pre-spawn-check-{timestamp}.md`
 
 ### {SESSION_DIR}
 
@@ -61,7 +61,7 @@ Before spawning any agents:
 3. **Build file modification matrix** — map which tasks touch which files
 4. **Assess conflict risk** — use Decision Matrix below
 5. **Estimate agent load** — target balanced workload (±50%), max 7 tasks/agent
-6. **Return briefing to the Orchestrator** — the Orchestrator auto-proceeds to SSV and then spawns Prompt Composer on PASS
+6. **Return briefing to the Orchestrator** — the Orchestrator auto-proceeds to startup-check and then spawns Prompt Composer on PASS
 
 ## Decision Matrix
 
@@ -159,7 +159,7 @@ Typical wave pattern: P1 wave (7 tasks) → P2 wave (6 agents, file-grouped) →
 ## Subagent Type Mapping
 
 Agent type selection is performed dynamically by the Recon Planner (Step 2.5 of
-`scout.md`). The Recon Planner scans `~/.claude/agents/*.md` and `.claude/agents/*.md`,
+`recon-planner.md`). The Recon Planner scans `~/.claude/agents/*.md` and `.claude/agents/*.md`,
 reads frontmatter descriptions, and recommends the best match per task.
 
 Legacy defaults retained for reference:

@@ -35,7 +35,7 @@ Planning Workflow                    Execution Workflow
      |                                    |
   Task Decomposer (decomposition)      pre-spawn-check gate (prompt audit)
      |                                    |
-  TDV gate                             Implementers (up to 7 parallel)
+  decomposition-check gate              Implementers (up to 7 parallel)
      |                                    |
   .crumbs/tasks.jsonl                  scope-verify + claims-vs-code gates (scope + substance)
                                           |
@@ -58,7 +58,7 @@ Four layers, each with a clear job.
 
 **3. Specialist agents.** Claude Code agent definitions in `agents/` cover recon, prompt composition, implementation, review, consolidation, verification, and documentation.
 
-**4. Verification layer.** The Checkpoint Auditor runs seven checkpoint types (startup-check, pre-spawn-check, scope-verify, claims-vs-code, review-integrity, session-complete, tdv) that mechanically block progression. It operates both as a standalone checkpoint runner and as a member of the Reviewer team.
+**4. Verification layer.** The Checkpoint Auditor runs seven checkpoint types (startup-check, pre-spawn-check, scope-verify, claims-vs-code, review-integrity, session-complete, decomposition-check) that mechanically block progression. It operates both as a standalone checkpoint runner and as a member of the Reviewer team.
 
 ### The Orchestrator's Information Diet
 
@@ -80,7 +80,7 @@ Nothing progresses until these pass.
 | **claims-vs-code** | CMVCC (Crumbs Moved vs Crumbs Claimed) | Task closure | sonnet |
 | **review-integrity** | CCB (Colony Census Bureau) | Presenting results to user | sonnet |
 | **session-complete** | ESV (Exec Summary Verification) | Git push | haiku |
-| **tdv** | TDV (Trail Decomposition Verification) | Handoff to implementation wave | haiku |
+| **decomposition-check** | TDV (Trail Decomposition Verification) | Handoff to implementation wave | haiku |
 
 All checkpoint artifacts are written to `<session-dir>/pc/` with timestamped filenames for full audit history.
 
@@ -153,14 +153,14 @@ ant-farm/
 │   ├── GLOSSARY.md          # Term definitions used across docs
 │   ├── templates/           # Agent prompt templates and skeletons
 │   │   ├── claude-block.md  # Canonical orchestration block (triggers + session completion)
-│   │   ├── scout.md, pantry.md, implementation.md, reviews.md
+│   │   ├── recon-planner.md, prompt-composer.md, implementation.md, reviews.md
 │   │   ├── checkpoints/     # Per-checkpoint definitions (common.md + one file per checkpoint)
 │   │   │   ├── common.md   # Shared preamble (term definitions, verdict thresholds)
-│   │   │   ├── pre-spawn-check.md, scope-verify.md, claims-vs-code.md, review-integrity.md, startup-check.md, session-complete.md, tdv.md
-│   │   ├── crumb-gatherer-skeleton.md, reviewer-skeleton.md, review-consolidator-skeleton.md
-│   │   ├── scribe-skeleton.md, surveyor-skeleton.md, forager-skeleton.md
-│   │   ├── decomposition.md, architect-skeleton.md
-│   │   └── review-focus-areas.md, queen-state.md, SESSION_PLAN_TEMPLATE.md
+│   │   │   ├── pre-spawn-check.md, scope-verify.md, claims-vs-code.md, review-integrity.md, startup-check.md, session-complete.md, decomposition-check.md
+│   │   ├── implementer-skeleton.md, reviewer-skeleton.md, review-consolidator-skeleton.md
+│   │   ├── scribe-skeleton.md, spec-writer-skeleton.md, researcher-skeleton.md
+│   │   ├── decomposition.md, task-decomposer-skeleton.md
+│   │   └── review-focus-areas.md, orchestrator-state.md, SESSION_PLAN_TEMPLATE.md
 │   └── reference/
 │       ├── dependency-analysis.md   # Pre-flight conflict analysis
 │       └── known-failures.md        # Past failures and fixes applied
@@ -342,19 +342,19 @@ All file paths in this document use repo-root relative format. At runtime, agent
 | `orchestration/templates/implementation.md` | The Prompt Composer | Agent prompt template with 6 mandatory steps |
 | `orchestration/templates/checkpoints/` | Checkpoint Auditor | Per-checkpoint definitions (common.md preamble + one file per checkpoint type) |
 | `orchestration/templates/reviews.md` | `build-review-prompts.sh` | Review protocol, 4 review types, Review Consolidator consolidation |
-| `orchestration/templates/pantry.md` | The Prompt Composer | Prompt Composer's own instructions |
-| `orchestration/templates/scout.md` | The Recon Planner | Pre-flight recon instructions |
-| `orchestration/templates/surveyor.md` | The Spec Writer | Requirements gathering instructions |
-| `orchestration/templates/forager.md` | The Researcher | Parallel research instructions |
+| `orchestration/templates/prompt-composer.md` | The Prompt Composer | Prompt Composer's own instructions |
+| `orchestration/templates/recon-planner.md` | The Recon Planner | Pre-flight recon instructions |
+| `orchestration/templates/spec-writer.md` | The Spec Writer | Requirements gathering instructions |
+| `orchestration/templates/researcher.md` | The Researcher | Parallel research instructions |
 | `orchestration/templates/decomposition.md` | The Task Decomposer | Decomposition workflow instructions |
-| `orchestration/templates/crumb-gatherer-skeleton.md` | The Orchestrator | Minimal agent spawn template |
+| `orchestration/templates/implementer-skeleton.md` | The Orchestrator | Minimal agent spawn template |
 | `orchestration/templates/reviewer-skeleton.md` | The Orchestrator | Minimal review agent spawn template |
 | `orchestration/templates/review-consolidator-skeleton.md` | The Orchestrator | Review Consolidator spawn template |
 | `orchestration/templates/scribe-skeleton.md` | The Orchestrator | Session Scribe spawn template |
-| `orchestration/templates/surveyor-skeleton.md` | The Planner | Spec Writer spawn template |
-| `orchestration/templates/forager-skeleton.md` | The Planner | Researcher spawn template |
-| `orchestration/templates/architect-skeleton.md` | The Planner | Task Decomposer spawn template |
-| `orchestration/templates/queen-state.md` | The Orchestrator | Session state template |
+| `orchestration/templates/spec-writer-skeleton.md` | The Planner | Spec Writer spawn template |
+| `orchestration/templates/researcher-skeleton.md` | The Planner | Researcher spawn template |
+| `orchestration/templates/task-decomposer-skeleton.md` | The Planner | Task Decomposer spawn template |
+| `orchestration/templates/orchestrator-state.md` | The Orchestrator | Session state template |
 | `orchestration/templates/SESSION_PLAN_TEMPLATE.md` | User | Session planning template |
 | `orchestration/reference/dependency-analysis.md` | The Recon Planner | Pre-flight conflict analysis |
 | `orchestration/reference/known-failures.md` | Post-mortem reference | Past failures and fixes applied |

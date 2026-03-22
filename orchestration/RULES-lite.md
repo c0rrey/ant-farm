@@ -41,7 +41,7 @@ At runtime, orchestration files are accessible at `~/.claude/orchestration/`. To
 - **NEVER** read source code, tests, project data files, or config files — the implementer agent does this
 - **NEVER** read agent instruction files (implementation.md, checkpoints/*.md, etc.) — pass the path to the agent
 - **NEVER** skip the pre-spawn-check gate — even a single-agent spawn must be audited
-- **NEVER** skip the claims-vs-code gate — the self-review step does not replace CMVCC
+- **NEVER** skip the claims-vs-code gate — the self-review step does not replace claims-vs-code
 
 ## Workflow: Lite Mode Execution
 

@@ -24,8 +24,8 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SCRIPT="$REPO_ROOT/scripts/build-review-prompts.sh"
-NITPICKER_SKELETON="$REPO_ROOT/orchestration/templates/nitpicker-skeleton.md"
-BIG_HEAD_SKELETON="$REPO_ROOT/orchestration/templates/review-consolidator-skeleton.md"
+REVIEWER_SKELETON="$REPO_ROOT/orchestration/templates/reviewer-skeleton.md"
+REVIEW_CONSOLIDATOR_SKELETON="$REPO_ROOT/orchestration/templates/review-consolidator-skeleton.md"
 
 PASS=0
 FAIL=0
@@ -82,12 +82,12 @@ run_script() {
         env REVIEW_SPLIT_THRESHOLD="$threshold_env" bash "$SCRIPT" \
             "$session_dir" "abc1234..HEAD" "$files_arg" "AF-1" \
             "20260317-120000" "$round" \
-            "$NITPICKER_SKELETON" "$BIG_HEAD_SKELETON"
+            "$REVIEWER_SKELETON" "$REVIEW_CONSOLIDATOR_SKELETON"
     else
         bash "$SCRIPT" \
             "$session_dir" "abc1234..HEAD" "$files_arg" "AF-1" \
             "20260317-120000" "$round" \
-            "$NITPICKER_SKELETON" "$BIG_HEAD_SKELETON"
+            "$REVIEWER_SKELETON" "$REVIEW_CONSOLIDATOR_SKELETON"
     fi
 }
 
@@ -460,7 +460,7 @@ run_test "big_head_expected_paths_per_split_instance" '
 
     run_script "$session" "$files_arg" 1 8 >/dev/null
 
-    brief="$session/prompts/review-big-head-consolidation.md"
+    brief="$session/prompts/review-consolidation.md"
 
     # Count lines in the "Expected report paths" section
     path_count="$(awk "/Expected report paths/,/^$/" "$brief" | grep -c "^- " || true)"
@@ -496,7 +496,7 @@ run_test "preflight_team_size_exceeds_15_errors" '
     stderr_out="$(env REVIEW_SPLIT_THRESHOLD=1 bash "$SCRIPT" \
         "$session" "abc1234..HEAD" "$files_arg" "AF-1" \
         "20260317-120000" "1" \
-        "$NITPICKER_SKELETON" "$BIG_HEAD_SKELETON" 2>&1 >/dev/null)" || rc=$?
+        "$REVIEWER_SKELETON" "$REVIEW_CONSOLIDATOR_SKELETON" 2>&1 >/dev/null)" || rc=$?
 
     if [ "$rc" -eq 0 ]; then
         echo "ASSERTION FAILED: expected non-zero exit for team size > 15, got 0" >&2
@@ -525,7 +525,7 @@ run_test "preflight_team_size_exactly_15_passes" '
     env REVIEW_SPLIT_THRESHOLD=1 bash "$SCRIPT" \
         "$session" "abc1234..HEAD" "$files_arg" "AF-1" \
         "20260317-120000" "1" \
-        "$NITPICKER_SKELETON" "$BIG_HEAD_SKELETON" >/dev/null 2>&1 || rc=$?
+        "$REVIEWER_SKELETON" "$REVIEW_CONSOLIDATOR_SKELETON" >/dev/null 2>&1 || rc=$?
 
     if [ "$rc" -ne 0 ]; then
         echo "ASSERTION FAILED: expected success when team size = 14 (≤ 15), got rc=$rc" >&2

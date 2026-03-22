@@ -99,8 +99,8 @@ crumb create --title="Test orchestration" --type=task --priority=3
 # Verify Claude (the Orchestrator):
 # 1. Delegates to the Recon Planner subagent (Recon Planner runs crumb show — Orchestrator does NOT run crumb show directly)
 # 2. Analyzes conflicts
-# 3. Presents strategy (SSV gate validates mechanically — no manual approval needed)
-# 4. Auto-proceeds to spawn agents after SSV PASS
+# 3. Presents strategy (startup-check gate validates mechanically — no manual approval needed)
+# 4. Auto-proceeds to spawn agents after startup-check PASS
 ```
 
 ## Lite Mode (Single-Crumb Execution)
@@ -226,7 +226,7 @@ Add to project CLAUDE.md:
 | **/*.go | general-purpose |
 | **/*.rs | general-purpose |
 | templates/** | refactoring-specialist |
-| docs/** | technical-writer |
+| docs/** | session-scribe |
 | .github/workflows/** | devops-engineer |
 ```
 
@@ -264,7 +264,7 @@ Let's get to work on: <task-ids>
 IMPORTANT: Before spawning any agents:
 1. Spawn the Recon Planner subagent to gather all task metadata (do NOT run crumb show directly as Orchestrator)
 2. Analyze file conflicts (create file modification matrix)
-3. Present execution strategy (SSV gate validates mechanically — auto-proceeds on PASS)
+3. Present execution strategy (startup-check gate validates mechanically — auto-proceeds on PASS)
 ```
 
 **Problem: Claude reads too many implementation files**

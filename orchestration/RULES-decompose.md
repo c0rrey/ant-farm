@@ -6,7 +6,7 @@
 
 ## Path Reference Convention
 
-All file paths in this document use **repo-root relative** format: `orchestration/templates/surveyor.md`.
+All file paths in this document use **repo-root relative** format: `orchestration/templates/spec-writer.md`.
 
 When code runs at runtime, agent files are synced to `~/.claude/agents/` and orchestration files are
 accessible at `~/.claude/orchestration/`. To translate repo paths to runtime paths:
@@ -40,8 +40,8 @@ misapplying Orchestrator patterns to decomposition sessions.
 | Trigger | `/ant-farm-plan` command | "let's get to work" message |
 | Purpose | Decompose a feature into trails and crumbs | Execute a prepared work session |
 | Workflow file | `orchestration/RULES-decompose.md` (this file) | `orchestration/RULES.md` |
-| Read permissions | `spec.md` and `decomposition-brief.md` only | `queen-state.md`, task files, git diffs |
-| State tracking | Step number + per-agent retry count (in context only) | `queen-state.md` written to disk |
+| Read permissions | `spec.md` and `decomposition-brief.md` only | `orchestrator-state.md`, task files, git diffs |
+| State tracking | Step number + per-agent retry count (in context only) | `orchestrator-state.md` written to disk |
 | Primary agents | Spec Writer, Researcher x4, Task Decomposer | Recon Planner, Prompt Composer, Checkpoint Auditor, Reviewer |
 | Context budget target | 15–20% of context window | Not separately specified |
 | `crumb` CLI usage | Prohibited — only the Task Decomposer calls `crumb` | Orchestrator calls `crumb` directly |
@@ -62,7 +62,7 @@ State tracked:
   - Per-Researcher retry count (max 1 each)
   - Task Decomposer retry count (max 2)
 
-The Planner does NOT use `queen-state.md`. That file belongs to the Orchestrator's implementation
+The Planner does NOT use `orchestrator-state.md`. That file belongs to the Orchestrator's implementation
 workflow. Writing a state file during decomposition would be a scope violation.
 
 **Recovery**: If the Planner's context is lost mid-session, the `progress.log` serves as a
@@ -101,8 +101,8 @@ The Planner's context window is restricted to prevent bloat. The following are e
   crumb counts before closing the decomposition session
 
 **FORBIDDEN (agents read; Planner never reads):**
-- `orchestration/templates/surveyor.md` — Spec Writer's instruction file
-- `orchestration/templates/forager.md` — Researcher's instruction file
+- `orchestration/templates/spec-writer.md` — Spec Writer's instruction file
+- `orchestration/templates/researcher.md` — Researcher's instruction file
 - `orchestration/templates/decomposition.md` — Task Decomposer's instruction file
 - `{DECOMPOSE_DIR}/research/*.md` — Researcher research briefs (Task Decomposer reads these)
 - Source code files, test files, application configs, project data files
@@ -285,14 +285,14 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|INPUT_CLASS|freeform|spec=pending" \
 
 **Step 2:** Requirements gathering — spawn the Spec Writer (freeform input only).
 
-Spawn the Spec Writer using `orchestration/templates/surveyor-skeleton.md` as a guide.
+Spawn the Spec Writer using `orchestration/templates/spec-writer-skeleton.md` as a guide.
 Do NOT read `ant-farm-spec-writer.md` yourself — pass its path to the Spec Writer agent.
 
 ```
 Task(
   subagent_type="ant-farm-spec-writer",
   model="opus",
-  prompt="<filled surveyor-skeleton.md template — see orchestration/templates/surveyor-skeleton.md>"
+  prompt="<filled spec-writer-skeleton.md template — see orchestration/templates/spec-writer-skeleton.md>"
 )
 ```
 
@@ -336,7 +336,7 @@ Task(subagent_type="ant-farm-researcher", model="sonnet", prompt="<Pitfall Resea
 Task(subagent_type="ant-farm-researcher", model="sonnet", prompt="<Pattern Researcher prompt>")
 ```
 
-Fill each prompt from `orchestration/templates/forager-skeleton.md`. Pass the same `{SPEC_PATH}`
+Fill each prompt from `orchestration/templates/researcher-skeleton.md`. Pass the same `{SPEC_PATH}`
 and `{DECOMPOSE_DIR}` to all four; vary only `{FOCUS_AREA}`.
 
 **Pattern Researcher greenfield skip**: If `CODEBASE_MODE=greenfield`, the Pattern Researcher writes
@@ -424,14 +424,14 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|USER_APPROVAL|approved" \
 
 The Task Decomposer runs alone. Do NOT spawn any other agent concurrently with the Task Decomposer.
 
-Spawn using `orchestration/templates/architect-skeleton.md` as a guide.
+Spawn using `orchestration/templates/task-decomposer-skeleton.md` as a guide.
 Do NOT read `decomposition.md` yourself — pass its path to the Task Decomposer agent.
 
 ```
 Task(
   subagent_type="ant-farm-task-decomposer",
   model="opus",
-  prompt="<filled architect-skeleton.md template — see orchestration/templates/architect-skeleton.md>"
+  prompt="<filled task-decomposer-skeleton.md template — see orchestration/templates/task-decomposer-skeleton.md>"
 )
 ```
 
@@ -445,13 +445,13 @@ The Task Decomposer:
 7. Creates trails and crumbs via `crumb` CLI
 8. Writes `{DECOMPOSE_DIR}/decomposition-brief.md`
 
-**Task Decomposer output gate** (quick sanity check before TDV):
+**Task Decomposer output gate** (quick sanity check before decomposition-check):
 
-After the Task Decomposer returns, verify these prerequisites before spawning TDV:
+After the Task Decomposer returns, verify these prerequisites before spawning decomposition-check:
 - [ ] `{DECOMPOSE_DIR}/decomposition-brief.md` exists and is non-empty
 - [ ] Return summary from the Task Decomposer includes `Coverage: N/N spec requirements — PASS`
 
-If either check fails, re-spawn the Task Decomposer with the specific issue. Do NOT spawn TDV on
+If either check fails, re-spawn the Task Decomposer with the specific issue. Do NOT spawn decomposition-check on
 a missing or incomplete brief.
 
 ```bash
@@ -461,34 +461,34 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|ARCHITECT_COMPLETE|brief=${DECOMPOSE_DIR}/d
 
 ---
 
-**Step 5:** Verification — spawn Checkpoint Auditor for TDV (Trail Decomposition Verification).
+**Step 5:** Verification — spawn Checkpoint Auditor for decomposition-check (Trail Decomposition Verification).
 
-TDV is a **Checkpoint Auditor spawn**, not an inline check. Spawn Checkpoint Auditor using the TDV checkpoint
-from `orchestration/templates/checkpoints/common.md` and `orchestration/templates/checkpoints/tdv.md`.
+decomposition-check is a **Checkpoint Auditor spawn**, not an inline check. Spawn Checkpoint Auditor using the decomposition-check checkpoint
+from `orchestration/templates/checkpoints/common.md` and `orchestration/templates/checkpoints/decomposition-check.md`.
 
-**Note**: The TDV checkpoint template uses `{SESSION_DIR}` as its output path placeholder. During
+**Note**: The decomposition-check checkpoint template uses `{SESSION_DIR}` as its output path placeholder. During
 decomposition, substitute `{DECOMPOSE_DIR}` for `{SESSION_DIR}` when filling the spawn prompt.
 
 ```
 Task(
   subagent_type="ant-farm-checkpoint-auditor",
   model="haiku",
-  prompt="<TDV checkpoint from checkpoints/tdv.md, with {SESSION_DIR} replaced by {DECOMPOSE_DIR}>"
+  prompt="<decomposition-check checkpoint from checkpoints/decomposition-check.md, with {SESSION_DIR} replaced by {DECOMPOSE_DIR}>"
 )
 ```
 
-**TDV gate** (HARD GATE — blocks Step 6):
+**decomposition-check gate** (HARD GATE — blocks Step 6):
 
-**On TDV PASS**: Read `{DECOMPOSE_DIR}/decomposition-brief.md` (permitted) to confirm trail and
+**On decomposition-check PASS**: Read `{DECOMPOSE_DIR}/decomposition-brief.md` (permitted) to confirm trail and
 crumb counts. Proceed to Step 6.
 
-**On TDV FAIL**: Re-spawn the Task Decomposer with the specific violations from the TDV report
+**On decomposition-check FAIL**: Re-spawn the Task Decomposer with the specific violations from the decomposition-check report
 (coverage gaps, circular deps, missing fields, broken trail linkage). Maximum **2 retries**. After
-each Task Decomposer retry, re-run TDV. If TDV still fails after two Task Decomposer retries, present the
+each Task Decomposer retry, re-run decomposition-check. If decomposition-check still fails after two Task Decomposer retries, present the
 failure details to the user and await instruction.
 
 ```bash
-echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|TDV|pass|trails=<N>|crumbs=<N>|brief=${DECOMPOSE_DIR}/decomposition-brief.md" \
+echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|DECOMPOSITION_CHECK|pass|trails=<N>|crumbs=<N>|brief=${DECOMPOSE_DIR}/decomposition-brief.md" \
   >> "${DECOMPOSE_DIR}/progress.log"
 ```
 
@@ -534,7 +534,7 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|DECOMPOSE_COMPLETE|handoff=done" \
 | Spec quality gate (Spec Writer path) | After Step 2 (Spec Writer) | Step 3 (Researcher spawn) | Re-spawn Spec Writer with violations; max 1 retry; escalate to user |
 | Research complete | After Step 3 (all Researchers) | Step 3.5 (User approval) | Re-spawn failed Researcher(s); max 1 retry each; escalate to user |
 | User approval | Step 3.5 | Step 4 (Task Decomposer spawn) | User revises spec; max 2 revision cycles; proceed with current state |
-| TDV PASS | After Step 5 (Checkpoint Auditor TDV) | Step 6 (Handoff) | Re-spawn Task Decomposer with violations; max 2 retries; escalate to user |
+| decomposition-check PASS | After Step 5 (Checkpoint Auditor decomposition-check) | Step 6 (Handoff) | Re-spawn Task Decomposer with violations; max 2 retries; escalate to user |
 
 ---
 
@@ -546,7 +546,7 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|DECOMPOSE_COMPLETE|handoff=done" \
 | Spec Writer | Spec quality gate FAIL (Spec Writer path) | 1 | Present violations to user; await instruction |
 | Researcher (any focus) | Research complete FAIL (missing file) | 1 per Researcher | Surface error per failed Researcher; await instruction |
 | Researcher (any focus) | Output exceeds 100 lines | 0 — truncate and proceed | Log truncation; do NOT re-spawn |
-| Task Decomposer | TDV FAIL | 2 | Present failure details to user; await instruction |
+| Task Decomposer | decomposition-check FAIL | 2 | Present failure details to user; await instruction |
 
 ---
 

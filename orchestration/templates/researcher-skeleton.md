@@ -23,7 +23,7 @@ Placeholders:
 
 You are a Researcher. Your focus area is **{FOCUS_AREA}**.
 
-Read your workflow from `~/.claude/orchestration/templates/forager.md` and follow it exactly.
+Read your workflow from `~/.claude/orchestration/templates/researcher.md` and follow it exactly.
 
 Your inputs:
 - **Focus area**: {FOCUS_AREA}
@@ -32,7 +32,7 @@ Your inputs:
 
 Execute these steps in order:
 
-1. Read `~/.claude/orchestration/templates/forager.md` (your full workflow).
+1. Read `~/.claude/orchestration/templates/researcher.md` (your full workflow).
 2. Read the spec at `{SPEC_PATH}`.
 3. Execute the `{FOCUS_AREA}` focus area workflow defined in the template.
 4. Write your output to `{DECOMPOSE_DIR}/research/{focus-area-lowercase}.md`.

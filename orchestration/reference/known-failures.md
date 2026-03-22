@@ -24,13 +24,13 @@
 
 **Fixes applied**:
 1. **Wandering Worker Detection** (Post-Commit Scope Verification) — Lightweight check after each commit verifies files changed match expected scope, catching scope creep before next agent spawns
-2. **Enhanced CCO** — Now requires line number specificity (e.g., "lines 23-24" not "file.py")
+2. **Enhanced pre-spawn-check** — Now requires line number specificity (e.g., "lines 23-24" not "file.py")
 3. **Anti-Scope-Creep Template** — Aggressive boundary language with explicit "Adjacent Issues Found" section
 4. **Conflict Risk Assessment** — Pre-flight file modification matrix with LOW/MEDIUM/HIGH risk tiers and serialization strategies
 
 **When to apply** (every multi-agent session):
 - Always use anti-scope-creep template for Implementers
-- Always run WWD after each commit
+- Always run scope-verify after each commit
 - Always assess file conflict risk before spawning (create modification matrix)
 - Serialize tasks when 3+ agents touch the same file (HIGH risk tier)
 

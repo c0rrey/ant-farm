@@ -3,21 +3,21 @@
 
 ## Path Reference Convention
 
-All file paths in this document use **repo-root relative** format: `orchestration/templates/scout.md`.
+All file paths in this document use **repo-root relative** format: `orchestration/templates/recon-planner.md`.
 
 When code runs at runtime, agent files are synced to `~/.claude/agents/` and orchestration files are
-accessible at `~/.claude/orchestration/templates/scout.md`. To translate repo paths to runtime paths:
+accessible at `~/.claude/orchestration/templates/recon-planner.md`. To translate repo paths to runtime paths:
 - Replace `orchestration/` with `~/.claude/orchestration/`
 - Replace `agents/` with `~/.claude/agents/`
 
-**In-document shorthand** (e.g., "templates/scout.md") is informal and always refers to the repo-root path with the `orchestration/` prefix implied.
+**In-document shorthand** (e.g., "templates/recon-planner.md") is informal and always refers to the repo-root path with the `orchestration/` prefix implied.
 
 ## Orchestrator Prohibitions (read FIRST)
 
 - **PREFER RULES.local.md** — If `RULES.local.md` exists in the same directory as this file, read and follow it instead of (or in addition to) this file. Local overrides take precedence.
 - **NEVER** run `crumb show`, `crumb ready`, `crumb list`, `crumb blocked`, or any `crumb` query command — the Recon Planner does this
 - **NEVER** read source code, tests, project data files, or config files — agents do this
-- **NEVER** read agent **instruction files** (scout.md, pantry.md, implementation.md, checkpoints/*.md, reviews.md, etc.) — pass the path to the agent, let it read its own instructions
+- **NEVER** read agent **instruction files** (recon-planner.md, prompt-composer.md, implementation.md, checkpoints/*.md, reviews.md, etc.) — pass the path to the agent, let it read its own instructions
 - **NEVER** send `shutdown_request` to any Reviewer team member before Step 4.
   - **Authorization**: The only event that authorizes shutdown is the termination check in Step 3c (zero P1/P2 findings). This sets a flag -- it does not trigger immediate dispatch.
   - **Dispatch timing**: The actual `shutdown_request` is sent later, after the review loop fully converges and the session reaches Step 4+. Do NOT send shutdown_request at the Step 3c decision fork or anywhere else before convergence.
@@ -39,7 +39,7 @@ The Orchestrator's window is restricted to prevent context bloat, but certain fi
 - Agent notifications (as they complete)
 
 **PERMITTED (Orchestrator reads once per phase, for context only):**
-- `orchestration/templates/crumb-gatherer-skeleton.md` — Once per implementation wave (skeleton structure; see [Glossary: wave](GLOSSARY.md#workflow-concepts))
+- `orchestration/templates/implementer-skeleton.md` — Once per implementation wave (skeleton structure; see [Glossary: wave](GLOSSARY.md#workflow-concepts))
 - `orchestration/templates/reviewer-skeleton.md` — Once per review cycle (skeleton structure)
 - `orchestration/templates/review-consolidator-skeleton.md` — Once per review cycle (skeleton structure)
 - `orchestration/templates/scribe-skeleton.md` — Once per session (read to fill placeholders before spawning the Session Scribe at Step 5)
@@ -48,8 +48,8 @@ The Orchestrator's window is restricted to prevent context bloat, but certain fi
 - `orchestration/reference/crumb-cheatsheet.md` — crumb CLI quick reference; read when composing agent prompts that invoke crumb commands
 
 **FORBIDDEN (agents read; Orchestrator never reads):**
-- `orchestration/templates/scout.md` — Recon Planner's instruction file
-- `orchestration/templates/pantry.md` — Prompt Composer's instruction file
+- `orchestration/templates/recon-planner.md` — Recon Planner's instruction file
+- `orchestration/templates/prompt-composer.md` — Prompt Composer's instruction file
 - `orchestration/templates/implementation.md` — Implementation details (read by Prompt Composer)
 - `orchestration/templates/checkpoints/` — Checkpoint definitions (read by Checkpoint Auditor; common.md + specific checkpoint file)
 - `orchestration/templates/reviews.md` — Review protocol (read by build-review-prompts.sh)
@@ -151,7 +151,7 @@ Skipping Step 3b is a critical workflow violation.
                 - User lists specific tasks → `tasks <id1>, <id2>, ...`
                 - User describes a filter → `filter <description>`
                 - User gives no specific scope (e.g., just "let's get to work") → `ready`
-            (3) the path `orchestration/templates/scout.md` as its instruction file.
+            (3) the path `orchestration/templates/recon-planner.md` as its instruction file.
             Do NOT read the scout template yourself. Do NOT run `crumb show`, `crumb ready`, `crumb blocked`,
             or any other `crumb` commands — the Recon Planner handles all task discovery and metadata gathering.
             WAIT for the Recon Planner to return its briefing verdict (written to `{SESSION_DIR}/briefing.md`).
@@ -179,11 +179,11 @@ Skipping Step 3b is a critical workflow violation.
             where `<N>` is the count of tasks in the briefing task list after startup-check PASS (N=0 is not logged — it is caught by the zero-task guard earlier in Step 1b).
 
 **Step 2:** Spawn — Spawn the Prompt Composer (`ant-farm-prompt-composer`, `model: "opus"`) for task briefs + combined previews
-            (→ orchestration/templates/pantry.md, Section 1). Include `Session directory: <value of SESSION_DIR>`
+            (→ orchestration/templates/prompt-composer.md, Section 1). Include `Session directory: <value of SESSION_DIR>`
             in Prompt Composer's prompt. Pass preview file paths and SESSION_DIR to Checkpoint Auditor
             (`ant-farm-checkpoint-auditor`, `model: "haiku"`) for pre-spawn-check; Checkpoint Auditor reads `orchestration/templates/checkpoints/common.md` and `orchestration/templates/checkpoints/pre-spawn-check.md` itself.
             Only after all pre-spawn-check PASS: spawn agents using skeleton
-            (→ orchestration/templates/crumb-gatherer-skeleton.md, using Agent Type from Prompt Composer verdict table, `model: "sonnet"` for all Implementers regardless of subagent_type).
+            (→ orchestration/templates/implementer-skeleton.md, using Agent Type from Prompt Composer verdict table, `model: "sonnet"` for all Implementers regardless of subagent_type).
             **Wave pipelining**: When spawning wave N Implementers, include the wave N+1 Prompt Composer
             (`ant-farm-prompt-composer`, `model: "opus"`) in the SAME message so they launch concurrently.
             The Prompt Composer reads from task-metadata (written by Recon Planner) and has no dependency on wave N's output.
@@ -287,7 +287,7 @@ Skipping Step 3b is a critical workflow violation.
                       Read orchestration/templates/checkpoints/common.md and orchestration/templates/checkpoints/session-complete.md for full instructions."
             )
             ```
-            > **Field derivation**: `SESSION_START_COMMIT` is the first commit the Orchestrator or any agent made this session (visible in `git log` since the pre-session HEAD). `SESSION_END_COMMIT` is the commit at HEAD immediately before Step 7's `git add CHANGELOG.md` commit. `SESSION_START_DATE` is the calendar date (UTC) when Step 0 ran (stored in queen-state.md or derivable from `SESSION_ID`).
+            > **Field derivation**: `SESSION_START_COMMIT` is the first commit the Orchestrator or any agent made this session (visible in `git log` since the pre-session HEAD). `SESSION_END_COMMIT` is the commit at HEAD immediately before Step 7's `git add CHANGELOG.md` commit. `SESSION_START_DATE` is the calendar date (UTC) when Step 0 ran (stored in orchestrator-state.md or derivable from `SESSION_ID`).
             session-complete checks: task coverage, commit coverage, open crumb accuracy, CHANGELOG derivation
             fidelity, section completeness, metric consistency.
             Artifact written to `{SESSION_DIR}/pc/pc-session-complete-{timestamp}.md`.
@@ -413,18 +413,18 @@ SUMMARY: {one-line-description}" > "${SESSION_DIR}/signals/{TASK_SUFFIX}.done"
 
 | Workflow Phase | Read This File |
 |----------------|----------------|
-| Composing agent prompts (Step 2) | orchestration/templates/pantry.md |
-| Agent skeleton for spawning (Step 2) | orchestration/templates/crumb-gatherer-skeleton.md |
+| Composing agent prompts (Step 2) | orchestration/templates/prompt-composer.md |
+| Agent skeleton for spawning (Step 2) | orchestration/templates/implementer-skeleton.md |
 | Review skeleton for team (Step 3b) | orchestration/templates/reviewer-skeleton.md |
 | Review Consolidator skeleton for consolidation (Step 3b) | orchestration/templates/review-consolidator-skeleton.md |
 | Implementation details (read by the Prompt Composer) | orchestration/templates/implementation.md |
 | Checkpoint details (read by Checkpoint Auditor) | orchestration/templates/checkpoints/ (common.md + specific checkpoint file) |
 | Review details (read by build-review-prompts.sh) | orchestration/templates/reviews.md |
 | Focus area definitions for reviewer prompts (read by build-review-prompts.sh) | orchestration/templates/review-focus-areas.md |
-| Pre-flight recon (Step 1) | orchestration/templates/scout.md |
+| Pre-flight recon (Step 1) | orchestration/templates/recon-planner.md |
 | Conflict patterns (read by the Recon Planner) | orchestration/reference/dependency-analysis.md |
 | Diagnosing a failure or post-mortem | orchestration/reference/known-failures.md |
-| Creating/recovering the Orchestrator's state file | orchestration/templates/queen-state.md |
+| Creating/recovering the Orchestrator's state file | orchestration/templates/orchestrator-state.md |
 | Exec summary authoring (Step 5) | orchestration/templates/scribe-skeleton.md |
 | Setting up orchestration in new project | orchestration/SETUP.md |
 
@@ -446,7 +446,7 @@ SUMMARY: {one-line-description}" > "${SESSION_DIR}/signals/{TASK_SUFFIX}.done"
 | Session Scribe fails session-complete | 1 | Escalate to user with session-complete report; user decides fix manually or push as-is |
 | Total retries per session | 5 | Pause all new spawns; triage with user |
 
-Track retry count in the Orchestrator's state file (→ templates/queen-state.md).
+Track retry count in the Orchestrator's state file (→ templates/orchestrator-state.md).
 
 ### Stuck-Agent Diagnostic Procedure
 

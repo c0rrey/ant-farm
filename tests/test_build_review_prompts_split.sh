@@ -16,8 +16,8 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SCRIPT="$REPO_ROOT/scripts/build-review-prompts.sh"
-NITPICKER_SKELETON="$REPO_ROOT/orchestration/templates/nitpicker-skeleton.md"
-BIG_HEAD_SKELETON="$REPO_ROOT/orchestration/templates/review-consolidator-skeleton.md"
+REVIEWER_SKELETON="$REPO_ROOT/orchestration/templates/reviewer-skeleton.md"
+REVIEW_CONSOLIDATOR_SKELETON="$REPO_ROOT/orchestration/templates/review-consolidator-skeleton.md"
 
 PASS=0
 FAIL=0
@@ -73,12 +73,12 @@ run_script() {
         env REVIEW_SPLIT_THRESHOLD="$threshold_env" bash "$SCRIPT" \
             "$session_dir" "abc1234..HEAD" "$files_arg" "AF-1" \
             "20260317-120000" "$round" \
-            "$NITPICKER_SKELETON" "$BIG_HEAD_SKELETON"
+            "$REVIEWER_SKELETON" "$REVIEW_CONSOLIDATOR_SKELETON"
     else
         bash "$SCRIPT" \
             "$session_dir" "abc1234..HEAD" "$files_arg" "AF-1" \
             "20260317-120000" "$round" \
-            "$NITPICKER_SKELETON" "$BIG_HEAD_SKELETON"
+            "$REVIEWER_SKELETON" "$REVIEW_CONSOLIDATOR_SKELETON"
     fi
 }
 
@@ -285,7 +285,7 @@ run_test "big_head_expected_paths_one_per_split_instance" '
 
     run_script "$session" "$files_arg" 1 8 >/dev/null
 
-    brief="$session/prompts/review-big-head-consolidation.md"
+    brief="$session/prompts/review-consolidation.md"
 
     # The expected_paths section uses "- " list items after "Expected report paths".
     # Count those items. The awk range pattern depends on a blank line terminating

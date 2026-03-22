@@ -98,7 +98,7 @@ Do not skip this protocol. An unmet acceptance criterion is always P1.
 
 **P1 example (acceptance criterion)**:
 ```
-orchestration/templates/pantry.md:L88 [P1] AC#2 unmet: task AF-120 requires the prompt preview to include the full file list, but the template at L88 truncates the list to the first 5 files when len(files) > 5. Previews for large changesets will be silently incomplete.
+orchestration/templates/prompt-composer.md:L88 [P1] AC#2 unmet: task AF-120 requires the prompt preview to include the full file list, but the template at L88 truncates the list to the first 5 files when len(files) > 5. Previews for large changesets will be silently incomplete.
 ```
 
 **P1 example (logic error)**:

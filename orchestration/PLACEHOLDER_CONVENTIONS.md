@@ -140,16 +140,16 @@ All files audited. All files use the Tiered convention correctly. When updating 
 
 | File | Tier 1 Placeholders | Tier 2 Placeholders | Tier 3 Placeholders | Tier 4 Placeholders | Term Definition Block | Status |
 |------|---|---|---|---|---|---------|
-| `scout.md` | `{SESSION_DIR}` (L10,62,66,129,175,178), `{MODE}` (L11), `{TASK_ID}` (L81,293), `{TASK_ID_1}`, `{TASK_ID_2}` (conflict matrix) | `{session-dir}` (L166-167), `{task-suffix}` (L78), `{id}`, `{epic-id}`, `{title}`, `{N}`, `{M}`, `{name}`, `{task-list}`, `{task-A/B/C}` (L137-198) | None | None | No (uses examples inline) | PASS |
-| `pantry.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{SESSION_DIR}` | `{session-dir}` (review output paths, previews, prompts), `{id}`, `{type}`, `{path}`, `{timestamp}` | None | None | Yes (L5-8) | PASS |
+| `recon-planner.md` | `{SESSION_DIR}` (L10,62,66,129,175,178), `{MODE}` (L11), `{TASK_ID}` (L81,293), `{TASK_ID_1}`, `{TASK_ID_2}` (conflict matrix) | `{session-dir}` (L166-167), `{task-suffix}` (L78), `{id}`, `{epic-id}`, `{title}`, `{N}`, `{M}`, `{name}`, `{task-list}`, `{task-A/B/C}` (L137-198) | None | None | No (uses examples inline) | PASS |
+| `prompt-composer.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{SESSION_DIR}` | `{session-dir}` (review output paths, previews, prompts), `{id}`, `{type}`, `{path}`, `{timestamp}` | None | None | Yes (L5-8) | PASS |
 | `RULES.md` | `{TIMESTAMP}` (Step 3b-i, via `${TIMESTAMP}` shell var), `{SESSION_DIR}` (all gates) | None | `${SESSION_ID}`, `${SESSION_DIR}`, `${TIMESTAMP}` (Step 3b-i) | None | No (references other term defs) | PASS |
 | `checkpoints/common.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{SESSION_DIR}` (term def near top, used throughout), `{SESSION_START_DATE}` (session-complete) | `{checkpoint}`, `{path}`, `{N}`, `{M}`, `{before-commit}`, `{after-commit}`, `{commit}`, `{file}`, `{line}`, `{description}`, `{list}` (in examples) | None | None | Yes (term def near top) | PASS |
-| `crumb-gatherer-skeleton.md` | `{TASK_TYPE}`, `{TASK_ID}`, `{TASK_SUFFIX}`, `{AGENT_TYPE}`, `{DATA_FILE_PATH}`, `{SUMMARY_OUTPUT_PATH}`, `{SESSION_DIR}` | None | None | None | Yes (L8-11) | PASS |
+| `implementer-skeleton.md` | `{TASK_TYPE}`, `{TASK_ID}`, `{TASK_SUFFIX}`, `{AGENT_TYPE}`, `{DATA_FILE_PATH}`, `{SUMMARY_OUTPUT_PATH}`, `{SESSION_DIR}` | None | None | None | Yes (L8-11) | PASS |
 | `reviewer-skeleton.md` | `{REVIEW_TYPE}`, `{DATA_FILE_PATH}`, `{REPORT_OUTPUT_PATH}` | None | None | None | Partial (L8-13; defines REVIEW_TYPE, DATA_FILE_PATH, REPORT_OUTPUT_PATH, REVIEW_ROUND -- all terms this template uses; EPOCH/timestamp defs not required as the reviewer template does not reference them) | PASS |
 | `review-consolidator-skeleton.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{TIMESTAMP}`, `{DATA_FILE_PATH}`, `{CONSOLIDATED_OUTPUT_PATH}`, `{SESSION_DIR}` | None | None | None | Yes (L8-12) | PASS |
 | `reviews.md` | `{TASK_ID}` (L11, transition gate checklist) | `{session-dir}`, `{timestamp}`, `{first-commit}`, `{last-commit}`, `{N}`, `{M}`, `{review-type}`, `{reviewer}`, `{list}`, `{path}`, `{id}`, `{title}`, `{crumb-id}`, `{hash}`, `{filename}`, `{combined-priority}`, `{root-cause-title}`, `{primary-review-type}`, `{instance}`, and others (throughout); CLI examples using `<angle-bracket>` preserved as-is | `${SESSION_DIR}` (code blocks only) | `{{REVIEW_ROUND}}` — substituted by `build-review-prompts.sh` before Review Consolidator brief delivery | No | PASS |
 | `implementation.md` | `{TASK_ID}` (output template), `{TASK_ID_1}`, `{TASK_ID_2}` (task list) | `{task-type}`, `{file-or-component}`, `{list-from-crumb}`, `{copy-from-crumb}`, `{session-dir}`, `{list}`, `{filename}` (in template block); CLI examples using `<angle-bracket>` preserved as-is | None | None | No | PASS |
-| `queen-state.md` | None | `{YYYY-MM-DDTHH:MM:SSZ}`, `{session-id}`, `{chosen-execution-strategy}`, `{name}`, `{ids}`, `{files}`, `{hash}`, `{task-ids}`, `{details}`, `{first-session-commit}`, `{last-impl-commit}`, `{first-fix-commit}`, `{N}`, `{total}`, `{list}`, `{used}`, `{agent}`, `{error-summary}` | None | None | No | PASS |
+| `orchestrator-state.md` | None | `{YYYY-MM-DDTHH:MM:SSZ}`, `{session-id}`, `{chosen-execution-strategy}`, `{name}`, `{ids}`, `{files}`, `{hash}`, `{task-ids}`, `{details}`, `{first-session-commit}`, `{last-impl-commit}`, `{first-fix-commit}`, `{N}`, `{total}`, `{list}`, `{used}`, `{agent}`, `{error-summary}` | None | None | No | PASS |
 | `SESSION_PLAN_TEMPLATE.md` | None (no placeholders found) | None | None | None | No | PASS |
 | `SETUP.md` | None | `{name}` (in skills install path); kickoff statement examples using `<angle-bracket>` preserved as CLI examples | None | None | No | PASS |
 | `GLOSSARY.md` | None | `{id}` (session directory path pattern), `{task-suffix}` (summary doc path) | None | None | No | PASS |
@@ -207,12 +207,12 @@ The orchestration system complies with the Tiered Placeholder Convention. All an
 
 ### Key Findings
 
-1. **scout.md (Recon Planner)** — COMPLIANT
+1. **recon-planner.md (Recon Planner)** — COMPLIANT
    - Tier 1 (`{SESSION_DIR}`, `{TASK_ID}`, `{TASK_ID_1}`, `{TASK_ID_2}`) used correctly for Orchestrator-provided context and output template examples
    - Tier 2 (`{session-dir}`, `{task-suffix}`) used correctly for agent-derived output format specs
    - Non-canonical synonyms corrected to `{task-suffix}` and `{TASK_ID}` (AGG-022, ant-farm-im8)
 
-2. **pantry.md (Prompt Composer)** — COMPLIANT
+2. **prompt-composer.md (Prompt Composer)** — COMPLIANT
    - Term definitions block present and correct (L5-8)
    - Tier 1 placeholders in term definitions and used for agent context
    - Tier 2 `{session-dir}` used in agent-facing instructions (shows how agent will use the session-dir value provided by Orchestrator)
@@ -238,7 +238,7 @@ The orchestration system complies with the Tiered Placeholder Convention. All an
    - Converted angle-bracket substitution placeholders (`<task-type>`, `<session-dir>`, `<task-id>`, etc.) to Tier 2 `{lowercase-kebab}` syntax
    - CLI examples (e.g., `crumb show <id>`, `git commit -m "<type>: <description>"`) preserved as-is
 
-8. **queen-state.md** — COMPLIANT (ant-farm-gkk)
+8. **orchestrator-state.md** — COMPLIANT (ant-farm-gkk)
    - Converted all angle-bracket fill-in-the-blank markers to Tier 2 `{lowercase-kebab}` syntax
 
 9. **GLOSSARY.md** — COMPLIANT (ant-farm-gkk)

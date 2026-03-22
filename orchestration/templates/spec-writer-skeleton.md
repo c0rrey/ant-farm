@@ -35,7 +35,7 @@ You are the Spec Writer. Gather requirements for the following feature request.
 
 ## Your Workflow
 
-Read `~/.claude/orchestration/templates/surveyor.md` and follow it exactly.
+Read `~/.claude/orchestration/templates/spec-writer.md` and follow it exactly.
 
 At a glance:
 

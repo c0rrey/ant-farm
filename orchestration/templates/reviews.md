@@ -1094,18 +1094,18 @@ Fix agents spawn into the Reviewer team with the following naming convention:
 
 | Role | Round 1 name | Round 2+ name |
 |---|---|---|
-| Fix Implementer N | `fix-cg-1`, `fix-cg-2`, ... | `fix-cg-r2-1`, `fix-cg-r2-2`, ... |
+| Fix Implementer N | `fix-impl-1`, `fix-impl-2`, ... | `fix-impl-r2-1`, `fix-impl-r2-2`, ... |
 | Fix PC — Scope Verify | `fix-pc-scope-verify` | `fix-pc-scope-verify-r2` |
 | Fix PC — Claims vs Code | `fix-pc-claims-vs-code` | `fix-pc-claims-vs-code-r2` |
 
 Round suffix (`-r2`, `-r3`, etc.) increments with each review round to avoid name collisions within the persistent team.
 
-#### Fix CG Prompt Structure
+#### Fix Implementer Prompt Structure
 
 Fix Implementers receive a lean prompt. The crumb is the source of truth — the CG does not need a full brief composed by the Orchestrator.
 
 ```
-You are fix-cg-N, a fix Implementer in the Reviewer team.
+You are fix-impl-N, a fix Implementer in the Reviewer team.
 
 Your task crumb: {crumb-id}
 Run: crumb show <crumb-id>
@@ -1126,25 +1126,25 @@ The prompt is intentionally minimal. Crumb content drives the work, not the prom
 The fix inner loop runs between a fix DP and the two fix PCs within the team. The loop is fully asynchronous via SendMessage.
 
 ```
-fix-cg-N  -->  [commit]  -->  SendMessage(fix-pc-scope-verify)
+fix-impl-N  -->  [commit]  -->  SendMessage(fix-pc-scope-verify)
                                     |
                               fix-pc-scope-verify runs scope-verify check
                                     |
                          PASS ------+------ FAIL
                           |                   |
-               SendMessage(fix-pc-claims-vs-code)   SendMessage(fix-cg-N) with specifics
+               SendMessage(fix-pc-claims-vs-code)   SendMessage(fix-impl-N) with specifics
                           |                   |
-                    fix-pc-claims-vs-code  fix-cg-N iterates (max 2 retries total)
+                    fix-pc-claims-vs-code  fix-impl-N iterates (max 2 retries total)
                     runs claims-vs-code        |
                           |             if retry limit hit → SendMessage(Orchestrator) to escalate
                  PASS ----+---- FAIL
                   |              |
-              fix-cg-N       SendMessage(fix-cg-N) with specifics
-              goes idle       fix-cg-N iterates (max 2 retries total)
+              fix-impl-N       SendMessage(fix-impl-N) with specifics
+              goes idle       fix-impl-N iterates (max 2 retries total)
                               if retry limit hit → SendMessage(Orchestrator) to escalate
 ```
 
-**Retry limit**: Each fix CG has a maximum of 2 retries total across both scope-verify and claims-vs-code failures. On the third failure, the CG sends a message to the Orchestrator with the failure details and goes idle. The Orchestrator escalates to the user.
+**Retry limit**: Each fix implementer has a maximum of 2 retries total across both scope-verify and claims-vs-code failures. On the third failure, the implementer sends a message to the Orchestrator with the failure details and goes idle. The Orchestrator escalates to the user.
 
 **fix-pc-scope-verify** (Haiku): Lightweight scope check — verifies the commit touches only the files listed in the crumb, no stray edits, and the commit message is well-formed. Fast and cheap.
 
@@ -1152,21 +1152,21 @@ fix-cg-N  -->  [commit]  -->  SendMessage(fix-pc-scope-verify)
 
 #### Wave Composition
 
-Group fix agents by file using orchestration/reference/dependency-analysis.md to detect conflicts. Max 7 fix CGs per wave, no file overlap within a wave.
+Group fix agents by file using orchestration/reference/dependency-analysis.md to detect conflicts. Max 7 fix implementers per wave, no file overlap within a wave.
 
 P1 and P2 fixes run in waves as follows:
 
 ```
-Wave 1: [P1 fix-cg tasks] + [P2 fix-cg tasks]    (concurrent, no file overlap)
+Wave 1: [P1 fix-impl tasks] + [P2 fix-impl tasks]    (concurrent, no file overlap)
 ```
 
 Unlike the old TDD workflow, P1 fixes do not require a separate test-writing wave in the persistent team design. The crumb's acceptance criteria serve as the verification specification; fix-pc-claims-vs-code enforces them.
 
-Spawn fix-pc-scope-verify and fix-pc-claims-vs-code once per round (they serve all fix CGs in that round via SendMessage). Do not re-spawn them per CG.
+Spawn fix-pc-scope-verify and fix-pc-claims-vs-code once per round (they serve all fix implementers in that round via SendMessage). Do not re-spawn them per implementer.
 
 #### Round Transition via SendMessage
 
-After all fix CGs complete and fix-pc-claims-vs-code has issued PASS for each:
+After all fix implementers complete and fix-pc-claims-vs-code has issued PASS for each:
 
 1. **Re-task Correctness reviewer**: SendMessage to `correctness` with:
    - Review round: N+1

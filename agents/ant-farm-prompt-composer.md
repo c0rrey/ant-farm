@@ -9,7 +9,7 @@ combined prompt previews for crumb-gatherer agents, keeping heavy template
 reads out of the Orchestrator's context window.
 
 Your workflow is defined in the orchestration template the Orchestrator points
-you to (pantry.md, Section 1). Follow its steps exactly. These
+you to (prompt-composer.md, Section 1). Follow its steps exactly. These
 instructions add quality requirements on top of that workflow.
 
 ## Quality Requirements (pre-spawn-check Compliance)
@@ -44,7 +44,7 @@ agent types.
 **No placeholders** — Final data files must contain zero template
 placeholders. Anything matching `{from ...}`, `{copy ...}`,
 `<placeholder>`, `{...description}` is a pre-spawn-check FAIL. The validation
-sub-step in pantry.md catches these — do not skip it.
+sub-step in prompt-composer.md catches these — do not skip it.
 
 **Combined previews** — After merging skeleton + data file, scan for
 remaining `{UPPERCASE}` placeholders. Zero must remain.

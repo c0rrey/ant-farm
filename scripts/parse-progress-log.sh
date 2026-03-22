@@ -77,15 +77,15 @@ step_label() {
     case "$1" in
         SESSION_INIT)     echo "Session Init: Session setup" ;;
         SCOUT_COMPLETE)   echo "Recon Planner Complete: Recon (Recon Planner + startup-check gate)" ;;
-        WAVE_SPAWNED)     echo "Wave Spawned: Spawn (Prompt Composer + CCO + Implementers)" ;;
+        WAVE_SPAWNED)     echo "Wave Spawned: Spawn (Prompt Composer + pre-spawn-check + Implementers)" ;;
         WAVE_SCOPE_VERIFY_PASS)    echo "Wave Scope Verify Passed: scope-verify verification passed" ;;
-        WAVE_VERIFIED)    echo "Wave Verified: Verify (WWD + CMVCC)" ;;
+        WAVE_VERIFIED)    echo "Wave Verified: Verify (scope-verify + claims-vs-code)" ;;
         REVIEW_COMPLETE)  echo "Review Complete: Review (Reviewer team)" ;;
         REVIEW_TRIAGED)   echo "Review Triaged: Triage (P1/P2 decision)" ;;
         DOCS_COMMITTED)   echo "Docs Committed: Documentation (README/CLAUDE.md)" ;;
         XREF_VERIFIED)    echo "Xref Verified: Cross-reference verification" ;;
         SCRIBE_COMPLETE)  echo "Session Scribe Complete: Step 5b (Session Scribe exec summary)" ;;
-        ESV_PASS)         echo "ESV Pass: Step 5c (Exec Summary Verification)" ;;
+        ESV_PASS)         echo "session-complete Pass: Step 5c (Exec Summary Verification)" ;;
         SESSION_COMPLETE) echo "Session Complete: Land the plane (git push)" ;;
         *)                echo "$1" ;;
     esac
@@ -97,7 +97,7 @@ step_resume_action() {
         SCOUT_COMPLETE)   echo "Re-run SCOUT_COMPLETE: check for existing briefing.md; if absent, re-spawn the Recon Planner." ;;
         WAVE_SPAWNED)     echo "Re-run WAVE_SPAWNED: re-read briefing.md and re-spawn Prompt Composer + Implementers for unfinished waves." ;;
         WAVE_SCOPE_VERIFY_PASS)    echo "Proceed to claims-vs-code verification: scope-verify already passed; re-spawn Checkpoint Auditor for claims-vs-code only." ;;
-        WAVE_VERIFIED)    echo "Re-run WAVE_VERIFIED: re-spawn Checkpoint Auditor for WWD/CMVCC on any unverified waves." ;;
+        WAVE_VERIFIED)    echo "Re-run WAVE_VERIFIED: re-spawn Checkpoint Auditor for scope-verify/claims-vs-code on any unverified waves." ;;
         REVIEW_COMPLETE)  echo "Re-run REVIEW_COMPLETE: re-spawn the Reviewer team (check for existing review reports first)." ;;
         REVIEW_TRIAGED)   echo "Re-run REVIEW_TRIAGED: re-read the Review Consolidator summary and re-present findings to the user." ;;
         DOCS_COMMITTED)   echo "Re-run DOCS_COMMITTED: update README and CLAUDE.md in a single commit." ;;

@@ -1,6 +1,6 @@
 <!-- Reader: Checkpoint Auditor. The Orchestrator does NOT read this file. -->
 
-## Trail Decomposition Verification (TDV): Post-Decomposition Structure Audit
+## decomposition-check: Post-Decomposition Structure Audit
 
 **When**: After Task Decomposer completes trail decomposition and writes crumbs to the crumb store, BEFORE handoff to the implementation wave
 **Model**: `haiku` (set comparisons, graph traversals, field existence checks — no judgment required)
@@ -9,11 +9,11 @@
 
 **Why haiku**: All four structural checks are set comparisons, graph traversals, and field presence validations with no ambiguity. The two heuristic warnings require pattern matching but no code comprehension. Haiku handles this class of verification faster and cheaper than sonnet.
 
-### TDV Property Table
+### decomposition-check Property Table
 
 | Property | Value |
 |---|---|
-| **Name** | Trail Decomposition Verification (TDV) |
+| **Name** | decomposition-check (Trail Decomposition Verification) |
 | **Run by** | Checkpoint Auditor |
 | **Model** | `haiku` |
 | **When** | After Task Decomposer completes decomposition, before implementation wave |
@@ -22,14 +22,14 @@
 | **Checks** | 4 structural (blockers) + 2 heuristic (warnings only) |
 
 ```markdown
-**Checkpoint Auditor verification - TDV (Trail Decomposition Verification)**
+**Checkpoint Auditor verification - decomposition-check (Trail Decomposition Verification)**
 
 You are the **Checkpoint Auditor**, the verification subagent. Your role is to verify the Task Decomposer's trail decomposition for structural correctness before any implementation work begins. See "Checkpoint Auditor Overview" section above for full conventions.
 
 **Trail ID**: `{TRAIL_ID}`
 **Session directory**: `{SESSION_DIR}`
 
-> **Decomposition context**: When TDV runs during decomposition (spawned by the Planner via
+> **Decomposition context**: When decomposition-check runs during decomposition (spawned by the Planner via
 > `RULES-decompose.md`), substitute `{DECOMPOSE_DIR}` for `{SESSION_DIR}` in all output paths.
 > The Planner passes `DECOMPOSE_DIR` as the session directory value when filling this template.
 
@@ -135,10 +135,10 @@ If any crumb's dependency chain (the longest path from it to a root crumb) excee
 > Warnings:
 > - WARN — Crumb `ant-farm-abc`: 2 of 3 acceptance criteria are vague (e.g., "Works as expected").
 >
-> Recommendation: Resume Task Decomposer with these violations. Task Decomposer must add `scope.agent_type` and `acceptance_criteria` to missing crumbs, and remove the non-existent dependency reference, then rewrite the decomposition before re-running TDV.
+> Recommendation: Resume Task Decomposer with these violations. Task Decomposer must add `scope.agent_type` and `acceptance_criteria` to missing crumbs, and remove the non-existent dependency reference, then rewrite the decomposition before re-running decomposition-check.
 
 Write your verification report to:
-`{SESSION_DIR}/pc/pc-session-tdv-{timestamp}.md`
+`{SESSION_DIR}/pc/pc-session-decomposition-check-{timestamp}.md`
 
 Where:
 - `{SESSION_DIR}`: session artifact directory (e.g., `.crumbs/sessions/_session-abc123`)
@@ -148,16 +148,16 @@ Where:
 
 ### The Orchestrator's Response
 
-**On PASS**: Proceed to implementation handoff. Heuristic warnings (if any) are advisory — note them in queen-state.md and use judgment about whether to act on them before spawning implementation agents.
+**On PASS**: Proceed to implementation handoff. Heuristic warnings (if any) are advisory — note them in orchestrator-state.md and use judgment about whether to act on them before spawning implementation agents.
 
 **On FAIL**:
-1. Log the failing check details from the TDV report.
+1. Log the failing check details from the decomposition-check report.
 2. Do NOT proceed to implementation handoff.
 3. Resume the Task Decomposer with a prompt that includes the specific violations:
    ```
-   TDV found decomposition errors that must be corrected before implementation can begin:
-   <paste specific violations from TDV report>
+   decomposition-check found decomposition errors that must be corrected before implementation can begin:
+   <paste specific violations from decomposition-check report>
    Please revise the decomposition to resolve these issues and update the crumbs in the crumb store.
    ```
-4. After Task Decomposer revises the decomposition, re-run TDV.
-5. If TDV fails a second time, escalate to user with the full violation report — do NOT attempt a third Task Decomposer retry automatically.
+4. After Task Decomposer revises the decomposition, re-run decomposition-check.
+5. If decomposition-check fails a second time, escalate to user with the full violation report — do NOT attempt a third Task Decomposer retry automatically.

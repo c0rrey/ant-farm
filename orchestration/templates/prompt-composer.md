@@ -108,7 +108,7 @@ For each task ID in the input list:
    Copy it into the task brief's `**Agent Type**` field and the Step 4
    output table. The Prompt Composer passes this value through unchanged — do NOT re-evaluate it.
    The Orchestrator decides whether to override at spawn time; override policy is defined in
-   `~/.claude/orchestration/templates/crumb-gatherer-skeleton.md` (the {AGENT_TYPE} placeholder description).
+   `~/.claude/orchestration/templates/implementer-skeleton.md` (the {AGENT_TYPE} placeholder description).
 
 4. Write a task brief to `{session-dir}/prompts/task-{TASK_SUFFIX}.md` with this exact format:
 
@@ -159,9 +159,9 @@ Do NOT fix adjacent issues you notice.
 
 **MANDATORY OUTPUT**: Every task that produced a task brief in Step 2 MUST also produce a preview file in this step. Preview files are hard requirements — not optional. Do NOT proceed to Step 4 until every preview file is written and verified.
 
-1. Read `~/.claude/orchestration/templates/crumb-gatherer-skeleton.md`.
+1. Read `~/.claude/orchestration/templates/implementer-skeleton.md`.
    **File existence check**: If the skeleton file is absent or unreadable, halt immediately and return:
-   `INFRASTRUCTURE FAILURE: crumb-gatherer-skeleton.md not found at ~/.claude/orchestration/templates/crumb-gatherer-skeleton.md — cannot compose previews. Verify orchestration setup.`
+   `INFRASTRUCTURE FAILURE: implementer-skeleton.md not found at ~/.claude/orchestration/templates/implementer-skeleton.md — cannot compose previews. Verify orchestration setup.`
    Do NOT proceed with preview composition if the skeleton is missing.
 2. For each task, construct a combined prompt preview:
    a. Take the skeleton template text (below the `---` separator)

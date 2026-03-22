@@ -25,7 +25,7 @@ The Planner's spawn prompt provides:
 
 ## Workflow
 
-Your detailed workflow is defined in `~/.claude/orchestration/templates/surveyor.md`.
+Your detailed workflow is defined in `~/.claude/orchestration/templates/spec-writer.md`.
 Read that file and follow it exactly. The steps at a glance:
 
 1. **Read codebase** — Scan structure to understand what already exists (brownfield

@@ -23,7 +23,7 @@ Your spawn prompt contains:
 
 ## Workflow
 
-Your detailed workflow is defined in `~/.claude/orchestration/templates/forager.md`.
+Your detailed workflow is defined in `~/.claude/orchestration/templates/researcher.md`.
 Read that file and follow it exactly. The steps at a glance:
 
 1. **Read spec** — Load the spec file. Extract requirements and constraints.
