@@ -299,8 +299,9 @@ class FileLock:
     """Context manager that holds an exclusive flock on tasks.lock.
 
     Platform restriction: uses ``fcntl.flock``, which is Unix-only (Linux,
-    macOS). Windows is not supported; attempting to use this on Windows will
-    raise ``AttributeError`` at import time (``fcntl`` is not available).
+    macOS). On Windows ``fcntl`` is absent; the module imports cleanly but
+    ``FileLock.__enter__`` will call ``die()`` (raising ``SystemExit``) when
+    the lock is first attempted.
 
     Acquires the lock with ``LOCK_NB`` (non-blocking) and retries for up to
     ``_LOCK_TIMEOUT_SECS`` seconds so the process never blocks indefinitely.
@@ -1213,7 +1214,8 @@ def cmd_close(args: argparse.Namespace) -> None:
             crumb = _find_crumb(tasks, crumb_id)
             # Invariant: pre-validation loop above (under same FileLock)
             # guarantees every ID exists — _find_crumb cannot return None here.
-            assert crumb is not None, f"invariant violated: '{crumb_id}' pre-validated but not found"
+            if crumb is None:
+                die(f"internal error: '{crumb_id}' pre-validated but not found in mutation loop")
 
             if crumb.get("status") == "closed":
                 skipped.append(crumb_id)
@@ -2587,8 +2589,8 @@ def cmd_prune(args: argparse.Namespace) -> None:
     and deletes directories exceeding the retention threshold.  The age
     comparison is inclusive: a directory exactly ``--days`` days old *is*
     pruned (``age_days >= days``, not ``>``).  Directories modified within
-    the last ``ACTIVE_GUARD_MINUTES`` minutes (currently 60) are never
-    deleted regardless of age.
+    the last ``ACTIVE_GUARD_MINUTES`` minutes are never deleted regardless
+    of age.
 
     With ``--dry-run`` the would-be pruned and would-be retained lists are
     printed without any deletion taking place.

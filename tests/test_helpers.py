@@ -19,6 +19,7 @@ import pytest
 import crumb
 from crumb import (
     FileLock,
+    _STALE_TMP_AGE_SECS,
     _priority_sort_key,
     _status_sort_key,
     cleanup_stale_tmp_files,
@@ -322,7 +323,7 @@ def test_cleanup_stale_removes_tmp_files(tmp_path: Path, monkeypatch: pytest.Mon
     tmp_file = crumbs_dir / "tasks.jsonl.tmp"
     tmp_file.write_text("leftover", encoding="utf-8")
     # Backdate mtime so the file is considered stale (older than threshold)
-    old_time = time.time() - 10
+    old_time = time.time() - (_STALE_TMP_AGE_SECS + 5)
     os.utime(tmp_file, (old_time, old_time))
     monkeypatch.chdir(tmp_path)
     cleanup_stale_tmp_files()
@@ -354,7 +355,7 @@ def test_cleanup_stale_removes_multiple_tmp_files(tmp_path: Path, monkeypatch: p
     crumbs_dir.mkdir()
     files = [crumbs_dir / f"file{i}.tmp" for i in range(3)]
     # Backdate mtime so files are considered stale (older than threshold)
-    old_time = time.time() - 10
+    old_time = time.time() - (_STALE_TMP_AGE_SECS + 5)
     for f in files:
         f.write_text("stale", encoding="utf-8")
         os.utime(f, (old_time, old_time))
