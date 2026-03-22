@@ -16,6 +16,7 @@ Covers:
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import time
 from datetime import datetime, timedelta
@@ -30,11 +31,20 @@ from crumb import (
     _is_active_session,
     _parse_session_dir_timestamp,
     cmd_prune,
+    DEFAULT_CONFIG,
     DEFAULT_RETENTION_DAYS,
     ACTIVE_GUARD_MINUTES,
     SESSION_DIR_PREFIXES,
     SESSION_TS_FORMAT,
 )
+
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+#: Seconds per day — used with os.utime to backdate directory mtimes.
+_SECS_PER_DAY: int = 86_400
 
 
 # ---------------------------------------------------------------------------
@@ -64,7 +74,7 @@ def _session_name(prefix: str, dt: datetime) -> str:
 
 def _backdate(d: Path, days: int) -> None:
     """Set a directory's mtime to ``days`` days ago (> active guard window)."""
-    old_ts = time.time() - (days * 86400)
+    old_ts = time.time() - (days * _SECS_PER_DAY)
     os.utime(d, (old_ts, old_ts))
 
 
@@ -179,19 +189,11 @@ def sessions_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     Returns:
         Path to the ``.crumbs/sessions/`` directory.
     """
-    import json
-
     crumbs_dir = tmp_path / ".crumbs"
     crumbs_dir.mkdir()
 
-    default_config: Dict[str, Any] = {
-        "prefix": "AF",
-        "default_priority": "P2",
-        "next_crumb_id": 1,
-        "next_trail_id": 1,
-    }
     (crumbs_dir / "config.json").write_text(
-        json.dumps(default_config, indent=2) + "\n", encoding="utf-8"
+        json.dumps(DEFAULT_CONFIG, indent=2) + "\n", encoding="utf-8"
     )
     (crumbs_dir / "tasks.jsonl").write_text("", encoding="utf-8")
 
@@ -598,12 +600,12 @@ class TestCmdPruneErrorHandling:
         _backdate(dir1, 30)
         _backdate(dir2, 25)
 
-        call_count = {"n": 0}
+        call_count = {"calls": 0}
         original_rmtree = __import__("shutil").rmtree
 
         def mock_rmtree(path: Any, *args: Any, **kwargs: Any) -> None:
-            call_count["n"] += 1
-            if call_count["n"] == 1:
+            call_count["calls"] += 1
+            if call_count["calls"] == 1:
                 raise PermissionError("permission denied")
             original_rmtree(path, *args, **kwargs)
 
@@ -613,7 +615,7 @@ class TestCmdPruneErrorHandling:
         err = capsys.readouterr().err
         assert "warning" in err.lower()
         # Second directory should still have been processed (loop continues)
-        assert call_count["n"] == 2
+        assert call_count["calls"] == 2
 
 
 # ---------------------------------------------------------------------------

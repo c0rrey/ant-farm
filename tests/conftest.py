@@ -14,6 +14,7 @@ from typing import Any, Dict
 import pytest
 
 import crumb
+from crumb import DEFAULT_CONFIG
 
 
 @pytest.fixture()
@@ -39,14 +40,8 @@ def crumbs_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     crumbs_dir.mkdir()
 
     # Write default config.json
-    default_config: Dict[str, Any] = {
-        "prefix": "AF",
-        "default_priority": "P2",
-        "next_crumb_id": 1,
-        "next_trail_id": 1,
-    }
     config_file = crumbs_dir / "config.json"
-    config_file.write_text(json.dumps(default_config, indent=2) + "\n", encoding="utf-8")
+    config_file.write_text(json.dumps(DEFAULT_CONFIG, indent=2) + "\n", encoding="utf-8")
 
     # Write empty tasks.jsonl
     tasks_file = crumbs_dir / "tasks.jsonl"

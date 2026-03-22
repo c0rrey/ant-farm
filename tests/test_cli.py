@@ -25,20 +25,14 @@ from typing import List
 
 import pytest
 
+from crumb import DEFAULT_CONFIG, SESSION_TS_FORMAT
+
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
 CRUMB_PY: Path = Path(__file__).resolve().parent.parent / "crumb.py"
-
-# Default config written into every isolated .crumbs/ directory.
-_DEFAULT_CONFIG: dict = {
-    "prefix": "AF",
-    "default_priority": "P2",
-    "next_crumb_id": 1,
-    "next_trail_id": 1,
-}
 
 
 def _make_crumbs_env(base: Path) -> Path:
@@ -62,7 +56,7 @@ def _make_crumbs_env(base: Path) -> Path:
 
     config_file = crumbs_dir / "config.json"
     config_file.write_text(
-        json.dumps(_DEFAULT_CONFIG, indent=2) + "\n", encoding="utf-8"
+        json.dumps(DEFAULT_CONFIG, indent=2) + "\n", encoding="utf-8"
     )
 
     tasks_file = crumbs_dir / "tasks.jsonl"
@@ -627,7 +621,7 @@ def _session_name(prefix: str, days_old: int, hour: int = 12) -> str:
     """
     ts: datetime = datetime.now() - timedelta(days=days_old)
     ts = ts.replace(hour=hour, minute=0, second=0, microsecond=0)
-    return f"{prefix}{ts.strftime('%Y%m%d-%H%M%S')}"
+    return f"{prefix}{ts.strftime(SESSION_TS_FORMAT)}"
 
 
 # ---------------------------------------------------------------------------
