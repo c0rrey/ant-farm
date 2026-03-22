@@ -34,12 +34,12 @@ For complete details, see `docs/installation-guide.md`. Quick reference:
 
 Re-run `setup.sh` after pulling upstream changes to update installed files. Use `--dry-run` to preview changes.
 
-**Note on `code-reviewer` agent**: The `code-reviewer` agent type (used by Nitpicker reviewers in the
-review pipeline) is a custom Claude Code agent. It is NOT deployed by `setup.sh` because it
+**Note on `code-reviewer` agent**: The `code-reviewer` agent type (used by Reviewers in the
+review pipeline) is a built-in Claude Code agent. It is NOT deployed by `setup.sh` because it
 lives in the user's global `~/.claude/agents/` directory, not in this repo's `agents/` folder. If you
 are setting up this orchestration system on a new machine, you must copy or create
 `~/.claude/agents/code-reviewer.md` manually. You can find the source file at `~/.claude/agents/code-reviewer.md` on the machine where the system was first configured.
-Without this file, the Nitpicker team members will fail to spawn (Claude Code will not recognize the
+Without this file, the Reviewer team members will fail to spawn (Claude Code will not recognize the
 `code-reviewer` agent type). `setup.sh` automatically checks for this file at the end of setup (Step 8:
 Preflight checks) and emits a visible warning if it is absent.
 
