@@ -240,9 +240,12 @@ done
 
 # UNREACHABLE: RESUME_STEP is always set by the loop above because SESSION_COMPLETE is in
 # STEP_KEYS. If SESSION_COMPLETE were completed, the early-exit guard above (exit 2) would
-# have already terminated the script. This branch can never be reached.
+# have already terminated the script. This branch can never be reached under current logic.
+# Fail loudly if a future code change invalidates this invariant.
 if [ -z "$RESUME_STEP" ]; then
-    RESUME_STEP="SESSION_COMPLETE"
+    echo "INTERNAL ERROR: RESUME_STEP is empty after scanning all STEP_KEYS. This should be unreachable." >&2
+    echo "  All steps appear completed but SESSION_COMPLETE guard did not trigger. Aborting." >&2
+    exit 1
 fi
 
 # ---------------------------------------------------------------------------
