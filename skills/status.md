@@ -1,10 +1,10 @@
 ---
-description: This skill should be used when the user invokes "/ant-farm-status", says "show project status", "what's the status", "show dashboard", "how many tasks are open", or asks for a quick overview of the current project's crumb task state. Displays a concise dashboard: trail completion counts, crumb status summary, and last session summary.
+description: This skill should be used when the user invokes "/ant-farm-status", says "show project status", "what's the status", "show dashboard", "how many tasks are open", or asks for a quick overview of the current project's crumb task state. Displays a concise dashboard: hook installation status, trail completion counts, crumb status summary, and last session summary.
 ---
 
 # /ant-farm-status — Quick View Dashboard Skill
 
-This skill governs the `/ant-farm-status` slash command. It renders a concise, scannable dashboard showing trail completion counts, crumb status totals by state, and the last session summary. It does not modify any data.
+This skill governs the `/ant-farm-status` slash command. It renders a concise, scannable dashboard showing hook installation status, trail completion counts, crumb status totals by state, and the last session summary. It does not modify any data.
 
 ## Trigger Conditions
 
@@ -27,6 +27,21 @@ If `NOT_INITIALIZED`:
 
 Stop. Do not proceed.
 
+## Step 0.5 — Check Hook Installation Status
+
+Check whether the ant-farm Claude Code hooks are present in the project tree.
+
+```bash
+[ -f hooks/ant-farm-statusline.js ] && echo "INSTALLED" || echo "NOT_INSTALLED"
+[ -f hooks/ant-farm-scope-advisor.js ] && echo "INSTALLED" || echo "NOT_INSTALLED"
+```
+
+Store the results:
+- `HOOK_STATUSLINE` — `installed` or `not installed`
+- `HOOK_SCOPE_ADVISOR` — `installed` or `not installed`
+
+These are informational checks only — do not stop on "not installed." The dashboard will display both statuses in Step 4.
+
 ## Step 1 — Gather Trail Completion Counts
 
 List all trails and compute a completion fraction for each.
@@ -41,33 +56,40 @@ For each trail in the output, compute:
 
 Store as a list of `(trail_id, title, TRAIL_CLOSED, TRAIL_TOTAL)` tuples. If the command returns no trails or fails, store an empty list and set `HAS_TRAILS=false`. Otherwise set `HAS_TRAILS=true`.
 
-To get per-trail counts, run:
+To get per-trail counts, parse `.crumbs/tasks.jsonl` directly with `jq` for structured counting:
 
 ```bash
-crumb list --trail <TRAIL_ID> --short 2>/dev/null | wc -l
-crumb list --trail <TRAIL_ID> --closed --short 2>/dev/null | wc -l
+# Total crumbs in trail (type != "trail", with matching parent link)
+jq -s '[.[] | select(.type != "trail" and .links.parent == "<TRAIL_ID>")] | length' .crumbs/tasks.jsonl
+# Closed crumbs in trail
+jq -s '[.[] | select(.type != "trail" and .links.parent == "<TRAIL_ID>" and .status == "closed")] | length' .crumbs/tasks.jsonl
 ```
 
 Repeat for each trail.
 
 ## Step 2 — Gather Crumb Status Summary
 
-Collect status counts across all crumbs.
+Collect status counts across all crumbs by parsing `.crumbs/tasks.jsonl` as structured JSON. Exclude trail records (`type == "trail"`) — only count crumbs.
 
 ```bash
-crumb list --open     --short 2>/dev/null | wc -l
-crumb list --blocked  --short 2>/dev/null | wc -l
-crumb list --in-progress --short 2>/dev/null | wc -l
-crumb list --closed   --short 2>/dev/null | wc -l
+jq -s '
+  [.[] | select(.type != "trail")] |
+  {
+    open:        [.[] | select(.status == "open")] | length,
+    blocked:     [.[] | select(.links.blocked_by != null and (.links.blocked_by | length) > 0 and .status != "closed")] | length,
+    in_progress: [.[] | select(.status == "in_progress")] | length,
+    closed:      [.[] | select(.status == "closed")] | length
+  }
+' .crumbs/tasks.jsonl
 ```
 
-Store results as:
+Parse the JSON output and store results as:
 - `COUNT_OPEN`
 - `COUNT_BLOCKED`
 - `COUNT_IN_PROGRESS`
 - `COUNT_CLOSED`
 
-If all commands fail or return empty output, set all counts to `0` and set `HAS_CRUMBS=false`. Otherwise set `HAS_CRUMBS=true`.
+If `jq` fails or the file is empty, set all counts to `0` and set `HAS_CRUMBS=false`. Otherwise set `HAS_CRUMBS=true` (even if all counts are zero — the file has records).
 
 ## Step 3 — Retrieve Last Session Summary
 
@@ -137,8 +159,14 @@ Render the following block (substitute values; omit any section where data is un
 ```
 ant-farm status
 ───────────────────────────────────────────
+HOOKS
+  statusline      <HOOK_STATUSLINE>
+  scope-advisor   <HOOK_SCOPE_ADVISOR>
+───────────────────────────────────────────
 TRAILS
 ```
+
+Use `installed` or `not installed` for each hook value. The HOOKS section is always rendered (it does not depend on trail/crumb data).
 
 For each trail in the list from Step 1, render one line:
 
@@ -227,8 +255,10 @@ If `HAS_LITE_SESSIONS=false`, omit the `LITE MODE SESSIONS` section entirely.
 | `.crumbs/` not initialized | Hard stop — instruct user to run `/ant-farm-init` |
 | `crumb` CLI not found | Hard stop — instruct user to run `/ant-farm-init` to install it |
 | No trails, no crumbs, no sessions | Show minimal "no tasks" message with `/ant-farm-plan` hint |
+| Hook file missing from project tree | Show `not installed` in HOOKS section — informational only, not a hard stop |
 | `crumb trail list` fails | Set `HAS_TRAILS=false`, render `(no trails)` |
-| `crumb list` fails for any status | Treat count as `0` for that status |
+| `jq` not available or fails | Fall back to `crumb list --short 2>/dev/null \| wc -l` for counts |
+| `.crumbs/tasks.jsonl` empty or malformed | Set all counts to `0`, set `HAS_CRUMBS=false` |
 | No exec-summary files in `.crumbs/sessions/` | Set `HAS_SESSION=false`, render `(no sessions completed yet)` |
 | exec-summary file found but unreadable | Set `HAS_SESSION=false`, render `(no sessions completed yet)` |
 | `grep` for lite-mode sessions fails or finds none | Set `HAS_LITE_SESSIONS=false`, omit `LITE MODE SESSIONS` section |
