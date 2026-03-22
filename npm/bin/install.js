@@ -107,6 +107,9 @@ async function runUninstallMode(dryRun) {
   console.log('Uninstalling ant-farm-cc ...');
   console.log('');
 
+  // -------------------------------------------------------------------------
+  // Step U1: Remove installed files (reads manifest, removes each entry)
+  // -------------------------------------------------------------------------
   let result;
   try {
     result = await runUninstall(CLAUDE_DIR, { dryRun, collector });
@@ -115,7 +118,9 @@ async function runUninstallMode(dryRun) {
     process.exit(1);
   }
 
-  // Unregister ant-farm hooks from Claude Code settings.json.
+  // -------------------------------------------------------------------------
+  // Step U2: Unregister ant-farm hooks and MCP server from settings.json
+  // -------------------------------------------------------------------------
   try {
     await unregisterHooks({ dryRun, collector });
   } catch (err) {
@@ -124,7 +129,6 @@ async function runUninstallMode(dryRun) {
     console.warn(`  WARNING: Failed to unregister hooks from settings.json: ${err.message}`);
   }
 
-  // Unregister the ant-farm crumb MCP server entry from Claude Code settings.json.
   try {
     await unregisterMcp({ dryRun, collector });
   } catch (err) {
@@ -133,6 +137,9 @@ async function runUninstallMode(dryRun) {
     console.warn(`  WARNING: Failed to unregister MCP server from settings.json: ${err.message}`);
   }
 
+  // -------------------------------------------------------------------------
+  // Step U3: Report results (warnings, removed count, dry-run summary)
+  // -------------------------------------------------------------------------
   const { removed, skipped, warnings } = result;
 
   console.log('');
@@ -350,6 +357,6 @@ async function runInstallMode(dryRun) {
 }
 
 main().catch((err) => {
-  console.error(`Unexpected error: ${err.message}`);
+  console.error(`Unexpected error: ${err?.message ?? String(err)}`);
   process.exit(1);
 });
