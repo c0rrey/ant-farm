@@ -32,7 +32,7 @@ For complete details, see `docs/installation-guide.md`. Quick reference:
 - Skills (`skills/*.md`) to `~/.claude/skills/ant-farm-<name>/SKILL.md`
 - `crumb.py` to `~/.local/bin/crumb` (marked executable)
 
-Re-run `setup.sh` after pulling upstream changes to update installed files. Use `--dry-run` to preview changes.
+Re-run `setup.sh` after pulling upstream changes to update installed files. Use `--dry-run` to preview changes. Use `--force` to overwrite an existing `crumb` binary that was not installed by ant-farm (i.e., missing the ant-farm sentinel comment).
 
 **Note on `code-reviewer` agent**: The `code-reviewer` agent type (used by Reviewers in the
 review pipeline) is a built-in Claude Code agent. It is NOT deployed by `setup.sh` because it
