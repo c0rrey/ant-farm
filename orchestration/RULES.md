@@ -223,7 +223,7 @@ Skipping Step 3b is a critical workflow violation.
             **Progress log (after claims-vs-code PASS for each wave):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_VERIFIED|wave=<N>|claims_vs_code=pass|tasks_verified=<ids>|commits=<hashes>|next_step=REVIEW_3B" >> ${SESSION_DIR}/progress.log`
             Note: For non-final waves, use `next_step=NEXT_WAVE` instead. The Position Check (see below) uses this value to confirm the correct next action.
 
-**Step 3b:** Review — Read `orchestration/RULES-review.md` now for the full Step 3b workflow.
+**Step 3b:** Review (round 1: Clarity, Edge Cases, Correctness, Drift; round 2+: Correctness, Edge Cases only) — Read `orchestration/RULES-review.md` now for the full Step 3b workflow.
             **Prerequisite**: Before composing review briefs, validate commit range format and file list completeness
             per RULES-review.md 3b-i.5. Invalid inputs (empty file list, malformed commit range) must produce a
             clear error — never pass through silently to reviewers.

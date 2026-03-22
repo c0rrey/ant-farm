@@ -117,8 +117,8 @@ your Step 2.5 catalog. Consider in order:
 4. **Fallback** — `general-purpose` if no specialist clearly fits
 
 **Tie-breaking on equal scores**: If criteria 1-3 result in a tie (multiple agents equally match), apply this two-step tie-breaking:
-- **Step A (Deep Read)**: For ONLY the tied candidates, read their full `.md` files (from the file paths recorded in Step 2.5). Re-evaluate the match against task root cause, title, and acceptance criteria using full descriptions.
-- **Step B (Explicit Fallback)**: If tie persists after Step A, record the agent type as: `PICK ONE: type-a OR type-b` (OR-separated list of tied types). This signals to the Queen that multiple agents are equally suitable for this task.
+1. **Deep Read**: For ONLY the tied candidates, read their full `.md` files (from the file paths recorded in Step 2.5). Re-evaluate the match against task root cause, title, and acceptance criteria using full descriptions.
+2. **Explicit Fallback**: If tie persists after the deep read, record the agent type as: `PICK ONE: type-a OR type-b` (OR-separated list of tied types). This signals to the Queen that multiple agents are equally suitable for this task.
 
 **Important**: Do NOT read full agent `.md` files unless a tie occurs. Catalog-only reads are the default path, keeping context usage minimal for the common case.
 
