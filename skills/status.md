@@ -71,10 +71,10 @@ If all commands fail or return empty output, set all counts to `0` and set `HAS_
 
 ## Step 3 — Retrieve Last Session Summary
 
-Find the most recent exec-summary file under `.crumbs/history/` (full-mode sessions).
+Find the most recent exec-summary file under `.crumbs/sessions/` (full-mode sessions). Session directories are named `_session-YYYYMMDD-HHMMSS`.
 
 ```bash
-ls -t .crumbs/history/exec-summary-*.md 2>/dev/null | head -1
+ls -t .crumbs/sessions/*/exec-summary.md 2>/dev/null | head -1
 ```
 
 Store the path as `LAST_SUMMARY_PATH`. If no files are found, set `LAST_SUMMARY_PATH=""` and `HAS_SESSION=false`. Otherwise set `HAS_SESSION=true`.
@@ -87,7 +87,7 @@ head -20 "${LAST_SUMMARY_PATH}"
 
 Store as `LAST_SUMMARY_EXCERPT`.
 
-Extract the session date from the filename (e.g., `exec-summary-20260313-021748.md` → `2026-03-13 02:17`). Store as `LAST_SESSION_DATE`.
+Extract the session date from the directory name (e.g., `.crumbs/sessions/_session-20260313-021748/exec-summary.md` → `2026-03-13 02:17`). Store as `LAST_SESSION_DATE`.
 
 **Also scan for lite-mode sessions:**
 
@@ -217,7 +217,7 @@ If `HAS_LITE_SESSIONS=false`, omit the `LITE MODE SESSIONS` section entirely.
 | No trails, no crumbs, no sessions | Show minimal "no tasks" message with `/ant-farm-plan` hint |
 | `crumb trail list` fails | Set `HAS_TRAILS=false`, render `(no trails)` |
 | `crumb list` fails for any status | Treat count as `0` for that status |
-| No exec-summary files in `.crumbs/history/` | Set `HAS_SESSION=false`, render `(no sessions completed yet)` |
+| No exec-summary files in `.crumbs/sessions/` | Set `HAS_SESSION=false`, render `(no sessions completed yet)` |
 | exec-summary file found but unreadable | Set `HAS_SESSION=false`, render `(no sessions completed yet)` |
 | `grep` for lite-mode sessions fails or finds none | Set `HAS_LITE_SESSIONS=false`, omit `LITE MODE SESSIONS` section |
 | Lite-mode `progress.log` found but missing `SESSION_COMPLETE` | Infer status from latest entry (`WAVE_SPAWNED` → `in_progress`, `WAVE_VERIFIED` → `in_progress`) |
