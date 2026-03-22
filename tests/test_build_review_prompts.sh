@@ -96,6 +96,7 @@ run_script() {
 # ---------------------------------------------------------------------------
 run_test "below_threshold_single_instance_per_type" '
     session="$(make_session)"
+    trap 'rm -rf "$session"' EXIT
     files_arg="$(write_files_list "$session" a.sh b.sh c.sh d.sh e.sh)"
 
     run_script "$session" "$files_arg" 1 >/dev/null
@@ -131,6 +132,7 @@ run_test "below_threshold_single_instance_per_type" '
 # ---------------------------------------------------------------------------
 run_test "at_threshold_no_split" '
     session="$(make_session)"
+    trap 'rm -rf "$session"' EXIT
     # Generate exactly 8 files
     files_arg="$(write_files_list "$session" \
         a.sh b.sh c.sh d.sh e.sh f.sh g.sh h.sh)"
@@ -159,6 +161,7 @@ run_test "at_threshold_no_split" '
 # ---------------------------------------------------------------------------
 run_test "above_threshold_split_three_partitions" '
     session="$(make_session)"
+    trap 'rm -rf "$session"' EXIT
     # 20 files → ceil(20/8) = 3 partitions
     files_arg="$(write_files_list "$session" \
         f01.sh f02.sh f03.sh f04.sh f05.sh f06.sh f07.sh f08.sh \
@@ -192,6 +195,7 @@ run_test "above_threshold_split_three_partitions" '
 # ---------------------------------------------------------------------------
 run_test "partition_coverage_no_duplicates_no_omissions" '
     session="$(make_session)"
+    trap 'rm -rf "$session"' EXIT
     # 20 files → 3 partitions
     files_arg="$(write_files_list "$session" \
         f01.sh f02.sh f03.sh f04.sh f05.sh f06.sh f07.sh f08.sh \
@@ -239,6 +243,7 @@ run_test "partition_coverage_no_duplicates_no_omissions" '
 # ---------------------------------------------------------------------------
 run_test "correctness_and_edge_cases_always_full_list" '
     session="$(make_session)"
+    trap 'rm -rf "$session"' EXIT
     files_arg="$(write_files_list "$session" \
         f01.sh f02.sh f03.sh f04.sh f05.sh f06.sh f07.sh f08.sh \
         f09.sh f10.sh f11.sh f12.sh f13.sh f14.sh f15.sh f16.sh \
@@ -266,6 +271,7 @@ run_test "correctness_and_edge_cases_always_full_list" '
 # ---------------------------------------------------------------------------
 run_test "files_lc_all_c_sorted_before_partitioning" '
     session="$(make_session)"
+    trap 'rm -rf "$session"' EXIT
     # Deliberately pass files in reverse order; partitioning should use sorted order.
     files_arg="$(write_files_list "$session" \
         z.sh y.sh x.sh w.sh v.sh u.sh t.sh s.sh r.sh q.sh)"
@@ -298,6 +304,7 @@ run_test "files_lc_all_c_sorted_before_partitioning" '
 # ---------------------------------------------------------------------------
 run_test "extract_focus_block_strips_suffix" '
     session="$(make_session)"
+    trap 'rm -rf "$session"' EXIT
     files_arg="$(write_files_list "$session" \
         f01.sh f02.sh f03.sh f04.sh f05.sh \
         f06.sh f07.sh f08.sh f09.sh f10.sh)"
@@ -325,6 +332,7 @@ run_test "extract_focus_block_strips_suffix" '
 # ---------------------------------------------------------------------------
 run_test "custom_threshold_env_var" '
     session="$(make_session)"
+    trap 'rm -rf "$session"' EXIT
     files_arg="$(write_files_list "$session" a.sh b.sh c.sh d.sh e.sh)"
 
     run_script "$session" "$files_arg" 1 3 >/dev/null
@@ -369,6 +377,7 @@ run_test "custom_threshold_env_var" '
 # ---------------------------------------------------------------------------
 run_test "round2_never_partitions" '
     session="$(make_session)"
+    trap 'rm -rf "$session"' EXIT
     # 20 files would normally trigger splitting in round 1
     files_arg="$(write_files_list "$session" \
         f01.sh f02.sh f03.sh f04.sh f05.sh f06.sh f07.sh f08.sh \
@@ -401,6 +410,7 @@ run_test "round2_never_partitions" '
 # ---------------------------------------------------------------------------
 run_test "return_table_one_row_per_split_instance" '
     session="$(make_session)"
+    trap 'rm -rf "$session"' EXIT
     # 20 files, threshold 8 → clarity-1,2,3 + edge-cases + correctness + drift-1,2,3 = 8 rows
     files_arg="$(write_files_list "$session" \
         f01.sh f02.sh f03.sh f04.sh f05.sh f06.sh f07.sh f08.sh \
@@ -440,6 +450,7 @@ run_test "return_table_one_row_per_split_instance" '
 # ---------------------------------------------------------------------------
 run_test "big_head_expected_paths_per_split_instance" '
     session="$(make_session)"
+    trap 'rm -rf "$session"' EXIT
     # 20 files, threshold 8 → 8 instances in ACTIVE_REVIEW_TYPES
     files_arg="$(write_files_list "$session" \
         f01.sh f02.sh f03.sh f04.sh f05.sh f06.sh f07.sh f08.sh \
@@ -473,6 +484,7 @@ run_test "big_head_expected_paths_per_split_instance" '
 # ---------------------------------------------------------------------------
 run_test "preflight_team_size_exceeds_15_errors" '
     session="$(make_session)"
+    trap 'rm -rf "$session"' EXIT
     # threshold=1, 14 files → 14 partitions × 2 (clarity+drift) + edge-cases + correctness = 30 types
     # 30 + 2 (Big Head + Pest Control) = 32 > 15 → must error
     files_arg="$(write_files_list "$session" \
@@ -503,6 +515,7 @@ run_test "preflight_team_size_exceeds_15_errors" '
 # ---------------------------------------------------------------------------
 run_test "preflight_team_size_exactly_15_passes" '
     session="$(make_session)"
+    trap 'rm -rf "$session"' EXIT
     # threshold=1, 5 files → 5 clarity + 5 drift + edge-cases + correctness = 12
     # Hmm, 12 + 2 = 14 ≤ 15 (still under). Use threshold=1 with 6 files:
     # 6 clarity-1..6 + 6 drift-1..6 + edge-cases + correctness = 14 types

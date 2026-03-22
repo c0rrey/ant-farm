@@ -87,6 +87,7 @@ run_script() {
 # ---------------------------------------------------------------------------
 run_test "below_threshold_5files_threshold8_produces_4_prompts_and_4_rows" '
     session="$(make_session)"
+    trap 'rm -rf "$session"' EXIT
     files_arg="$(write_files_list "$session" a.sh b.sh c.sh d.sh e.sh)"
 
     output="$(run_script "$session" "$files_arg" 1 8)"
@@ -137,6 +138,7 @@ run_test "below_threshold_5files_threshold8_produces_4_prompts_and_4_rows" '
 # ---------------------------------------------------------------------------
 run_test "above_threshold_20files_threshold8_produces_8_prompts_and_8_rows" '
     session="$(make_session)"
+    trap 'rm -rf "$session"' EXIT
     # 20 files → ceil(20/8) = 3 partitions for Clarity and Drift.
     # Total types: clarity-1,2,3 + edge-cases + correctness + drift-1,2,3 = 8.
     files_arg="$(write_files_list "$session" \
@@ -193,6 +195,7 @@ run_test "above_threshold_20files_threshold8_produces_8_prompts_and_8_rows" '
 # ---------------------------------------------------------------------------
 run_test "clarity_split_file_lists_concat_equals_full_sorted_list" '
     session="$(make_session)"
+    trap 'rm -rf "$session"' EXIT
     files_arg="$(write_files_list "$session" \
         f01.sh f02.sh f03.sh f04.sh f05.sh f06.sh f07.sh f08.sh \
         f09.sh f10.sh f11.sh f12.sh f13.sh f14.sh f15.sh f16.sh \
@@ -241,6 +244,7 @@ run_test "clarity_split_file_lists_concat_equals_full_sorted_list" '
 # ---------------------------------------------------------------------------
 run_test "correctness_and_edge_cases_contain_all_20_files" '
     session="$(make_session)"
+    trap 'rm -rf "$session"' EXIT
     files_arg="$(write_files_list "$session" \
         f01.sh f02.sh f03.sh f04.sh f05.sh f06.sh f07.sh f08.sh \
         f09.sh f10.sh f11.sh f12.sh f13.sh f14.sh f15.sh f16.sh \
@@ -273,6 +277,7 @@ run_test "correctness_and_edge_cases_contain_all_20_files" '
 # ---------------------------------------------------------------------------
 run_test "big_head_expected_paths_one_per_split_instance" '
     session="$(make_session)"
+    trap 'rm -rf "$session"' EXIT
     files_arg="$(write_files_list "$session" \
         f01.sh f02.sh f03.sh f04.sh f05.sh f06.sh f07.sh f08.sh \
         f09.sh f10.sh f11.sh f12.sh f13.sh f14.sh f15.sh f16.sh \
