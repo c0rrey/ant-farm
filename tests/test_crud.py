@@ -660,14 +660,15 @@ class TestUpdate:
         tasks = read_tasks(tasks_file)
         assert tasks[0]["priority"] == "P0"
 
-    def test_update_closed_crumb_status_raises_system_exit(
+    def test_update_closed_crumb_raises_system_exit(
         self, crumbs_env: Path
     ) -> None:
-        """cmd_update raises SystemExit when given an unrecognised status value.
+        """cmd_update raises SystemExit when attempting to update a closed crumb.
 
-        Note: argparse enforces choices=VALID_STATUSES so an invalid value would
-        normally be rejected by the parser. We test the validation path by
-        bypassing argparse and passing an invalid status directly.
+        Note: argparse enforces choices=VALID_STATUSES so a truly invalid value
+        would be rejected by the parser before reaching the guard. We exercise
+        the closed-crumb guard directly by seeding a closed crumb via file
+        manipulation and then calling cmd_update.
         """
         _seed_task(crumbs_env, id="AF-1", status="open")
         # Directly mutate the tasks.jsonl to have an unexpected status so the
