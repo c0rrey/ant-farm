@@ -170,6 +170,12 @@ map_has() {
 map_init
 trap 'map_cleanup' EXIT
 
+# Pre-build a lookup set of valid step keys for O(1) membership checks during parsing.
+mkdir -p "${_MAP_DIR}/valid_keys"
+for _vk in "${STEP_KEYS[@]}"; do
+    printf '' > "${_MAP_DIR}/valid_keys/${_vk}"
+done
+
 while IFS='|' read -r timestamp step_key rest; do
     # Skip blank lines or malformed lines (missing step_key)
     [ -z "$step_key" ] && continue
@@ -178,6 +184,10 @@ while IFS='|' read -r timestamp step_key rest; do
     if ! [[ "$timestamp" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2} ]]; then
         echo "WARNING: Skipping malformed log line (invalid timestamp '${timestamp}'): ${step_key}|${rest}" >&2
         continue
+    fi
+    # Warn on unrecognized step keys so corrupted logs are easier to diagnose.
+    if ! [ -f "${_MAP_DIR}/valid_keys/${step_key}" ]; then
+        echo "WARNING: Unrecognized step key '${step_key}' in log line at ${timestamp}. Possible log corruption." >&2
     fi
     map_set "completed" "$step_key" "yes"
     map_set "timestamp" "$step_key" "$timestamp"
