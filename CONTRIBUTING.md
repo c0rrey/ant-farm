@@ -28,7 +28,7 @@ Body text: the agent's system prompt. Instructions, principles, workflow steps.
 - `tools` -- subset of: `Bash`, `Read`, `Write`, `Edit`, `Glob`, `Grep`
 
 **Optional frontmatter fields:**
-- `model` -- e.g. `sonnet`, `haiku`. If omitted, the model is set by the Queen at spawn time via the `model` parameter on the Task tool call. See the Model Assignments table in `orchestration/RULES.md`.
+- `model` -- e.g. `sonnet`, `haiku`. If omitted, the model is set by the Queen at spawn time via the `model` parameter on the Task tool call. See `orchestration/reference/model-assignments.md`.
 
 ### Restart requirement
 
@@ -37,7 +37,7 @@ Claude Code loads agent files once at startup. Adding or editing an agent file r
 ### Cross-file updates after adding an agent
 
 1. **`README.md`** -- add the agent to the "Custom agents" table
-2. **`orchestration/RULES.md`** -- add the agent to the "Agent Types" table and "Model Assignments" table
+2. **`orchestration/reference/agent-types.md`** and **`orchestration/reference/model-assignments.md`** -- add the agent to the Agent Types table and Model Assignments table
 3. **`orchestration/templates/scout.md`** -- the Scout discovers agents dynamically by scanning `~/.claude/agents/`, so no template change is needed unless you want to add heuristic rules for when to recommend the new agent
 4. **`orchestration/GLOSSARY.md`** -- add the agent to the "Ant Metaphor Roles" table (the `## Ant Metaphor Roles` section)
 
@@ -69,7 +69,8 @@ Checkpoints are verification gates run by the Checkpoint Auditor. Checkpoint def
    - Add a subsection under "Details by Checkpoint"
 
 3. **Update cross-references** (see "Cross-File Dependencies" below):
-   - `orchestration/RULES.md` -- add the checkpoint to the Hard Gates table, specify where in the workflow it runs, and add the model to the Model Assignments table
+   - `orchestration/RULES.md` -- add the checkpoint to the Hard Gates table and specify where in the workflow it runs
+   - `orchestration/reference/model-assignments.md` -- add the model to the Model Assignments table
    - `README.md` -- add the checkpoint to the Hard Gates table and the architecture diagram if it introduces a new flow
 
 ### Artifact naming
@@ -90,7 +91,8 @@ Templates live in `orchestration/templates/`. Each template has a specific reade
 |----------|---------|---------|
 | `scout.md` | Scout (self-read) | Pre-flight recon instructions |
 | `pantry.md` | Pantry (self-read) | Prompt composition instructions |
-| `implementation.md` | Pantry | Agent prompt template with 6 mandatory steps |
+| `implementation.md` | Crumb Gatherer (via Pantry composition) | Agent prompt template with 6 mandatory steps |
+| `implementation-summary.md` | Pantry | Condensed extract of implementation.md read by Pantry during prompt composition |
 | `checkpoints/` | Checkpoint Auditor | Per-checkpoint definitions (common.md + one per type) |
 | `reviews.md` | `build-review-prompts.sh` | Review protocol, report format |
 | `crumb-gatherer-skeleton.md` | Queen | Minimal agent spawn template |
@@ -214,7 +216,7 @@ Changes to one file often require updates to others. This table lists the critic
 | If you change... | Also update... |
 |------------------|----------------|
 | A checkpoint's verdict thresholds | `RULES.md` Hard Gates table (describes blocking behavior) |
-| A checkpoint's model assignment | `RULES.md` Model Assignments table |
+| A checkpoint's model assignment | `orchestration/reference/model-assignments.md` |
 | Artifact naming convention | Any template or script that references `{SESSION_DIR}/pc/` paths |
 | review-integrity report-count check | `reviews.md` (must match expected report count per round) |
 
@@ -241,7 +243,7 @@ Changes to one file often require updates to others. This table lists the critic
 | If you change... | Also update... |
 |------------------|----------------|
 | Agent name or tools | `README.md` Custom agents table |
-| Agent name or role | `RULES.md` Agent Types table, Model Assignments table |
+| Agent name or role | `orchestration/reference/agent-types.md`, `orchestration/reference/model-assignments.md` |
 | Agent tools list | Verify the agent can still perform its workflow steps |
 
 ### RULES.md dependencies
