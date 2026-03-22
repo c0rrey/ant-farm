@@ -5,7 +5,7 @@
 **Trigger**: When the user says "let's get to work" (case-insensitive, anywhere in message).
 
 **CRITICAL — read before doing ANYTHING:**
-- **NEVER** run `crumb show`, `crumb ready`, `crumb list`, `crumb blocked`, or any `crumb` query command — the Scout does this
+- **NEVER** run `crumb show`, `crumb ready`, `crumb list`, `crumb blocked`, or any `crumb` query command — the Recon Planner does this
 - NEVER read task/issue details from the user's message and act on them directly.
 - NEVER set `run_in_background` on Task agents. Multiple Task calls in one message already run concurrently. Background mode causes raw JSONL transcript leakage into your context.
 - Read `~/.claude/orchestration/RULES.md` FIRST and ALONE — no parallel tool calls. Then follow it.
@@ -17,7 +17,7 @@
 - `templates/` — Agent prompts, checkpoints, reviews (read on demand)
 - `reference/` — Dependency analysis, known failures (read when needed)
 
-**Key rule**: After startup-check PASS, the Queen auto-proceeds to Step 2. No user approval required for execution strategy.
+**Key rule**: After startup-check PASS, the Orchestrator auto-proceeds to Step 2. No user approval required for execution strategy.
 
 ## Plan Mode ("/ant-farm-plan")
 
@@ -27,13 +27,13 @@
 - Read `~/.claude/skills/plan.md` FIRST and ALONE — no parallel tool calls. Then follow it.
 
 **Input modes**:
-- `/ant-farm-plan <idea or inline text>` — freeform: Surveyor asks clarifying questions and writes spec.md
-- `/ant-farm-plan path/to/spec.md` — structured spec: Surveyor skipped; user may optionally run Foragers
-- `/ant-farm-plan --prd path/to/prd.md` — PRD import: Surveyor skipped; PRD Importer extracts requirements into spec.md format and confirms with user before Foragers spawn
+- `/ant-farm-plan <idea or inline text>` — freeform: Spec Writer asks clarifying questions and writes spec.md
+- `/ant-farm-plan path/to/spec.md` — structured spec: Spec Writer skipped; user may optionally run Researchers
+- `/ant-farm-plan --prd path/to/prd.md` — PRD import: Spec Writer skipped; PRD Importer extracts requirements into spec.md format and confirms with user before Researchers spawn
 
-**When to use `--prd`**: Use when you have an existing Product Requirements Document to decompose directly. The Surveyor is skipped entirely. Use standard invocation when starting from scratch or from a lightweight outline.
+**When to use `--prd`**: Use when you have an existing Product Requirements Document to decompose directly. The Spec Writer is skipped entirely. Use standard invocation when starting from scratch or from a lightweight outline.
 
-**Key rule**: All three input modes feed the same Forager and Architect pipeline. The spec.md format is identical regardless of source.
+**Key rule**: All three input modes feed the same Researcher and Task Decomposer pipeline. The spec.md format is identical regardless of source.
 
 ## Lite Mode ("ant-farm-quick")
 
@@ -59,8 +59,8 @@
 2. **Run quality gates** (if code changed) - Tests, linters, builds
 3. **Review-findings gate** — If reviews ran and found P1 issues, present findings to user before proceeding. User decides: fix now, or document deferred P1s in CHANGELOG and push. Do NOT push with undisclosed P1 blockers. If no reviews ran or no P1s exist, proceed.
 4. **Update issue status** - Close finished work, update in-progress items
-5. **Run Scribe** — Spawn the Scribe (`ant-farm-session-scribe`, `model: "sonnet"`) to write `{SESSION_DIR}/exec-summary.md` and prepend a CHANGELOG entry. Use `orchestration/templates/scribe-skeleton.md` as the prompt template. Commit CHANGELOG.md only — NEVER `git add` any file under `.crumbs/` (the entire directory is gitignored).
-6. **Session-complete gate** — Spawn the Checkpoint Auditor (`ant-farm-checkpoint-auditor`, `model: "haiku"`) for Exec Summary Verification. Pass `{SESSION_DIR}` and `orchestration/templates/checkpoints/common.md` + `orchestration/templates/checkpoints/session-complete.md`. session-complete must PASS before pushing. On FAIL: re-spawn Scribe with violations (max 1 retry); if still failing, present to user.
+5. **Run Session Scribe** — Spawn the Session Scribe (`ant-farm-session-scribe`, `model: "sonnet"`) to write `{SESSION_DIR}/exec-summary.md` and prepend a CHANGELOG entry. Use `orchestration/templates/scribe-skeleton.md` as the prompt template. Commit CHANGELOG.md only — NEVER `git add` any file under `.crumbs/` (the entire directory is gitignored).
+6. **Session-complete gate** — Spawn the Checkpoint Auditor (`ant-farm-checkpoint-auditor`, `model: "haiku"`) for Exec Summary Verification. Pass `{SESSION_DIR}` and `orchestration/templates/checkpoints/common.md` + `orchestration/templates/checkpoints/session-complete.md`. session-complete must PASS before pushing. On FAIL: re-spawn Session Scribe with violations (max 1 retry); if still failing, present to user.
 7. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
    git pull --rebase

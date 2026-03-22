@@ -1,4 +1,4 @@
-# The Queen's Session State
+# The Orchestrator's Session State
 
 > **Timestamp format**: All timestamps in this file use ISO 8601 / RFC 3339: `YYYY-MM-DDTHH:MM:SSZ`
 > (e.g., `2026-02-20T14:35:07Z`). Generate via `date -u +%Y-%m-%dT%H:%M:%SZ`.
@@ -9,7 +9,7 @@
 **Session start**: {YYYY-MM-DDTHH:MM:SSZ}
 **Strategy**: {chosen-execution-strategy}
 
-## The Scout
+## The Recon Planner
 | Status | Briefing Path | Tasks Found | Blocked | Recommended Strategy |
 |--------|---------------|-------------|---------|---------------------|
 | pending/completed/failed | {path} | {N} | {M} | {name} |
@@ -19,7 +19,7 @@
 |------------|----------|----------------|--------|-------------|----------------|
 | {name}     | {ids}    | {files}        | spawned/completed/errored | {hash} | PASS/PENDING/FAIL |
 
-## The Pantry
+## The Prompt Composer
 | Wave | Status | Tasks | Verdict |
 |------|--------|-------|---------|
 | 1    | pending/completed/failed | {task-ids} | All PASS / {details} |
@@ -45,9 +45,9 @@
 - **Fix commit range**: {first-fix-commit}..HEAD (set after fix cycle)
 - **Termination**: {pending | terminated (round N: 0 P1/P2)}
 
-## Scribe and Session-Complete (Step 5 / 6)
-- **Scribe status**: {pending | spawned | completed | failed}
-- **Scribe retry**: {0 | 1} (max 1 retry before escalation)
+## Session Scribe and Session-Complete (Step 5 / 6)
+- **Session Scribe status**: {pending | spawned | completed | failed}
+- **Session Scribe retry**: {0 | 1} (max 1 retry before escalation)
 - **Exec summary path**: {SESSION_DIR}/exec-summary.md (or N/A)
 - **Session-complete status**: {pending | spawned | PASS | FAIL}
 - **Session-complete artifact**: {SESSION_DIR}/pc/pc-session-session-complete-{timestamp}.md (or N/A)
@@ -66,13 +66,13 @@
 
 When queen-state.md conflicts with other state sources, precedence is:
 
-| State Domain | Authoritative Source | Queen-state.md Role |
+| State Domain | Authoritative Source | queen-state.md Role |
 |--------------|---------------------|---------------------|
 | Commits (hashes, ranges, authorship) | `git log` / `git diff` | Cache — refresh from git if stale |
 | Artifact content (previews, reports, verdicts) | Artifact files on disk (`${SESSION_DIR}/...`) | Pointer — references paths, does not duplicate content |
 | Session workflow state (current step, wave, review round, retry budget, queue position) | **queen-state.md** | Authoritative — this file is the single source of truth |
-| Task status (open, closed, blocked) | `crumb` database (via Scout) | Cache — may lag behind crumb; Scout re-syncs on next run |
+| Task status (open, closed, blocked) | `crumb` database (via Recon Planner) | Cache — may lag behind crumb; Recon Planner re-syncs on next run |
 
 **Recovery rule**: If queen-state.md is lost or corrupted, rebuild workflow state from git log
 (commit messages encode task IDs and step transitions) and artifact files (verdict tables encode
-checkpoint pass/fail). Task status must be re-queried via a fresh Scout spawn.
+checkpoint pass/fail). Task status must be re-queried via a fresh Recon Planner spawn.

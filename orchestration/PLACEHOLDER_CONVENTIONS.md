@@ -8,22 +8,22 @@ The orchestration system uses four distinct placeholder syntaxes, each with a sp
 
 | Syntax | Purpose | Substituted By | Substituted When | Example |
 |--------|---------|---|---|---------|
-| `{UPPERCASE}` | Queen-provided context | Queen agent | Before agent spawn | `{TASK_ID}`, `{SESSION_DIR}`, `{TASK_SUFFIX}` |
+| `{UPPERCASE}` | Orchestrator-provided context | Orchestrator | Before agent spawn | `{TASK_ID}`, `{SESSION_DIR}`, `{TASK_SUFFIX}` |
 | `{lowercase-kebab}` | Runtime-derived or output format | Agent or system | At runtime by agent | `{session-dir}` (computed from SESSION_DIR), `{timestamp}` (from system clock) |
 | `${SHELL_VAR}` | Bash/shell variables | Shell interpreter | When bash script executes | `${SESSION_ID}`, `${SESSION_DIR}` in code blocks only |
 | `{{UPPERCASE}}` | Review slot markers | `build-review-prompts.sh` | When shell script composes review prompts | `{{REVIEW_ROUND}}`, `{{COMMIT_RANGE}}`, `{{CHANGED_FILES}}` |
 
 ## Detailed Definitions
 
-### Tier 1: Queen-Substituted (`{UPPERCASE}`)
+### Tier 1: Orchestrator-Substituted (`{UPPERCASE}`)
 
-These placeholders are filled in by the Queen agent **before spawning a subagent**. They represent information the Queen already possesses from prior steps.
+These placeholders are filled in by the Orchestrator **before spawning a subagent**. They represent information the Orchestrator already possesses from prior steps.
 
-**When to use**: Task context that came from a previous step (Scout metadata, crumb data, etc.)
+**When to use**: Task context that came from a previous step (Recon Planner metadata, crumb data, etc.)
 
 **Characteristics**:
 - ALL CAPS with underscores
-- Filled in by Queen in task skeleton templates
+- Filled in by Orchestrator in task skeleton templates
 - Never appear in final prompts (all instances replaced with actual values)
 - Used in data file paths, task IDs, epic IDs, file paths
 
@@ -32,7 +32,7 @@ These placeholders are filled in by the Queen agent **before spawning a subagent
 - `{TASK_SUFFIX}` — suffix portion only (e.g., `9oa` from `ant-farm-9oa`)
 - `{SESSION_DIR}` — session artifact directory path (e.g., `.crumbs/sessions/_session-abc123`)
 - `{AGENT_TYPE}` — subagent type for Task tool (e.g., `python-pro`, `general-purpose`)
-- `{DATA_FILE_PATH}` — full path to data file pre-written by Pantry
+- `{DATA_FILE_PATH}` — full path to data file pre-written by Prompt Composer
 - `{SUMMARY_OUTPUT_PATH}` — full path where agent should write summary doc (e.g., `{SESSION_DIR}/summaries/{TASK_SUFFIX}.md`)
 - `{TIMESTAMP}` — UTC timestamp in YYYYMMDD-HHmmss format, generated once at the start of Step 3b; used in review report filenames and the dummy reviewer output path to ensure all artifacts from the same review round share a consistent timestamp
 
@@ -57,7 +57,7 @@ These placeholders represent values that are **computed at runtime by an agent**
 **Characteristics**:
 - lowercase with hyphens (kebab-case)
 - Appear in agent-facing instructions or output specs
-- Never pre-filled by Queen (agent computes or system provides them)
+- Never pre-filled by Orchestrator (agent computes or system provides them)
 - Often represent file paths, IDs, or values derived from prior computations
 
 **Examples**:
@@ -98,9 +98,9 @@ mkdir -p "${SESSION_DIR}/"{task-metadata,previews,prompts}
 
 ### Tier 4: Script-Substituted (`{{DOUBLE_BRACE}}`)
 
-These placeholders are filled in by **`build-review-prompts.sh`** when it composes the final review prompts from skeleton templates. They use double curly braces to visually distinguish them from Queen-substituted Tier 1 placeholders and to prevent accidental substitution during earlier pipeline stages.
+These placeholders are filled in by **`build-review-prompts.sh`** when it composes the final review prompts from skeleton templates. They use double curly braces to visually distinguish them from Orchestrator-substituted Tier 1 placeholders and to prevent accidental substitution during earlier pipeline stages.
 
-**When to use**: Values that are only known at review-slot-filling time — after Crumb Gatherers have committed and the Queen has generated the review cycle metadata — but that must not be filled in by the Queen during initial agent spawn.
+**When to use**: Values that are only known at review-slot-filling time — after Implementers have committed and the Orchestrator has generated the review cycle metadata — but that must not be filled in by the Orchestrator during initial agent spawn.
 
 **Characteristics**:
 - ALL CAPS with underscores, wrapped in double curly braces: `{{VAR}}`
@@ -117,8 +117,8 @@ These placeholders are filled in by **`build-review-prompts.sh`** when it compos
 
 **Why double braces instead of single braces?**
 
-Single-brace `{UPPERCASE}` is already claimed by Tier 1 (Queen-substituted). Using `{{UPPERCASE}}` for script-substituted slots makes the two tiers visually and programmatically distinct:
-- The Queen's substitution logic replaces `{VAR}` patterns — it will not accidentally replace `{{VAR}}`
+Single-brace `{UPPERCASE}` is already claimed by Tier 1 (Orchestrator-substituted). Using `{{UPPERCASE}}` for script-substituted slots makes the two tiers visually and programmatically distinct:
+- The Orchestrator's substitution logic replaces `{VAR}` patterns — it will not accidentally replace `{{VAR}}`
 - `build-review-prompts.sh` explicitly targets `{{VAR}}` patterns — it will not accidentally replace `{VAR}`
 - The self-check guard in templates (`case "$REVIEW_ROUND" in *'{'*|*'}'* )`) catches any unsubstituted `{{VAR}}` that slipped through
 
@@ -143,7 +143,7 @@ All files audited. All files use the Tiered convention correctly. When updating 
 | `scout.md` | `{SESSION_DIR}` (L10,62,66,129,175,178), `{MODE}` (L11), `{TASK_ID}` (L81,293), `{TASK_ID_1}`, `{TASK_ID_2}` (conflict matrix) | `{session-dir}` (L166-167), `{task-suffix}` (L78), `{id}`, `{epic-id}`, `{title}`, `{N}`, `{M}`, `{name}`, `{task-list}`, `{task-A/B/C}` (L137-198) | None | None | No (uses examples inline) | PASS |
 | `pantry.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{SESSION_DIR}` | `{session-dir}` (review output paths, previews, prompts), `{id}`, `{type}`, `{path}`, `{timestamp}` | None | None | Yes (L5-8) | PASS |
 | `RULES.md` | `{TIMESTAMP}` (Step 3b-i, via `${TIMESTAMP}` shell var), `{SESSION_DIR}` (all gates) | None | `${SESSION_ID}`, `${SESSION_DIR}`, `${TIMESTAMP}` (Step 3b-i) | None | No (references other term defs) | PASS |
-| `checkpoints/common.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{SESSION_DIR}` (term def near top, used throughout), `{SESSION_START_DATE}` (ESV) | `{checkpoint}`, `{path}`, `{N}`, `{M}`, `{before-commit}`, `{after-commit}`, `{commit}`, `{file}`, `{line}`, `{description}`, `{list}` (in examples) | None | None | Yes (term def near top) | PASS |
+| `checkpoints/common.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{SESSION_DIR}` (term def near top, used throughout), `{SESSION_START_DATE}` (session-complete) | `{checkpoint}`, `{path}`, `{N}`, `{M}`, `{before-commit}`, `{after-commit}`, `{commit}`, `{file}`, `{line}`, `{description}`, `{list}` (in examples) | None | None | Yes (term def near top) | PASS |
 | `crumb-gatherer-skeleton.md` | `{TASK_TYPE}`, `{TASK_ID}`, `{TASK_SUFFIX}`, `{AGENT_TYPE}`, `{DATA_FILE_PATH}`, `{SUMMARY_OUTPUT_PATH}`, `{SESSION_DIR}` | None | None | None | Yes (L8-11) | PASS |
 | `reviewer-skeleton.md` | `{REVIEW_TYPE}`, `{DATA_FILE_PATH}`, `{REPORT_OUTPUT_PATH}` | None | None | None | Partial (L8-13; defines REVIEW_TYPE, DATA_FILE_PATH, REPORT_OUTPUT_PATH, REVIEW_ROUND -- all terms this template uses; EPOCH/timestamp defs not required as the reviewer template does not reference them) | PASS |
 | `review-consolidator-skeleton.md` | `{TASK_ID}`, `{TASK_SUFFIX}`, `{TIMESTAMP}`, `{DATA_FILE_PATH}`, `{CONSOLIDATED_OUTPUT_PATH}`, `{SESSION_DIR}` | None | None | None | Yes (L8-12) | PASS |
@@ -169,7 +169,7 @@ To ensure compliance with these conventions, apply these grep patterns:
 grep -rE '\{[A-Z][A-Z_]*\}' orchestration/
 ```
 
-Expected matches: `{TASK_ID}`, `{SESSION_DIR}`, `{TASK_SUFFIX}`, etc. These should all appear in templates meant for Queen substitution or in term definition blocks.
+Expected matches: `{TASK_ID}`, `{SESSION_DIR}`, `{TASK_SUFFIX}`, etc. These should all appear in templates meant for Orchestrator substitution or in term definition blocks.
 
 ### Pattern 2: Find all Tier 2 placeholders
 ```bash
@@ -207,15 +207,15 @@ The orchestration system complies with the Tiered Placeholder Convention. All an
 
 ### Key Findings
 
-1. **Scout.md** — COMPLIANT
-   - Tier 1 (`{SESSION_DIR}`, `{TASK_ID}`, `{TASK_ID_1}`, `{TASK_ID_2}`) used correctly for Queen-provided context and output template examples
+1. **scout.md (Recon Planner)** — COMPLIANT
+   - Tier 1 (`{SESSION_DIR}`, `{TASK_ID}`, `{TASK_ID_1}`, `{TASK_ID_2}`) used correctly for Orchestrator-provided context and output template examples
    - Tier 2 (`{session-dir}`, `{task-suffix}`) used correctly for agent-derived output format specs
    - Non-canonical synonyms corrected to `{task-suffix}` and `{TASK_ID}` (AGG-022, ant-farm-im8)
 
-2. **Pantry.md** — COMPLIANT
+2. **pantry.md (Prompt Composer)** — COMPLIANT
    - Term definitions block present and correct (L5-8)
    - Tier 1 placeholders in term definitions and used for agent context
-   - Tier 2 `{session-dir}` used in agent-facing instructions (shows how agent will use the session-dir value provided by Queen)
+   - Tier 2 `{session-dir}` used in agent-facing instructions (shows how agent will use the session-dir value provided by Orchestrator)
 
 3. **RULES.md** — COMPLIANT
    - Tier 3 `${SESSION_ID}`, `${SESSION_DIR}` used correctly in bash code block
@@ -225,7 +225,7 @@ The orchestration system complies with the Tiered Placeholder Convention. All an
    - Consistent Tier 1 uppercase usage
    - Tier 2 lowercase used for output examples
 
-5. **Skeleton Templates (crumb-gatherer, nitpicker, big-head)** — COMPLIANT
+5. **Skeleton Templates (crumb-gatherer, reviewer, review-consolidator)** — COMPLIANT
    - Term definitions blocks present
    - All Tier 1 placeholders used correctly
 
@@ -271,7 +271,7 @@ The orchestration system complies with the Tiered Placeholder Convention. All an
 3. **Reduces confusion**: New template authors don't wonder "will this be filled in?"
 4. **Enables automation**: CI/CD can validate placeholder casing
 5. **Flexible**: Accommodates current usage without massive refactor
-6. **Semantically rich**: Four tiers map to four workflow phases (Queen spawn, agent runtime, shell execution, script slot-filling)
+6. **Semantically rich**: Four tiers map to four workflow phases (Orchestrator spawn, agent runtime, shell execution, script slot-filling)
 
 ---
 
@@ -281,7 +281,7 @@ The orchestration system complies with the Tiered Placeholder Convention. All an
 Only location where Tier 3 (`${VAR}`) appears. These are NOT template placeholders — they are actual shell variables that will be expanded by the shell. They follow bash naming conventions (uppercase with underscores).
 
 ### Generic placeholders in examples
-When showing an example output path like `.crumbs/sessions/{path}`, the `{path}` is Tier 2 (agent-derived) even if it looks like a generic placeholder. If it's filled in by the Queen before spawn, it must be Tier 1 (`{PATH}` in uppercase).
+When showing an example output path like `.crumbs/sessions/{path}`, the `{path}` is Tier 2 (agent-derived) even if it looks like a generic placeholder. If it's filled in by the Orchestrator before spawn, it must be Tier 1 (`{PATH}` in uppercase).
 
 ### Legacy term definitions
 Some files pre-date this convention. Their term definition blocks (if present) may use mixed casing. When updating these files, normalize to convention and regenerate term blocks.

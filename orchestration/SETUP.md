@@ -96,8 +96,8 @@ crumb create --title="Test orchestration" --type=task --priority=3
 # Start session:
 # "Let's get to work on: <task-id>"
 
-# Verify Claude (the Queen):
-# 1. Delegates to the Scout subagent (Scout runs crumb show — Queen does NOT run crumb show directly)
+# Verify Claude (the Orchestrator):
+# 1. Delegates to the Recon Planner subagent (Recon Planner runs crumb show — Orchestrator does NOT run crumb show directly)
 # 2. Analyzes conflicts
 # 3. Presents strategy (SSV gate validates mechanically — no manual approval needed)
 # 4. Auto-proceeds to spawn agents after SSV PASS
@@ -105,7 +105,7 @@ crumb create --title="Test orchestration" --type=task --priority=3
 
 ## Lite Mode (Single-Crumb Execution)
 
-For single, isolated tasks where full-pipeline overhead (Scout, Pantry, Nitpicker) is unnecessary, use **lite mode** defined in `orchestration/RULES-lite.md`.
+For single, isolated tasks where full-pipeline overhead (Recon Planner, Prompt Composer, Reviewer) is unnecessary, use **lite mode** defined in `orchestration/RULES-lite.md`.
 
 **When to use lite mode:**
 - Exactly one crumb is being worked
@@ -119,16 +119,16 @@ For single, isolated tasks where full-pipeline overhead (Scout, Pantry, Nitpicke
 ```
 
 **What is different in lite mode:**
-- No Scout subagent or startup-check (SSV) gate
-- No Pantry pre-digestion — Queen composes the task brief directly from `crumb show` output
-- No Nitpicker review team or review-integrity (CCB) gate
-- No Scribe or session-complete (ESV) gate
+- No Recon Planner subagent or startup-check gate
+- No Prompt Composer pre-digestion — Orchestrator composes the task brief directly from `crumb show` output
+- No Reviewer team or review-integrity gate
+- No Session Scribe or session-complete gate
 - Implementer reads task files directly (the implementer's prompt includes the crumb data verbatim)
 - Mandatory self-review step: implementer verifies its own changes against acceptance criteria before committing
 
 **What remains the same in lite mode:**
-- pre-spawn-check (CCO) gate before the implementer spawns
-- claims-vs-code (CMVCC) gate after the implementer completes
+- pre-spawn-check gate before the implementer spawns
+- claims-vs-code gate after the implementer completes
 - Atomic commit with `git pull --rebase`
 - Crumb tracking (claim at start, close at end)
 - Progress log with `mode=lite` field
@@ -262,7 +262,7 @@ Fix: Be explicit in kickoff:
 Let's get to work on: <task-ids>
 
 IMPORTANT: Before spawning any agents:
-1. Spawn the Scout subagent to gather all task metadata (do NOT run crumb show directly as Queen)
+1. Spawn the Recon Planner subagent to gather all task metadata (do NOT run crumb show directly as Orchestrator)
 2. Analyze file conflicts (create file modification matrix)
 3. Present execution strategy (SSV gate validates mechanically — auto-proceeds on PASS)
 ```
@@ -272,7 +272,7 @@ IMPORTANT: Before spawning any agents:
 Fix: Remind about information diet:
 ```
 Orchestration discipline: Only read task metadata in this window.
-See RULES.md Queen Read Permissions section.
+See RULES.md Orchestrator Read Permissions section.
 Delegate all implementation file reading to subagents.
 ```
 
