@@ -204,6 +204,12 @@ async function syncClaudeMdBlock(blockContent, dst, { dryRun = false, collector 
 
   // Both sentinels present — compare content
   const existingBlock = extractBlock(existing);
+  if (!existingBlock) {
+    throw new Error(
+      `Sentinel markers found in ${dst} but could not extract block — ` +
+        `markers may not be on their own lines. Fix the file manually.`
+    );
+  }
   if (existingBlock.trimEnd() === block.trimEnd()) {
     if (dryRun) {
       collector.add('claude-md-unchanged', null, dst);
