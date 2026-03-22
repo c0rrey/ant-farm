@@ -73,6 +73,7 @@ Ask the user for a short prefix that will be prepended to all task IDs in this p
 Accept the user's input or use `DERIVED_PREFIX` if the user accepts the default.
 
 Validate the prefix:
+- Minimum 1 character (empty input must re-prompt, not silently pass)
 - Contains only lowercase letters, digits, and hyphens
 - Does not end with a hyphen
 - Maximum 16 characters
