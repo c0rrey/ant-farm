@@ -1,5 +1,49 @@
 # Changelog
 
+## 2026-03-22 — Session 20260322-131616 (crumb.py Bug Fix Sweep — Epic AF-T63)
+
+### Summary
+
+Session completed epic AF-T63, resolving all 19 crumb.py P3 bugs in a single Wave 1 using 3 parallel agents batched by non-overlapping file regions. Changes covered the full file: Windows-safe `fcntl` import, `FileLock` retry error handling, `cleanup_stale_tmp_files` locking and error visibility, `cmd_create`/`cmd_prune`/`cmd_close`/`cmd_tree` correctness, type annotation consistency, and minor docstring/comment accuracy fixes. Round 1 review (4 reviewers) found 1 P1 (stale `FileLock` docstring) and 3 P3 issues; all 4 were auto-fixed in a single fix agent pass. Round 2 confirmed clean convergence with 0 findings. All 476 tests pass. 2 commits total.
+
+### Implementation (Wave 1 — 19 tasks)
+
+- **AF-178**: fix: add `--from-file` to usage synopsis (`crumb.py:14`) (`162e3e3`)
+- **AF-259**: fix: wrap unconditional `fcntl` import in `try/except ImportError` with `None` fallback (`crumb.py:38`) (`162e3e3`)
+- **AF-253**: fix: add `Set` to typing import and replace bare `set` annotations with `Set[str]` at three sites (`crumb.py:53,1771,2062,2285`) (`162e3e3`)
+- **AF-33**: fix: remove redundant `crumbs_dir()` wrapper function (`crumb.py:113`) (`162e3e3`)
+- **AF-345**: fix: narrow bare `except` in `write_tasks` to `except Exception` (`crumb.py:289`) (`162e3e3`)
+- **AF-332**: fix: normalize blank lines before section separator (`crumb.py:294–296`) (`162e3e3`)
+- **AF-46 + AF-257**: fix: add `except OSError` fallback after `except BlockingIOError` in `FileLock.__enter__` retry loop — unified fix (`crumb.py:357–370`) (`162e3e3`)
+- **AF-215**: fix: log `OSError` in `cleanup_stale_tmp_files` instead of swallowing silently (`crumb.py:401–404`) (`162e3e3`)
+- **AF-347**: fix: wrap `cleanup_stale_tmp_files` call under `FileLock` (`crumb.py:379–406`) (`162e3e3`)
+- **AF-177**: fix: add ISO-8601 validation for `--after` DATE argument (`crumb.py:700–706`) (`162e3e3`)
+- **AF-174**: fix: remove duplicate CLI-override merge block in `cmd_create` (`crumb.py:832–862`) (`162e3e3`)
+- **AF-155**: fix: reject empty-string title in `--from-json` path (`crumb.py:884`) (`162e3e3`)
+- **AF-35**: fix: expand incomplete protected-field comment in `cmd_update` (`crumb.py:888–891`) (`162e3e3`)
+- **AF-76**: fix: add invariant comment to second `_find_crumb` call in `cmd_close` (`crumb.py:976`) (`162e3e3`)
+- **AF-213**: fix: remove dead variable `all_trail_ids` in `cmd_tree` (`crumb.py:1602`) (`162e3e3`)
+- **AF-212**: fix: remove hardcoded `(currently 60)` parenthetical from `cmd_prune` docstring (`crumb.py:2295`) (`162e3e3`)
+- **AF-93**: fix: add TOCTOU re-check of `_is_active_session` before each `rmtree` in `cmd_prune` (`crumb.py:2313–2356`) (`162e3e3`)
+- **AF-254**: fix: rename local `crumbs_dir` to `prune_dir` to eliminate module-level shadowing (`crumb.py:2414`) (`162e3e3`)
+
+### Review Fixes (Round 1)
+
+- **AF-417**: fix: update `FileLock` docstring — use-time `SystemExit`, not import-time `AttributeError` (`crumb.py:301–304`) (`dcfddf0`)
+- **AF-418**: fix: replace magic backdate `10` with `_STALE_TMP_AGE_SECS + 5` (`tests/test_helpers.py:326,358`) (`dcfddf0`)
+- **AF-419**: fix: remove `(currently 60)` parenthetical from `cmd_prune` docstring (`crumb.py:2592`) (`dcfddf0`)
+- **AF-420**: fix: replace `assert crumb is not None` with explicit `if crumb is None: die(...)` guard (`crumb.py:1217–1218`) (`dcfddf0`)
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 4 files, 19 tasks | 1 | 0 | 3 | PASS WITH ISSUES — auto-fix |
+| 2 | 4 fix tasks | 0 | 0 | 0 | PASS — CONVERGED |
+
+4 root causes consolidated (0 merges needed). All P1 and P3 findings fixed this session.
+
+
 ## 2026-03-22 — Session 20260322-115432 (Defensive Bash Hardening & Clarity — 25-Task Sweep)
 
 ### Summary
