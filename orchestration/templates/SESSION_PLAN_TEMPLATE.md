@@ -134,6 +134,8 @@ graph TD
 
 ### Agent Spawn Sequence
 
+**Note:** The pseudocode below is conceptual and illustrates the spawn pattern. Adapt function names, parameters, and values to match the actual orchestration API.
+
 #### Wave 1: [Name]
 
 ```python
