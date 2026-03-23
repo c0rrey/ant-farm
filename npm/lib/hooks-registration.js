@@ -14,6 +14,9 @@
  *   PreToolUse (matcher "Write|Edit"):
  *     { "type": "command", "command": "node ~/.claude/hooks/ant-farm-scope-advisor.js" }
  *
+ *   PreToolUse (matcher "Task|TeamCreate|SendMessage"):
+ *     { "type": "command", "command": "node ~/.claude/hooks/ant-farm-gate-enforcer.js" }
+ *
  * Idempotency:
  *   Each function checks whether the entry is already present (by command string)
  *   before inserting. Re-running install does not add duplicate entries.
@@ -261,7 +264,7 @@ function unregisterStatusLineHook(settings) {
 }
 
 /**
- * Removes all ant-farm PreToolUse hook entries from the given settings object.
+ * Removes all ant-farm scope advisor PreToolUse hook entries from the given settings object.
  *
  * Iterates all groups in hooks.PreToolUse, strips the ant-farm command from
  * each group's hooks array, and prunes empty groups (groups with zero hooks
