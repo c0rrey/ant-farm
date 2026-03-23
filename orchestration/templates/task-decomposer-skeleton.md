@@ -67,7 +67,7 @@ At a glance:
    must map to at least one crumb. This is a mandatory gate; do not proceed
    until coverage is PASS.
 
-7. **Create via MCP tools** — Create trails and crumbs using the following MCP tools (CLI fallback commands shown in comments):
+7. **Create via MCP tools** — Create trails and crumbs using the following MCP tools (CLI fallback commands shown in parentheses):
    - Trail: `crumb_trail_show` does not create — use CLI `crumb trail create "{trail-title}"` (no MCP create-trail tool; CLI required)
    - Crumb: `crumb_create` MCP tool with `title`, `priority`, `crumb_type`, `description`, `from_json` fields (CLI fallback: `crumb create --from-file /tmp/crumb-{slug}.json`)
    - Parent link: `crumb_link` MCP tool with `crumb_id` and `parent` fields (CLI fallback: `crumb link {crumb-id} --parent {trail-id}`)
