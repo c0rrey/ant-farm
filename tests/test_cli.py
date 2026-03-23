@@ -1432,3 +1432,73 @@ class TestValidateSpec:
         assert "intuitive" in phrases_found, (
             f"Expected 'intuitive' in matches.\nresult: {parsed}"
         )
+
+    # ------------------------------------------------------------------
+    # AC-3.3 — case-insensitive: 'As Expected' matches 'as expected'
+    # ------------------------------------------------------------------
+
+    def test_case_insensitive_as_expected(self, tmp_path: Path) -> None:
+        """'As Expected' (mixed case) is caught by the banned phrase 'as expected'.
+
+        Acceptance criterion AC-3.3: case-insensitive matching applies to the
+        specific phrase 'as expected', so a capitalised variant in an AC line
+        triggers exit 1 just as the lower-case form does.
+        """
+        _make_crumbs_env(tmp_path)
+        spec = self._write_spec(
+            tmp_path,
+            "- AC-1.1: The module behaves As Expected in all scenarios.\n",
+        )
+
+        result = _run(["validate-spec", str(spec)], cwd=tmp_path)
+
+        assert result.returncode == 1, (
+            "'As Expected' (mixed case) must match banned phrase 'as expected'.\n"
+            f"stdout: {result.stdout!r}"
+        )
+        assert "as expected" in result.stdout.lower(), (
+            f"Expected matched phrase 'as expected' in output.\nstdout: {result.stdout!r}"
+        )
+
+    # ------------------------------------------------------------------
+    # Edge cases — empty spec file
+    # ------------------------------------------------------------------
+
+    def test_empty_spec_file_exits_zero(self, tmp_path: Path) -> None:
+        """An empty spec file contains no AC lines and exits 0 with 0 matches.
+
+        Acceptance criterion 8: an empty file is valid (no banned phrases can
+        appear in zero lines) and must not cause an error or non-zero exit.
+        """
+        _make_crumbs_env(tmp_path)
+        spec = self._write_spec(tmp_path, "")
+
+        result = _run(["validate-spec", str(spec)], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            "Empty spec file must exit 0.\n"
+            f"stdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+
+    def test_empty_spec_file_json_clean_true(self, tmp_path: Path) -> None:
+        """``--json`` on an empty spec outputs ``{"clean": true, "matches": []}``.
+
+        Supplements acceptance criterion 8: the JSON path also handles empty
+        files gracefully, reporting clean=true and an empty matches array.
+        """
+        _make_crumbs_env(tmp_path)
+        spec = self._write_spec(tmp_path, "")
+
+        result = _run(["validate-spec", "--json", str(spec)], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            "Empty spec file with --json must exit 0.\n"
+            f"stdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        parsed = json.loads(result.stdout)
+        assert parsed["clean"] is True, (
+            f"Expected 'clean: true' for empty spec.\nresult: {parsed}"
+        )
+        assert parsed["matches"] == [], (
+            f"Expected empty matches array for empty spec.\nresult: {parsed}"
+        )
