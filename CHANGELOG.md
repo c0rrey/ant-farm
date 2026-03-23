@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-03-22 — Session 20260322-185904 (Test Cleanup, Null Guards, Hook Tests & JSON Schema Docs)
+
+### Summary
+
+Completed 14 tasks across 2 primary waves and a review-driven fix cycle. Work spanned Python test-quality improvements (constant deduplication, naming fixes, test renames), JavaScript install-tooling polish (step banners, null guard, hook registration tests), and a new `docs/json-schema.md` reference document. Two review rounds ran: round 1 produced 1 P2 finding (silent dict-to-scalar replacement in `from_json`) which was auto-fixed; round 2 cleared with 0 findings. 6 P3 polish crumbs (AF-444–AF-449) filed and deferred. Session produced 11 commits.
+
+### Implementation (Waves 1–2)
+
+- **AF-156 + AF-159 + AF-160**: fix/refactor: replace hardcoded constants with imports, extract `_SECS_PER_DAY`, move local import to module level (`tests/conftest.py`, `tests/test_cli.py`, `tests/test_prune.py`) (`05440b1`)
+- **AF-158**: fix: rename misleading test method and rewrite docstring for closed-crumb guard (`tests/test_crud.py`) (`66d8e2c`)
+- **AF-256**: fix: remove unused `from typing import Dict` import (`tests/test_render_template.py`) (`3812ba2`)
+- **AF-331**: refactor: rename `_make_update_args_import` → `_make_update_args` at definition and all call sites (`tests/test_import.py`) (`77268d3`)
+- **AF-333**: fix: align event-type comment table arrows to column 23 (`hooks/lib/progress-reader.js`) (`90bb714`)
+- **AF-335 + AF-346**: fix: add `// Step U1/U2/U3:` banners to `runUninstallMode` and guard top-level catch with `err?.message ?? String(err)` (`npm/bin/install.js`) (`33d7c29`)
+- **AF-344**: fix: add null guard before `trimEnd()` in `syncClaudeMdBlock` to replace silent TypeError with descriptive Error (`npm/lib/claude-md.js`) (`f05f281`)
+- **AF-343**: refactor: move `_show_args` helper adjacent to `TestShowJSON` (`tests/test_queries.py`) (`45e1862`)
+- **AF-436**: test: add 8 unit tests for `registerHooks`/`unregisterHooks` following `registerMcp`/`unregisterMcp` pattern (`npm/test/install.test.js`, `npm/test/uninstall.test.js`) (`8ab3232`)
+- **AF-437**: docs: add `docs/json-schema.md` JSON schema reference for crumb CLI `--json` output; add cross-reference in `crumb.py` docstring (`aaf2367`)
+
+### Review Fixes (Round 1)
+
+- **AF-443**: fix: emit `sys.stderr` warning on dict-to-scalar replacement in `from_json` deep-merge (`crumb.py`) (`fda07ff`)
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 11 files, 13 tasks | 0 | 1 | 6 | PASS WITH ISSUES |
+| 2 | 1 file, 1 task (fix) | 0 | 0 | 0 | PASS |
+
+7 root causes consolidated. P2 auto-fixed; 6 P3 crumbs (AF-444–AF-449) filed and deferred.
+
 ## 2026-03-22 — Session 20260322-151004 (Metaphor Rename: Colony → Descriptive Names)
 
 ### Summary
