@@ -55,6 +55,7 @@ const path = require('path');
 const { debugLog } = require('./lib/debug-log');
 const { isGatePassed, writeGateVerdict } = require('./lib/gate-manager');
 const { getExpectedNextStep } = require('./lib/progress-reader');
+const { canRetry } = require('./lib/retry-tracker');
 
 const HOOK_NAME = 'ant-farm-gate-enforcer';
 
@@ -69,6 +70,18 @@ const POSITION_CHECK_GATE = 'position-check';
 
 /** Tools that bypass gate checks entirely (review team coordination). */
 const BYPASS_TOOLS = new Set(['TeamCreate', 'SendMessage']);
+
+/**
+ * Failure type passed to canRetry() for gate-enforcer-level retry checks.
+ * Gate-enforced re-spawns are checkpoint retries.
+ */
+const RETRY_FAILURE_TYPE = 'checkpoint';
+
+/**
+ * Gate name used when recording agent spawn timestamps in gate-status.json.
+ * Written with a PASS verdict each time a spawn is allowed through.
+ */
+const AGENT_SPAWN_GATE = 'agent-spawn';
 
 // ---------------------------------------------------------------------------
 // Session detection
@@ -236,6 +249,29 @@ function isBypassEnabled(projectDir) {
 }
 
 // ---------------------------------------------------------------------------
+// Task ID extraction
+// ---------------------------------------------------------------------------
+
+/**
+ * Scans a prompt string for the first occurrence of a crumb task ID
+ * (format: two or more uppercase letters followed by a hyphen and digits,
+ * e.g. "AF-123", "TSK-42").
+ *
+ * Returns the matched task ID, or 'unknown' if no match is found.
+ * Used to supply a taskId to canRetry() for per-task retry accounting.
+ *
+ * @param {string} prompt  The Task tool prompt string.
+ * @returns {string}  Matched task ID or 'unknown'.
+ */
+function extractTaskIdFromPrompt(prompt) {
+  if (typeof prompt !== 'string') {
+    return 'unknown';
+  }
+  const match = prompt.match(/\b([A-Z]{2,}-\d+)\b/);
+  return match ? match[1] : 'unknown';
+}
+
+// ---------------------------------------------------------------------------
 // Core handler
 // ---------------------------------------------------------------------------
 
@@ -295,19 +331,33 @@ async function handler(input) {
       return JSON.stringify({ continue: false, reason });
     }
 
+    // Retry check: extract task ID from the prompt and verify the retry limit
+    // has not been exceeded for this task. Blocks re-spawns when canRetry()
+    // returns false (per-type or global cap reached).
+    const prompt =
+      input &&
+      input.tool_input &&
+      typeof input.tool_input.prompt === 'string'
+        ? input.tool_input.prompt
+        : '';
+
+    const taskId = extractTaskIdFromPrompt(prompt);
+    const retryAllowed = canRetry(sessionDir, RETRY_FAILURE_TYPE, taskId);
+    debugLog(HOOK_NAME, 'retry check', { taskId, retryAllowed });
+
+    if (!retryAllowed) {
+      const reason = `Retry limit exceeded: ${RETRY_FAILURE_TYPE} retries for task ${taskId} have reached the maximum`;
+      debugLog(HOOK_NAME, 'blocking Task spawn — retry limit exceeded', { reason });
+      return JSON.stringify({ continue: false, reason });
+    }
+
     // Position check: verify the spawn matches the expected next step from progress.log.
     const expectedNextStep = getExpectedNextStep(sessionDir);
     debugLog(HOOK_NAME, 'expected next step from progress.log', { expectedNextStep });
 
     if (expectedNextStep !== null) {
       // Determine the step being attempted from the prompt text.
-      const prompt =
-        input &&
-        input.tool_input &&
-        typeof input.tool_input.prompt === 'string'
-          ? input.tool_input.prompt
-          : '';
-
+      // `prompt` was already extracted above for the retry check.
       const stepMatched = prompt.includes(expectedNextStep);
       debugLog(HOOK_NAME, `position check: expected="${expectedNextStep}" matched=${stepMatched}`);
 
@@ -344,6 +394,15 @@ async function handler(input) {
       } catch (writeErr) {
         debugLog(HOOK_NAME, 'failed to write position-check PASS verdict', writeErr && writeErr.message);
       }
+    }
+
+    // Record spawn timestamp in gate-status.json so the session log reflects
+    // when agents were dispatched. Written as an agent-spawn PASS verdict;
+    // the timestamp field is automatically included by writeGateVerdict().
+    try {
+      writeGateVerdict(sessionDir, AGENT_SPAWN_GATE, 'PASS', { task_id: taskId });
+    } catch (spawnWriteErr) {
+      debugLog(HOOK_NAME, 'failed to write agent-spawn verdict', spawnWriteErr && spawnWriteErr.message);
     }
 
     // Gate has passed — allow spawn silently.
@@ -400,8 +459,11 @@ module.exports = {
   extractSessionDirFromText,
   detectSessionFromEnv,
   isBypassEnabled,
+  extractTaskIdFromPrompt,
   SESSION_PATH_MARKER,
   PREDECESSOR_GATE,
   POSITION_CHECK_GATE,
+  RETRY_FAILURE_TYPE,
+  AGENT_SPAWN_GATE,
   BYPASS_TOOLS,
 };

@@ -493,3 +493,209 @@ test('detectSessionDir: returns null when tool_input has no prompt', () => {
     restoreEnv();
   }
 });
+
+// ===========================================================================
+// extractTaskIdFromPrompt unit tests
+// ===========================================================================
+
+const { extractTaskIdFromPrompt } = require('../ant-farm-gate-enforcer');
+
+test('extractTaskIdFromPrompt: extracts AF-NNN task ID from prompt', () => {
+  assert.equal(
+    extractTaskIdFromPrompt('Execute task for AF-466. Step 0: Read context.'),
+    'AF-466',
+    'Should extract AF-NNN id'
+  );
+});
+
+test('extractTaskIdFromPrompt: extracts first task ID when multiple present', () => {
+  assert.equal(
+    extractTaskIdFromPrompt('Task AF-100 depends on AF-99.'),
+    'AF-100',
+    'Should return first match'
+  );
+});
+
+test('extractTaskIdFromPrompt: returns "unknown" when no task ID in prompt', () => {
+  assert.equal(
+    extractTaskIdFromPrompt('Run the agent with no task ID here.'),
+    'unknown',
+    'No task ID should return "unknown"'
+  );
+});
+
+test('extractTaskIdFromPrompt: returns "unknown" for non-string input', () => {
+  assert.equal(extractTaskIdFromPrompt(null), 'unknown');
+  assert.equal(extractTaskIdFromPrompt(undefined), 'unknown');
+  assert.equal(extractTaskIdFromPrompt(42), 'unknown');
+});
+
+// ===========================================================================
+// Integration: retry limit blocking (AC-1, AC-5)
+// ===========================================================================
+
+const { recordRetry } = require('../lib/retry-tracker');
+const { RETRY_FAILURE_TYPE } = require('../ant-farm-gate-enforcer');
+
+test('handler: blocks spawn when checkpoint retry limit exceeded (3 attempts, limit 2)', async () => {
+  saveEnv();
+  const { projectDir, sessionDir } = createSessionDir({ 'startup-check': 'PASS' });
+  // Pre-populate retries.json with 2 checkpoint entries for AF-466.
+  // canRetry() limit for 'checkpoint' is 2, so 2 existing entries → not allowed.
+  recordRetry(sessionDir, 'checkpoint', 'AF-466');
+  recordRetry(sessionDir, 'checkpoint', 'AF-466');
+  try {
+    const input = {
+      tool_name: 'Task',
+      workspace: { project_dir: projectDir },
+      tool_input: {
+        prompt: `Execute task for AF-466. Session: ${sessionDir}/task-466.md`,
+      },
+    };
+    const result = await handler(input);
+
+    assert.ok(result !== '', 'Should return a block response when retry limit exceeded');
+    const parsed = JSON.parse(result);
+    assert.equal(parsed.continue, false, 'Must block with continue: false');
+    assert.ok(typeof parsed.reason === 'string', 'Must include a reason string');
+    assert.ok(
+      parsed.reason.includes('Retry limit exceeded'),
+      `Reason must mention retry limit; got: "${parsed.reason}"`
+    );
+  } finally {
+    cleanup(projectDir);
+    restoreEnv();
+  }
+});
+
+test('handler: allows spawn when below checkpoint retry limit (1 attempt, limit 2)', async () => {
+  saveEnv();
+  const { projectDir, sessionDir } = createSessionDir({ 'startup-check': 'PASS' });
+  // 1 existing retry — still under the limit of 2.
+  recordRetry(sessionDir, 'checkpoint', 'AF-42');
+  try {
+    const input = {
+      tool_name: 'Task',
+      workspace: { project_dir: projectDir },
+      tool_input: {
+        prompt: `Execute task for AF-42. Session: ${sessionDir}/task-42.md`,
+      },
+    };
+    const result = await handler(input);
+    assert.equal(result, '', 'Should allow spawn when retry count is under the limit');
+  } finally {
+    cleanup(projectDir);
+    restoreEnv();
+  }
+});
+
+// ===========================================================================
+// Integration: position mismatch blocking (AC-2, AC-6)
+// ===========================================================================
+
+test('handler: blocks spawn when position check mismatches expected next step', async () => {
+  saveEnv();
+  const { projectDir, sessionDir } = createSessionDir({ 'startup-check': 'PASS' });
+
+  // Write a progress.log with next_step=pre-spawn-check.
+  const progressLog = path.join(sessionDir, 'progress.log');
+  fs.writeFileSync(
+    progressLog,
+    '2026-01-01T00:00:00Z|WAVE_SPAWNED|wave=1|next_step=pre-spawn-check\n',
+    'utf8'
+  );
+
+  try {
+    const input = {
+      tool_name: 'Task',
+      workspace: { project_dir: projectDir },
+      tool_input: {
+        // Prompt mentions 'scope-verify' but expected is 'pre-spawn-check'.
+        prompt: `Run scope-verify agent. Session: ${sessionDir}/task.md`,
+      },
+    };
+    const result = await handler(input);
+
+    assert.ok(result !== '', 'Should return a block response on position mismatch');
+    const parsed = JSON.parse(result);
+    assert.equal(parsed.continue, false, 'Must block with continue: false');
+    assert.ok(typeof parsed.reason === 'string', 'Must include a reason string');
+    assert.ok(
+      parsed.reason.includes('Position check failed'),
+      `Reason must mention position check; got: "${parsed.reason}"`
+    );
+    assert.ok(
+      parsed.reason.includes('pre-spawn-check'),
+      `Reason must include expected step; got: "${parsed.reason}"`
+    );
+  } finally {
+    cleanup(projectDir);
+    restoreEnv();
+  }
+});
+
+test('handler: allows spawn when position matches expected next step', async () => {
+  saveEnv();
+  const { projectDir, sessionDir } = createSessionDir({ 'startup-check': 'PASS' });
+
+  // Write a progress.log with next_step=scope-verify.
+  const progressLog = path.join(sessionDir, 'progress.log');
+  fs.writeFileSync(
+    progressLog,
+    '2026-01-01T00:00:00Z|WAVE_VERIFIED|wave=1|next_step=scope-verify\n',
+    'utf8'
+  );
+
+  try {
+    const input = {
+      tool_name: 'Task',
+      workspace: { project_dir: projectDir },
+      tool_input: {
+        // Prompt mentions 'scope-verify' which matches the expected step.
+        prompt: `Run scope-verify agent. Session: ${sessionDir}/task.md`,
+      },
+    };
+    const result = await handler(input);
+    assert.equal(result, '', 'Should allow spawn when position matches expected next step');
+  } finally {
+    cleanup(projectDir);
+    restoreEnv();
+  }
+});
+
+// ===========================================================================
+// Integration: agent-spawn timestamp recorded in gate-status.json (AC-3)
+// ===========================================================================
+
+const { readGateStatus } = require('../lib/gate-manager');
+
+test('handler: records agent-spawn timestamp in gate-status.json when spawn allowed', async () => {
+  saveEnv();
+  const { projectDir, sessionDir } = createSessionDir({ 'startup-check': 'PASS' });
+  try {
+    const input = makeTaskInput(projectDir, sessionDir);
+    const before = Date.now();
+    const result = await handler(input);
+    const after = Date.now();
+
+    assert.equal(result, '', 'Gate-passed spawn must be silent');
+
+    const status = readGateStatus(sessionDir);
+    assert.ok(status !== null, 'gate-status.json must be readable after spawn');
+    assert.ok(
+      status.gates['agent-spawn'] !== undefined,
+      'gate-status.json must contain an agent-spawn entry'
+    );
+    assert.equal(
+      status.gates['agent-spawn'].verdict,
+      'PASS',
+      'agent-spawn verdict must be PASS'
+    );
+
+    const spawnTs = new Date(status.gates['agent-spawn'].timestamp).getTime();
+    assert.ok(spawnTs >= before && spawnTs <= after, 'agent-spawn timestamp must be within test window');
+  } finally {
+    cleanup(projectDir);
+    restoreEnv();
+  }
+});

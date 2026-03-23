@@ -186,6 +186,21 @@
       "description": "ant-farm PreToolUse scope advisor hook script"
     },
     {
+      "src": "hooks/ant-farm-gate-enforcer.js",
+      "dst": "hooks/ant-farm-gate-enforcer.js",
+      "description": "ant-farm PreToolUse gate enforcer hook script"
+    },
+    {
+      "src": "hooks/lib/gate-manager.js",
+      "dst": "hooks/lib/gate-manager.js",
+      "description": "ant-farm hook library: gate status manager"
+    },
+    {
+      "src": "hooks/lib/retry-tracker.js",
+      "dst": "hooks/lib/retry-tracker.js",
+      "description": "ant-farm hook library: retry event tracker"
+    },
+    {
       "src": "hooks/lib/progress-reader.js",
       "dst": "hooks/lib/progress-reader.js",
       "description": "ant-farm hook library: progress log reader"
