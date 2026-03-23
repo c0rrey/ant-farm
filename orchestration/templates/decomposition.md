@@ -357,11 +357,11 @@ List the key files, modules, and patterns discovered.
 For each trail, list the crumbs in topological order (independent first,
 blocked-last):
 
-```
+~~~
 {trail-title}:
   {crumb-title} ({crumb-id}) → blocks → {crumb-title} ({crumb-id})
   {crumb-title} ({crumb-id}) [no blockers]
-```
+~~~
 
 ## Cross-Trail Dependencies
 

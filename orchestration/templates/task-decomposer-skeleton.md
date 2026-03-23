@@ -20,11 +20,6 @@ downstream implementer work — this requires the most capable model.
 If any prerequisite is missing, do NOT spawn the Task Decomposer — the missing input
 will produce incomplete decomposition.
 
-**Term definitions (canonical across all orchestration templates):**
-- `{DECOMPOSE_DIR}` — decomposition working directory (e.g., `.crumbs/sessions/_decompose-abc123/`)
-- `{CODEBASE_ROOT}` — absolute path to the repository root
-- `{SPEC_PATH}` — absolute path to spec.md (typically `{DECOMPOSE_DIR}/spec.md`)
-
 Placeholders:
 - `{DECOMPOSE_DIR}`: absolute path to the decomposition working directory — pre-created by Planner
 - `{CODEBASE_ROOT}`: absolute path to the repository root
