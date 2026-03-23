@@ -18,11 +18,11 @@ import time
 
 import pytest
 
-import crumb
 from crumb import (
     cmd_doctor,
     read_tasks,
     _detect_cycles,
+    _get_blocked_by,
 )
 
 
@@ -952,4 +952,264 @@ class TestDoctorCycles:
         captured = capsys.readouterr()
         assert "cycle" not in captured.err.lower(), (
             "200-crumb linear chain must not be reported as cyclic"
+        )
+
+
+# ---------------------------------------------------------------------------
+# TestDoctorCycleFix — --fix cycle-breaking tests
+# ---------------------------------------------------------------------------
+
+
+class TestDoctorCycleFix:
+    """Tests for --fix cycle-breaking mode in cmd_doctor."""
+
+    # --- AC #1: three-node cycle is broken, closing edge logged ---
+
+    def test_fix_three_node_cycle_removes_closing_edge(
+        self,
+        crumbs_env: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """--fix on A->B->C->A removes the C->A edge and logs the fix."""
+        _write_tasks(crumbs_env, [
+            _make_task("AF-1", blocked_by=["AF-3"]),   # AF-1 blocked by AF-3
+            _make_task("AF-2", blocked_by=["AF-1"]),   # AF-2 blocked by AF-1
+            _make_task("AF-3", blocked_by=["AF-2"]),   # AF-3 blocked by AF-2  → closes cycle
+        ])
+
+        # --fix exits 1 on the current run (cycle was found before fixing)
+        with pytest.raises(SystemExit):
+            cmd_doctor(_make_doctor_args(fix=True))
+
+        captured = capsys.readouterr()
+        assert "fixed" in captured.out.lower(), "Expected 'fixed:' message in stdout"
+        # The closing edge message should name the removed edge
+        assert "cycle" in captured.out.lower()
+
+    def test_fix_three_node_cycle_file_has_no_cycle_after_fix(
+        self,
+        crumbs_env: Path,
+    ) -> None:
+        """After --fix on a three-node cycle, re-running doctor reports zero cycle errors."""
+        _write_tasks(crumbs_env, [
+            _make_task("AF-1", blocked_by=["AF-3"]),
+            _make_task("AF-2", blocked_by=["AF-1"]),
+            _make_task("AF-3", blocked_by=["AF-2"]),
+        ])
+
+        with pytest.raises(SystemExit):
+            cmd_doctor(_make_doctor_args(fix=True))
+
+        # Re-run on the now-fixed file — must detect no cycles
+        cycles_after = _detect_cycles(
+            {rec["id"]: rec for rec in read_tasks(crumbs_env / "tasks.jsonl")}
+        )
+        assert cycles_after == [], f"Expected no cycles after --fix, got: {cycles_after}"
+
+    # --- AC #2: second doctor run reports zero cycle errors ---
+
+    def test_fix_second_run_exits_zero_after_cycle_fixed(
+        self,
+        crumbs_env: Path,
+    ) -> None:
+        """A second cmd_doctor call after --fix completes without cycle errors."""
+        _write_tasks(crumbs_env, [
+            _make_task("AF-1", blocked_by=["AF-2"]),
+            _make_task("AF-2", blocked_by=["AF-1"]),
+        ])
+
+        # First run fixes cycle (exits 1 because cycle was found)
+        with pytest.raises(SystemExit):
+            cmd_doctor(_make_doctor_args(fix=True))
+
+        # Second run on the corrected file: orphan warnings may exist but no cycles
+        try:
+            cmd_doctor(_make_doctor_args())
+        except SystemExit:
+            pass  # allowed to exit 1 due to unrelated issues (orphan, etc.)
+
+        # Directly verify no cycles remain in the file
+        tasks = read_tasks(crumbs_env / "tasks.jsonl")
+        id_map = {t["id"]: t for t in tasks}
+        assert _detect_cycles(id_map) == []
+
+    # --- AC #3: multiple independent cycles fixed in a single run ---
+
+    def test_fix_multiple_independent_cycles(
+        self,
+        crumbs_env: Path,
+    ) -> None:
+        """--fix handles two independent cycles in a single run."""
+        _write_tasks(crumbs_env, [
+            # Cycle 1: AF-1 <-> AF-2
+            _make_task("AF-1", blocked_by=["AF-2"]),
+            _make_task("AF-2", blocked_by=["AF-1"]),
+            # Cycle 2: AF-3 <-> AF-4
+            _make_task("AF-3", blocked_by=["AF-4"]),
+            _make_task("AF-4", blocked_by=["AF-3"]),
+        ])
+
+        with pytest.raises(SystemExit):
+            cmd_doctor(_make_doctor_args(fix=True))
+
+        tasks = read_tasks(crumbs_env / "tasks.jsonl")
+        id_map = {t["id"]: t for t in tasks}
+        cycles_remaining = _detect_cycles(id_map)
+        assert cycles_remaining == [], (
+            f"Expected no cycles after multi-cycle --fix, got: {cycles_remaining}"
+        )
+
+    def test_fix_multiple_independent_cycles_logs_all_fixes(
+        self,
+        crumbs_env: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """--fix logs a fix message for each independent cycle broken."""
+        _write_tasks(crumbs_env, [
+            _make_task("AF-1", blocked_by=["AF-2"]),
+            _make_task("AF-2", blocked_by=["AF-1"]),
+            _make_task("AF-3", blocked_by=["AF-4"]),
+            _make_task("AF-4", blocked_by=["AF-3"]),
+        ])
+
+        with pytest.raises(SystemExit):
+            cmd_doctor(_make_doctor_args(fix=True))
+
+        captured = capsys.readouterr()
+        fix_lines = [line for line in captured.out.splitlines() if "fixed" in line.lower()]
+        # Two independent cycles → at least two fix messages
+        assert len(fix_lines) >= 2, (
+            f"Expected at least 2 fix messages for 2 cycles, got: {fix_lines}"
+        )
+
+    # --- AC #4: non-cyclic blocked_by edges are preserved ---
+
+    def test_fix_preserves_non_cyclic_blocked_by(
+        self,
+        crumbs_env: Path,
+    ) -> None:
+        """--fix does not remove blocked_by edges that are not part of a cycle."""
+        # AF-5 -> AF-6 is a valid non-cyclic edge; AF-1 <-> AF-2 is the cycle
+        _write_tasks(crumbs_env, [
+            _make_task("AF-1", blocked_by=["AF-2"]),
+            _make_task("AF-2", blocked_by=["AF-1"]),
+            _make_task("AF-5", blocked_by=["AF-6"]),
+            _make_task("AF-6"),
+        ])
+
+        with pytest.raises(SystemExit):
+            cmd_doctor(_make_doctor_args(fix=True))
+
+        tasks = read_tasks(crumbs_env / "tasks.jsonl")
+        task5 = next(t for t in tasks if t["id"] == "AF-5")
+        blocked_by_5 = task5.get("links", {}).get("blocked_by", [])
+        assert "AF-6" in blocked_by_5, (
+            "Non-cyclic edge AF-5->AF-6 must be preserved after --fix"
+        )
+
+    def test_fix_preserves_acyclic_chain_edges(
+        self,
+        crumbs_env: Path,
+    ) -> None:
+        """--fix on a graph with one cycle and a long chain only removes cycle edge."""
+        # Chain: AF-10 -> AF-11 -> AF-12 (acyclic)
+        # Cycle: AF-1 <-> AF-2
+        _write_tasks(crumbs_env, [
+            _make_task("AF-1", blocked_by=["AF-2"]),
+            _make_task("AF-2", blocked_by=["AF-1"]),
+            _make_task("AF-10", blocked_by=["AF-11"]),
+            _make_task("AF-11", blocked_by=["AF-12"]),
+            _make_task("AF-12"),
+        ])
+
+        with pytest.raises(SystemExit):
+            cmd_doctor(_make_doctor_args(fix=True))
+
+        tasks = read_tasks(crumbs_env / "tasks.jsonl")
+        id_map = {t["id"]: t for t in tasks}
+
+        # Chain edges must be intact
+        blocked_10 = _get_blocked_by(id_map["AF-10"])
+        blocked_11 = _get_blocked_by(id_map["AF-11"])
+        assert "AF-11" in blocked_10, "AF-10->AF-11 edge must be preserved"
+        assert "AF-12" in blocked_11, "AF-11->AF-12 edge must be preserved"
+
+    # --- AC #5: --json output includes cycle_fixes_applied array ---
+
+    def test_fix_json_output_includes_cycle_fixes_applied_field(
+        self,
+        crumbs_env: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """--fix --json output includes a cycle_fixes_applied array field."""
+        _write_tasks(crumbs_env, [
+            {"id": "AF-T1", "type": "trail", "title": "T", "status": "open", "priority": "P2"},
+        ])
+
+        cmd_doctor(_make_doctor_args(fix=True, json_output=True))
+
+        captured = capsys.readouterr()
+        parsed = json.loads(captured.out)
+        assert "cycle_fixes_applied" in parsed, (
+            "JSON output must include 'cycle_fixes_applied' field when --fix is given"
+        )
+        assert isinstance(parsed["cycle_fixes_applied"], list)
+
+    def test_fix_json_cycle_fixes_empty_when_no_cycles(
+        self,
+        crumbs_env: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """--fix --json cycle_fixes_applied is empty list when no cycles exist."""
+        _write_tasks(crumbs_env, [
+            {"id": "AF-T1", "type": "trail", "title": "T", "status": "open", "priority": "P2"},
+        ])
+
+        cmd_doctor(_make_doctor_args(fix=True, json_output=True))
+
+        captured = capsys.readouterr()
+        parsed = json.loads(captured.out)
+        assert parsed["cycle_fixes_applied"] == []
+
+    def test_fix_json_cycle_fixes_populated_when_cycles_exist(
+        self,
+        crumbs_env: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """--fix --json cycle_fixes_applied is non-empty when cycles were broken."""
+        _write_tasks(crumbs_env, [
+            _make_task("AF-1", blocked_by=["AF-2"]),
+            _make_task("AF-2", blocked_by=["AF-1"]),
+        ])
+
+        with pytest.raises(SystemExit):
+            cmd_doctor(_make_doctor_args(fix=True, json_output=True))
+
+        captured = capsys.readouterr()
+        parsed = json.loads(captured.out)
+        assert "cycle_fixes_applied" in parsed
+        assert len(parsed["cycle_fixes_applied"]) >= 1, (
+            "cycle_fixes_applied must be non-empty when cycles were broken"
+        )
+        assert all(isinstance(msg, str) for msg in parsed["cycle_fixes_applied"])
+
+    # --- Self-referential cycle fix ---
+
+    def test_fix_self_referential_cycle(
+        self,
+        crumbs_env: Path,
+    ) -> None:
+        """--fix breaks a self-referential cycle (A blocked_by A)."""
+        _write_tasks(crumbs_env, [
+            _make_task("AF-1", blocked_by=["AF-1"]),
+        ])
+
+        with pytest.raises(SystemExit):
+            cmd_doctor(_make_doctor_args(fix=True))
+
+        tasks = read_tasks(crumbs_env / "tasks.jsonl")
+        id_map = {t["id"]: t for t in tasks}
+        cycles_remaining = _detect_cycles(id_map)
+        assert cycles_remaining == [], (
+            f"Self-referential cycle must be broken by --fix, got: {cycles_remaining}"
         )

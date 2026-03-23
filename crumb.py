@@ -1055,6 +1055,80 @@ def _detect_cycles(id_to_record: Dict[str, Dict[str, Any]]) -> List[List[str]]:
     return cycles
 
 
+def _break_cycle_edges(
+    cycles: List[List[str]],
+    id_to_record: Dict[str, Dict[str, Any]],
+) -> List[Tuple[str, str]]:
+    """Remove the closing blocked_by edge from each cycle, mutating id_to_record in place.
+
+    For a cycle path ``[A, B, C, A]`` returned by graphlib, each consecutive pair
+    ``(X, Y)`` encodes a dependency edge where Y is blocked by X (X must complete
+    before Y).  The closing edge is ``(C, A)``, meaning A is blocked by C.  This
+    function removes C from A's ``blocked_by`` (in both the top-level field and
+    ``links.blocked_by``) so the cycle is broken with minimal collateral damage.
+
+    Self-referential cycles ``[X, X]`` remove X from its own ``blocked_by``.
+
+    Only edges that actually exist in the record are removed; if the edge is
+    missing (e.g., already cleaned by a prior iteration) it is silently skipped.
+
+    Args:
+        cycles: List of cycle paths as returned by ``_detect_cycles``.  Each
+            path is a closed list where ``path[0] == path[-1]``.
+        id_to_record: Mapping of crumb ID to record dict.  **Mutated in place.**
+
+    Returns:
+        List of ``(blocked_id, blocker_id)`` tuples describing each edge removed:
+        ``blocker_id`` was removed from ``blocked_id``'s ``blocked_by`` field.
+        Duplicate closing edges across multiple reported cycles are deduplicated.
+    """
+    removed: List[Tuple[str, str]] = []
+    seen_edges: Set[Tuple[str, str]] = set()
+
+    for cycle_path in cycles:
+        if len(cycle_path) < 2:
+            continue
+        # In the cycle path [A, B, C, A], each consecutive pair (X, Y) encodes
+        # a dependency edge meaning Y is blocked by X (X must complete before Y).
+        # The closing edge is represented by (cycle_path[-2], cycle_path[0]):
+        #   cycle_path[0] is blocked by cycle_path[-2].
+        # To break the cycle we remove cycle_path[-2] from cycle_path[0]'s blocked_by.
+        #
+        # For a self-referential cycle [X, X]:
+        #   cycle_path[-2] == cycle_path[0] == X — remove X from X's blocked_by.
+        blocker_id = cycle_path[-2]   # the predecessor to remove
+        blocked_id = cycle_path[0]    # the record whose blocked_by we edit
+        edge = (blocker_id, blocked_id)
+        if edge in seen_edges:
+            continue  # already handled this edge
+        seen_edges.add(edge)
+
+        record = id_to_record.get(blocked_id)
+        if record is None:
+            continue
+
+        edge_removed = False
+
+        # Remove from top-level blocked_by
+        top_blocked: List[str] = record.get("blocked_by") or []
+        if isinstance(top_blocked, list) and blocker_id in top_blocked:
+            record["blocked_by"] = [b for b in top_blocked if b != blocker_id]
+            edge_removed = True
+
+        # Remove from links.blocked_by
+        links_raw = record.get("links")
+        if isinstance(links_raw, dict):
+            links_blocked: List[str] = links_raw.get("blocked_by") or []
+            if isinstance(links_blocked, list) and blocker_id in links_blocked:
+                links_raw["blocked_by"] = [b for b in links_blocked if b != blocker_id]
+                edge_removed = True
+
+        if edge_removed:
+            removed.append((blocked_id, blocker_id))
+
+    return removed
+
+
 def _is_crumb_blocked(
     crumb: Dict[str, Any], id_to_record: Dict[str, Dict[str, Any]]
 ) -> bool:
@@ -1704,7 +1778,8 @@ def cmd_doctor(args: argparse.Namespace) -> None:
 
     Checks: malformed JSON, duplicate IDs, dangling parent/blocked_by
     links, orphan crumbs, and circular dependency cycles in blocked_by
-    fields. With --fix, removes dangling blocked_by refs.
+    fields. With --fix, removes dangling blocked_by refs and breaks
+    detected cycles by removing the closing edge of each cycle.
     Exit 1 on errors; warnings alone exit 0.
     """
     path = require_tasks_jsonl()
@@ -1712,6 +1787,7 @@ def cmd_doctor(args: argparse.Namespace) -> None:
     errors: List[str] = []
     warnings: List[str] = []
     fixes_applied: List[str] = []
+    cycle_fixes_applied: List[str] = []
     cycles: List[List[str]] = []
 
     with FileLock():
@@ -1823,6 +1899,14 @@ def cmd_doctor(args: argparse.Namespace) -> None:
             path_str = " -> ".join(cycle_path)
             errors.append(f"cycle detected: {path_str}")
 
+        # --- Pass 4 (--fix): break detected cycles ---
+        if getattr(args, "fix", False) and cycles:
+            broken_edges = _break_cycle_edges(cycles, id_to_record)
+            for from_id, to_id in broken_edges:
+                msg = f"'{from_id}': removed cycle-closing blocked_by edge to '{to_id}'"
+                cycle_fixes_applied.append(msg)
+                fixes_applied.append(msg)
+
         # --- Apply --fix writes ---
         if getattr(args, "fix", False) and fixes_applied:
             write_tasks(path, valid_records)
@@ -1845,6 +1929,7 @@ def cmd_doctor(args: argparse.Namespace) -> None:
             "errors": errors,
             "warnings": warnings,
             "fixes_applied": fixes_applied,
+            "cycle_fixes_applied": cycle_fixes_applied,
             "cycles": cycles,
         }
         print(json.dumps(report, indent=2))
