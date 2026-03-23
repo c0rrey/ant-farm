@@ -177,12 +177,22 @@ Do NOT fix adjacent issues you notice.
       ```json
       {
         "crumb_id": "{TASK_ID}",
-        "allowed_files": ["{file1}", "{file2}", ...]
+        "allowed_files": ["{file1}", "{file2}", ...],
+        "mode": "{enforcing|advisory}",
+        "permitted_exceptions": []
       }
       ```
       Where `allowed_files` is the list of affected files from the task brief's `## Context` section (the `**Affected files**` field). Include the file paths exactly as written in the task brief — with `:line-range` suffixes if present. The scope-reader strips line ranges when comparing paths; keep them for documentation.
 
-      **Overwrite on each task**: the sidecar always reflects the most recently spawned agent's scope. Earlier sidecars from the same wave are overwritten; this is expected. Agents spawned concurrently within the same wave share a process-level project directory — the sidecar covers the last task written. The hook's advisory is informational-only (never blocking), so minor overlap between concurrent agents is acceptable.
+      **Set `mode` per agent type**:
+      - `"enforcing"` — for Implementer agents (default for general-purpose and implementation tasks). The hook blocks writes to files outside `allowed_files`.
+      - `"advisory"` — for Reviewer and Orchestrator agents. The hook logs scope violations but does not block writes.
+
+      Use the agent type from the task brief's `**Agent Type**` field to determine the correct mode. If the agent type is `reviewer` or `orchestrator`, set `"advisory"`; otherwise set `"enforcing"`.
+
+      **`permitted_exceptions`**: An array of file paths that are allowed even in enforcing mode (e.g., log files, lock files the agent must touch). Leave as `[]` unless the task brief explicitly lists exception files.
+
+      **Overwrite on each task**: the sidecar always reflects the most recently spawned agent's scope. Earlier sidecars from the same wave are overwritten; this is expected. Agents spawned concurrently within the same wave share a process-level project directory — the sidecar covers the last task written.
 
       **Skip if files list is empty**: if `allowed_files` would be empty (no files extracted), do not write the sidecar for this task.
 

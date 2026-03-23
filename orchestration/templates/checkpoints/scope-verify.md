@@ -26,6 +26,7 @@ You are the **Checkpoint Auditor**, the verification subagent. Your role is to v
 1. Run `git log --oneline -1` to get the latest commit hash
 2. Run `git show --stat {commit-hash}` to list files changed
 3. Compare changed files to expected files from task description
+4. If the task's agent type is `implementer` (enforcing mode): verify that no BLOCKED events appear in the hook debug log for this wave. The hook debug log is written to `.ant-farm-scope-debug.log` in the project root. A BLOCKED entry means the agent attempted a write to a file outside its allowed scope — flag this as a scope violation even if the git diff looks clean.
 
 ## Check
 
