@@ -487,8 +487,6 @@ async def crumb_trail_show(trail_id: str) -> dict[str, Any]:
 
     try:
         return await asyncio.to_thread(_run)
-    except RuntimeError:
-        raise
     except SystemExit as exc:
         raise RuntimeError(f"crumb_trail_show failed for '{trail_id}': exit code {exc.code}") from exc
 
@@ -558,8 +556,6 @@ async def crumb_trail_close(trail_id: str) -> dict[str, Any]:
 
     try:
         return await asyncio.to_thread(_run)
-    except RuntimeError:
-        raise
     except SystemExit as exc:
         raise RuntimeError(f"crumb_trail_close failed for '{trail_id}': exit code {exc.code}") from exc
 
@@ -873,8 +869,6 @@ async def crumb_link(
 
     try:
         return await asyncio.to_thread(_run)
-    except RuntimeError:
-        raise
     except SystemExit as exc:
         raise RuntimeError(f"crumb_link failed for '{crumb_id}': exit code {exc.code}") from exc
 
