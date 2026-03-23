@@ -57,7 +57,6 @@ For each filed crumb, verify its description contains:
 Flag any crumbs missing these elements. List which elements are missing.
 
 ## Check 4: Root Cause Spot-Check
-<!-- Historical: was "Check 3b" prior to sequential renumbering (inserted after Check 3 in the original scheme). -->
 
 Select up to 2 crumbs for deep validation. Prioritize P1 crumbs first; if fewer than 2 P1 crumbs exist, fill remaining slots with the highest-surface-count P2 crumbs (most file:line references).
 
