@@ -39,13 +39,14 @@ Continue to Step 1 anyway (idempotent repair mode). Do not abort.
 Run the following checks to identify the project's primary language and stack. Store the results for use in Step 5 (agent type suggestion).
 
 ```bash
-# Check for language indicators in order of specificity
-[ -f package.json ] && echo "nodejs"
-[ -f tsconfig.json ] && echo "typescript"
-[ -f pyproject.toml ] || [ -f setup.py ] || [ -f requirements.txt ] && echo "python"
-[ -f go.mod ] && echo "go"
-[ -f Cargo.toml ] && echo "rust"
-[ -f pom.xml ] || [ -f build.gradle ] && echo "java"
+# Check for language indicators in order of specificity; stop at first match
+if [ -f package.json ]; then echo "nodejs"
+elif [ -f tsconfig.json ]; then echo "typescript"
+elif [ -f pyproject.toml ] || [ -f setup.py ] || [ -f requirements.txt ]; then echo "python"
+elif [ -f go.mod ]; then echo "go"
+elif [ -f Cargo.toml ]; then echo "rust"
+elif [ -f pom.xml ] || [ -f build.gradle ]; then echo "java"
+fi
 ```
 
 Use the first match as the primary language. If none match, record as `unknown`.
