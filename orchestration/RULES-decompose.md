@@ -34,7 +34,7 @@ accessible at `~/.claude/orchestration/`. To translate repo paths to runtime pat
 
 ---
 
-## Planner Orchestrator Profile
+## Planner Agent Profile
 
 The Planner is a distinct orchestrator from the Orchestrator. Understanding this distinction prevents
 misapplying Orchestrator patterns to decomposition sessions.
@@ -369,6 +369,7 @@ for focus in stack architecture pitfall pattern; do
   [ -f "${f}" ] || { echo "WARN: ${f} missing, skipping truncation" >> "${DECOMPOSE_DIR}/progress.log"; continue; }
   lines=$(wc -l < "${f}")
   if [ "${lines}" -gt 100 ]; then
+    # FORAGER_TRUNCATED: "FORAGER" is the Researcher agent's internal label; both refer to the same agent type
     echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FORAGER_TRUNCATED|${focus}|lines=${lines}" \
       >> "${DECOMPOSE_DIR}/progress.log"
     head -100 "${f}" > "${f}.tmp" && mv "${f}.tmp" "${f}"
@@ -383,6 +384,7 @@ Maximum **1 retry per Researcher**. If a Researcher still fails after one retry,
 the user and await instruction.
 
 ```bash
+# "foragers" is the internal label for the 4 Researcher agents that ran
 echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|RESEARCH_COMPLETE|pass|foragers=4|spec=${DECOMPOSE_DIR}/spec.md" \
   >> "${DECOMPOSE_DIR}/progress.log"
 ```

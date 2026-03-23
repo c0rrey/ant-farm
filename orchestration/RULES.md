@@ -107,7 +107,7 @@ The Orchestrator's window is restricted to prevent context bloat, but certain fi
 > throughout the entire workflow (Steps 0→1, 1→2, 2→3, 3→3b, 3b→3c, etc.).
 
 **Run this check before every major phase transition.** This is required after every wave
-completion (WAVE_VERIFIED) and after every fix agent completion (FIX_CMVCC_COMPLETE).
+completion (WAVE_VERIFIED) and after every fix agent completion (FIX_CLAIMS_VS_CODE_COMPLETE).
 It is also recommended at any Step boundary where context may have been refreshed.
 
 ```bash
@@ -242,6 +242,7 @@ Skipping Step 3b is a critical workflow violation.
             **Progress log (after fix Recon Planner startup-check PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_SCOUT_COMPLETE|round=<N>|startup_check=pass|fix_crumbs=<crumb-ids>|next_step=FIX_AGENTS_SPAWN" >> ${SESSION_DIR}/progress.log`
 
             **Progress log (after fix agents spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_AGENTS_SPAWNED|round=<N>|fix_cgs=<names>|fix_pcs=fix-pc-scope-verify,fix-pc-claims-vs-code|next_step=FIX_INNER_LOOP" >> ${SESSION_DIR}/progress.log`
+            _(In the log format above, `fix_cgs` and `verified_cgs` list fix implementer agent names; "CG" is the internal label for fix implementer agents (Code Generator).)_
 
             **Progress log (after all fix CGs verified by fix-pc-claims-vs-code):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_CLAIMS_VS_CODE_COMPLETE|round=<N>|verified_cgs=<names>|commits=<hashes>|next_step=ROUND_TRANSITION" >> ${SESSION_DIR}/progress.log`
 
@@ -444,7 +445,7 @@ SUMMARY: {one-line-description}" > "${SESSION_DIR}/signals/{TASK_SUFFIX}.done"
 | Prompt Composer pre-spawn-check fails | 1 | Escalate to user; do not spawn Implementers without verified prompts |
 | Recon Planner fails or returns no tasks | 1 | Escalate to user; do not proceed to Step 2 without task list |
 | startup-check FAIL -> re-Recon Planner cycle | 1 | Escalate to user with startup-check violations; do not re-run Recon Planner a third time |
-| Fix CG stuck/crash (no commit in team) | 0 | Run stuck-agent diagnostic; file a crumb for the failed fix; escalate to user. Do NOT re-spawn without user approval |
+| Fix implementer (CG) stuck/crash (no commit in team) | 0 | Run stuck-agent diagnostic; file a crumb for the failed fix; escalate to user. Do NOT re-spawn without user approval |
 | Fix PC crash (fix-pc-scope-verify or fix-pc-claims-vs-code) | 1 | Spawn replacement into team (`team_name: "reviewer-team"`); resume from last SendMessage |
 | Reviewer failure (round 2+, re-task via SendMessage fails) | 1 | Spawn fresh reviewer into team as replacement; re-send the round transition message |
 | Review Consolidator crash (before crumb filing complete) | 1 | Spawn fresh Review Consolidator into team with handoff brief describing which crumbs were filed and which remain; re-run review-integrity after |

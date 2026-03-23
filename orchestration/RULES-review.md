@@ -169,6 +169,7 @@
             ```
 
             **Progress log (after fix agents spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_AGENTS_SPAWNED|round=<N>|fix_cgs=<names>|fix_pcs=fix-pc-scope-verify,fix-pc-claims-vs-code|next_step=FIX_INNER_LOOP" >> ${SESSION_DIR}/progress.log`
+            _(In the log format above, `fix_cgs` lists the fix implementer agent names; "CG" is the internal label for fix implementer agents (Code Generator).)_
 
             **Step 3c-iii. Fix inner loop** — fully asynchronous via SendMessage within the team:
             ```
@@ -192,7 +193,7 @@
             ```
 
             Retry limit: each fix implementer has a maximum of 2 retries total across both scope-verify and claims-vs-code
-            failures. On the third failure, the CG sends a message to the Orchestrator and goes idle.
+            failures. On the third failure, the fix implementer sends a message to the Orchestrator and goes idle.
             The Orchestrator escalates to the user.
 
             **Progress log (after all fix implementers verified by fix-pc-claims-vs-code):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_CLAIMS_VS_CODE_COMPLETE|round=<N>|verified_cgs=<names>|commits=<hashes>|next_step=ROUND_TRANSITION" >> ${SESSION_DIR}/progress.log`
