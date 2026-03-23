@@ -16,6 +16,13 @@ try:
 except ImportError:
     fcntl = None  # type: ignore[assignment]  # Windows — FileLock.die()s at use
 
+try:
+    from graphlib import TopologicalSorter, CycleError as _CycleError
+    _GRAPHLIB_AVAILABLE = True
+except ImportError:  # Python < 3.9
+    _GRAPHLIB_AVAILABLE = False
+    _CycleError = None  # type: ignore[assignment,misc]
+
 import json
 import os
 import re
@@ -955,6 +962,83 @@ def _get_blocked_by(crumb: Dict[str, Any]) -> List[str]:
     return merged
 
 
+def _detect_cycles(id_to_record: Dict[str, Dict[str, Any]]) -> List[List[str]]:
+    """Detect cycles in the blocked_by dependency graph.
+
+    Uses ``graphlib.TopologicalSorter`` (Python 3.9+) to find cycles. For
+    each cycle discovered, removes its nodes from the working graph and repeats
+    until no cycles remain, ensuring all cycles in disconnected subgraphs are
+    found.
+
+    Self-referential cycles (A blocked_by A) are detected in a pre-pass before
+    the topological sort, since graphlib does not always surface them as a
+    distinct CycleError path.
+
+    Args:
+        id_to_record: Mapping of crumb ID to its full record dict.
+
+    Returns:
+        List of cycles, where each cycle is an ordered list of IDs forming the
+        cycle path (e.g., ``["AF-1", "AF-2", "AF-3", "AF-1"]`` — last element
+        repeats the first to close the loop). Returns an empty list when
+        graphlib is unavailable (Python < 3.9).
+    """
+    if not _GRAPHLIB_AVAILABLE:
+        return []
+
+    cycles: List[List[str]] = []
+
+    # Pre-pass: detect self-referential cycles (A blocked_by A).
+    # graphlib may or may not surface these cleanly, so handle explicitly.
+    self_refs: Set[str] = set()
+    for rec_id, record in id_to_record.items():
+        blockers = _get_blocked_by(record)
+        if rec_id in blockers:
+            cycles.append([rec_id, rec_id])
+            self_refs.add(rec_id)
+
+    # Build adjacency: node -> set of predecessors (nodes it depends on /
+    # is blocked by). graphlib uses "predecessors" = nodes that must come first.
+    # blocked_by means "I depend on these", i.e. they are my predecessors.
+    remaining: Dict[str, Set[str]] = {}
+    for rec_id, record in id_to_record.items():
+        if rec_id in self_refs:
+            continue  # already reported; skip to avoid confusing the sorter
+        blockers = [b for b in _get_blocked_by(record) if b in id_to_record and b not in self_refs]
+        remaining[rec_id] = set(blockers)
+
+    # Iteratively run TopologicalSorter, peel off one cycle per iteration.
+    # This surfaces all cycles across disconnected subgraphs.
+    max_iterations = len(remaining) + 1  # safety cap
+    for _ in range(max_iterations):
+        if not remaining:
+            break
+        ts = TopologicalSorter(remaining)
+        try:
+            ts.prepare()
+            break  # no cycle found — remaining graph is acyclic
+        except _CycleError as exc:  # type: ignore[misc]
+            # exc.args[1] is a tuple of IDs forming the cycle path
+            raw_cycle: Tuple[str, ...] = exc.args[1] if len(exc.args) > 1 else ()
+            if raw_cycle:
+                # graphlib already returns a closed path: [A, B, C, A].
+                # Use as-is; no need to append raw_cycle[0] again.
+                cycle_path = list(raw_cycle)
+                cycles.append(cycle_path)
+                # Remove the first node in the cycle to break it, then retry
+                # to find any remaining cycles.
+                pivot = raw_cycle[0]
+                remaining.pop(pivot, None)
+                # Also remove any references to pivot from other nodes so the
+                # graph stays self-consistent.
+                for deps in remaining.values():
+                    deps.discard(pivot)
+            else:
+                break  # degenerate CycleError with no path info — stop
+
+    return cycles
+
+
 def _is_crumb_blocked(
     crumb: Dict[str, Any], id_to_record: Dict[str, Dict[str, Any]]
 ) -> bool:
@@ -1406,7 +1490,8 @@ def cmd_doctor(args: argparse.Namespace) -> None:
     """Validate tasks.jsonl integrity and optionally repair issues.
 
     Checks: malformed JSON, duplicate IDs, dangling parent/blocked_by
-    links, orphan crumbs. With --fix, removes dangling blocked_by refs.
+    links, orphan crumbs, and circular dependency cycles in blocked_by
+    fields. With --fix, removes dangling blocked_by refs.
     Exit 1 on errors; warnings alone exit 0.
     """
     path = require_tasks_jsonl()
@@ -1414,6 +1499,7 @@ def cmd_doctor(args: argparse.Namespace) -> None:
     errors: List[str] = []
     warnings: List[str] = []
     fixes_applied: List[str] = []
+    cycles: List[List[str]] = []
 
     with FileLock():
         # --- Pass 1: raw line-by-line read for malformed JSON detection ---
@@ -1518,6 +1604,12 @@ def cmd_doctor(args: argparse.Namespace) -> None:
                                     f"'{rec_id}': removed dangling blocked_by {dangling_set} from links"
                                 )
 
+        # --- Pass 3: cycle detection in blocked_by dependency graph ---
+        cycles = _detect_cycles(id_to_record)
+        for cycle_path in cycles:
+            path_str = " -> ".join(cycle_path)
+            errors.append(f"cycle detected: {path_str}")
+
         # --- Apply --fix writes ---
         if getattr(args, "fix", False) and fixes_applied:
             write_tasks(path, valid_records)
@@ -1540,6 +1632,7 @@ def cmd_doctor(args: argparse.Namespace) -> None:
             "errors": errors,
             "warnings": warnings,
             "fixes_applied": fixes_applied,
+            "cycles": cycles,
         }
         print(json.dumps(report, indent=2))
         if errors:

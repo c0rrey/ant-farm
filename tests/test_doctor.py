@@ -3,6 +3,8 @@
 Covers:
   - TestDoctor: cmd_doctor — clean state, malformed JSONL, duplicate IDs,
     dangling blocked_by refs, dangling parent refs, and --fix repair mode.
+  - TestDoctorCycles: cycle detection — A->B->C->A chains, self-referential
+    cycles, disconnected subgraphs, cycle-free regression, and --json output.
 """
 
 from __future__ import annotations
@@ -12,12 +14,15 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List
 
+import time
+
 import pytest
 
 import crumb
 from crumb import (
     cmd_doctor,
     read_tasks,
+    _detect_cycles,
 )
 
 
@@ -509,3 +514,336 @@ class TestDoctor:
         captured = capsys.readouterr()
         assert "No issues found" in captured.out
         assert not captured.out.startswith("{"), "Output must not be JSON when --json absent"
+
+
+# ---------------------------------------------------------------------------
+# TestDoctorCycles
+# ---------------------------------------------------------------------------
+
+
+def _make_task(task_id: str, blocked_by: List[str] | None = None) -> Dict[str, Any]:
+    """Build a minimal task record, optionally with blocked_by set in links.
+
+    Args:
+        task_id: The crumb ID string.
+        blocked_by: Optional list of crumb IDs this task is blocked by.
+
+    Returns:
+        A task record dict suitable for use in tasks.jsonl.
+    """
+    rec: Dict[str, Any] = {
+        "id": task_id,
+        "type": "task",
+        "title": f"Task {task_id}",
+        "status": "open",
+        "priority": "P2",
+    }
+    if blocked_by is not None:
+        rec["links"] = {"blocked_by": blocked_by}
+    return rec
+
+
+class TestDoctorCycles:
+    """Tests for cycle detection in cmd_doctor and _detect_cycles."""
+
+    # --- Unit tests on _detect_cycles directly ---
+
+    def test_detect_cycles_empty_graph(self) -> None:
+        """_detect_cycles returns an empty list for an empty graph."""
+        assert _detect_cycles({}) == []
+
+    def test_detect_cycles_no_cycle_linear_chain(self) -> None:
+        """_detect_cycles returns [] when A->B->C has no cycle."""
+        records = {
+            "AF-1": _make_task("AF-1", blocked_by=["AF-2"]),
+            "AF-2": _make_task("AF-2", blocked_by=["AF-3"]),
+            "AF-3": _make_task("AF-3"),
+        }
+        assert _detect_cycles(records) == []
+
+    def test_detect_cycles_self_referential(self) -> None:
+        """_detect_cycles detects A blocked_by A as a self-referential cycle."""
+        records = {"AF-1": _make_task("AF-1", blocked_by=["AF-1"])}
+        cycles = _detect_cycles(records)
+        assert len(cycles) == 1
+        assert cycles[0] == ["AF-1", "AF-1"]
+
+    def test_detect_cycles_two_node_cycle(self) -> None:
+        """_detect_cycles detects A <-> B mutual dependency."""
+        records = {
+            "AF-1": _make_task("AF-1", blocked_by=["AF-2"]),
+            "AF-2": _make_task("AF-2", blocked_by=["AF-1"]),
+        }
+        cycles = _detect_cycles(records)
+        assert len(cycles) >= 1
+        # Verify the cycle contains both nodes
+        all_ids = {node for cycle in cycles for node in cycle}
+        assert "AF-1" in all_ids
+        assert "AF-2" in all_ids
+
+    def test_detect_cycles_three_node_cycle(self) -> None:
+        """_detect_cycles detects A->B->C->A circular chain."""
+        records = {
+            "AF-1": _make_task("AF-1", blocked_by=["AF-3"]),
+            "AF-2": _make_task("AF-2", blocked_by=["AF-1"]),
+            "AF-3": _make_task("AF-3", blocked_by=["AF-2"]),
+        }
+        cycles = _detect_cycles(records)
+        assert len(cycles) >= 1
+        all_ids = {node for cycle in cycles for node in cycle}
+        assert "AF-1" in all_ids
+        assert "AF-2" in all_ids
+        assert "AF-3" in all_ids
+
+    def test_detect_cycles_closed_path_format(self) -> None:
+        """Each cycle path closes the loop: last element equals first element."""
+        records = {
+            "AF-1": _make_task("AF-1", blocked_by=["AF-2"]),
+            "AF-2": _make_task("AF-2", blocked_by=["AF-1"]),
+        }
+        cycles = _detect_cycles(records)
+        assert len(cycles) >= 1
+        for cycle in cycles:
+            assert len(cycle) >= 2, "Cycle path must have at least 2 elements"
+            assert cycle[0] == cycle[-1], "Cycle path must close: first == last"
+
+    def test_detect_cycles_disconnected_subgraphs(self) -> None:
+        """_detect_cycles finds cycles in disconnected components independently."""
+        # Component 1: A->B->A (cycle)
+        # Component 2: C->D->C (cycle)
+        # Component 3: E->F (no cycle)
+        records = {
+            "AF-1": _make_task("AF-1", blocked_by=["AF-2"]),
+            "AF-2": _make_task("AF-2", blocked_by=["AF-1"]),
+            "AF-3": _make_task("AF-3", blocked_by=["AF-4"]),
+            "AF-4": _make_task("AF-4", blocked_by=["AF-3"]),
+            "AF-5": _make_task("AF-5", blocked_by=["AF-6"]),
+            "AF-6": _make_task("AF-6"),
+        }
+        cycles = _detect_cycles(records)
+        assert len(cycles) >= 2
+        all_ids = {node for cycle in cycles for node in cycle}
+        assert "AF-1" in all_ids or "AF-2" in all_ids
+        assert "AF-3" in all_ids or "AF-4" in all_ids
+        # No cycle in E/F components
+        cycle_ids_flat = [node for cycle in cycles for node in cycle]
+        assert "AF-5" not in cycle_ids_flat
+        assert "AF-6" not in cycle_ids_flat
+
+    def test_detect_cycles_ignores_dangling_refs(self) -> None:
+        """_detect_cycles only considers blockers that exist in id_to_record."""
+        # AF-1 is blocked by AF-GHOST which doesn't exist — not a cycle
+        records = {"AF-1": _make_task("AF-1", blocked_by=["AF-GHOST"])}
+        cycles = _detect_cycles(records)
+        assert cycles == []
+
+    # --- Integration tests through cmd_doctor ---
+
+    def test_doctor_detects_three_node_cycle(
+        self,
+        crumbs_env: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """cmd_doctor reports FAIL with cycle path for A->B->C->A chain."""
+        _write_tasks(crumbs_env, [
+            _make_task("AF-1", blocked_by=["AF-3"]),
+            _make_task("AF-2", blocked_by=["AF-1"]),
+            _make_task("AF-3", blocked_by=["AF-2"]),
+        ])
+
+        with pytest.raises(SystemExit) as exc_info:
+            cmd_doctor(_make_doctor_args())
+
+        assert exc_info.value.code == 1
+        captured = capsys.readouterr()
+        assert "cycle" in captured.err.lower()
+
+    def test_doctor_cycle_error_message_contains_arrow_path(
+        self,
+        crumbs_env: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """The cycle error message contains ' -> ' separating node IDs."""
+        _write_tasks(crumbs_env, [
+            _make_task("AF-1", blocked_by=["AF-2"]),
+            _make_task("AF-2", blocked_by=["AF-1"]),
+        ])
+
+        with pytest.raises(SystemExit):
+            cmd_doctor(_make_doctor_args())
+
+        captured = capsys.readouterr()
+        assert " -> " in captured.err
+
+    def test_doctor_self_referential_cycle_detected(
+        self,
+        crumbs_env: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """cmd_doctor reports FAIL when a crumb is blocked_by itself."""
+        _write_tasks(crumbs_env, [
+            _make_task("AF-1", blocked_by=["AF-1"]),
+        ])
+
+        with pytest.raises(SystemExit) as exc_info:
+            cmd_doctor(_make_doctor_args())
+
+        assert exc_info.value.code == 1
+        captured = capsys.readouterr()
+        assert "cycle" in captured.err.lower()
+        assert "AF-1" in captured.err
+
+    def test_doctor_cycle_free_file_reports_no_cycle_errors(
+        self,
+        crumbs_env: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """cmd_doctor on a cycle-free JSONL does not produce cycle errors (regression)."""
+        _write_tasks(crumbs_env, [
+            {"id": "AF-T1", "type": "trail", "title": "Trail", "status": "open", "priority": "P2"},
+            {
+                "id": "AF-1",
+                "type": "task",
+                "title": "A",
+                "status": "open",
+                "priority": "P2",
+                "links": {"parent": "AF-T1", "blocked_by": ["AF-2"]},
+            },
+            {
+                "id": "AF-2",
+                "type": "task",
+                "title": "B",
+                "status": "open",
+                "priority": "P2",
+                "links": {"parent": "AF-T1"},
+            },
+        ])
+
+        cmd_doctor(_make_doctor_args())
+
+        captured = capsys.readouterr()
+        assert "cycle" not in captured.err.lower()
+        assert "No issues found" in captured.out
+
+    def test_doctor_json_output_includes_cycles_field(
+        self,
+        crumbs_env: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """cmd_doctor --json output includes a 'cycles' array field."""
+        _write_tasks(crumbs_env, [
+            {"id": "AF-T1", "type": "trail", "title": "T", "status": "open", "priority": "P2"},
+        ])
+
+        cmd_doctor(_make_doctor_args(json_output=True))
+
+        captured = capsys.readouterr()
+        parsed = json.loads(captured.out)
+        assert "cycles" in parsed, "JSON output must include 'cycles' field"
+        assert isinstance(parsed["cycles"], list)
+
+    def test_doctor_json_cycles_empty_when_no_cycles(
+        self,
+        crumbs_env: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """cmd_doctor --json 'cycles' is empty list when no cycles exist."""
+        _write_tasks(crumbs_env, [
+            {"id": "AF-T1", "type": "trail", "title": "T", "status": "open", "priority": "P2"},
+        ])
+
+        cmd_doctor(_make_doctor_args(json_output=True))
+
+        captured = capsys.readouterr()
+        parsed = json.loads(captured.out)
+        assert parsed["cycles"] == []
+
+    def test_doctor_json_cycles_populated_when_cycle_exists(
+        self,
+        crumbs_env: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """cmd_doctor --json 'cycles' contains ordered ID paths when cycles exist."""
+        _write_tasks(crumbs_env, [
+            _make_task("AF-1", blocked_by=["AF-2"]),
+            _make_task("AF-2", blocked_by=["AF-1"]),
+        ])
+
+        with pytest.raises(SystemExit):
+            cmd_doctor(_make_doctor_args(json_output=True))
+
+        captured = capsys.readouterr()
+        parsed = json.loads(captured.out)
+        assert "cycles" in parsed
+        assert len(parsed["cycles"]) >= 1
+        cycle = parsed["cycles"][0]
+        assert isinstance(cycle, list)
+        assert len(cycle) >= 2
+        # The cycle must close: first == last
+        assert cycle[0] == cycle[-1]
+
+    def test_doctor_json_cycle_ids_are_ordered(
+        self,
+        crumbs_env: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """cmd_doctor --json cycle entries are ordered lists of IDs (strings)."""
+        _write_tasks(crumbs_env, [
+            _make_task("AF-1", blocked_by=["AF-2"]),
+            _make_task("AF-2", blocked_by=["AF-1"]),
+        ])
+
+        with pytest.raises(SystemExit):
+            cmd_doctor(_make_doctor_args(json_output=True))
+
+        captured = capsys.readouterr()
+        parsed = json.loads(captured.out)
+        for cycle in parsed["cycles"]:
+            assert all(isinstance(node, str) for node in cycle), \
+                "All cycle node IDs must be strings"
+
+    def test_doctor_cycle_with_disconnected_subgraphs(
+        self,
+        crumbs_env: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """cmd_doctor detects a cycle in one component while another is cycle-free."""
+        _write_tasks(crumbs_env, [
+            # Cycle component
+            _make_task("AF-1", blocked_by=["AF-2"]),
+            _make_task("AF-2", blocked_by=["AF-1"]),
+            # Acyclic component
+            _make_task("AF-3", blocked_by=["AF-4"]),
+            _make_task("AF-4"),
+        ])
+
+        with pytest.raises(SystemExit) as exc_info:
+            cmd_doctor(_make_doctor_args())
+
+        assert exc_info.value.code == 1
+        captured = capsys.readouterr()
+        assert "cycle" in captured.err.lower()
+
+    def test_doctor_performance_500_crumbs(
+        self,
+        crumbs_env: Path,
+    ) -> None:
+        """cmd_doctor completes in <1 second for 500 crumbs with complex dependency graph."""
+        # Build 500 tasks: 490 in a long acyclic chain, 10 in a cycle at the end
+        records: List[Dict[str, Any]] = []
+        for i in range(1, 491):
+            blocked = [f"AF-{i + 1}"] if i < 490 else []
+            records.append(_make_task(f"AF-{i}", blocked_by=blocked))
+        # Add a 10-node cycle: AF-491->AF-492->...->AF-500->AF-491
+        for i in range(491, 501):
+            next_id = f"AF-{491 if i == 500 else i + 1}"
+            records.append(_make_task(f"AF-{i}", blocked_by=[next_id]))
+
+        _write_tasks(crumbs_env, records)
+
+        start = time.monotonic()
+        with pytest.raises(SystemExit):
+            cmd_doctor(_make_doctor_args())
+        elapsed = time.monotonic() - start
+
+        assert elapsed < 1.0, f"cmd_doctor took {elapsed:.3f}s on 500 crumbs — must be <1s"
