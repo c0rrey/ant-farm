@@ -7,6 +7,15 @@
 #   scripts/build-review-prompts.sh → ~/.claude/orchestration/scripts/
 #   skills/*.md         → ~/.claude/skills/ant-farm-<name>/SKILL.md
 #   crumb.py            → ~/.local/bin/crumb
+#   hooks/              → ~/.claude/hooks/
+#   mcp_server.py       → ~/.claude/mcp_server.py
+#
+# Settings.json registration (hooks — ~/.claude/settings.json):
+#   statusLine hook     → node ~/.claude/hooks/ant-farm-statusline.js
+#   PreToolUse hook     → node ~/.claude/hooks/ant-farm-scope-advisor.js (Write|Edit)
+#
+# MCP registration (~/.claude.json — separate from settings.json):
+#   mcpServers.crumb    → python3 ~/.claude/mcp_server.py (absolute paths)
 #
 # CLAUDE.md handling:
 #   Step 6a: Remove any existing ant-farm block from ~/.claude/CLAUDE.md
@@ -530,6 +539,231 @@ else
         chmod +x "$CRUMB_DST"
         log "crumb installed and marked executable: $CRUMB_DST"
     fi
+fi
+
+# ---------------------------------------------------------------------------
+# Step 5b: Install hooks → ~/.claude/hooks/
+#   Copies hook scripts and their lib/ dependencies.
+# ---------------------------------------------------------------------------
+log "Installing hooks → ~/.claude/hooks/ ..."
+hooks_installed=0
+
+if [ -d "$REPO_ROOT/hooks" ]; then
+    find_output_hooks=$(mktemp); TEMP_FILES+=("$find_output_hooks")
+    if ! find "$REPO_ROOT/hooks" -type f -print0 > "$find_output_hooks"; then
+        warn "find failed while walking hooks/: $(cat "$find_output_hooks")"
+        rm -f "$find_output_hooks"
+    else
+        while IFS= read -r -d '' src_file; do
+            rel="${src_file#"$REPO_ROOT/hooks/"}"
+            dst="${HOME}/.claude/hooks/${rel}"
+            backup_and_copy "$src_file" "$dst" || { warn "Failed to install hook: $src_file"; continue; }
+            hooks_installed=$((hooks_installed + 1))
+        done < "$find_output_hooks"
+        rm -f "$find_output_hooks"
+
+        if [ "$hooks_installed" -eq 0 ]; then
+            warn "hooks/ directory exists but no files were installed."
+        else
+            log "Hook files installed: $hooks_installed"
+        fi
+    fi
+else
+    warn "hooks/ directory not found: $REPO_ROOT/hooks — skipping hooks install"
+fi
+
+# ---------------------------------------------------------------------------
+# Step 5c: Install MCP server → ~/.claude/mcp_server.py
+# ---------------------------------------------------------------------------
+MCP_SRC="$REPO_ROOT/mcp_server.py"
+MCP_DST="${HOME}/.claude/mcp_server.py"
+
+if [ ! -f "$MCP_SRC" ]; then
+    warn "mcp_server.py not found: $MCP_SRC — skipping MCP server install"
+else
+    log "Installing MCP server → ${MCP_DST} ..."
+    backup_and_copy "$MCP_SRC" "$MCP_DST"
+    # MCP server imports crumb.py as a module — copy it alongside mcp_server.py
+    if [ -f "$CRUMB_SRC" ]; then
+        backup_and_copy "$CRUMB_SRC" "${HOME}/.claude/crumb.py"
+    fi
+fi
+
+# ---------------------------------------------------------------------------
+# Step 5d: Register hooks in ~/.claude/settings.json
+#   Idempotent: checks for existing entries before adding.
+#   Preserves all non-ant-farm settings.
+# ---------------------------------------------------------------------------
+SETTINGS_PATH="${HOME}/.claude/settings.json"
+
+register_hooks_in_settings() {
+    local settings_path="$1"
+
+    # Read existing settings or start with empty object
+    local settings="{}"
+    if [ -f "$settings_path" ]; then
+        settings="$(cat "$settings_path")"
+    fi
+
+    local changed=false
+
+    # --- StatusLine hook ---
+    local sl_command="node ~/.claude/hooks/ant-farm-statusline.js"
+    if ! printf '%s' "$settings" | python3 -c "
+import sys, json
+s = json.load(sys.stdin)
+sl = s.get('statusLine', {})
+sys.exit(0 if isinstance(sl, dict) and sl.get('command') == '$sl_command' else 1)
+" 2>/dev/null; then
+        # Check if another statusLine exists
+        if printf '%s' "$settings" | python3 -c "
+import sys, json
+s = json.load(sys.stdin)
+sl = s.get('statusLine')
+sys.exit(0 if sl and isinstance(sl, dict) and sl.get('command') else 1)
+" 2>/dev/null; then
+            warn "A statusLine hook is already configured in $settings_path."
+            warn "ant-farm statusline hook was NOT registered."
+            warn "To enable it, set statusLine.command to: $sl_command"
+        else
+            settings="$(printf '%s' "$settings" | python3 -c "
+import sys, json
+s = json.load(sys.stdin)
+s['statusLine'] = {'type': 'command', 'command': '$sl_command'}
+json.dump(s, sys.stdout, indent=2)
+print()
+")"
+            changed=true
+            log "Registered statusLine hook"
+        fi
+    else
+        log "StatusLine hook already registered"
+    fi
+
+    # --- PreToolUse scope advisor hook ---
+    local sa_command="node ~/.claude/hooks/ant-farm-scope-advisor.js"
+    local sa_matcher="Write|Edit"
+    if ! printf '%s' "$settings" | python3 -c "
+import sys, json
+s = json.load(sys.stdin)
+ptu = s.get('hooks', {}).get('PreToolUse', [])
+found = any(
+    isinstance(g, dict) and any(
+        isinstance(h, dict) and h.get('command') == '$sa_command'
+        for h in g.get('hooks', [])
+    )
+    for g in ptu
+)
+sys.exit(0 if found else 1)
+" 2>/dev/null; then
+        settings="$(printf '%s' "$settings" | python3 -c "
+import sys, json
+s = json.load(sys.stdin)
+if 'hooks' not in s or not isinstance(s['hooks'], dict):
+    s['hooks'] = {}
+if 'PreToolUse' not in s['hooks'] or not isinstance(s['hooks']['PreToolUse'], list):
+    s['hooks']['PreToolUse'] = []
+s['hooks']['PreToolUse'].append({
+    'matcher': '$sa_matcher',
+    'hooks': [{'type': 'command', 'command': '$sa_command'}]
+})
+json.dump(s, sys.stdout, indent=2)
+print()
+")"
+        changed=true
+        log "Registered PreToolUse scope advisor hook"
+    else
+        log "PreToolUse scope advisor hook already registered"
+    fi
+
+    # Write back if changed
+    if [ "$changed" = true ]; then
+        if [ "$DRY_RUN" = true ]; then
+            log "[dry-run] would update $settings_path with hook registrations"
+        else
+            printf '%s' "$settings" > "$settings_path"
+            log "Updated $settings_path"
+        fi
+    fi
+}
+
+if [ -d "$REPO_ROOT/hooks" ]; then
+    log "Registering hooks in $SETTINGS_PATH ..."
+    register_hooks_in_settings "$SETTINGS_PATH"
+fi
+
+# ---------------------------------------------------------------------------
+# Step 5e: Register MCP server in ~/.claude.json
+#   MCP servers are configured in ~/.claude.json (NOT settings.json).
+#   Uses absolute paths — Claude Code does not expand ~ in args.
+#   Idempotent: checks for existing entry before adding.
+# ---------------------------------------------------------------------------
+CLAUDE_JSON_PATH="${HOME}/.claude.json"
+PYTHON3_PATH="$(command -v python3 2>/dev/null || echo "python3")"
+
+register_mcp_in_claude_json() {
+    local claude_json="$1"
+    local python_path="$2"
+    local mcp_script="${HOME}/.claude/mcp_server.py"
+
+    # Read existing config or start with empty object
+    local config="{}"
+    if [ -f "$claude_json" ]; then
+        config="$(cat "$claude_json")"
+    fi
+
+    # Check if already registered with correct command + args
+    if printf '%s' "$config" | python3 -c "
+import sys, json
+s = json.load(sys.stdin)
+entry = s.get('mcpServers', {}).get('crumb', {})
+sys.exit(0 if entry.get('command') == '$python_path' and entry.get('args') == ['$mcp_script'] else 1)
+" 2>/dev/null; then
+        log "MCP server already registered in $claude_json"
+        return
+    fi
+
+    # Check if a different crumb entry exists
+    if printf '%s' "$config" | python3 -c "
+import sys, json
+s = json.load(sys.stdin)
+entry = s.get('mcpServers', {}).get('crumb')
+sys.exit(0 if entry and isinstance(entry, dict) and entry.get('command') else 1)
+" 2>/dev/null; then
+        warn "An mcpServers.crumb entry already exists in $claude_json with a different command."
+        warn "ant-farm MCP server was NOT registered."
+        warn "To enable it, run: claude mcp add --transport stdio --scope user crumb -- $python_path $mcp_script"
+        return
+    fi
+
+    # Register the MCP server
+    local updated
+    updated="$(printf '%s' "$config" | python3 -c "
+import sys, json
+s = json.load(sys.stdin)
+if 'mcpServers' not in s or not isinstance(s['mcpServers'], dict):
+    s['mcpServers'] = {}
+s['mcpServers']['crumb'] = {
+    'type': 'stdio',
+    'command': '$python_path',
+    'args': ['$mcp_script'],
+    'env': {}
+}
+json.dump(s, sys.stdout, indent=2)
+print()
+")"
+
+    if [ "$DRY_RUN" = true ]; then
+        log "[dry-run] would register MCP server in $claude_json (command: $python_path $mcp_script)"
+    else
+        printf '%s' "$updated" > "$claude_json"
+        log "Registered MCP server in $claude_json (command: $python_path $mcp_script)"
+    fi
+}
+
+if [ -f "$MCP_SRC" ]; then
+    log "Registering MCP server in $CLAUDE_JSON_PATH ..."
+    register_mcp_in_claude_json "$CLAUDE_JSON_PATH" "$PYTHON3_PATH"
 fi
 
 # ---------------------------------------------------------------------------
