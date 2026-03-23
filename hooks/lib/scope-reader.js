@@ -10,7 +10,9 @@
  * Sidecar format:
  *   {
  *     "crumb_id": "AF-NNN",
- *     "allowed_files": ["path/to/file.js", "other/file.py:10-50", ...]
+ *     "allowed_files": ["path/to/file.js", "other/file.py:10-50", ...],
+ *     "mode": "advisory" | "enforcing",       (optional, defaults to "advisory")
+ *     "permitted_exceptions": ["CHANGELOG.md"] (optional, paths that bypass enforcing mode)
  *   }
  *
  * The caller is responsible for resolving allowed_files entries relative to
@@ -30,8 +32,10 @@ const SCOPE_SIDECAR_FILENAME = '.ant-farm-scope.json';
  * Represents parsed scope data from the sidecar file.
  *
  * @typedef {Object} ScopeData
- * @property {string}   crumb_id      The crumb ID this scope is associated with.
- * @property {string[]} allowed_files List of allowed file paths (may include :line-range suffixes).
+ * @property {string}   crumb_id             The crumb ID this scope is associated with.
+ * @property {string[]} allowed_files         List of allowed file paths (may include :line-range suffixes).
+ * @property {string}   mode                 Enforcement mode: 'advisory' (default) or 'enforcing'.
+ * @property {string[]} permitted_exceptions  Paths that bypass enforcement in enforcing mode.
  */
 
 /**
@@ -75,9 +79,21 @@ function readScopeSidecar(projectDir) {
     return null;
   }
 
+  // Parse optional mode field — defaults to 'advisory' when absent or unrecognized.
+  const rawMode = parsed.mode;
+  const mode =
+    rawMode === 'enforcing' || rawMode === 'advisory' ? rawMode : 'advisory';
+
+  // Parse optional permitted_exceptions array — defaults to empty when absent.
+  const permittedExceptions = Array.isArray(parsed.permitted_exceptions)
+    ? parsed.permitted_exceptions.filter((f) => typeof f === 'string')
+    : [];
+
   return {
     crumb_id: typeof parsed.crumb_id === 'string' ? parsed.crumb_id : '',
     allowed_files: parsed.allowed_files.filter((f) => typeof f === 'string'),
+    mode,
+    permitted_exceptions: permittedExceptions,
   };
 }
 

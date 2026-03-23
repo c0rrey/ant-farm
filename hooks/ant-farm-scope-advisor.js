@@ -11,13 +11,17 @@
  * Behavior:
  *   - Reads .ant-farm-scope.json from the project root.
  *   - If the target file IS in allowed_files: no advisory (tool proceeds normally).
- *   - If the target file is NOT in allowed_files: injects an advisory message.
+ *   - If the target file is NOT in allowed_files:
+ *       advisory mode  → injects an advisory message ({ continue: true, reason: "..." }).
+ *       enforcing mode → blocks the write ({ continue: false, reason: "BLOCKED: ..." }).
+ *   - permitted_exceptions paths bypass enforcement even in enforcing mode.
  *   - If .ant-farm-scope.json does not exist: silently inactive (no output).
- *   - Advisory only — never blocks tool execution (continue: true always).
+ *   - mode absent or 'advisory': advisory only — never blocks tool execution.
  *
  * Response format:
- *   Silent (no output)                        — in-scope or sidecar absent
- *   {"continue": true, "reason": "<msg>"}     — out-of-scope advisory
+ *   Silent (no output)                          — in-scope, exception, or sidecar absent
+ *   {"continue": true, "reason": "<msg>"}       — out-of-scope advisory (advisory mode)
+ *   {"continue": false, "reason": "BLOCKED: …"} — out-of-scope block (enforcing mode)
  *
  * Silent no-op conditions (produces no stdout output):
  *   - .ant-farm-scope.json does not exist in the project root
@@ -49,9 +53,31 @@ const { readScopeSidecar, isFileInScope } = require('./lib/scope-reader');
 
 const HOOK_NAME = 'ant-farm-scope-advisor';
 
-/** Advisory message injected when a file is outside the assigned scope. */
+/** Advisory message injected when a file is outside the assigned scope (advisory mode). */
 const ADVISORY_MESSAGE =
   'This file is outside your assigned scope. Check your crumb file list before proceeding.';
+
+/**
+ * Checks whether a target file matches any entry in scopeData.permitted_exceptions.
+ * Uses the same resolution strategy as isFileInScope: resolves against projectDir and
+ * strips optional :line-range suffixes before comparing.
+ *
+ * @param {string}    targetFile   Absolute or relative path of the file being written/edited.
+ * @param {import('./lib/scope-reader').ScopeData} scopeData  Parsed scope data.
+ * @param {string}    projectDir   Absolute path to the project root.
+ * @returns {boolean}  True if the file is in permitted_exceptions, false otherwise.
+ */
+function isPermittedException(targetFile, scopeData, projectDir) {
+  const resolvedTarget = path.resolve(projectDir, targetFile);
+  for (const entry of scopeData.permitted_exceptions) {
+    const filePart = entry.replace(/:[0-9]+-[0-9]+$/, '');
+    const resolvedEntry = path.resolve(projectDir, filePart);
+    if (resolvedTarget === resolvedEntry) {
+      return true;
+    }
+  }
+  return false;
+}
 
 /**
  * Extracts the target file path from a PreToolUse input object.
@@ -122,7 +148,37 @@ async function handler(input) {
       return '';
     }
 
-    // File is outside scope — emit advisory (non-blocking).
+    // File is outside scope. Check mode to decide advisory vs. block.
+    const mode = scopeData.mode; // 'advisory' | 'enforcing'
+
+    if (mode === 'enforcing') {
+      // Check permitted_exceptions before blocking.
+      const isException = isPermittedException(targetFile, scopeData, projectDir);
+      debugLog(HOOK_NAME, 'isPermittedException', isException);
+
+      if (isException) {
+        // Explicitly permitted — proceed silently.
+        debugLog(HOOK_NAME, 'permitted exception — silent no-op', targetFile);
+        return '';
+      }
+
+      // Block the write and log context for traceability.
+      const crumbId = scopeData.crumb_id || '(unknown)';
+      const allowedList = scopeData.allowed_files.join(', ') || '(none)';
+      const agentContext =
+        (input && input.agent && typeof input.agent === 'string' ? input.agent : null) ||
+        (input && input.session_id ? `session:${input.session_id}` : 'unknown-agent');
+
+      debugLog(
+        HOOK_NAME,
+        `BLOCKED write | agent: ${agentContext} | file: ${targetFile} | crumb: ${crumbId} | scope: ${allowedList}`
+      );
+
+      const blockReason = `BLOCKED: ${targetFile} is outside declared scope for ${crumbId}`;
+      return JSON.stringify({ continue: false, reason: blockReason });
+    }
+
+    // Advisory mode (default) — emit warning but allow write.
     debugLog(HOOK_NAME, 'out-of-scope advisory injected', targetFile);
     return JSON.stringify({ continue: true, reason: ADVISORY_MESSAGE });
   } catch (err) {
@@ -166,4 +222,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { handler, extractTargetPath, ADVISORY_MESSAGE };
+module.exports = { handler, extractTargetPath, isPermittedException, ADVISORY_MESSAGE };
