@@ -102,7 +102,7 @@ graph TD
 
 ---
 
-## User Approval Checkpoint
+## User Approval Checkpoint (reference only — current workflow auto-proceeds after startup-check PASS)
 
 > **Note:** The current automated workflow (RULES.md Step 1b) auto-proceeds after startup-check PASS — no manual user approval step. This section is retained for reference when manual review is desired.
 
@@ -158,7 +158,7 @@ spawn(
 # ... more agents
 ```
 
-**Monitor:** TaskCreate for each agent
+**Monitor:** Watch for agent completion events (Task tool completion, sentinel files per RULES.md Sentinel-File Completion Protocol)
 
 #### Wave 2: [Name]
 
