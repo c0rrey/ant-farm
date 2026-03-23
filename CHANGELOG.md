@@ -1,5 +1,41 @@
 # Changelog
 
+## 2026-03-23 — Session 20260323-124227 (MCP Tool Expansion and Full Framework Migration)
+
+### Summary
+
+Completed 23 tasks across 3 primary implementation waves and a review-driven fix cycle. The session delivered the 7 missing MCP tools for the crumb task tracker (crumb_trail_list, crumb_trail_show, crumb_trail_close, crumb_close, crumb_ready, crumb_blocked, crumb_link) and migrated the entire orchestration framework — 4 RULES files, 21 template files, 12 skill and agent files — to prefer MCP tool calls over CLI. Two review rounds ran: round 1 produced 1 P1 and 4 P2 findings (all fixed), plus 14 deferred P3 crumbs; round 2 cleared with 0 P1/P2 and 1 P3 residual that was fixed within the session. Session produced 13 commits across 39 files.
+
+### Implementation (Waves 1–3)
+
+- **AF-492**: feat: add 7 missing MCP tools (crumb_trail_list, crumb_trail_show, crumb_trail_close, crumb_close, crumb_ready, crumb_blocked, crumb_link) with 44 new tests (`mcp_server.py`, `tests/test_mcp_server.py`) (`7f55373`)
+- **AF-493**: feat: migrate RULES files to prefer MCP tools over CLI — fallback notes added to 4 RULES files; prose CLI invocations replaced with MCP forms (`b126d65`)
+- **AF-494**: feat: migrate 21 orchestration template files to prefer MCP tools over CLI — prose converted, bash code blocks preserved as CLI, trail creation stays CLI (`1786e20`)
+- **AF-495**: feat: migrate 12 skills and agent definition files to prefer MCP tools over CLI — top-level blockquote note blocks added to all 5 skills and 7 agent files (`7d6e75e`)
+
+### Review Fixes (Round 1)
+
+- **AF-496, AF-498, AF-499, AF-500, AF-501**: fix: improve error messages and consistency across MCP tools — corrected crumb_update docstring, preserved exit code in SystemExit conversions, added missing handlers to crumb_list/crumb_query, added early return for empty ids, corrected crumb_close output-order docstring (`mcp_server.py`) (`9048bac`)
+- **AF-504**: fix: add 7 missing MCP tools to agent/skill banners — extended all 9 file banners from 6-tool list to full 13-tool list (`dc1e6b8`)
+- **AF-517, AF-516, AF-514**: fix: remove duplicate placeholders, clarify suffix example, fix nested fence in template skeleton files (`1b138ce`)
+- **AF-521, AF-523, AF-524**: fix: consolidate crumb doctor call in work.md, update MCP tool names in RULES.md Hard Gates table and recon-planner.md Step 4 (`8c6abf5`)
+- **AF-503**: fix: align language-detection script with early-exit comment in skills/init.md (`8a2fad9`)
+- **AF-502**: fix: rename "Crumbs filed" to "Open crumbs" in session-complete.md Check 6 (`9c62040`)
+- **AF-513**: fix: clarify scribe-skeleton.md path base directory in claude-block.md (`b3f0df8`)
+
+### Review Fixes (Post-Round-2)
+
+- **AF-526**: fix: remove 3 remaining bare `except RuntimeError: raise` no-op clauses in mcp_server.py and update affected test (`ba191b0`, `76a79af`)
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 39 files, 4 tasks | 1 | 4 | 25 | PASS WITH ISSUES |
+| 2 | 7 fix commits, 16 crumbs | 0 | 0 | 1 | PASS |
+
+31 root causes consolidated in round 1 (43 raw findings, 12 merges). 5 P1/P2 findings fixed; 14 P3 findings deferred to backlog.
+
 ## 2026-03-22 — Session 20260322-185904 (Test Cleanup, Null Guards, Hook Tests & JSON Schema Docs)
 
 ### Summary
