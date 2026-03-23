@@ -32,6 +32,7 @@
  */
 
 const fs = require('fs');
+const path = require('path');
 
 /**
  * Step number mapping: event type → step number (1-based, out of TOTAL_STEPS).
@@ -167,4 +168,78 @@ function readProgressLog(filePath) {
   return parseLine(lastLine);
 }
 
-module.exports = { readProgressLog, parseLine, readLastLine, EVENT_STEP_MAP, TOTAL_STEPS };
+/**
+ * Reads all non-empty lines from the file at `filePath` and returns them as an array.
+ * Returns an empty array if the file cannot be read, is empty, or has no non-empty lines.
+ *
+ * @param {string} filePath  Absolute path to the progress log file.
+ * @returns {string[]}
+ */
+function readAllLines(filePath) {
+  let raw;
+  try {
+    raw = fs.readFileSync(filePath, 'utf8');
+  } catch (_err) {
+    return [];
+  }
+
+  if (!raw || raw.trim() === '') {
+    return [];
+  }
+
+  return raw.split('\n').filter((l) => l.trim() !== '');
+}
+
+/**
+ * Scans progress.log inside the given session directory for the last `next_step=`
+ * field value across all log lines (any event type).
+ *
+ * A progress log line has the pipe-delimited format:
+ *   TIMESTAMP|EVENT_TYPE|field=value|field=value|...
+ *
+ * The function scans all non-empty lines in order, tracking the most recent
+ * occurrence of a `next_step=<value>` key-value pair. This mirrors the
+ * `wave=` extraction logic in `parseLine` but operates across the full file.
+ *
+ * Returns null when:
+ *   - progress.log does not exist or cannot be read
+ *   - progress.log is empty or has no non-empty lines
+ *   - No line contains a `next_step=` key-value pair
+ *   - The `next_step=` value is an empty string
+ *
+ * @param {string} sessionDir  Absolute path to the session directory.
+ * @returns {string|null}  The last `next_step=` value found, or null.
+ */
+function getExpectedNextStep(sessionDir) {
+  const filePath = path.join(sessionDir, 'progress.log');
+  const lines = readAllLines(filePath);
+
+  let lastNextStep = null;
+
+  for (const line of lines) {
+    const fields = line.split('|');
+    // KV pairs start at index 2 (fields[0]=timestamp, fields[1]=event_type).
+    for (let i = 2; i < fields.length; i++) {
+      const kv = fields[i].trim();
+      if (kv.startsWith('next_step=')) {
+        const value = kv.slice('next_step='.length);
+        if (value !== '') {
+          lastNextStep = value;
+        }
+        break; // Only one next_step= per line expected; move to next line.
+      }
+    }
+  }
+
+  return lastNextStep;
+}
+
+module.exports = {
+  readProgressLog,
+  parseLine,
+  readLastLine,
+  readAllLines,
+  getExpectedNextStep,
+  EVENT_STEP_MAP,
+  TOTAL_STEPS,
+};

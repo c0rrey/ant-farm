@@ -1095,6 +1095,259 @@ class TestSessionRetries:
 
 
 # ---------------------------------------------------------------------------
+# session-status tests
+# ---------------------------------------------------------------------------
+
+#: Filename read by session-status inside a session directory.
+_PROGRESS_LOG_FILE = "progress.log"
+
+
+def _write_progress_log(session_dir: Path, lines: list) -> None:
+    """Write *lines* as newline-joined content to ``session_dir/progress.log``.
+
+    Args:
+        session_dir: Directory that acts as the session directory.
+        lines: List of raw progress log line strings.
+    """
+    progress_path = session_dir / _PROGRESS_LOG_FILE
+    progress_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+class TestSessionStatus:
+    """Integration tests for ``crumb session-status`` subcommand."""
+
+    # ------------------------------------------------------------------
+    # session-status — no progress.log
+    # ------------------------------------------------------------------
+
+    def test_session_status_no_file_exits_zero(self, tmp_path: Path) -> None:
+        """``crumb session-status`` exits 0 when progress.log is absent."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        result = _run(["session-status", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected exit code 0 for missing progress.log.\n"
+            f"stdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+
+    def test_session_status_no_file_prints_unknown(self, tmp_path: Path) -> None:
+        """``crumb session-status`` reports unknown when progress.log is absent."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        result = _run(["session-status", str(session_dir)], cwd=tmp_path)
+
+        assert "unknown" in result.stdout, (
+            f"Expected 'unknown' in stdout for missing progress.log.\n"
+            f"stdout: {result.stdout!r}"
+        )
+
+    # ------------------------------------------------------------------
+    # session-status — with progress.log
+    # ------------------------------------------------------------------
+
+    def test_session_status_shows_last_step(self, tmp_path: Path) -> None:
+        """``crumb session-status`` shows the last event type from progress.log."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        _write_progress_log(session_dir, [
+            "2026-01-01T00:00:00.000Z|SESSION_INIT|wave=0",
+            "2026-01-01T00:01:00.000Z|SCOUT_COMPLETE|wave=0",
+        ])
+
+        result = _run(["session-status", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected exit code 0.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        assert "SCOUT_COMPLETE" in result.stdout, (
+            f"Expected last event type 'SCOUT_COMPLETE' in stdout.\nstdout: {result.stdout!r}"
+        )
+
+    def test_session_status_shows_next_step(self, tmp_path: Path) -> None:
+        """``crumb session-status`` shows the expected next step from progress.log."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        _write_progress_log(session_dir, [
+            "2026-01-01T00:00:00.000Z|SESSION_INIT|wave=0|next_step=pre-spawn-check",
+        ])
+
+        result = _run(["session-status", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected exit code 0.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        assert "pre-spawn-check" in result.stdout, (
+            f"Expected 'pre-spawn-check' in stdout.\nstdout: {result.stdout!r}"
+        )
+
+    def test_session_status_shows_none_when_no_next_step(self, tmp_path: Path) -> None:
+        """``crumb session-status`` shows none for next step when no next_step= field."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        _write_progress_log(session_dir, [
+            "2026-01-01T00:00:00.000Z|SESSION_INIT|wave=0",
+        ])
+
+        result = _run(["session-status", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0
+        # When next_step is absent, the output should say "none"
+        assert "none" in result.stdout.lower(), (
+            f"Expected 'none' in stdout for missing next_step.\nstdout: {result.stdout!r}"
+        )
+
+    def test_session_status_last_next_step_wins(self, tmp_path: Path) -> None:
+        """``crumb session-status`` uses the last next_step= value when multiple exist."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        _write_progress_log(session_dir, [
+            "2026-01-01T00:00:00.000Z|SESSION_INIT|wave=0|next_step=pre-spawn-check",
+            "2026-01-01T00:01:00.000Z|SCOUT_COMPLETE|wave=0|next_step=scope-verify",
+        ])
+
+        result = _run(["session-status", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0
+        assert "scope-verify" in result.stdout, (
+            f"Expected last next_step 'scope-verify' in stdout.\nstdout: {result.stdout!r}"
+        )
+        # The earlier value should NOT be the dominant one shown
+        assert "pre-spawn-check" not in result.stdout.split("next step:")[-1], (
+            f"Expected 'pre-spawn-check' NOT to be shown as next step.\nstdout: {result.stdout!r}"
+        )
+
+    def test_session_status_shows_position(self, tmp_path: Path) -> None:
+        """``crumb session-status`` shows a position label for known event types."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        _write_progress_log(session_dir, [
+            "2026-01-01T00:00:00.000Z|WAVE_SPAWNED|wave=1",
+        ])
+
+        result = _run(["session-status", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0
+        # Position label should include step number
+        assert "3" in result.stdout, (
+            f"Expected step '3' in position output for WAVE_SPAWNED.\nstdout: {result.stdout!r}"
+        )
+
+    # ------------------------------------------------------------------
+    # session-status --json
+    # ------------------------------------------------------------------
+
+    def test_session_status_json_output_is_valid_json(self, tmp_path: Path) -> None:
+        """``crumb session-status --json`` emits valid JSON."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        _write_progress_log(session_dir, [
+            "2026-01-01T00:00:00.000Z|SCOUT_COMPLETE|wave=0|next_step=pre-spawn-check",
+        ])
+
+        result = _run(["session-status", "--json", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected exit code 0.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        try:
+            data = json.loads(result.stdout)
+        except json.JSONDecodeError as exc:
+            raise AssertionError(
+                f"stdout is not valid JSON: {exc}\nstdout: {result.stdout!r}"
+            ) from exc
+
+        assert "position" in data, f"Expected 'position' key in JSON output: {data!r}"
+        assert "last_step" in data, f"Expected 'last_step' key in JSON output: {data!r}"
+        assert "next_step" in data, f"Expected 'next_step' key in JSON output: {data!r}"
+
+    def test_session_status_json_last_step_correct(self, tmp_path: Path) -> None:
+        """``crumb session-status --json`` returns correct last_step value."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        _write_progress_log(session_dir, [
+            "2026-01-01T00:00:00.000Z|SESSION_INIT|wave=0",
+            "2026-01-01T00:01:00.000Z|SCOUT_COMPLETE|wave=0",
+        ])
+
+        result = _run(["session-status", "--json", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert data["last_step"] == "SCOUT_COMPLETE", (
+            f"Expected last_step='SCOUT_COMPLETE', got {data['last_step']!r}"
+        )
+
+    def test_session_status_json_next_step_correct(self, tmp_path: Path) -> None:
+        """``crumb session-status --json`` returns correct next_step value."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        _write_progress_log(session_dir, [
+            "2026-01-01T00:00:00.000Z|SESSION_INIT|wave=0|next_step=scope-verify",
+        ])
+
+        result = _run(["session-status", "--json", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert data["next_step"] == "scope-verify", (
+            f"Expected next_step='scope-verify', got {data['next_step']!r}"
+        )
+
+    def test_session_status_json_no_file(self, tmp_path: Path) -> None:
+        """``crumb session-status --json`` emits null fields when no progress.log."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        result = _run(["session-status", "--json", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert data["position"] is None, f"Expected position=null, got {data['position']!r}"
+        assert data["last_step"] is None, f"Expected last_step=null, got {data['last_step']!r}"
+        assert data["next_step"] is None, f"Expected next_step=null, got {data['next_step']!r}"
+
+    def test_session_status_json_next_step_null_when_absent(self, tmp_path: Path) -> None:
+        """``crumb session-status --json`` returns next_step=null when no next_step= field."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        _write_progress_log(session_dir, [
+            "2026-01-01T00:00:00.000Z|SESSION_INIT|wave=0",
+        ])
+
+        result = _run(["session-status", "--json", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert data["next_step"] is None, (
+            f"Expected next_step=null when no next_step= field, got {data['next_step']!r}"
+        )
+
+
+# ---------------------------------------------------------------------------
 # validate-spec tests
 # ---------------------------------------------------------------------------
 

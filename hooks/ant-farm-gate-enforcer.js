@@ -53,7 +53,8 @@
 const fs = require('fs');
 const path = require('path');
 const { debugLog } = require('./lib/debug-log');
-const { isGatePassed } = require('./lib/gate-manager');
+const { isGatePassed, writeGateVerdict } = require('./lib/gate-manager');
+const { getExpectedNextStep } = require('./lib/progress-reader');
 
 const HOOK_NAME = 'ant-farm-gate-enforcer';
 
@@ -62,6 +63,9 @@ const SESSION_PATH_MARKER = '.crumbs/sessions/_session-';
 
 /** Gate that must have passed before any Task-based agent spawn is allowed. */
 const PREDECESSOR_GATE = 'startup-check';
+
+/** Gate name used when recording the position check verdict in gate-status.json. */
+const POSITION_CHECK_GATE = 'position-check';
 
 /** Tools that bypass gate checks entirely (review team coordination). */
 const BYPASS_TOOLS = new Set(['TeamCreate', 'SendMessage']);
@@ -291,6 +295,57 @@ async function handler(input) {
       return JSON.stringify({ continue: false, reason });
     }
 
+    // Position check: verify the spawn matches the expected next step from progress.log.
+    const expectedNextStep = getExpectedNextStep(sessionDir);
+    debugLog(HOOK_NAME, 'expected next step from progress.log', { expectedNextStep });
+
+    if (expectedNextStep !== null) {
+      // Determine the step being attempted from the prompt text.
+      const prompt =
+        input &&
+        input.tool_input &&
+        typeof input.tool_input.prompt === 'string'
+          ? input.tool_input.prompt
+          : '';
+
+      const stepMatched = prompt.includes(expectedNextStep);
+      debugLog(HOOK_NAME, `position check: expected="${expectedNextStep}" matched=${stepMatched}`);
+
+      if (!stepMatched) {
+        // Extract the attempting step label from the prompt for the error message.
+        // Best-effort: scan for any known step name in the prompt, or fall back to 'unknown'.
+        const KNOWN_STEPS = [
+          'startup-check',
+          'pre-spawn-check',
+          'scope-verify',
+          'claims-vs-code',
+          'review-integrity',
+          'session-complete',
+          'position-check',
+        ];
+        const attemptingStep = KNOWN_STEPS.find((s) => prompt.includes(s)) || 'unknown';
+
+        const reason = `Position check failed: expected ${expectedNextStep}, attempting ${attemptingStep}`;
+        debugLog(HOOK_NAME, 'blocking Task spawn — position mismatch', { reason });
+
+        // Write the position-check FAIL verdict to gate-status.json with next_step meta.
+        try {
+          writeGateVerdict(sessionDir, POSITION_CHECK_GATE, 'FAIL', { next_step: expectedNextStep });
+        } catch (writeErr) {
+          debugLog(HOOK_NAME, 'failed to write position-check FAIL verdict', writeErr && writeErr.message);
+        }
+
+        return JSON.stringify({ continue: false, reason });
+      }
+
+      // Position matches — write PASS verdict with next_step meta.
+      try {
+        writeGateVerdict(sessionDir, POSITION_CHECK_GATE, 'PASS', { next_step: expectedNextStep });
+      } catch (writeErr) {
+        debugLog(HOOK_NAME, 'failed to write position-check PASS verdict', writeErr && writeErr.message);
+      }
+    }
+
     // Gate has passed — allow spawn silently.
     debugLog(HOOK_NAME, 'gate passed — allowing Task spawn');
     return '';
@@ -347,5 +402,6 @@ module.exports = {
   isBypassEnabled,
   SESSION_PATH_MARKER,
   PREDECESSOR_GATE,
+  POSITION_CHECK_GATE,
   BYPASS_TOOLS,
 };

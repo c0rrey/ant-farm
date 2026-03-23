@@ -2280,6 +2280,131 @@ def cmd_prune(args: argparse.Namespace) -> None:
 #: Filename written by hooks/lib/retry-tracker.js inside the session directory.
 _RETRIES_FILE = "retries.json"
 
+# ---------------------------------------------------------------------------
+# Session status commands
+# ---------------------------------------------------------------------------
+
+#: Progress log filename written by ant-farm hooks inside the session directory.
+_PROGRESS_LOG_FILE = "progress.log"
+
+
+def _parse_progress_log(session_dir: Path) -> Dict[str, Any]:
+    """Parse progress.log in *session_dir* and return session position metadata.
+
+    Reads the progress log line-by-line.  Each non-empty line uses the pipe-
+    delimited format::
+
+        TIMESTAMP|EVENT_TYPE|field=value|field=value|...
+
+    Returns a dict with keys:
+
+    * ``last_step`` — the EVENT_TYPE from the final non-empty line, or ``None``.
+    * ``position``  — a human-readable label for the last step, or ``None``.
+    * ``next_step`` — the value of the last ``next_step=`` KV field found across
+                      all lines, or ``None`` when no such field exists.
+
+    The dict values are all ``None`` when progress.log is absent, empty, or
+    contains no parseable lines.
+
+    Args:
+        session_dir: Absolute path to the session directory.
+
+    Returns:
+        Dict with keys ``last_step``, ``position``, and ``next_step``.
+    """
+    progress_path = session_dir / _PROGRESS_LOG_FILE
+    result: Dict[str, Any] = {"last_step": None, "position": None, "next_step": None}
+
+    if not progress_path.exists():
+        return result
+
+    try:
+        text = progress_path.read_text(encoding="utf-8")
+    except OSError:
+        return result
+
+    lines = [ln for ln in text.splitlines() if ln.strip()]
+    if not lines:
+        return result
+
+    # Extract EVENT_TYPE from the last non-empty line.
+    last_line = lines[-1]
+    parts = last_line.split("|")
+    if len(parts) >= 2:
+        result["last_step"] = parts[1].strip() or None
+
+    # Compute a human-readable position label from last_step.
+    _STEP_LABELS: Dict[str, str] = {
+        "SESSION_INIT": "1/6 session-init",
+        "SCOUT_COMPLETE": "2/6 scout-complete",
+        "WAVE_SPAWNED": "3/6 wave-spawned",
+        "WAVE_WWD_PASS": "3/6 wave-wwd-pass",
+        "WAVE_VERIFIED": "3/6 wave-verified",
+        "REVIEW_COMPLETE": "4/6 review-complete",
+        "REVIEW_TRIAGED": "4/6 review-triaged",
+        "DOCS_COMMITTED": "5/6 docs-committed",
+        "XREF_VERIFIED": "5/6 xref-verified",
+        "SCRIBE_COMPLETE": "5/6 scribe-complete",
+        "ESV_PASS": "6/6 esv-pass",
+        "SESSION_COMPLETE_PASS": "6/6 session-complete-pass",
+        "SESSION_COMPLETE": "6/6 session-complete",
+    }
+    if result["last_step"] is not None:
+        result["position"] = _STEP_LABELS.get(result["last_step"])
+
+    # Find the last next_step= KV field across all lines.
+    last_next_step = None
+    for line in lines:
+        fields = line.split("|")
+        for field in fields[2:]:
+            kv = field.strip()
+            if kv.startswith("next_step="):
+                value = kv[len("next_step="):]
+                if value:
+                    last_next_step = value
+                break  # Only one next_step= per line expected.
+    result["next_step"] = last_next_step
+
+    return result
+
+
+def cmd_session_status(args: argparse.Namespace) -> None:
+    """Show current session position from progress.log.
+
+    Reads progress.log from the given session directory and prints a summary
+    of the current position, last completed step, and expected next step.
+    Supports --json for machine-readable output.
+
+    Args:
+        args: Parsed CLI arguments.  Expects ``args.session_dir`` (str) and
+              ``args.json_output`` (bool).
+    """
+    session_dir = Path(args.session_dir).expanduser().resolve()
+    progress_path = session_dir / _PROGRESS_LOG_FILE
+
+    if not progress_path.exists():
+        if args.json_output:
+            print(json.dumps({"position": None, "last_step": None, "next_step": None}))
+        else:
+            print("position: unknown (no progress.log found)")
+        return
+
+    data = _parse_progress_log(session_dir)
+
+    if args.json_output:
+        print(json.dumps({
+            "position": data["position"],
+            "last_step": data["last_step"],
+            "next_step": data["next_step"],
+        }))
+    else:
+        position_str = data["position"] if data["position"] is not None else "unknown"
+        last_step_str = data["last_step"] if data["last_step"] is not None else "none"
+        next_step_str = data["next_step"] if data["next_step"] is not None else "none"
+        print(f"position: {position_str}")
+        print(f"last step: {last_step_str}")
+        print(f"next step: {next_step_str}")
+
 
 def cmd_session_retries(args: argparse.Namespace) -> None:
     """Show retry counts for a session directory.
@@ -2391,6 +2516,7 @@ def build_parser() -> argparse.ArgumentParser:
             "  render-template  Expand {{SLOT_NAME}} placeholders in a template file\n"
             "  session-retries  Show retry counts for a session directory\n"
             "  session-reset-retries  Clear the retry log for a session directory\n"
+            "  session-status   Show current position, last step, and next step for a session\n"
         ),
     )
     parser.set_defaults(func=None)
@@ -2654,6 +2780,19 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to the session directory containing retries.json",
     )
     p_session_reset_retries.set_defaults(func=cmd_session_reset_retries)
+
+    # --- session-status ---
+    p_session_status = sub.add_parser(
+        "session-status",
+        help="Show current position, last step, and expected next step for a session",
+    )
+    p_session_status.add_argument(
+        "session_dir",
+        metavar="SESSION_DIR",
+        help="Path to the session directory containing progress.log",
+    )
+    _add_json_flag(p_session_status)
+    p_session_status.set_defaults(func=cmd_session_status)
 
     return parser
 
