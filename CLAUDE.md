@@ -10,7 +10,7 @@ Run `./scripts/setup.sh` then `/ant-farm-init` to install orchestration triggers
 **Trigger**: When the user says "let's get to work" (case-insensitive, anywhere in message).
 
 **CRITICAL — read before doing ANYTHING:**
-- **NEVER** run `crumb show`, `crumb ready`, `crumb list`, `crumb blocked`, or any `crumb` query command — the Recon Planner does this
+- **NEVER** call the `crumb_show`, `crumb_ready`, `crumb_list`, `crumb_blocked` MCP tools (or their CLI equivalents `crumb show`, `crumb ready`, `crumb list`, `crumb blocked`), or any other `crumb` query command — the Recon Planner does this
 - NEVER read task/issue details from the user's message and act on them directly.
 - NEVER set `run_in_background` on Task agents. Multiple Task calls in one message already run concurrently. Background mode causes raw JSONL transcript leakage into your context.
 - Read `~/.claude/orchestration/RULES.md` FIRST and ALONE — no parallel tool calls. Then follow it.
@@ -64,7 +64,7 @@ Run `./scripts/setup.sh` then `/ant-farm-init` to install orchestration triggers
 2. **Run quality gates** (if code changed) - Tests, linters, builds
 3. **Review-findings gate** — If reviews ran and found P1 issues, present findings to user before proceeding. User decides: fix now, or document deferred P1s in CHANGELOG and push. Do NOT push with undisclosed P1 blockers. If no reviews ran or no P1s exist, proceed.
 4. **Update issue status** - Close finished work, update in-progress items
-5. **Run Session Scribe** — Spawn the Session Scribe (`ant-farm-session-scribe`, `model: "sonnet"`) to write `{SESSION_DIR}/exec-summary.md` and prepend a CHANGELOG entry. Use `orchestration/templates/scribe-skeleton.md` as the prompt template. Commit CHANGELOG.md only — NEVER `git add` any file under `.crumbs/` (the entire directory is gitignored).
+5. **Run Session Scribe** — Spawn the Session Scribe (`ant-farm-session-scribe`, `model: "sonnet"`) to write `{SESSION_DIR}/exec-summary.md` and prepend a CHANGELOG entry. Use `orchestration/templates/scribe-skeleton.md` (repo path; synced to `~/.claude/` by setup.sh) as the prompt template. Commit CHANGELOG.md only — NEVER `git add` any file under `.crumbs/` (the entire directory is gitignored).
 6. **Session-complete gate** — Spawn the Checkpoint Auditor (`ant-farm-checkpoint-auditor`, `model: "haiku"`) for Exec Summary Verification. Pass `{SESSION_DIR}` and `orchestration/templates/checkpoints/common.md` + `orchestration/templates/checkpoints/session-complete.md`. session-complete must PASS before pushing. On FAIL: re-spawn Session Scribe with violations (max 1 retry); if still failing, present to user.
 7. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
