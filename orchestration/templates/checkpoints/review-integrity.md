@@ -16,7 +16,7 @@ Audit the review consolidation for completeness, accuracy, and traceability.
 
 **Consolidated summary**: `{SESSION_DIR}/review-reports/review-consolidated-{timestamp}.md`
 **Individual reports**: (the Orchestrator provides exact filenames and the review round number in the consolidation prompt.)
-**Session start date**: `{SESSION_START_DATE}` (ISO 8601 date, e.g., `2026-02-20` — Orchestrator-supplied; used to scope crumb list in Check 7)
+**Session start date**: `{SESSION_START_DATE}` (ISO 8601 date, e.g., `2026-02-20` — Orchestrator-supplied; used to scope crumb_list in Check 7)
 
 Round 1:
 - `{SESSION_DIR}/review-reports/clarity-review-{timestamp}.md`
@@ -42,7 +42,7 @@ Every finding must be accounted for — either standalone, merged into a group, 
 Report the math: "Round 1: Clarity: N, Edge Cases: N, Correctness: N, Drift: N = N total. Round 2+: Correctness: N, Edge Cases: N = N total. Consolidated references N findings across N root causes. N findings merged as duplicates. RECONCILED / NOT RECONCILED — {list orphaned findings}"
 
 ## Check 2: Crumb Existence Check
-For each crumb ID in the consolidated summary, run `crumb show <id>`.
+For each crumb ID in the consolidated summary, use the `crumb_show` MCP tool with `crumb_id: "<id>"` (CLI fallback: `crumb show <id>`).
 Verify it exists and has status=open.
 Report any IDs that don't resolve or have unexpected status.
 
@@ -106,7 +106,7 @@ Spot-check 2 merged groups by reading the actual code at each finding's location
 
 "review-integrity Check 8 ABORTED: SESSION_START_DATE placeholder was not substituted before spawning review-integrity (got: '{SESSION_START_DATE}'). Root cause: upstream substitution failure — the Orchestrator did not replace `{SESSION_START_DATE}` in the review-integrity prompt before dispatch. Fix: ensure the Orchestrator fills in SESSION_START_DATE as an ISO 8601 date (e.g. `2026-02-20`) before spawning the Checkpoint Auditor."
 
-Run `crumb list --open --after {SESSION_START_DATE}` and cross-reference against the consolidated summary's "Crumbs filed" list.
+Use the `crumb_list` MCP tool with `status: "open"` and `after: "{SESSION_START_DATE}"` and cross-reference against the consolidated summary's "Crumbs filed" list (CLI fallback: `crumb list --open --after {SESSION_START_DATE}`).
 - `{SESSION_START_DATE}`: the Orchestrator-supplied session start date (ISO 8601 format, e.g., `2026-02-20`). This scopes results to crumbs filed during this session only and prevents pulling thousands of unrelated open crumbs from earlier sessions.
 - Every open crumb from this session should trace back to the consolidation step
 - Flag any crumbs that were filed during the review phase (not consolidation) — these are unauthorized

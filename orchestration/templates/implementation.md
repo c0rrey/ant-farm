@@ -22,8 +22,8 @@ Tasks: {TASK_ID_1}, {TASK_ID_2}, ...
 For each task, execute these 6 steps in order:
 
 ## Step 1: Claim
-- Run `crumb show <id>` to get full details and acceptance criteria
-- Run `crumb update <id> --status=in_progress` to claim
+- Use the `crumb_show` MCP tool with `crumb_id: "<id>"` to get full details and acceptance criteria (CLI fallback: `crumb show <id>`)
+- Use the `crumb_update` MCP tool with `status: "in_progress"` to claim (CLI fallback: `crumb update <id> --status=in_progress`)
 
 ## Step 2: Design (MANDATORY)
 Design at least 4 **genuinely distinct** approaches to solve the problem.
@@ -44,7 +44,7 @@ Implement the chosen approach. Write clean, minimal code that satisfies the acce
 ## Step 4: Per-File Correctness Review (MANDATORY)
 After implementation, review EVERY file you changed or created:
 - Re-read each file in full
-- Verify it meets all acceptance criteria from `crumb show`
+- Verify it meets all acceptance criteria from `crumb_show` (or `crumb show` CLI)
 - Check for logic errors, typos, missing edge cases
 - Verify cross-file consistency (do references between files still work?)
 - Run any available build/test commands to validate
@@ -112,7 +112,7 @@ For each file changed:
 
 After all tasks in this batch:
 - Run `git pull --rebase` to stack commits cleanly
-- Close all tasks: `crumb close <id1> <id2> ...`
+- Close all tasks: use the `crumb_close` MCP tool with `ids: ["<id1>", "<id2>", ...]` (CLI fallback: `crumb close <id1> <id2> ...`)
 - DO NOT push to remote (the Orchestrator handles this)
 - DO NOT modify documentation files (CHANGELOG, README, CLAUDE.md)
 
@@ -165,7 +165,7 @@ Before sending any agent prompt, confirm it includes:
 - [ ] **Context section** with exact files/lines from crumb (pre-digested, not "discover the problem")
 - [ ] **Scope boundaries** limiting what files to read
 - [ ] Root cause and acceptance criteria extracted from crumb
-- [ ] **Step 1**: `crumb show` + `crumb update --status=in_progress`
+- [ ] **Step 1**: `crumb_show` MCP tool + `crumb_update` with `status: "in_progress"` (CLI fallback: `crumb show` + `crumb update --status=in_progress`)
 - [ ] **Step 2**: "Design at least 4 approaches" with pros/cons (MANDATORY)
 - [ ] **Step 3**: Implementation instructions
 - [ ] **Step 4**: "Review EVERY file you changed" with explicit checks (MANDATORY)
@@ -191,9 +191,10 @@ Every crumb description includes:
 
 ### The Orchestrator's Extraction Pattern
 
-Before spawning an agent, extract this info from `crumb show <id>`:
+Before spawning an agent, extract this info from the `crumb_show` MCP tool (or `crumb show <id>` CLI fallback):
 
 ```bash
+# CLI fallback (if MCP tools unavailable):
 crumb show <task-id>  # Read ONCE in the Orchestrator's window
 
 # Extract and provide to agent:

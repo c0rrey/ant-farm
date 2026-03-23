@@ -29,14 +29,14 @@ Compare the actual changes to the summary doc's "Files changed" and "Implementat
 - Are there files listed in the summary but NOT changed in the diff?
 
 ## Check 2: Acceptance Criteria Spot-Check
-Run `crumb show {TASK_ID}` to get the task's acceptance criteria.
+Use the `crumb_show` MCP tool with `crumb_id: "{TASK_ID}"` to get the task's acceptance criteria (CLI fallback: `crumb show {TASK_ID}`).
 
-**GUARD: crumb show Failure Handling (INFRASTRUCTURE FAILURE)** _(definition: `orchestration/reference/terms.md` Failure Taxonomy)_
-If `crumb show {TASK_ID}` fails (task not found, unreadable, or crumb command error):
-- Record the infrastructure failure: "{TASK_ID} — crumb show failed: {error details}"
-- Write a note in your review report: "Could not retrieve acceptance criteria for {TASK_ID} via `crumb show`: {error}. Proceeding with criteria from summary doc only."
+**GUARD: crumb_show Failure Handling (INFRASTRUCTURE FAILURE)** _(definition: `orchestration/reference/terms.md` Failure Taxonomy)_
+If the `crumb_show` MCP tool (or `crumb show {TASK_ID}` CLI) fails (task not found, unreadable, or crumb command error):
+- Record the infrastructure failure: "{TASK_ID} — crumb_show failed: {error details}"
+- Write a note in your review report: "Could not retrieve acceptance criteria for {TASK_ID} via `crumb_show`: {error}. Proceeding with criteria from summary doc only."
 - Do NOT abort the review; use the acceptance criteria listed in the agent's summary doc instead
-- Clearly mark this fallback in your findings: "[Note: Criteria from summary doc, not from `crumb show`]"
+- Clearly mark this fallback in your findings: "[Note: Criteria from summary doc, not from `crumb_show`]"
 
 **Tie-breaking rule for selecting which criteria to verify** (when multiple criteria exist):
 1. Pick the first 2 criteria listed in the acceptance criteria section, OR
@@ -129,10 +129,10 @@ For each finding, check that it is actionable:
 - List any findings that fail the specificity bar
 
 ## Check 4: Process Compliance
-Search the report for `crumb create`, `crumb update`, `crumb close`, or crumb ID patterns (e.g., `my-project-xxx`).
-- Reviewers must NOT file crumbs
+Search the report for `crumb_create`, `crumb create`, `crumb_update`, `crumb update`, `crumb_close`, `crumb close`, or crumb ID patterns (e.g., `my-project-xxx`).
+- Reviewers must NOT file crumbs (neither via MCP tool nor CLI)
 - If any crumb-filing commands or IDs are found, FAIL this check
-- If unauthorized crumb filing is detected, this is a FAIL (not just a flag). The remediation step is: delete the unauthorized crumb (`crumb close <id> --reason="unauthorized filing during review"`) and document the violation in the verification report.
+- If unauthorized crumb filing is detected, this is a FAIL (not just a flag). The remediation step is: close the unauthorized crumb using the `crumb_close` MCP tool with `ids: ["<id>"]` (CLI fallback: `crumb close <id>`) and document the violation in the verification report.
 
 ## Verdict
 - **PASS** — All 4 checks confirm substance and compliance

@@ -69,7 +69,7 @@ Create a team with these members. Reviewers work in parallel.
 Review Consolidator waits for all expected reports (count from consolidation brief's expected_paths), then consolidates.
 Checkpoint Auditor is a team member so Review Consolidator can SendMessage to it directly for checkpoint validation.
 
-Reviewers produce REPORTS ONLY — do NOT file crumbs (`crumb create`).
+Reviewers produce REPORTS ONLY — do NOT file crumbs (do not call `crumb_create` MCP tool or `crumb create` CLI).
 Review Consolidator consolidates all reports, groups findings by root cause, and files crumbs.
 
 Review scope: commits {first-commit} through {last-commit} ({N} commits total, across trails: {trail-list})
@@ -91,7 +91,7 @@ Create a team with these members. Reviewers work in parallel.
 Review Consolidator waits for all expected reports (count from consolidation brief's expected_paths), then consolidates.
 Checkpoint Auditor is a team member so Review Consolidator can SendMessage to it directly for checkpoint validation.
 
-Reviewers produce REPORTS ONLY — do NOT file crumbs (`crumb create`).
+Reviewers produce REPORTS ONLY — do NOT file crumbs (do not call `crumb_create` MCP tool or `crumb create` CLI).
 Review Consolidator consolidates all reports, groups findings by root cause, and files crumbs.
 
 Review scope: commits {first-commit} through {last-commit} ({N} commits total, across trails: {trail-list})
@@ -349,14 +349,13 @@ Do NOT file crumbs — Review Consolidator handles all crumb filing.
 Review these files and their acceptance criteria:
 {list of files and their original task requirements}
 
-**IMPORTANT**: Run `crumb show <task-id>` for each task in the commit range to retrieve
-the original acceptance criteria. Do not rely solely on the orchestrator's prompt —
+**IMPORTANT**: Use the `crumb_show` MCP tool with `crumb_id: "<task-id>"` for each task in the commit range to retrieve the original acceptance criteria (CLI fallback: `crumb show <task-id>`). Do not rely solely on the orchestrator's prompt —
 verify against the source of truth. For each finding, cite the specific acceptance
 criterion that is violated or unmet.
 
 For each completed task, verify:
 - All acceptance criteria met
-- Acceptance criteria source documented (which `crumb show` output, which requirement)
+- Acceptance criteria source documented (which `crumb_show` output, which requirement)
 - No unintended side effects
 - Related files updated consistently
 - Tests would pass (if tests exist)
@@ -784,7 +783,7 @@ if ! crumb list --open --short > "$_OPEN_CRUMBS_TMP" 2>/dev/null; then
 fi
 ```
 
-If the bash block above exits with code 1, stop immediately. Do NOT proceed to consolidation or crumb filing. Use the SendMessage tool to notify the Orchestrator: "Review Consolidator FAILED: crumb list infrastructure error during cross-session dedup. Crumb filing aborted to prevent duplicates. Consolidated output written to {CONSOLIDATED_OUTPUT_PATH}. Please check crumb status and re-spawn Review Consolidator when ready." Then end your turn.
+If the bash block above exits with code 1, stop immediately. Do NOT proceed to consolidation or crumb filing. Use the SendMessage tool to notify the Orchestrator: "Review Consolidator FAILED: crumb list CLI infrastructure error during cross-session dedup. Crumb filing aborted to prevent duplicates. Consolidated output written to {CONSOLIDATED_OUTPUT_PATH}. Please check crumb status and re-spawn Review Consolidator when ready." Then end your turn.
 <!-- NOTE: {CONSOLIDATED_OUTPUT_PATH} in the SendMessage text above is a template placeholder substituted by build-review-prompts.sh at build time — a real filesystem path appears in its place when Review Consolidator receives this prompt. Consistent with the bash-block comment in review-consolidator-skeleton.md. -->
 
 For each root cause group, compare against existing crumb titles (from `$_OPEN_CRUMBS_TMP`):
@@ -848,7 +847,7 @@ Findings merged:
 
 ### Step 4: Checkpoint Gate — Await Checkpoint Auditor Validation Before Filing Crumbs
 
-**Do NOT file any crumbs yet.** After writing the consolidated summary (Step 3), notify Checkpoint Auditor and wait for its verdict before calling `crumb create`.
+**Do NOT file any crumbs yet.** After writing the consolidated summary (Step 3), notify Checkpoint Auditor and wait for its verdict before calling the `crumb_create` MCP tool (or `crumb create` CLI).
 
 **Notification to Checkpoint Auditor (SendMessage):**
 ```
@@ -910,7 +909,7 @@ Review Consolidator checkpoint escalation to Orchestrator:
 
 File ONE crumb per root cause (not per finding, not per review).
 
-**Important**: Crumbs filed during session review are standalone. Do NOT assign them to a specific trail via `crumb link --parent`. They represent session-wide findings, not trail-specific work.
+**Important**: Crumbs filed during session review are standalone. Do NOT assign them to a specific trail via the `crumb_link` MCP tool `parent` field (or `crumb link --parent` CLI). They represent session-wide findings, not trail-specific work.
 
 ```bash
 _DESC_TMP="$(mktemp /tmp/crumb-desc-XXXXXX.md)"
@@ -955,11 +954,9 @@ rm -f "$_DESC_TMP" "$_CRUMB_JSON_TMP"
 
 In round 2+, Review Consolidator auto-files P3 findings to the "Future Work" trail without user involvement:
 
-1. Find or create the "Future Work" trail:
+1. Find or create the "Future Work" trail: use the `crumb_trail_list` MCP tool to check for an existing "future work" trail (CLI fallback: `crumb trail list | grep -i "future work"`). If not found, create via CLI (no MCP create-trail tool):
    ```bash
-   # Check if future-work trail exists
-   crumb trail list | grep -i "future work"
-   # If not found:
+   # CLI fallback — create trail if not found:
    crumb trail create --title "Future Work" --description "Low-priority polish and improvements from review sessions"
    ```
 
@@ -1108,13 +1105,13 @@ Fix Implementers receive a lean prompt. The crumb is the source of truth — the
 You are fix-impl-N, a fix Implementer in the Reviewer team.
 
 Your task crumb: {crumb-id}
-Run: crumb show <crumb-id>
+Use the `crumb_show` MCP tool with `crumb_id: "<crumb-id>"` to load the task (CLI fallback: `crumb show <crumb-id>`).
 
 The crumb contains root cause, affected surfaces, fix approach, and acceptance criteria.
 Implement the fix. Follow the acceptance criteria exactly.
 
 After committing:
-1. Record your commit hash in your task crumb: crumb update <crumb-id> --note="commit: <hash>"
+1. Record your commit hash in your task crumb: use `crumb_update` MCP tool with `note: "commit: <hash>"` (CLI fallback: `crumb update <crumb-id> --note="commit: <hash>"`)
 2. SendMessage to fix-pc-scope-verify: "Fix committed. Crumb: {crumb-id}. Commit: {hash}. Files changed: {list}."
 Then go idle and wait.
 ```
@@ -1204,16 +1201,16 @@ After all fix agents complete and SendMessage round-transition messages are sent
 
 > **Round 1 only.** In round 2+, P3s are auto-filed by Review Consolidator during consolidation (see "P3 Auto-Filing" above). This section applies only when round 1 terminates with P3 findings.
 
-**Create "Future Work" trail if needed**:
+**Create "Future Work" trail if needed**: Use the `crumb_trail_list` MCP tool to check for an existing trail (CLI fallback shown below). Create via CLI if not found (no MCP create-trail tool):
 ```bash
-# Check if future-work trail exists
+# CLI fallback — check and create trail:
 crumb trail list | grep -i "future work" || \
 crumb trail create --title "Future Work" --description "Low-priority polish and improvements from review sessions"
 ```
 
 **File P3 crumbs under the trail**:
 - All P3 crumbs from consolidation should be children of the future-work trail
-- Use `crumb link <p3-crumb-id> --parent <future-work-trail-id>` for each P3 issue
+- Use the `crumb_link` MCP tool with `crumb_id: "<p3-crumb-id>"` and `parent: "<future-work-trail-id>"` for each P3 issue (CLI fallback: `crumb link <p3-crumb-id> --parent <future-work-trail-id>`)
 - These can be addressed in future sessions
 - No immediate action required — they're queued for later
 

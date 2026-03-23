@@ -79,7 +79,7 @@ Your workflow:
    fi
    ```
    If the bash block above exits with code 1 due to the mkdir guard (directory creation failed before the failure artifact could be written), use the SendMessage tool to notify the Orchestrator immediately: "Review Consolidator FAILED: could not create output directory for failure artifact during cross-session dedup. Filesystem issue — manual intervention required." Then end your turn.
-   If the bash block above exits with code 1 due to `crumb list` failure (the `if !` condition), stop immediately. Do NOT proceed to consolidation or crumb filing. Use the SendMessage tool to notify the Orchestrator: "Review Consolidator FAILED: crumb list infrastructure error during cross-session dedup. Crumb filing aborted to prevent duplicates. Consolidated output written to {CONSOLIDATED_OUTPUT_PATH}. Please check crumb status and re-spawn Review Consolidator when ready." Then end your turn.
+   If the bash block above exits with code 1 due to `crumb list` CLI failure (the `if !` condition), stop immediately. Do NOT proceed to consolidation or crumb filing. Use the SendMessage tool to notify the Orchestrator: "Review Consolidator FAILED: crumb list infrastructure error during cross-session dedup. Crumb filing aborted to prevent duplicates. Consolidated output written to {CONSOLIDATED_OUTPUT_PATH}. Please check crumb status and re-spawn Review Consolidator when ready." Then end your turn.
    <!-- NOTE: {CONSOLIDATED_OUTPUT_PATH} in the SendMessage text above is a template placeholder substituted by build-review-prompts.sh at build time — a real filesystem path appears in its place when Review Consolidator receives this prompt. Consistent with the bash-block comment above. -->
    For each root cause group, compare against existing crumb titles (from `"$_CRUMB_LIST_TMP"`):
    - **Exact title match** (case-insensitive): Do NOT file. Log in the summary: "Dedup: RC-N matches existing crumb <ID> — skipped."
@@ -138,7 +138,7 @@ print(json.dumps({'type': 'bug', 'priority': priority, 'title': title, 'descript
     - **FAIL**: Escalate to Orchestrator with specifics (which findings failed, why); file crumbs ONLY for validated findings
     - **TIMEOUT/UNAVAILABLE**: Escalate to Orchestrator with consolidated report path; do NOT file crumbs
 11. **Round 2+ only — P3 auto-filing**: After filing P1/P2 crumbs, auto-file P3 findings to "Future Work" trail:
-    - Find or create the trail: `crumb trail list | grep -i "future work"` or `crumb trail create --title "Future Work" --description "Low-priority polish and improvements from review sessions"`
+    - Find or create the trail: use `crumb_trail_list` MCP tool to check for "future work" (CLI fallback: `crumb trail list | grep -i "future work"`); if not found, create via CLI `crumb trail create --title "Future Work" --description "Low-priority polish and improvements from review sessions"` (no MCP create-trail tool; CLI required)
     - For each P3 (skip any marked as duplicates in the cross-session dedup step (step 7)):
       ```bash
       _DESC_TMP="$(mktemp /tmp/crumb-desc-XXXXXX.md)"

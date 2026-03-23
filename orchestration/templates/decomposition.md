@@ -202,7 +202,7 @@ After all design is complete and verified, create the trails and crumbs.
 
 ### Create Trails
 
-For each trail:
+For each trail, create it via CLI (no MCP create-trail tool available):
 
 ```bash
 crumb trail create "{trail-title}"
@@ -270,9 +270,10 @@ For each crumb, construct a JSON object with nested `scope` and `links` objects:
 }
 ```
 
-Write the JSON to a temporary file and create the crumb:
+Write the JSON to a temporary file and create the crumb using the `crumb_create` MCP tool with `from_json` containing the JSON payload, OR via CLI (shown below as fallback):
 
 ```bash
+# CLI fallback (if MCP tools unavailable):
 # Write payload to temp file
 _CRUMB_TMP="$(mktemp /tmp/crumb-XXXXXX.json)"
 cat > "$_CRUMB_TMP" << 'EOF'
@@ -291,25 +292,27 @@ Record the returned crumb ID.
 
 ### Wire Parent-Child (Trail → Crumb)
 
-After creating each crumb, assign it to its trail:
+After creating each crumb, assign it to its trail using the `crumb_link` MCP tool with `crumb_id` and `parent` fields (CLI fallback shown below):
 
 ```bash
+# CLI fallback:
 crumb link {crumb-id} --parent {trail-id}
 ```
 
 Note: the CHILD (crumb) is the first argument; the TRAIL (parent) is the second.
 Reversing the arguments creates a wrong-direction dependency. Verify with
-`crumb show {trail-id}` after wiring.
+the `crumb_show` MCP tool (CLI fallback: `crumb show {trail-id}`) after wiring.
 
 ### Wire Blocked-By Dependencies
 
-For each crumb that has `blocked_by` entries:
+For each crumb that has `blocked_by` entries, use the `crumb_link` MCP tool with `crumb_id` and `blocked_by` fields (CLI fallback shown below):
 
 ```bash
+# CLI fallback:
 crumb link {blocked-crumb-id} --blocked-by {blocker-crumb-id}
 ```
 
-The BLOCKED crumb is the positional argument; the BLOCKER goes after `--blocked-by`.
+The BLOCKED crumb is the positional argument (or `crumb_id` in MCP); the BLOCKER goes after `--blocked-by` (or in the `blocked_by` field in MCP).
 
 ---
 
@@ -405,8 +408,7 @@ Cross-trail deps: {N} (see brief for details)
 
 1. **No code writing.** You create crumbs that describe implementation work. You
    do NOT implement any code yourself.
-2. **No orphan crumbs.** Every crumb must belong to exactly one trail via a
-   `crumb link --parent` call.
+2. **No orphan crumbs.** Every crumb must belong to exactly one trail via the `crumb_link` MCP tool with `parent` field (CLI fallback: `crumb link --parent`).
 3. **No circular dependencies.** Topological sort is mandatory before creating deps.
 4. **No vague scope.** Every crumb must list concrete files (exact paths or
    clearly marked "new"). "Various files" or "relevant modules" are not acceptable.

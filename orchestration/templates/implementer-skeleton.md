@@ -37,7 +37,7 @@ Step 0: Read your task context from {DATA_FILE_PATH}
 
 Execute these 6 steps in order:
 
-1. **Claim**: `crumb show {TASK_ID}` + `crumb update {TASK_ID} --status=in_progress`
+1. **Claim**: Use the `crumb_show` MCP tool with `crumb_id: "{TASK_ID}"` to load full details, then use `crumb_update` with `status: "in_progress"` to claim it. (CLI fallback if MCP unavailable: `crumb show {TASK_ID}` + `crumb update {TASK_ID} --status=in_progress`)
 2. **Design** (MANDATORY) — 4+ genuinely distinct approaches with tradeoffs. Document choice before coding.
 3. **Implement**: Write clean, minimal code satisfying acceptance criteria.
 4. **Review** (MANDATORY) — Re-read EVERY changed file. Verify acceptance criteria. Assumptions audit.
@@ -45,7 +45,7 @@ Execute these 6 steps in order:
    Use conventional commit type (fix/feat/refactor/etc). Record commit hash in summary doc.
 6. **Summary doc** (MANDATORY) — Write to {SUMMARY_OUTPUT_PATH} with all required sections
    (see task brief for section list). Only after the summary doc is successfully written:
-   `crumb close {TASK_ID}`
+   use the `crumb_close` MCP tool with `ids: ["{TASK_ID}"]` to close the task. (CLI fallback: `crumb close {TASK_ID}`)
 
 SCOPE: Only edit files listed in the task context. Document adjacent issues, don't fix them.
 Do NOT push to remote. Do NOT modify CHANGELOG/README/CLAUDE.md.

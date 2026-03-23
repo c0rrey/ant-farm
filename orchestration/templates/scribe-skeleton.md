@@ -43,13 +43,13 @@ Read the following sources. Take notes as you go — you will synthesize them in
 | Progress log | `{SESSION_DIR}/progress.log` | Timeline of milestones; use first and last timestamps to derive duration |
 | Files changed | `git diff --stat {COMMIT_RANGE}` | Which files actually changed |
 | Commit messages | `git log --oneline {COMMIT_RANGE}` | What was committed |
-| Open crumbs | For each ID in `{OPEN_CRUMB_IDS}`, run `crumb show <id>` | Context on what remains open |
+| Open crumbs | For each ID in `{OPEN_CRUMB_IDS}`, call the `crumb_show` MCP tool with `crumb_id: "<id>"` (CLI fallback: `crumb show <id>`) | Context on what remains open |
 
 **Duration calculation**: Read the first line and last line of `{SESSION_DIR}/progress.log`. Each line has the format `YYYY-MM-DDTHH:MM:SS|STEP_KEY|...`. Subtract first timestamp from last timestamp to get elapsed time. Express as `~Xh Ym` (round to nearest 5 minutes).
 
 **Fallback — zero agent summaries**: If the `{SESSION_DIR}/summaries/*.md` glob returns no files, note "No agent summaries available." in your working notes and derive Work Completed entirely from `git log --oneline {COMMIT_RANGE}` and the briefing.md task list. Do not leave the Work Completed section blank; reconstruct what you can from commits and briefing context.
 
-If `{OPEN_CRUMB_IDS}` is empty, skip the `crumb show` calls and write "None" in the Open Issues section.
+If `{OPEN_CRUMB_IDS}` is empty, skip the `crumb_show` calls and write "None" in the Open Issues section.
 
 ### Step 2 — Write exec summary
 

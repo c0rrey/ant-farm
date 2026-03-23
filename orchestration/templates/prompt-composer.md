@@ -87,7 +87,7 @@ For each task ID in the input list:
 
    > **Note — file existence on disk**: The fail-fast checks above validate metadata *content* (non-empty, complete, no placeholders) but do NOT verify that the files listed in `**Affected Files**` exist on disk. This is by design — file existence is verified downstream by Reviewers at review time, when the actual file content is read and diffed. If a listed file is missing at that point, the Reviewer reports the discrepancy.
 
-   (Pre-extracted by the Recon Planner. Do NOT run `crumb show` — the metadata is already there.)
+   (Pre-extracted by the Recon Planner. Do NOT call the `crumb_show` MCP tool or `crumb show` CLI — the metadata is already there.)
 
 **After processing all tasks**: If any tasks failed the fail-fast checks above, return a single partial verdict table to the Orchestrator showing completed and failed tasks. This table is produced once after the entire loop completes — not after each individual failure:
 ```
@@ -197,7 +197,7 @@ These preview files are what the Checkpoint Auditor will audit via the pre-spawn
 
 ### Step 4: Write Session Summary
 
-Write `{session-dir}/session-summary.md` capturing the planned execution state. All data comes from artifacts already read or computed in Steps 2-3 — do NOT run `crumb show` or any `crumb` commands.
+Write `{session-dir}/session-summary.md` capturing the planned execution state. All data comes from artifacts already read or computed in Steps 2-3 — do NOT call the `crumb_show` MCP tool or any `crumb` CLI commands.
 
 Use this exact format:
 

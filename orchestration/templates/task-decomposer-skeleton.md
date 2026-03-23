@@ -72,14 +72,13 @@ At a glance:
    must map to at least one crumb. This is a mandatory gate; do not proceed
    until coverage is PASS.
 
-7. **Create via CLI** — Create trails and crumbs:
-   ```bash
-   crumb trail create "{trail-title}"
-   crumb create --from-file /tmp/crumb-{slug}.json
-   crumb link {crumb-id} --parent {trail-id}
-   crumb link {blocked-id} --blocked-by {blocker-id}
-   ```
-   The BLOCKED crumb is the positional argument in both link patterns.
+7. **Create via MCP tools** — Create trails and crumbs using the following MCP tools (CLI fallback commands shown in comments):
+   - Trail: `crumb_trail_show` does not create — use CLI `crumb trail create "{trail-title}"` (no MCP create-trail tool; CLI required)
+   - Crumb: `crumb_create` MCP tool with `title`, `priority`, `crumb_type`, `description`, `from_json` fields (CLI fallback: `crumb create --from-file /tmp/crumb-{slug}.json`)
+   - Parent link: `crumb_link` MCP tool with `crumb_id` and `parent` fields (CLI fallback: `crumb link {crumb-id} --parent {trail-id}`)
+   - Blocked-by link: `crumb_link` MCP tool with `crumb_id` and `blocked_by` fields (CLI fallback: `crumb link {blocked-id} --blocked-by {blocker-id}`)
+
+   The BLOCKED crumb is the `crumb_id` argument in both link patterns.
 
 8. **Write decomposition-brief.md** — Write `{DECOMPOSE_DIR}/decomposition-brief.md`
    with: codebase map, trail structure, spec coverage table, dependency graph,
@@ -107,8 +106,7 @@ requirements to fill gaps.
 ### Prohibitions (no exceptions)
 
 - **No code writing.** Describe implementation work in crumbs; do not implement it.
-- **No orphan crumbs.** Every crumb must be parented to a trail via
-  `crumb link --parent`.
+- **No orphan crumbs.** Every crumb must be parented to a trail via the `crumb_link` MCP tool with `parent` field (CLI fallback: `crumb link --parent`).
 - **No circular dependencies.** Topological sort is mandatory before creating deps.
 - **No vague scope.** Every crumb must list concrete file paths. "Various files"
   or "relevant modules" are not acceptable.

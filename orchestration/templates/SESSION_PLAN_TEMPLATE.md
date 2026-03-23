@@ -261,7 +261,7 @@ Before declaring session complete:
 
 - [ ] All spawned agents completed (none stuck/errored)
 - [ ] All TaskCreate entries marked completed
-- [ ] All crumbs tasks closed (crumb close <ids>)
+- [ ] All crumbs tasks closed (`crumb_close` MCP tool with `ids: ["<id1>", ...]`, CLI fallback: `crumb close <ids>`)
 - [ ] Git working tree clean (git status)
 - [ ] Build/test quality gates passed
   - [ ] `python build.py --dry-run` succeeds

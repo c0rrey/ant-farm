@@ -26,6 +26,7 @@ For each wave in the strategy:
 2. Check whether any file appears in two or more tasks within the same wave.
 3. Report each violation as: "Wave N: file `<path>` appears in tasks <id1> AND <id2> — parallel edits would conflict."
 
+
 A file overlap within a wave means two agents would edit the same file simultaneously, causing merge conflicts or lost changes. Tasks sharing a file must be serialized into separate waves.
 
 **PASS condition**: No file appears in more than one task within any single wave.
@@ -34,22 +35,22 @@ A file overlap within a wave means two agents would edit the same file simultane
 ## Check 2: File Lists Match Crumb Descriptions
 
 For each task in the strategy:
-1. Run `crumb show {TASK_ID}` to retrieve the crumb's recorded affected files.
+1. Use the `crumb_show` MCP tool with `crumb_id: "{TASK_ID}"` to retrieve the crumb's recorded affected files (CLI fallback: `crumb show {TASK_ID}`).
 2. Compare the Recon Planner's reported affected files (from briefing.md) against the crumb's actual affected files.
 3. Report each mismatch as: "Task {TASK_ID}: Recon Planner lists `<file>` but crumb does not — OR — crumb lists `<file>` but Recon Planner omits it."
 
 **GUARD: Zero-task boundary**
 If the strategy contains zero tasks, PASS Check 2 immediately with a note: "No tasks in strategy — file list verification not applicable (vacuous PASS)." Skip the per-task loop below.
 
-**GUARD: crumb show Failure Handling (INFRASTRUCTURE FAILURE)** _(definition: `orchestration/reference/terms.md` Failure Taxonomy)_
-If `crumb show {TASK_ID}` fails (task not found, unreadable, or crumb command error):
-- Record the failure: "{TASK_ID} — crumb show failed: {error details}"
-- Write a note in your verification report: "Could not verify file list for {TASK_ID} via `crumb show`: {error}. Skipping this task's file list check."
+**GUARD: crumb_show Failure Handling (INFRASTRUCTURE FAILURE)** _(definition: `orchestration/reference/terms.md` Failure Taxonomy)_
+If the `crumb_show` MCP tool (or `crumb show {TASK_ID}` CLI) fails (task not found, unreadable, or crumb command error):
+- Record the failure: "{TASK_ID} — crumb_show failed: {error details}"
+- Write a note in your verification report: "Could not verify file list for {TASK_ID} via `crumb_show`: {error}. Skipping this task's file list check."
 - Continue with the remaining tasks — do NOT abort the entire check.
-- Clearly mark skipped tasks in your findings: "[SKIPPED: crumb show failed]"
-- If more than half the tasks fail `crumb show` (and total tasks > 0), FAIL the check with: "Infrastructure failure: could not verify file lists for majority of tasks."
+- Clearly mark skipped tasks in your findings: "[SKIPPED: crumb_show failed]"
+- If more than half the tasks fail `crumb_show` (and total tasks > 0), FAIL the check with: "Infrastructure failure: could not verify file lists for majority of tasks."
 
-**PASS condition**: For every task where `crumb show` succeeds, the Recon Planner's file list exactly matches the crumb's recorded affected files (same set, order-insensitive).
+**PASS condition**: For every task where `crumb_show` succeeds, the Recon Planner's file list exactly matches the crumb's recorded affected files (same set, order-insensitive).
 **FAIL condition**: Any file list mismatch detected, or infrastructure failure threshold exceeded. List every discrepancy.
 
 ## Check 3: No Intra-Wave Dependency Violations
@@ -57,12 +58,12 @@ If `crumb show {TASK_ID}` fails (task not found, unreadable, or crumb command er
 For each wave in the strategy:
 1. Identify all tasks in that wave.
 2. Check whether any task in wave N is listed as blocking (or blocked by) another task in the same wave N.
-3. To retrieve dependencies: run `crumb show {TASK_ID}` for each task and examine its DEPENDENCIES section.
+3. To retrieve dependencies: use the `crumb_show` MCP tool with `crumb_id: "{TASK_ID}"` for each task and examine its DEPENDENCIES section (CLI fallback: `crumb show {TASK_ID}`).
 4. Report each violation as: "Wave N: task <id1> blocks task <id2> — both are in wave N; <id2> must move to a later wave."
 
 An intra-wave dependency means an agent that is supposed to start in parallel actually depends on another agent finishing first. This defeats the purpose of wave grouping and may cause incorrect ordering.
 
-**GUARD: crumb show Failure Handling**: Same as Check 2 — if `crumb show` fails for a task, skip dependency check for that task and note the skip.
+**GUARD: crumb_show Failure Handling**: Same as Check 2 — if the `crumb_show` MCP tool (or `crumb show` CLI) fails for a task, skip dependency check for that task and note the skip.
 
 **PASS condition**: No task in wave N has a "blocks" or "blocked-by" relationship with another task in the same wave N.
 **FAIL condition**: One or more intra-wave dependency violations detected. List every violation.

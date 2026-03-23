@@ -5,7 +5,7 @@
 
 Every implementer executes these steps in order. Task briefs you compose must instruct agents to follow them exactly:
 
-1. **Claim** — `crumb show <id>` + `crumb update <id> --status=in_progress`
+1. **Claim** — use the `crumb_show` MCP tool to load task details, then `crumb_update` with `status: "in_progress"` to claim (CLI fallback: `crumb show <id>` + `crumb update <id> --status=in_progress`)
 2. **Design (MANDATORY)** — 4+ genuinely distinct approaches with pros/cons; document choice before coding
 3. **Implement** — write clean, minimal code satisfying acceptance criteria
 4. **Correctness Review (MANDATORY)** — re-read every changed file; verify acceptance criteria; assumptions audit (3 specific failure scenarios + mitigations)

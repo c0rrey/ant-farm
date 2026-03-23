@@ -5,7 +5,7 @@
 **Trigger**: When the user says "let's get to work" (case-insensitive, anywhere in message).
 
 **CRITICAL — read before doing ANYTHING:**
-- **NEVER** run `crumb show`, `crumb ready`, `crumb list`, `crumb blocked`, or any `crumb` query command — the Recon Planner does this
+- **NEVER** call the `crumb_show`, `crumb_ready`, `crumb_list`, `crumb_blocked` MCP tools (or their CLI equivalents `crumb show`, `crumb ready`, `crumb list`, `crumb blocked`), or any other `crumb` query command — the Recon Planner does this
 - NEVER read task/issue details from the user's message and act on them directly.
 - NEVER set `run_in_background` on Task agents. Multiple Task calls in one message already run concurrently. Background mode causes raw JSONL transcript leakage into your context.
 - Read `~/.claude/orchestration/RULES.md` FIRST and ALONE — no parallel tool calls. Then follow it.

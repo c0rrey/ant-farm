@@ -18,7 +18,7 @@ You are the **Checkpoint Auditor**, the verification subagent. Your role is to v
 **Session directory**: `{SESSION_DIR}`
 **Session start commit**: `{SESSION_START_COMMIT}` (Orchestrator-supplied; first commit of this session, used to scope git log)
 **Session end commit**: `{SESSION_END_COMMIT}` (Orchestrator-supplied; final commit before push)
-**Session start date**: `{SESSION_START_DATE}` (ISO 8601, e.g., `2026-02-22` — Orchestrator-supplied; used to scope crumb list)
+**Session start date**: `{SESSION_START_DATE}` (ISO 8601, e.g., `2026-02-22` — Orchestrator-supplied; used to scope crumb_list)
 
 Read the exec summary first. Then run all six checks below.
 
@@ -49,23 +49,23 @@ Read the exec summary first. Then run all six checks below.
 ## Check 3: Open Crumb Accuracy
 
 1. Read the exec summary's "Open Issues" section and extract every crumb ID listed as open.
-2. Run `crumb show <id>` for each listed crumb to verify it is actually open.
+2. For each listed crumb, use the `crumb_show` MCP tool with `crumb_id: "<id>"` to verify it is actually open (CLI fallback: `crumb show <id>`).
 
-**GUARD: crumb show Failure Handling (INFRASTRUCTURE FAILURE)** _(definition: `orchestration/reference/terms.md` Failure Taxonomy)_
-If `crumb show <id>` fails (task not found, unreadable, or crumb command error):
-- Record the infrastructure failure: "`<id>` — crumb show failed: {error details}"
-- Write a note in your verification report: "Could not verify status of `<id>` via `crumb show`: {error}. Skipping this crumb's status check."
+**GUARD: crumb_show Failure Handling (INFRASTRUCTURE FAILURE)** _(definition: `orchestration/reference/terms.md` Failure Taxonomy)_
+If the `crumb_show` MCP tool (or `crumb show <id>` CLI) fails (task not found, unreadable, or crumb command error):
+- Record the infrastructure failure: "`<id>` — crumb_show failed: {error details}"
+- Write a note in your verification report: "Could not verify status of `<id>` via `crumb_show`: {error}. Skipping this crumb's status check."
 - Do NOT abort the review; continue with remaining crumbs.
-- Clearly mark skipped crumbs in your findings: "[SKIPPED: crumb show failed]"
-- If more than half the listed crumbs fail `crumb show`, FAIL the check with: "Infrastructure failure: could not verify status for majority of listed crumbs."
+- Clearly mark skipped crumbs in your findings: "[SKIPPED: crumb_show failed]"
+- If more than half the listed crumbs fail `crumb_show`, FAIL the check with: "Infrastructure failure: could not verify status for majority of listed crumbs."
 
-3. Run `crumb list --open --after {SESSION_START_DATE}` to detect any open crumbs from this session that are NOT listed in the exec summary.
-   > **Empty list handling**: If `crumb list --open --after {SESSION_START_DATE}` returns zero results AND the exec summary's "Open Issues" section says "None" (or equivalent), this is a PASS — no discrepancy exists. Proceed directly to Check 4. Only fail if the exec summary lists crumbs as open but `crumb show` contradicts them, or if `crumb list` returns crumbs that the exec summary omits.
+3. Use the `crumb_list` MCP tool with `status: "open"` and `after: "{SESSION_START_DATE}"` to detect any open crumbs from this session that are NOT listed in the exec summary (CLI fallback: `crumb list --open --after {SESSION_START_DATE}`).
+   > **Empty list handling**: If `crumb_list` (or `crumb list --open --after {SESSION_START_DATE}`) returns zero results AND the exec summary's "Open Issues" section says "None" (or equivalent), this is a PASS — no discrepancy exists. Proceed directly to Check 4. Only fail if the exec summary lists crumbs as open but `crumb_show` contradicts them, or if `crumb_list` returns crumbs that the exec summary omits.
 4. Report each discrepancy as one of:
-   - "Crumb `<id>` listed as open in exec summary but `crumb show` reports status={status}."
+   - "Crumb `<id>` listed as open in exec summary but `crumb_show` reports status={status}."
    - "Crumb `<id>` is open and filed during this session but not listed in exec summary's Open Issues."
 
-**PASS condition**: Every crumb listed as open in exec summary is actually open (per `crumb show`), and no unlisted open crumbs from this session exist. If `crumb list` returns zero results and the exec summary states "None", this is also PASS.
+**PASS condition**: Every crumb listed as open in exec summary is actually open (per `crumb_show`), and no unlisted open crumbs from this session exist. If `crumb_list` returns zero results and the exec summary states "None", this is also PASS.
 **FAIL condition**: Any status mismatch, or unlisted open crumbs exist. List every discrepancy.
 
 ## Check 4: CHANGELOG Derivation Fidelity
@@ -133,7 +133,7 @@ Check 6 (Metric Consistency): PASS / FAIL — {evidence or "All counts consisten
 > - Commit `a3f9c12` ("chore: sync crumbs JSONL") — in git log but not referenced in exec summary.
 >
 > Check 3 (Open Crumb Accuracy): FAIL
-> - Crumb `ant-farm-99z` listed as open in exec summary but `crumb show` reports status=closed.
+> - Crumb `ant-farm-99z` listed as open in exec summary but `crumb_show` reports status=closed.
 >
 > Check 4 (CHANGELOG Fidelity): PASS
 >

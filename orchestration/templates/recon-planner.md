@@ -25,28 +25,23 @@ you'll use in Steps 4-5.
 ## Step 2: Discover Tasks
 
 Based on input mode:
-- **`ready`** (no specific scope): Run `crumb ready --limit=20 --sort=priority`
-  (or use the `crumb_list` MCP tool with `status="open"` and `sort="priority"` if
-  the MCP server is available) to grab the 20 highest-priority unblocked tasks.
+- **`ready`** (no specific scope): Use the `crumb_ready` MCP tool with `limit: 20` and `sort: "priority"` to grab the 20 highest-priority unblocked tasks. (CLI fallback if MCP unavailable: `crumb ready --limit=20 --sort=priority`)
   Use this when the user says "let's get to work" without specifying an epic,
   task list, or filter.
-  **Truncation warning**: If exactly 20 results are returned, run
-  `crumb ready --sort=priority | grep -c . || echo 0` (no --limit) to get the total count
+  **Truncation warning**: If exactly 20 results are returned, call `crumb_ready` without a limit (CLI: `crumb ready --sort=priority | grep -c . || echo 0`) to get the total count
   of ready tasks. Add a note to the briefing (Step 6):
   "Showing 20 of N ready tasks (--limit=20 applied). Re-run with a higher
   limit or filter by epic for complete coverage." Replace N with the actual
   total. If the total equals 20, omit the warning (no truncation occurred).
-- **`epic <epic-id>`**: Run `crumb trail show <epic-id>`, extract child task IDs
+- **`epic <epic-id>`**: Use the `crumb_trail_show` MCP tool with `trail_id: "<epic-id>"` to extract child task IDs (CLI fallback: `crumb trail show <epic-id>`)
 - **`tasks <id1>, <id2>, ...`**: Use the provided list directly
-- **`filter <description>`**: Translate the description into `crumb list` flags
-  (e.g., "all P2 bugs" → `crumb list --priority=2 --type=bug --open`), or use
-  the `crumb_list` MCP tool with equivalent parameters if the MCP server is available.
+- **`filter <description>`**: Translate the description into a `crumb_list` MCP tool call with equivalent parameters (e.g., "all P2 bugs" → `crumb_list` with `priority: "P2"`, `crumb_type: "bug"`, `status: "open"`). (CLI fallback: `crumb list --priority=2 --type=bug --open`)
   Use your judgment to construct the query. If the filter is ambiguous,
   note the ambiguity in the briefing so the Orchestrator can clarify with the user.
 
 Then (skip for `ready` mode — tasks are already unblocked):
-- Run `crumb ready` to identify which discovered tasks are unblocked
-- Run `crumb blocked` to map dependency chains
+- Use the `crumb_ready` MCP tool to identify which discovered tasks are unblocked (CLI fallback: `crumb ready`)
+- Use the `crumb_blocked` MCP tool to map dependency chains (CLI fallback: `crumb blocked`)
 - Separate tasks into "ready" (wave 1 candidates) and "blocked" (later wave candidates)
 - **Plan the full execution**: blocked tasks are NOT out of scope — they belong in later waves
   based on their dependency chains. The goal is a complete multi-wave plan covering ALL tasks.
@@ -80,7 +75,7 @@ the fallback when no discovered specialist fits.
 Create the metadata directory: `mkdir -p {SESSION_DIR}/task-metadata/`
 
 For each task (ready AND blocked):
-1. Run `crumb show <task-id>`
+1. Call the `crumb_show` MCP tool with `crumb_id: "<task-id>"` to retrieve task details (CLI fallback: `crumb show <task-id>`)
 2. Write to `{SESSION_DIR}/task-metadata/{task-suffix}.md` using this exact format:
 
 ```markdown
@@ -286,8 +281,8 @@ Recommended strategy: {strategy name}
 
 ## Error Handling
 
-- **If `crumb show` fails for a task**: Write a metadata file with `**Status**: error`.
-  Include the error message from `crumb show` in a `**Error Details**` field.
+- **If the `crumb_show` MCP tool (or `crumb show` CLI) fails for a task**: Write a metadata file with `**Status**: error`.
+  Include the error message from `crumb_show` in a `**Error Details**` field.
   Note it in the briefing under a "## Errors" section with the error message.
   Continue with remaining tasks.
 
@@ -302,13 +297,13 @@ Recommended strategy: {strategy name}
   **Type**: {type from crumb list, or "unknown"}
   **Priority**: {priority from crumb list, or "unknown"}
   **Epic**: {epic-id from crumb list, or "unknown"}
-  **Error Details**: {exact error message from crumb show}
+  **Error Details**: {exact error message from crumb_show}
 
   Note: Affected Files, Root Cause, Agent Type, Dependencies, and Acceptance Criteria
-  could not be populated — crumb show failed. This task will be excluded from conflict
+  could not be populated — crumb_show failed. This task will be excluded from conflict
   analysis and deferred to the final wave in all proposed strategies.
   ```
-- **If `crumb trail show <epic-id>` or `crumb list` fails**: Return an error
+- **If `crumb_trail_show` MCP tool (or `crumb trail show <epic-id>` CLI) or `crumb_list` MCP tool (or `crumb list` CLI) fails**: Return an error
   verdict to the Orchestrator immediately: `ERROR: {command} failed — {error message}`.
   Do not proceed with analysis.
 - **If filter returns zero results**: Return a verdict noting zero tasks found.
