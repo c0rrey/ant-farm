@@ -78,7 +78,7 @@ All checkpoints use the following verdict states:
 
 | Checkpoint | Threshold / Condition | Tie-Breaking Rule | Queue Blocking |
 |---|---|---|---|
-| **startup-check** | All 3 checks must pass | First-listed violation per check | FAIL blocks Prompt Composer spawn and all downstream steps |
+| **startup-check** | All 4 checks must pass (1, 1b, 2, 3) | First-listed violation per check | FAIL blocks Prompt Composer spawn and all downstream steps |
 | **pre-spawn-check (Implementers)** | Check 7 WARN allowed if file < 100 lines | First-listed section/function | WARN does not block; Orchestrator approves before spawn |
 | **pre-spawn-check (Reviewers)** | All round-active prompts identical file list (round 1: 4; round 2+: 2) | (No tie-breaking) | FAIL blocks spawn |
 | **scope-verify** | Small file = <100 lines | First-listed changed file | WARN does not block queue; FAIL blocks queue |
@@ -90,7 +90,7 @@ All checkpoints use the following verdict states:
 ### Details by Checkpoint
 
 **startup-check Verdict Specifics:**
-- PASS: All 3 checks pass (no file overlaps within a wave, file lists match crumb descriptions, no intra-wave dependency violations)
+- PASS: All 4 checks pass (no unresolved file overlaps within a wave, no agent exceeds 3 tasks per wave, file lists match crumb descriptions, no intra-wave dependency violations). File overlaps between tasks assigned to the same agent are resolved — not violations.
 - FAIL: Any check fails. Blocks Prompt Composer spawn and all downstream spawning until Recon Planner re-runs or issue is resolved.
 
 **pre-spawn-check Verdict Specifics:**

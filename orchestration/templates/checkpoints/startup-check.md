@@ -5,9 +5,9 @@
 **When**: After Recon Planner returns `{SESSION_DIR}/briefing.md` and BEFORE spawning Prompt Composer (Step 2 in RULES.md)
 **Model**: `haiku` (pure set comparisons — no judgment required)
 
-**Why**: The Recon Planner's strategy (wave groupings, task-to-wave assignments, file conflict analysis) is currently validated only by human approval, which misses mechanical errors like file/task mismatches or intra-wave dependency violations. A lightweight automated check before Prompt Composer is spawned catches strategy defects at the cheapest possible point — before any implementation prompts are composed.
+**Why**: The Recon Planner's strategy (wave groupings, task-to-wave assignments, agent batching, file conflict analysis) is currently validated only by human approval, which misses mechanical errors like file/task mismatches, agent overloading, or intra-wave dependency violations. A lightweight automated check before Prompt Composer is spawned catches strategy defects at the cheapest possible point — before any implementation prompts are composed.
 
-**Why haiku**: All three checks are set comparisons and dependency graph traversals with no ambiguity. No judgment or code comprehension is required. Haiku handles this class of verification faster and cheaper than sonnet.
+**Why haiku**: All four checks are set comparisons, count validations, and dependency graph traversals with no ambiguity. No judgment or code comprehension is required. Haiku handles this class of verification faster and cheaper than sonnet.
 
 ```markdown
 **Checkpoint Auditor verification - startup-check (Recon Planner Strategy Verification)**
@@ -17,20 +17,32 @@ You are the **Checkpoint Auditor**, the verification subagent. Your role is to v
 **Briefing file**: `{SESSION_DIR}/briefing.md`
 **Session directory**: `{SESSION_DIR}`
 
-Read the briefing file first to extract the full wave plan (wave numbers, task IDs per wave, affected files per task, and inter-task dependencies). Then run all three checks below.
+Read the briefing file first to extract the full wave plan (wave numbers, task IDs per wave, agent assignments per task, affected files per task, and inter-task dependencies). Then run all three checks below.
 
-## Check 1: No File Overlaps Within a Wave
+## Check 1: No Unresolved File Overlaps Within a Wave
 
 For each wave in the strategy:
 1. Collect all affected files listed for every task in that wave.
 2. Check whether any file appears in two or more tasks within the same wave.
-3. Report each violation as: "Wave N: file `<path>` appears in tasks <id1> AND <id2> — parallel edits would conflict."
+3. For each overlap, check whether the overlapping tasks are assigned to the **same agent** in the briefing.
+   - **Same agent**: The overlap is resolved — not a violation. Record it as: "Wave N: file `<path>` shared by tasks <id1>, <id2> — RESOLVED (same agent: Agent M)."
+   - **Different agents**: The overlap is a conflict. Report as: "Wave N: file `<path>` appears in tasks <id1> (Agent M) AND <id2> (Agent P) — parallel edits would conflict."
 
+File overlaps between tasks assigned to the same agent are safe because a single agent executes its tasks sequentially — no concurrent edits occur. Overlaps between tasks assigned to different agents remain dangerous and must be resolved by moving tasks to separate waves or consolidating them under one agent.
 
-A file overlap within a wave means two agents would edit the same file simultaneously, causing merge conflicts or lost changes. Tasks sharing a file must be serialized into separate waves.
+**PASS condition**: Every file overlap within a wave is resolved (all overlapping tasks assigned to the same agent), AND no agent exceeds 3 tasks per wave (see Check 1b).
+**FAIL condition**: One or more file overlaps exist between tasks assigned to different agents. List every unresolved violation.
 
-**PASS condition**: No file appears in more than one task within any single wave.
-**FAIL condition**: One or more files appear in multiple tasks within the same wave. List every violation.
+## Check 1b: Agent Task Cap (Max 3 Tasks Per Agent Per Wave)
+
+For each wave in the strategy:
+1. Count the number of tasks assigned to each agent.
+2. Report any agent with more than 3 tasks as: "Wave N: Agent M has <count> tasks (<id1>, <id2>, ...) — exceeds the 3-task cap."
+
+An agent with too many tasks risks scope creep, context bloat, and reduced quality. The cap ensures each agent's workload stays focused.
+
+**PASS condition**: No agent has more than 3 tasks in any single wave.
+**FAIL condition**: One or more agents exceed 3 tasks in a wave. List every violation.
 
 ## Check 2: File Lists Match Crumb Descriptions
 
@@ -70,7 +82,7 @@ An intra-wave dependency means an agent that is supposed to start in parallel ac
 
 ## Verdict
 
-**PASS** — All 3 checks pass. Report PASS to the Orchestrator. The Orchestrator will auto-proceed to spawn Prompt Composer (Step 2) — do NOT spawn Prompt Composer yourself.
+**PASS** — All 4 checks pass (1, 1b, 2, 3). Report PASS to the Orchestrator. The Orchestrator will auto-proceed to spawn Prompt Composer (Step 2) — do NOT spawn Prompt Composer yourself.
 
 **FAIL: <list each failing check>** — One or more checks failed. Do NOT spawn Prompt Composer. Report specific violations so the Recon Planner can revise the strategy.
 
@@ -79,14 +91,17 @@ An intra-wave dependency means an agent that is supposed to start in parallel ac
 > **Verdict: FAIL**
 >
 > Check 1 (File Overlaps): FAIL
-> - Wave 2: file `src/api/routes.py` appears in tasks ant-farm-abc AND ant-farm-def — parallel edits would conflict.
+> - Wave 2: file `src/api/routes.py` appears in tasks ant-farm-abc (Agent 3) AND ant-farm-def (Agent 5) — parallel edits would conflict.
+> - Wave 2: file `src/api/models.py` shared by tasks ant-farm-ghi, ant-farm-jkl — RESOLVED (same agent: Agent 3).
+>
+> Check 1b (Agent Task Cap): PASS
 >
 > Check 2 (File List Match): PASS
 >
 > Check 3 (Intra-Wave Dependencies): FAIL
 > - Wave 1: task ant-farm-xyz blocks task ant-farm-uvw — both are in Wave 1; ant-farm-uvw must move to Wave 2.
 >
-> Recommendation: Re-run Recon Planner with these violations noted. Move ant-farm-def or ant-farm-abc to a different wave (file conflict), and move ant-farm-uvw to Wave 2 or later (dependency ordering).
+> Recommendation: Re-run Recon Planner with these violations noted. Move ant-farm-def to the same agent as ant-farm-abc, or move one to a different wave (file conflict). Move ant-farm-uvw to Wave 2 or later (dependency ordering).
 
 Write your verification report to:
 `{SESSION_DIR}/pc/pc-session-startup-check-{timestamp}.md`
