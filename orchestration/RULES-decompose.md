@@ -4,6 +4,12 @@
 > and follows it exactly. Do NOT read `orchestration/RULES.md` — it governs the Orchestrator's
 > implementation session workflow, which is separate from decomposition.
 
+> **Tool invocation note**: The Planner itself does not call crumb operations directly (the Task
+> Decomposer handles all crumb CLI calls). If an operation is delegated to the Planner in future
+> updates, prefer MCP tool equivalents (`crumb_create`, `crumb_link`, `crumb_show`, `crumb_trail_list`,
+> `crumb_trail_show`, `crumb_trail_close`). If the MCP server is unavailable, fall back to the
+> equivalent `crumb <command>` CLI call via Bash.
+
 ## Path Reference Convention
 
 All file paths in this document use **repo-root relative** format: `orchestration/templates/spec-writer.md`.
@@ -24,7 +30,7 @@ accessible at `~/.claude/orchestration/`. To translate repo paths to runtime pat
 - **NEVER** set `run_in_background` on Task agents — multiple Task calls in one message already
   run concurrently; background mode leaks JSONL transcripts into the Planner's context
 - **NEVER** spawn the Task Decomposer until ALL four Researcher outputs exist and the spec quality gate passes
-- **NEVER** create trails or crumbs yourself — only the Task Decomposer does this via `crumb` CLI
+- **NEVER** create trails or crumbs yourself — only the Task Decomposer does this (via MCP tools or `crumb` CLI)
 
 ---
 
@@ -44,7 +50,7 @@ misapplying Orchestrator patterns to decomposition sessions.
 | State tracking | Step number + per-agent retry count (in context only) | `orchestrator-state.md` written to disk |
 | Primary agents | Spec Writer, Researcher x4, Task Decomposer | Recon Planner, Prompt Composer, Checkpoint Auditor, Reviewer |
 | Context budget target | 15–20% of context window | Not separately specified |
-| `crumb` CLI usage | Prohibited — only the Task Decomposer calls `crumb` | Orchestrator calls `crumb` directly |
+| `crumb` CLI usage | Prohibited — only the Task Decomposer calls `crumb` (or MCP tools) | Orchestrator uses MCP tools (crumb_*); CLI fallback if MCP unavailable |
 
 The Planner MUST NOT read `orchestration/RULES.md`. The Orchestrator MUST NOT read this file. They are
 separate orchestrators with non-overlapping roles.
@@ -106,7 +112,7 @@ The Planner's context window is restricted to prevent bloat. The following are e
 - `orchestration/templates/decomposition.md` — Task Decomposer's instruction file
 - `{DECOMPOSE_DIR}/research/*.md` — Researcher research briefs (Task Decomposer reads these)
 - Source code files, test files, application configs, project data files
-- Raw `crumb show`, `crumb list`, `crumb trail status` output (let the Task Decomposer handle CLI calls)
+- Raw `crumb show`, `crumb list`, `crumb trail status` output or MCP tool results (let the Task Decomposer handle all crumb operations)
 
 ---
 
@@ -440,9 +446,9 @@ The Task Decomposer:
 2. Scans `{CODEBASE_ROOT}` to build a brownfield/greenfield map
 3. Groups requirements into trails (3–8 crumbs per trail)
 4. Decomposes trails into crumbs (5–8 files per crumb)
-5. Wires dependencies via `crumb link`
+5. Wires dependencies via `crumb_link` (MCP) or `crumb link` CLI
 6. Verifies 100% spec coverage (mandatory gate — Task Decomposer does NOT proceed without PASS)
-7. Creates trails and crumbs via `crumb` CLI
+7. Creates trails and crumbs via `crumb_create` / `crumb_trail_*` (MCP) or `crumb` CLI
 8. Writes `{DECOMPOSE_DIR}/decomposition-brief.md`
 
 **Task Decomposer output gate** (quick sanity check before decomposition-check):

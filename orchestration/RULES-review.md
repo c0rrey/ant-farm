@@ -2,6 +2,10 @@
 
 > Continuation of the workflow defined in `orchestration/RULES.md`. The Orchestrator reads this file when Step 3b is reached (after all implementation waves are verified).
 
+> **Tool invocation note**: Where this file instructs agents to call crumb operations, prefer MCP tool
+> equivalents (`crumb_show`, `crumb_update`, `crumb_close`). If the MCP server is unavailable, fall
+> back to the equivalent `crumb <command>` CLI call via Bash.
+
 **Step 3b:** Review — fill review slots and spawn Reviewers.
 
             **Team persistence**: The Reviewer team persists across the full review-fix-review loop.
@@ -156,10 +160,10 @@
             ```
             You are fix-impl-N, a fix Implementer in the Reviewer team.
             Your task crumb: {crumb-id}
-            Run: crumb show <crumb-id>
+            Call crumb_show(crumb_id="<crumb-id>") (MCP) to read the task details.
             Implement the fix. Follow the acceptance criteria exactly.
             After committing:
-            1. Record commit hash: crumb update <crumb-id> --note="commit: <hash>"
+            1. Record commit hash: crumb_update(crumb_id="<crumb-id>", note="commit: <hash>") (MCP)
             2. SendMessage to fix-pc-scope-verify: "Fix committed. Crumb: {crumb-id}. Commit: {hash}. Files changed: {list}."
             Then go idle and wait.
             ```

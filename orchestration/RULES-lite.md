@@ -1,6 +1,11 @@
 # Orchestration Rules — Lite Mode
 <!-- .local override: To customize, create RULES-lite.local.md in the same directory. Your local file will not be overwritten by setup.sh. -->
 
+> **Tool invocation note**: Where this file instructs the Orchestrator or Implementer to call crumb
+> operations, prefer the MCP tool equivalents (`crumb_show`, `crumb_update`, `crumb_close`,
+> `crumb_ready`, `crumb_list`, `crumb_create`). If the MCP server is unavailable, fall back to the
+> equivalent `crumb <command>` CLI call via Bash.
+
 ## What Is Lite Mode
 
 Lite mode is a single-crumb execution path designed for small, isolated changes where the full pipeline overhead (Recon Planner wave analysis, Prompt Composer pre-digestion, Reviewer review team) is unnecessary. It preserves the quality gates that matter for any change — prompt auditing (pre-spawn-check), substance verification (claims-vs-code), atomic commits, and crumb tracking — while eliminating the multi-agent orchestration scaffolding.
@@ -51,7 +56,7 @@ At runtime, orchestration files are accessible at `~/.claude/orchestration/`. To
 SESSION_ID="$(date +%Y%m%d-%H%M%S)-$(head -c4 /dev/urandom | xxd -p)"
 SESSION_DIR=".crumbs/sessions/_session-${SESSION_ID}"
 mkdir -p "${SESSION_DIR}"/{prompts,pc,summaries,signals}
-crumb prune >/dev/null || true
+crumb prune >/dev/null || true  # CLI only — no MCP equivalent
 ```
 
 Store SESSION_DIR in context and pass it to every agent that needs to write artifacts.
@@ -61,7 +66,7 @@ Store SESSION_DIR in context and pass it to every agent that needs to write arti
 echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SESSION_INIT|complete|mode=lite|session_dir=${SESSION_DIR}|next_step=STEP_1_SELECT" >> ${SESSION_DIR}/progress.log
 ```
 
-**Step 1:** Task selection — identify the single crumb to work. Run `crumb show <TASK_ID>` to read the task's title, description, acceptance criteria, and affected files. Store the task ID and acceptance criteria in context.
+**Step 1:** Task selection — identify the single crumb to work. Call `crumb_show(crumb_id="<TASK_ID>")` (MCP) to read the task's title, description, acceptance criteria, and affected files. Store the task ID and acceptance criteria in context.
 
 > **Note**: In lite mode the Orchestrator reads the crumb directly. There is no Recon Planner subagent. The Orchestrator's context budget is protected by the single-crumb scope — there is no wave analysis or briefing doc to read.
 
@@ -104,7 +109,7 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_SPAWNED|wave=1|mode=lite|task=${TASK_I
 
 **Write .ant-farm-scope.json atomically (temp file + rename) before spawning:**
 
-> **AFFECTED_FILES_LIST** is the space-separated list of `file:line-range` strings from the crumb's `Scope.files` field (populated in Step 1 when you ran `crumb show`). Construct this list from the crumb's affected files before running the snippet below.
+> **AFFECTED_FILES_LIST** is the space-separated list of `file:line-range` strings from the crumb's `Scope.files` field (populated in Step 1 when you called `crumb_show`). Construct this list from the crumb's affected files before running the snippet below.
 
 ```bash
 # Build the allowed_files JSON array from the crumb's affected files list
@@ -137,7 +142,7 @@ Task(
 ```
 
 The implementer executes the standard 6 mandatory steps:
-1. **Claim**: `crumb show <TASK_ID>` + `crumb update <TASK_ID> --status=in_progress`
+1. **Claim**: `crumb_show(crumb_id="<TASK_ID>")` + `crumb_update(crumb_id="<TASK_ID>", status="in_progress")` (MCP)
 2. **Design**: 4+ genuinely distinct approaches with tradeoffs; document chosen approach before coding
 3. **Implement**: Write clean, minimal code satisfying the acceptance criteria
 4. **Self-review** (MANDATORY): Re-read every changed file. For each file, verify the acceptance criteria are met. Document the review in the summary doc with file-specific notes — generic "looks clean" language fails claims-vs-code Check 4. This self-review step replaces the Reviewer team; it must be substantive.
@@ -169,9 +174,10 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_VERIFIED|wave=1|mode=lite|claims_vs_co
 
 **Step 5:** Close — update crumb status, clean up sidecar, and push.
 
+Call `crumb_close(ids=["<TASK_ID>"])` (MCP) to close the crumb.
+If MCP is unavailable: `crumb close <TASK_ID>` via Bash.
+
 ```bash
-crumb update <TASK_ID> --status=closed
-crumb close <TASK_ID>
 rm -f .ant-farm-scope.json
 git pull --rebase
 git push

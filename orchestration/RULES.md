@@ -1,6 +1,12 @@
 # Orchestration Rules
 <!-- .local override: To customize, create RULES.local.md in the same directory. Your local file will not be overwritten by setup.sh. -->
 
+> **Tool invocation note**: Where this file instructs the Orchestrator to call crumb operations directly
+> (e.g., `crumb prune`), prefer the MCP tool equivalents (`crumb_list`, `crumb_show`, `crumb_update`,
+> `crumb_close`, `crumb_ready`, `crumb_blocked`, `crumb_create`, `crumb_link`, `crumb_trail_list`,
+> `crumb_trail_show`, `crumb_trail_close`). If the MCP server is unavailable, fall back to the
+> equivalent `crumb <command>` CLI call via Bash.
+
 ## Path Reference Convention
 
 All file paths in this document use **repo-root relative** format: `orchestration/templates/recon-planner.md`.
@@ -369,7 +375,7 @@ At session start (Step 0), run:
     SESSION_ID="$(date +%Y%m%d-%H%M%S)-$(od -An -tx1 -N4 /dev/urandom | tr -d ' \n')"
     SESSION_DIR=".crumbs/sessions/_session-${SESSION_ID}"
     mkdir -p "${SESSION_DIR}"/{task-metadata,previews,prompts,pc,summaries,signals}
-    crumb prune 2>/dev/null || echo "WARNING: crumb prune failed (non-blocking) — continuing session setup"
+    crumb prune 2>/dev/null || echo "WARNING: crumb prune failed (non-blocking) — continuing session setup"  # CLI only — no MCP equivalent
 
 Store SESSION_DIR in your context and pass it explicitly to every agent that needs to write artifacts.
 
