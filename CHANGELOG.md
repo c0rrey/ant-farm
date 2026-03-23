@@ -1,5 +1,44 @@
 # Changelog
 
+## 2026-03-23 — Session 2ad19b6d (Gate Enforcement Infrastructure and crumb CLI Expansion)
+
+### Summary
+
+Shipped 18 tasks (15 implementation + 3 review fixes) across 4 implementation waves in ~2 hours. The session delivered the complete gate enforcement stack — scope advisor enforcing mode, gate-manager library, retry tracker, gate enforcer PreToolUse hook, position check, and full npm registration wiring — alongside two new `crumb` CLI subcommands (`validate-trail`, `validate-spec`) and cycle detection with `--fix` mode in `crumb doctor`. Two review rounds were run; round 1 identified 3 P2 findings (documentation staleness and import organization) which were auto-fixed and verified clean in round 2. All 77 implementation acceptance criteria passed per the correctness reviewer. 19 commits, 21 files changed.
+
+### Implementation (Waves 1–4)
+
+- **AF-452**: feat: cycle detection in crumb doctor — `_detect_cycles()` with graphlib + iterative peeling, 18 tests, JSON `cycles` field (`crumb.py`, `tests/test_doctor.py`) (`13f9a53`)
+- **AF-455**: feat: add `validate-trail` subcommand with configurable thresholds — PASS/FAIL/WARN logic, `--all`/`--strict`/`--json`, 49 tests (`crumb.py`, `tests/test_trails.py`) (`b436d4d`)
+- **AF-459**: feat: add enforcing mode to scope advisor hook — `mode` + `permitted_exceptions` in sidecar schema, `isPermittedException()`, blocking path with debug log, 31 tests (`hooks/ant-farm-scope-advisor.js`, `hooks/lib/scope-reader.js`, `hooks/test/scope-advisor.test.js`, `hooks/lib/test/scope-reader.test.js`) (`de614a2`, `526ea7d`)
+- **AF-462**: feat: implement gate-manager.js library module — `readGateStatus`, `writeGateVerdict` (atomic tmp+rename), `isGatePassed`, `GATE_CHAIN`, 26 tests (`hooks/lib/gate-manager.js`, `hooks/lib/test/gate-manager.test.js`) (`ee519c5`)
+- **AF-456**: feat: add `validate-spec` banned-phrase filter subcommand — word-boundary regex AC-line scanner, 11 default banned phrases, `--json`, 13 tests (`crumb.py`, `tests/test_cli.py`) (`bad0ce2`)
+- **AF-464**: feat: implement retry tracker library and CLI — `recordRetry`, `canRetry`, `getTotalRetries`, `resetRetries`, `crumb session-retries`/`session-reset-retries`, 22 JS + 12 Python tests (`hooks/lib/retry-tracker.js`, `hooks/lib/test/retry-tracker.test.js`, `crumb.py`, `tests/test_cli.py`) (`d8c3b52`)
+- **AF-453**: feat: add `--fix` mode to `crumb doctor` for cycle breaking — `_break_cycle_edges()` batch closing-edge removal, JSON `cycle_fixes_applied` field, 13 tests (`crumb.py`, `tests/test_doctor.py`) (`777fa87`)
+- **AF-454**: feat: add cycle detection performance test and edge cases — 500-crumb topology fixture, diamond + chain + empty tests (`tests/test_doctor.py`, `tests/fixtures/500_crumbs_with_cycles.jsonl`) (`f8aacf0`)
+- **AF-457**: test: add AC1-AC4 validate-trail coverage — 8 tests for minimum/maximum violation messages and `--all` per-trail statuses (`tests/test_trails.py`) (`b133b3c`)
+- **AF-458**: test: add missing validate-spec tests for empty file and 'As Expected' phrase — 3 tests for AC-3 and AC-8 (`tests/test_cli.py`) (`a062d15`)
+- **AF-460**: feat: set scope mode per agent type in prompt composer — `mode`/`permitted_exceptions` sidecar doc, enforcing/advisory rule, BLOCKED event check in scope-verify step 4 (`orchestration/templates/prompt-composer.md`, `orchestration/templates/checkpoints/scope-verify.md`) (`117c97a`)
+- **AF-461**: feat: add debug log integration test for scope advisor enforcing mode — byte-offset snapshot + truncate-in-finally pattern (`hooks/test/scope-advisor.test.js`) (`a2ca04b`)
+- **AF-463**: feat: implement gate enforcement PreToolUse hook — startup-check gating, env/prompt-scan session detection, `bypass_gates` escape hatch, BYPASS_TOOLS pass-through, 27 tests (`hooks/ant-farm-gate-enforcer.js`, `hooks/test/gate-enforcer.test.js`) (`5fe16da`)
+- **AF-465**: feat: add `getExpectedNextStep`, position check enforcer, and `session-status` CLI — `readAllLines`/`getExpectedNextStep` in progress-reader, position check in gate enforcer, `crumb session-status`, 19 JS + 12 Python tests (`hooks/lib/progress-reader.js`, `hooks/lib/test/progress-reader.test.js`, `hooks/ant-farm-gate-enforcer.js`, `crumb.py`, `tests/test_cli.py`) (`aaa32a6`)
+- **AF-466**: feat: wire retry tracking and position check into gate enforcer — `canRetry` check, `extractTaskIdFromPrompt`, `AGENT_SPAWN_GATE` timestamp, npm manifest + hooks-registration wired, 9 new tests (`hooks/ant-farm-gate-enforcer.js`, `hooks/test/gate-enforcer.test.js`, `npm/install-manifest.json`, `npm/lib/hooks-registration.js`) (`d9c90ea`)
+
+### Review Fixes (Round 1 P2s)
+
+- **AF-554**: fix: update hooks-registration.js JSDoc to include gate enforcer — module JSDoc and `unregisterScopeAdvisorHook` doc updated (`npm/lib/hooks-registration.js`) (`07f3c36`)
+- **AF-555**: fix: correct debug log path in scope-verify.md checkpoint template — stale project-root path replaced with `~/.claude/.ant-farm-hook-debug.log` (`orchestration/templates/checkpoints/scope-verify.md`) (`ece658a`)
+- **AF-556**: fix: hoist scattered require declarations in gate-enforcer.test.js — mid-file requires hoisted to top, duplicate gate-manager require deduplicated (`hooks/test/gate-enforcer.test.js`) (`7e435e3`)
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 21 files, 15 tasks | 0 | 3 | 15 | PASS WITH ISSUES |
+| 2 | 3 fix commits | 0 | 0 | 0 | PASS |
+
+18 root causes consolidated (7 findings merged). 3 P2s auto-fixed; 15 P3s deferred.
+
 ## 2026-03-23 — Session 6355db7e (Orchestration Template Polish and Documentation Consistency)
 
 ### Summary
