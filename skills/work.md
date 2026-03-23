@@ -126,7 +126,7 @@ Generate a session ID and create the session artifact directory:
 ```bash
 SESSION_ID=$(date +%Y%m%d-%H%M%S)
 SESSION_DIR=".crumbs/sessions/_session-${SESSION_ID}"
-mkdir -p "${SESSION_DIR}"/{task-metadata,previews,prompts,pc,summaries,signals}
+mkdir -p "${SESSION_DIR}"/{task-metadata,previews,prompts,pc,summaries,signals}  # pc = checkpoint artifacts (legacy: "pest control")
 echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SESSION_INIT|complete|session_dir=${SESSION_DIR}" >> "${SESSION_DIR}/progress.log"
 ```
 

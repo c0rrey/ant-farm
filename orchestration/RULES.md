@@ -375,8 +375,8 @@ At session start (Step 0), run:
 
     SESSION_ID="$(date +%Y%m%d-%H%M%S)-$(od -An -tx1 -N4 /dev/urandom | tr -d ' \n')"
     SESSION_DIR=".crumbs/sessions/_session-${SESSION_ID}"
-    mkdir -p "${SESSION_DIR}"/{task-metadata,previews,prompts,pc,summaries,signals}
-    crumb prune 2>/dev/null || echo "WARNING: crumb prune failed (non-blocking) — continuing session setup"  # CLI only — no MCP equivalent
+    mkdir -p "${SESSION_DIR}"/{task-metadata,previews,prompts,pc,summaries,signals}  # pc = checkpoint artifacts (legacy: "pest control")
+    _PRUNE_ERR=$(crumb prune 2>&1 >/dev/null) || echo "WARNING: crumb prune failed (non-blocking): ${_PRUNE_ERR}"  # CLI only — no MCP equivalent
 
 Store SESSION_DIR in your context and pass it explicitly to every agent that needs to write artifacts.
 
@@ -441,7 +441,7 @@ SUMMARY: {one-line-description}" > "${SESSION_DIR}/signals/{TASK_SUFFIX}.done"
 |-----------|-------------|-------------|
 | Agent fails claims-vs-code | 2 | Escalate to user with full context |
 | review-integrity fails | 1 | Present to user with verification report attached |
-| Agent stuck (no commit within 15 turns) | 0 | Run stuck-agent diagnostic (see below); escalate to user |
+| Agent stuck (no commit within 15 turns — see Stuck-Agent Diagnostic Procedure) | 0 | Run stuck-agent diagnostic; escalate to user |
 | Prompt Composer pre-spawn-check fails | 1 | Escalate to user; do not spawn Implementers without verified prompts |
 | Recon Planner fails or returns no tasks | 1 | Escalate to user; do not proceed to Step 2 without task list |
 | startup-check FAIL -> re-Recon Planner cycle | 1 | Escalate to user with startup-check violations; do not re-run Recon Planner a third time |

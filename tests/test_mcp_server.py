@@ -142,8 +142,8 @@ class TestMcpServerRegistration:
         assert mcp is not None
         assert mcp.name == "crumb"
 
-    def test_thirteen_tools_registered(self) -> None:
-        """Exactly 13 tools are registered on the MCP server."""
+    def test_expected_tools_registered(self) -> None:
+        """Exactly the expected tools are registered on the MCP server."""
         tools_result = asyncio.run(mcp.list_tools())
         registered_names = {t.name for t in tools_result}
         expected = {
