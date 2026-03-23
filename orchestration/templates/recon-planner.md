@@ -164,6 +164,11 @@ Each strategy MUST include:
 - **Risk assessment**: overall risk level and what could go wrong
 - **Coverage**: verify all tasks (ready + blocked) are assigned to exactly one wave
 
+**Fix-Cycle Batch Cap** (fix-cycle mode only — does not apply to implementation-mode strategies):
+- **Hard cap: max 3 crumbs per fix agent.** Never assign more than 3 fix crumbs to a single fix implementer.
+- **Splitting rule**: When a single file has >3 fix crumbs, split them across multiple fix agents (e.g., 4 crumbs → agents of 3 + 1). Each agent commits independently; include `git pull --rebase` between sequential commits on the same file.
+- **Wave placement**: split agents for the same file go in the same wave when their crumbs are non-overlapping sections; serialize into sequential waves only if edits conflict.
+
 **Presenting tied agents**: When a task's agent type is `PICK ONE: type-a OR type-b`, list it in the strategy with the full PICK ONE notation. Example:
 ```
 **Wave 1** (6 agents): ant-farm-xyz (python-pro), ant-farm-abc (PICK ONE: debugger OR performance-engineer), ant-farm-def (typescript-pro), ...

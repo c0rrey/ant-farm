@@ -149,6 +149,12 @@
             **Step 3c-ii. Spawn fix agents into team** — Prompt Composer and pre-spawn-check are skipped for fix agents
             (the Review Consolidator crumb IS the brief; crumb content passed review-integrity; startup-check independently verified the
             strategy). Spawn fix agents into the team in a single message:
+
+            **Batch cap (hard rule)**: Max 3 crumbs per fix implementer. If the Recon Planner's strategy assigns >3 crumbs
+            to any single fix agent, reject the strategy and re-run the Recon Planner with the violation listed. When a
+            single file has >3 fix crumbs, they MUST be split across multiple fix agents; include `git pull --rebase`
+            between commits on the same file.
+
             - **N fix implementers** (`model: "sonnet"`, `team_name: "reviewer-team"`): names `fix-impl-1..N`
               (round 2+: `fix-impl-r2-1..N`)
             - **fix-pc-scope-verify** (`model: "haiku"`, `team_name: "reviewer-team"`): one per round; serves
