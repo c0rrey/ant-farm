@@ -28,7 +28,7 @@ The steps in the review-consolidator-skeleton.md (Steps 1–12) correspond to th
 
 Replace `{PLACEHOLDER}` values (uppercase) in the agent-facing template below:
 
-- `{MODEL}`: Review Consolidator model — see the **Review Consolidator Consolidation Protocol** section of `orchestration/templates/reviews.md` for the authoritative model assignment. Do NOT hardcode a model name here; consult that section instead.
+- `{MODEL}`: Review Consolidator model — `"opus"` (authoritative source: `orchestration/templates/reviews.md` Review Consolidator Consolidation Protocol section).
 - `{DATA_FILE_PATH}`: Review Consolidator consolidation brief written by build-review-prompts.sh
 - `{CONSOLIDATED_OUTPUT_PATH}`: `{SESSION_DIR}/review-reports/review-consolidated-{TIMESTAMP}.md`
 
@@ -62,7 +62,7 @@ TeamCreate(
     { "name": "edge-cases-reviewer",   "subagent_type": "ant-farm-reviewer-edge-cases",   "prompt": "<filled reviewer template with REVIEW_TYPE=edge-cases>", "model": "opus" },
     { "name": "correctness-reviewer",  "subagent_type": "ant-farm-reviewer-correctness",  "prompt": "<filled reviewer template with REVIEW_TYPE=correctness>", "model": "opus" },
     { "name": "drift-reviewer",        "subagent_type": "ant-farm-reviewer-drift",         "prompt": "<filled reviewer template with REVIEW_TYPE=drift>", "model": "sonnet" },
-    { "name": "ant-farm-review-consolidator", "prompt": "<filled review-consolidator template — report count from consolidation brief's expected_paths>", "model": "{MODEL}" },
+    { "name": "ant-farm-review-consolidator", "prompt": "<filled review-consolidator template — report count from consolidation brief's expected_paths>", "model": "opus" },
     { "name": "ant-farm-checkpoint-auditor", "prompt": "<checkpoint-auditor prompt>", "model": "sonnet" }
   ]
 )
@@ -80,7 +80,7 @@ TeamCreate(
     { "name": "correctness-reviewer",  "subagent_type": "ant-farm-reviewer-correctness",  "prompt": "<filled reviewer template with REVIEW_TYPE=correctness>", "model": "opus" },
     { "name": "drift-1",               "subagent_type": "ant-farm-reviewer-drift",         "prompt": "<filled reviewer template with REVIEW_TYPE=drift, file subset A>", "model": "sonnet" },
     { "name": "drift-2",               "subagent_type": "ant-farm-reviewer-drift",         "prompt": "<filled reviewer template with REVIEW_TYPE=drift, file subset B>", "model": "sonnet" },
-    { "name": "ant-farm-review-consolidator", "prompt": "<filled review-consolidator template — report count from consolidation brief's expected_paths>", "model": "{MODEL}" },
+    { "name": "ant-farm-review-consolidator", "prompt": "<filled review-consolidator template — report count from consolidation brief's expected_paths>", "model": "opus" },
     { "name": "ant-farm-checkpoint-auditor", "prompt": "<checkpoint-auditor prompt>", "model": "sonnet" }
   ]
 )
@@ -98,7 +98,7 @@ TeamCreate(
   members=[
     { "name": "correctness-reviewer",  "subagent_type": "ant-farm-reviewer-correctness",  "prompt": "<filled reviewer template with REVIEW_TYPE=correctness>", "model": "opus" },
     { "name": "edge-cases-reviewer",   "subagent_type": "ant-farm-reviewer-edge-cases",   "prompt": "<filled reviewer template with REVIEW_TYPE=edge-cases>", "model": "opus" },
-    { "name": "ant-farm-review-consolidator", "prompt": "<filled review-consolidator template — report count from consolidation brief's expected_paths>", "model": "{MODEL}" },
+    { "name": "ant-farm-review-consolidator", "prompt": "<filled review-consolidator template — report count from consolidation brief's expected_paths>", "model": "opus" },
     { "name": "ant-farm-checkpoint-auditor", "prompt": "<checkpoint-auditor prompt>", "model": "sonnet" }
   ]
 )

@@ -16,7 +16,7 @@
             team-based round 2+ reviews.
 
             **Team roster progression**:
-            - **Round 1 (initial)**: base case 6 members — 4 Reviewers (Clarity, Edge Cases, Correctness, Drift) + Review Consolidator + Checkpoint Auditor (mixed-model: Correctness + Edge Cases use `opus`; Clarity + Drift use `sonnet`). When split reviewer instances are present, member count increases (e.g., 8 members for 2 Clarity + 2 Drift splits). Member names and count come from `build-review-prompts.sh` return table.
+            - **Round 1 (initial)**: base case 6 members — 4 Reviewers (Clarity, Edge Cases, Correctness, Drift) + Review Consolidator + Checkpoint Auditor (mixed-model: Correctness, Edge Cases, + Review Consolidator use `opus`; Clarity + Drift use `sonnet`). When split reviewer instances are present, member count increases (e.g., 8 members for 2 Clarity + 2 Drift splits). Member names and count come from `build-review-prompts.sh` return table.
             - **After fix wave**: + N fix implementers + fix-pc-scope-verify + fix-pc-claims-vs-code (names: fix-impl-1..N, fix-pc-scope-verify, fix-pc-claims-vs-code; round suffixes for round 2+: fix-impl-r2-1, fix-pc-scope-verify-r2, fix-pc-claims-vs-code-r2)
             - **Peak**: up to 15 members in the base case (6 + 7 fix implementers + 2 fix PCs); higher with split instances. Only N+2 fix agents are active during the fix phase; the original reviewers are idle.
             - **Round 2+**: Clarity and Drift reviewers — including split instances (e.g., `clarity-1`, `clarity-2`, `drift-1`, `drift-2`) — remain idle; Correctness and Edge Cases are re-tasked via named-member SendMessage
@@ -78,7 +78,7 @@
             - Round 1: base case is 6 members (4 reviewers + Review Consolidator + Checkpoint Auditor); may be more if `build-review-prompts.sh` produces split reviewer instances
             - **Dynamic member list**: The Orchestrator reads the return table from `build-review-prompts.sh` to determine member count and names. Do NOT use a fixed 6-member list. The return table lists every filled slot (e.g., `clarity-1`, `clarity-2`, `drift-1`, `drift-2`) along with their prompt file paths. Build the `members` array from this table — each slot becomes one TeamCreate member entry.
             - **Split instance naming**: When a reviewer type is split across multiple instances, each instance is named `{review-type}-{N}` (e.g., `clarity-1`, `clarity-2`, `drift-1`, `drift-2`). The base-case single-instance names (`clarity-reviewer`, `drift-reviewer`) are used only when no split occurred.
-            - Model assignments: Correctness (`model: "opus"`), Edge Cases (`model: "opus"`), Clarity and all clarity-N instances (`model: "sonnet"`), Drift and all drift-N instances (`model: "sonnet"`)
+            - Model assignments: Correctness (`model: "opus"`), Edge Cases (`model: "opus"`), Review Consolidator (`model: "opus"`), Clarity and all clarity-N instances (`model: "sonnet"`), Drift and all drift-N instances (`model: "sonnet"`)
             - Round 2+: do NOT spawn a new team — re-task Correctness and Edge Cases reviewers via named-member SendMessage (see Step 3c fix workflow)
             - Review Consolidator MUST be a team member, NOT a separate Task agent
             - Checkpoint Auditor MUST be a team member so Review Consolidator can SendMessage to it
