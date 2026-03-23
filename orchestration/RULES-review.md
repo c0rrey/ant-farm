@@ -105,13 +105,13 @@
             - Shutdown is authorized at this point — but do NOT send `shutdown_request` yet. Proceed to Step 4 first; send `shutdown_request` to team members during session teardown (Step 6 cleanup).
             **If P1 or P2 issues found**:
             **DO NOT send shutdown_request to any team member.** The team must remain active for the fix workflow.
-            **Round cap — escalate after round 4** (check this FIRST before any fix decision):
+            **Round cap — escalate after round 4** (4 = 1 full review + 3 fix-verification passes; diminishing returns and churn risk beyond this) (check this FIRST before any fix decision):
             - If current round >= 4 and P1/P2 findings are still present, do NOT start another round
             - Present full round history to user (round numbers, finding counts, crumb IDs)
             - Ask user: "Review loop has not converged after 4 rounds. Continue or abort?"
             - Await user decision before taking any further action
             **Only if current round < 4**: determine fix action:
-            **Auto-fix (round 1, ≤10 root causes)**: If round == 1 AND total P1+P2 root causes ≤ 10:
+            **Auto-fix (round 1, ≤10 root causes)**: If round == 1 AND total P1+P2 root causes ≤ 10 (10: empirically, >10 root causes suggests a systemic issue better triaged by the user than auto-fixed):
             - Announce (do NOT wait for user input):
               "**Auto-fix**: Round 1 review found X P1 and Y P2 issues (Z root causes, within 10-threshold). Spawning fix tasks automatically."
             - Proceed directly to fix workflow (below)

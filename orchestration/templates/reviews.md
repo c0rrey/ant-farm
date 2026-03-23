@@ -231,7 +231,7 @@ The review loop terminates when a round produces **zero P1 or P2 findings**. At 
    - Note: CHANGELOG is authored by the Session Scribe at Step 5, not here
 4. No user prompt needed — the loop simply ends
 
-**Escalation cap**: After round 4 with no convergence (P1 or P2 findings still present), do NOT start round 5. Instead, escalate to the user with the full round history (round numbers, finding counts per round, crumb IDs) and ask whether to continue or abort. The reduced scope + reduced reviewers + P3 auto-filing make convergence fast; if it has not converged by round 4, human judgment is required.
+**Escalation cap**: After round 4 with no convergence (P1 or P2 findings still present) (4 = 1 full review + 3 fix-verification passes; diminishing returns and churn risk beyond this), do NOT start round 5. Instead, escalate to the user with the full round history (round numbers, finding counts per round, crumb IDs) and ask whether to continue or abort. The reduced scope + reduced reviewers + P3 auto-filing make convergence fast; if it has not converged by round 4, human judgment is required.
 
 ### Round 2+ Reviewer Instructions
 
