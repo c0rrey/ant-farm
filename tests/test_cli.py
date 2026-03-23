@@ -859,6 +859,242 @@ class TestCLIPrune:
 
 
 # ---------------------------------------------------------------------------
+# session-retries / session-reset-retries tests
+# ---------------------------------------------------------------------------
+
+#: Filename used by retry-tracker.js inside a session directory.
+_RETRIES_FILE = "retries.json"
+
+
+def _write_retries(session_dir: Path, events: list) -> None:
+    """Write *events* to ``session_dir/retries.json``.
+
+    Args:
+        session_dir: Directory that acts as the session directory.
+        events: List of retry event dicts to serialise.
+    """
+    retries_path = session_dir / _RETRIES_FILE
+    retries_path.write_text(json.dumps(events, indent=2) + "\n", encoding="utf-8")
+
+
+class TestSessionRetries:
+    """Integration tests for ``crumb session-retries`` and
+    ``crumb session-reset-retries`` subcommands."""
+
+    # ------------------------------------------------------------------
+    # session-retries — no retries.json
+    # ------------------------------------------------------------------
+
+    def test_session_retries_no_file_exits_zero(self, tmp_path: Path) -> None:
+        """``crumb session-retries`` exits 0 when retries.json is absent."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        result = _run(["session-retries", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected exit code 0 for missing retries.json.\n"
+            f"stdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+
+    def test_session_retries_no_file_prints_total_zero(self, tmp_path: Path) -> None:
+        """``crumb session-retries`` reports total 0 when retries.json is absent."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        result = _run(["session-retries", str(session_dir)], cwd=tmp_path)
+
+        assert "0" in result.stdout, (
+            f"Expected '0' in stdout for missing retries.json.\n"
+            f"stdout: {result.stdout!r}"
+        )
+
+    # ------------------------------------------------------------------
+    # session-retries — with events
+    # ------------------------------------------------------------------
+
+    def test_session_retries_shows_total_count(self, tmp_path: Path) -> None:
+        """``crumb session-retries`` shows the total number of retry events."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        events = [
+            {"timestamp": "2026-01-01T00:00:00.000Z", "failure_type": "checkpoint",
+             "task_id": "AF-1", "retry_number": 1, "max_allowed": 2},
+            {"timestamp": "2026-01-01T00:01:00.000Z", "failure_type": "agent_error",
+             "task_id": "AF-2", "retry_number": 1, "max_allowed": 1},
+        ]
+        _write_retries(session_dir, events)
+
+        result = _run(["session-retries", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected exit code 0.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        assert "2" in result.stdout, (
+            f"Expected total count '2' in stdout.\nstdout: {result.stdout!r}"
+        )
+
+    def test_session_retries_shows_failure_types(self, tmp_path: Path) -> None:
+        """``crumb session-retries`` lists each failure type in output."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        events = [
+            {"timestamp": "2026-01-01T00:00:00.000Z", "failure_type": "checkpoint",
+             "task_id": "AF-1", "retry_number": 1, "max_allowed": 2},
+        ]
+        _write_retries(session_dir, events)
+
+        result = _run(["session-retries", str(session_dir)], cwd=tmp_path)
+
+        assert "checkpoint" in result.stdout, (
+            f"Expected 'checkpoint' in stdout.\nstdout: {result.stdout!r}"
+        )
+
+    # ------------------------------------------------------------------
+    # session-retries --json
+    # ------------------------------------------------------------------
+
+    def test_session_retries_json_output_is_valid_json(self, tmp_path: Path) -> None:
+        """``crumb session-retries --json`` emits valid JSON."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        events = [
+            {"timestamp": "2026-01-01T00:00:00.000Z", "failure_type": "checkpoint",
+             "task_id": "AF-1", "retry_number": 1, "max_allowed": 2},
+        ]
+        _write_retries(session_dir, events)
+
+        result = _run(["session-retries", "--json", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected exit code 0.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        try:
+            data = json.loads(result.stdout)
+        except json.JSONDecodeError as exc:
+            raise AssertionError(
+                f"stdout is not valid JSON: {exc}\nstdout: {result.stdout!r}"
+            ) from exc
+
+        assert data["total"] == 1, f"Expected total=1, got {data!r}"
+        assert "by_type" in data, f"Expected 'by_type' key in JSON output: {data!r}"
+        assert "events" in data, f"Expected 'events' key in JSON output: {data!r}"
+
+    def test_session_retries_json_no_file(self, tmp_path: Path) -> None:
+        """``crumb session-retries --json`` emits ``total: 0`` when no file."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        result = _run(["session-retries", "--json", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert data["total"] == 0
+
+    # ------------------------------------------------------------------
+    # session-reset-retries
+    # ------------------------------------------------------------------
+
+    def test_session_reset_retries_exits_zero(self, tmp_path: Path) -> None:
+        """``crumb session-reset-retries`` exits 0 when retries.json exists."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+        _write_retries(session_dir, [
+            {"timestamp": "2026-01-01T00:00:00.000Z", "failure_type": "checkpoint",
+             "task_id": "AF-1", "retry_number": 1, "max_allowed": 2},
+        ])
+
+        result = _run(["session-reset-retries", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected exit code 0.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+
+    def test_session_reset_retries_clears_file(self, tmp_path: Path) -> None:
+        """``crumb session-reset-retries`` overwrites retries.json with []."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+        _write_retries(session_dir, [
+            {"timestamp": "2026-01-01T00:00:00.000Z", "failure_type": "checkpoint",
+             "task_id": "AF-1", "retry_number": 1, "max_allowed": 2},
+        ])
+
+        _run(["session-reset-retries", str(session_dir)], cwd=tmp_path)
+
+        retries_path = session_dir / _RETRIES_FILE
+        stored = json.loads(retries_path.read_text(encoding="utf-8"))
+        assert stored == [], f"Expected empty array after reset, got {stored!r}"
+
+    def test_session_reset_retries_creates_file_when_absent(self, tmp_path: Path) -> None:
+        """``crumb session-reset-retries`` creates retries.json when it does not exist."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        result = _run(["session-reset-retries", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected exit code 0.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        retries_path = session_dir / _RETRIES_FILE
+        assert retries_path.exists(), "retries.json should be created by reset"
+        stored = json.loads(retries_path.read_text(encoding="utf-8"))
+        assert stored == []
+
+    def test_session_reset_retries_atomic_no_tmp_left(self, tmp_path: Path) -> None:
+        """``crumb session-reset-retries`` does not leave a .json.tmp file behind."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        _run(["session-reset-retries", str(session_dir)], cwd=tmp_path)
+
+        tmp_path_check = session_dir / "retries.json.tmp"
+        assert not tmp_path_check.exists(), ".json.tmp should not exist after reset"
+
+    def test_session_reset_retries_prints_confirmation(self, tmp_path: Path) -> None:
+        """``crumb session-reset-retries`` prints a confirmation message."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        result = _run(["session-reset-retries", str(session_dir)], cwd=tmp_path)
+
+        assert result.stdout.strip(), (
+            f"Expected non-empty stdout from reset command.\nstdout: {result.stdout!r}"
+        )
+
+    def test_session_retries_then_reset_then_retries(self, tmp_path: Path) -> None:
+        """Round-trip: write events, reset, query shows 0."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+        _write_retries(session_dir, [
+            {"timestamp": "2026-01-01T00:00:00.000Z", "failure_type": "checkpoint",
+             "task_id": "AF-1", "retry_number": 1, "max_allowed": 2},
+            {"timestamp": "2026-01-01T00:01:00.000Z", "failure_type": "agent_error",
+             "task_id": "AF-2", "retry_number": 1, "max_allowed": 1},
+        ])
+
+        _run(["session-reset-retries", str(session_dir)], cwd=tmp_path)
+
+        result = _run(["session-retries", "--json", str(session_dir)], cwd=tmp_path)
+        data = json.loads(result.stdout)
+        assert data["total"] == 0, f"Expected total=0 after reset, got {data!r}"
+
+
+# ---------------------------------------------------------------------------
 # validate-spec tests
 # ---------------------------------------------------------------------------
 
