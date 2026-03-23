@@ -96,11 +96,11 @@ If the `crumb_show` MCP tool (or `crumb show <id>` CLI) fails (task not found, u
 
 ## Check 6: Metric Consistency
 
-1. Read the "At a Glance" table in the exec summary and extract all numeric counts (e.g., "Tasks completed: N", "Commits: N", "Crumbs filed: N").
+1. Read the "At a Glance" table in the exec summary and extract all numeric counts (e.g., "Tasks completed: N", "Commits: N", "Open crumbs: N").
 2. For each count, verify it against the actual item count in the corresponding body section:
    - "Tasks completed" count must match the number of task entries in "Work Completed"
    - "Commits" count must match the number of commits in the session range (`git log --oneline` output)
-   - "Crumbs filed" count must match the number of crumb IDs listed in "Open Issues" (or the review findings section if crumbs were filed there)
+   - "Open crumbs" count must match the number of crumb IDs listed in "Open Issues" (or the review findings section if crumbs were filed there)
 3. Report each mismatch as: "At a Glance says '{label}: {claimed}' but actual count in body is {actual}."
 
 **PASS condition**: All numeric counts in "At a Glance" match the actual item counts in the body sections.
