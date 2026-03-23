@@ -38,8 +38,8 @@ Stop. Do not proceed.
 Check whether the ant-farm Claude Code hooks are present in the project tree.
 
 ```bash
-[ -f hooks/ant-farm-statusline.js ] && echo "INSTALLED" || echo "NOT_INSTALLED"
-[ -f hooks/ant-farm-scope-advisor.js ] && echo "INSTALLED" || echo "NOT_INSTALLED"
+[ -f hooks/ant-farm-statusline.js ] && echo "installed" || echo "not installed"
+[ -f hooks/ant-farm-scope-advisor.js ] && echo "installed" || echo "not installed"
 ```
 
 Store the results:
