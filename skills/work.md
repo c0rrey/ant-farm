@@ -4,7 +4,8 @@ description: This skill should be used when the user invokes "/ant-farm-work", s
 
 > **Tool invocation note**: Where this skill instructs the Orchestrator to call crumb operations directly
 > (e.g., `crumb list`, `crumb doctor`), prefer the MCP tool equivalents (`crumb_list`, `crumb_show`,
-> `crumb_update`, `crumb_create`, `crumb_query`, `crumb_doctor`). If the MCP server is unavailable, fall
+> `crumb_update`, `crumb_create`, `crumb_query`, `crumb_doctor`, `crumb_trail_list`, `crumb_trail_show`,
+> `crumb_trail_close`, `crumb_close`, `crumb_ready`, `crumb_blocked`, `crumb_link`). If the MCP server is unavailable, fall
 > back to the equivalent `crumb <command>` CLI call via Bash.
 
 # /ant-farm-work — Execution Session Skill

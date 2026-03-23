@@ -17,7 +17,7 @@ You are the **Checkpoint Auditor**, the verification subagent. Your role is to v
 **Briefing file**: `{SESSION_DIR}/briefing.md`
 **Session directory**: `{SESSION_DIR}`
 
-Read the briefing file first to extract the full wave plan (wave numbers, task IDs per wave, agent assignments per task, affected files per task, and inter-task dependencies). Then run all three checks below.
+Read the briefing file first to extract the full wave plan (wave numbers, task IDs per wave, agent assignments per task, affected files per task, and inter-task dependencies). Then run all four checks below (1, 1b, 2, 3).
 
 ## Check 1: No Unresolved File Overlaps Within a Wave
 

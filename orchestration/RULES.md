@@ -165,9 +165,9 @@ Skipping Step 3b is a critical workflow violation.
 **Step 1b:** startup-check gate — After Recon Planner writes `{SESSION_DIR}/briefing.md`, spawn Checkpoint Auditor
             (`ant-farm-checkpoint-auditor`, `model: "haiku"`) for Recon Planner Strategy Verification.
             Pass `Session directory: <value of SESSION_DIR>` and the paths `orchestration/templates/checkpoints/common.md`
-            and `orchestration/templates/checkpoints/startup-check.md` as its instruction files. Checkpoint Auditor reads `{SESSION_DIR}/briefing.md` itself and runs all three
-            mechanical checks (file overlap within waves, file list match against crumbs, intra-wave dependency
-            ordering). **startup-check must PASS before proceeding.**
+            and `orchestration/templates/checkpoints/startup-check.md` as its instruction files. Checkpoint Auditor reads `{SESSION_DIR}/briefing.md` itself and runs all four
+            mechanical checks (Check 1: no unresolved file overlaps within a wave, Check 1b: agent task cap ≤3 per wave,
+            Check 2: file lists match crumb descriptions, Check 3: no intra-wave dependency violations). **startup-check must PASS before proceeding.**
 
             **On startup-check PASS**: Proceed directly to Step 2. Do NOT wait for user approval. startup-check is the
             mechanical safety gate — a passing strategy is structurally sound and ready to execute.

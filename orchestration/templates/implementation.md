@@ -123,9 +123,7 @@ Focus: {specific guidance for this file/component}
 
 **When to use**: For all Implementers, especially when multiple tasks touch the same file.
 
-**Why**: Agents are helpful by nature and will fix adjacent problems they notice ("while I'm here..."). This creates work attribution scrambling and misleading audit trails.
-
-**Known failure mode**: When multiple agents touch the same file without explicit scope boundaries, they tend to fix each other's work ("while I'm here..."), scrambling attribution and creating misleading audit trails.
+**Why**: Agents are helpful by nature and will fix adjacent problems they notice ("while I'm here..."). When multiple agents touch the same file without explicit scope boundaries, they scramble attribution and create misleading audit trails.
 
 **Template** (insert after Context section, before Step 1):
 
