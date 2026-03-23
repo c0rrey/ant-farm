@@ -1313,3 +1313,178 @@ class TestCmdValidateTrail:
         assert crumb.DEFAULT_CONFIG["min_crumbs_per_trail"] == 3
         assert crumb.DEFAULT_CONFIG["max_crumbs_per_trail"] == 8
         assert crumb.DEFAULT_CONFIG["max_files_per_crumb"] == 8
+
+    # ------------------------------------------------------------------
+    # AC1: 5 open crumbs, all with <=8 files → PASS
+    # ------------------------------------------------------------------
+
+    def test_five_crumbs_all_within_file_limit_reports_pass(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Trail with exactly 5 open crumbs each referencing <=8 files reports PASS.
+
+        Acceptance criterion: a trail with 5 open crumbs and all crumbs having
+        <=8 files is within the default thresholds [3, 8] and should report
+        PASS with no violations.
+        """
+        _write_records(
+            crumbs_env,
+            [self._TRAIL]
+            + [
+                self._task(f"AF-{i}", files=[f"file{i}.py", f"test_{i}.py"])
+                for i in range(1, 6)
+            ],
+        )
+        cmd_validate_trail(self._args(id="AF-T1"))
+        captured = capsys.readouterr()
+        assert "PASS" in captured.out
+        assert "no violations" in captured.out
+
+    # ------------------------------------------------------------------
+    # AC2: 2 open crumbs → FAIL with minimum threshold message
+    # ------------------------------------------------------------------
+
+    def test_two_crumbs_fail_message_mentions_minimum(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Trail with 2 open crumbs reports FAIL and the violation message names minimum threshold.
+
+        The message must include both the actual count (2) and the minimum (3)
+        so the user understands which threshold was violated.
+        """
+        _write_records(
+            crumbs_env,
+            [self._TRAIL] + [self._task(f"AF-{i}") for i in range(1, 3)],
+        )
+        cmd_validate_trail(self._args(id="AF-T1"))
+        captured = capsys.readouterr()
+        assert "FAIL" in captured.out
+        # Message should name the actual count and the minimum threshold
+        assert "2" in captured.out
+        assert "minimum" in captured.out.lower()
+
+    def test_two_crumbs_fail_message_contains_actual_count_and_threshold(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """The FAIL violation message for 2 crumbs contains count '2' and min '3'.
+
+        Verifies the exact numbers appear in the output, which the user needs
+        to understand what corrective action to take.
+        """
+        _write_records(
+            crumbs_env,
+            [self._TRAIL] + [self._task(f"AF-{i}") for i in range(1, 3)],
+        )
+        cmd_validate_trail(self._args(id="AF-T1", json_output=True))
+        captured = capsys.readouterr()
+        data = json.loads(captured.out)
+        assert data["status"] == "FAIL"
+        fail_msg = next(v["message"] for v in data["violations"] if v["type"] == "FAIL")
+        assert "2" in fail_msg
+        assert "3" in fail_msg  # minimum is 3
+
+    # ------------------------------------------------------------------
+    # AC3: 9 open crumbs → FAIL with maximum threshold message
+    # ------------------------------------------------------------------
+
+    def test_nine_crumbs_fail_message_mentions_maximum(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Trail with 9 open crumbs reports FAIL and the violation message names maximum threshold.
+
+        The message must include both the actual count (9) and the maximum (8)
+        so the user understands which threshold was exceeded.
+        """
+        _write_records(
+            crumbs_env,
+            [self._TRAIL] + [self._task(f"AF-{i}") for i in range(1, 10)],
+        )
+        cmd_validate_trail(self._args(id="AF-T1"))
+        captured = capsys.readouterr()
+        assert "FAIL" in captured.out
+        # Message should name the actual count and the maximum threshold
+        assert "9" in captured.out
+        assert "maximum" in captured.out.lower()
+
+    def test_nine_crumbs_fail_message_contains_actual_count_and_threshold(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """The FAIL violation message for 9 crumbs contains count '9' and max '8'.
+
+        Verifies the exact numbers appear in the JSON violation message.
+        """
+        _write_records(
+            crumbs_env,
+            [self._TRAIL] + [self._task(f"AF-{i}") for i in range(1, 10)],
+        )
+        cmd_validate_trail(self._args(id="AF-T1", json_output=True))
+        captured = capsys.readouterr()
+        data = json.loads(captured.out)
+        assert data["status"] == "FAIL"
+        fail_msg = next(v["message"] for v in data["violations"] if v["type"] == "FAIL")
+        assert "9" in fail_msg
+        assert "8" in fail_msg  # maximum is 8
+
+    # ------------------------------------------------------------------
+    # AC4: --all with mixed results → per-trail PASS/FAIL statuses
+    # ------------------------------------------------------------------
+
+    def test_all_returns_correct_per_trail_statuses_mixed(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """--all --json returns the correct PASS/FAIL status for each trail individually.
+
+        AF-T1 gets 5 crumbs (PASS), AF-T2 gets 1 crumb (FAIL, below min=3).
+        The per-trail result entries must reflect those individual verdicts.
+        """
+        trail2 = {
+            "id": "AF-T2",
+            "type": "trail",
+            "title": "T2",
+            "status": "open",
+            "priority": "P2",
+        }
+        _write_records(
+            crumbs_env,
+            [self._TRAIL, trail2]
+            + [self._task(f"AF-{i}") for i in range(1, 6)]
+            + [self._task("AF-50", trail_id="AF-T2")],
+        )
+        cmd_validate_trail(self._args(all_trails=True, json_output=True))
+        captured = capsys.readouterr()
+        results = json.loads(captured.out)
+        assert isinstance(results, list)
+        assert len(results) == 2
+
+        by_id = {r["trail_id"]: r for r in results}
+        assert by_id["AF-T1"]["status"] == "PASS"
+        assert by_id["AF-T2"]["status"] == "FAIL"
+
+    def test_all_per_trail_pass_has_no_violations(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """A PASS trail in --all mode has an empty violations list."""
+        _write_records(
+            crumbs_env,
+            [self._TRAIL] + [self._task(f"AF-{i}") for i in range(1, 5)],
+        )
+        cmd_validate_trail(self._args(all_trails=True, json_output=True))
+        captured = capsys.readouterr()
+        results = json.loads(captured.out)
+        pass_trail = next(r for r in results if r["trail_id"] == "AF-T1")
+        assert pass_trail["violations"] == []
+
+    def test_all_per_trail_fail_has_violations(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """A FAIL trail in --all mode has a non-empty violations list."""
+        _write_records(
+            crumbs_env,
+            [self._TRAIL] + [self._task(f"AF-{i}") for i in range(1, 3)],
+        )
+        cmd_validate_trail(self._args(all_trails=True, json_output=True))
+        captured = capsys.readouterr()
+        results = json.loads(captured.out)
+        fail_trail = next(r for r in results if r["trail_id"] == "AF-T1")
+        assert fail_trail["status"] == "FAIL"
+        assert len(fail_trail["violations"]) > 0
