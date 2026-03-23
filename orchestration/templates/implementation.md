@@ -3,7 +3,7 @@
 
 ## Agent Prompt Template
 
-⚠️ (MANDATORY): Every spawned Implementer MUST receive ALL sections below. All 6 steps are required — skipping Step 2 (Design), Step 4 (Correctness Review), or Step 6 (Summary Doc) is a process failure. Copy this template verbatim and fill in the placeholders.
+**(MANDATORY)**: Every spawned Implementer MUST receive ALL sections below. All 6 steps are required — skipping Step 2 (Design), Step 4 (Correctness Review), or Step 6 (Summary Doc) is a process failure. Copy this template verbatim and fill in the placeholders.
 
 ```markdown
 Execute {task-type} for {file-or-component}:
