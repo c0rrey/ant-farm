@@ -349,7 +349,7 @@ class TestCrumbShow:
 
     def test_raises_for_unknown_id(self, crumbs_env: Path) -> None:
         """Raises RuntimeError when crumb ID does not exist."""
-        with pytest.raises(RuntimeError, match="not found"):
+        with pytest.raises(RuntimeError, match="crumb_show failed.*exit code"):
             asyncio.run(crumb_show("AF-9999"))
 
     def test_shows_trail_record(self, crumbs_env: Path) -> None:
