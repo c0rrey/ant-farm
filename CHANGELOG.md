@@ -1,5 +1,44 @@
 # Changelog
 
+## 2026-03-23 — Session 6355db7e (Orchestration Template Polish and Documentation Consistency)
+
+### Summary
+
+Completed 19 tasks across 3 implementation waves (7/5/3) plus a 4-task review fix cycle, all focused on documentation clarity and consistency improvements across orchestration templates, RULES files, and skills. Work included adding rationale to magic constants, fixing stale terminology and naming conventions, standardizing pre-flight check patterns, capping fix-cycle agent batch sizes, and cleaning up import style in tests. Two review rounds ran: round 1 produced 0 P1 and 4 P2 findings (all auto-fixed), plus 22 P3 crumbs filed; round 2 cleared with 0 findings. Session produced 19 commits across 18 files (including 2 external commits outside task scope).
+
+### Implementation (Waves 1–3)
+
+- **AF-505**: docs: add inline rationale for magic constants in RULES-review.md and reviews.md (`d57a426`)
+- **AF-507**: fix: update stale heading and wrong monitoring tool name in SESSION_PLAN_TEMPLATE.md (`cb88e2f`)
+- **AF-512**: fix: remove redundant parenthetical and move FAIL-FAST annotations to after conditions list in prompt-composer.md (`25bba4f`)
+- **AF-515**: fix: replace emoji MANDATORY marker with bold convention in implementation.md (`a2ef8db`)
+- **AF-518**: fix: correct Step 7 heading — CLI fallbacks are inline parentheticals, not comments in task-decomposer-skeleton.md (`aa1eea8`)
+- **AF-519**: fix: standardize pre-flight check to two-outcome form in quick.md and work.md (`fd2cdc2`)
+- **AF-520**: fix: lowercase bash sentinel output in status.md hook check (`a872ff2`)
+- **AF-506**: docs: fix internal agent terminology leaks in RULES docs — bridge FORAGER/Researcher, fix CG prose, correct FIX_CMVCC_COMPLETE typo (`8ab3231`)
+- **AF-511**: docs: explain {{REVIEW_ROUND}} double-brace convention in reviews.md (`661ef85`)
+- **AF-510**: fix: clarify step 10a as async reply handler in review-consolidator-skeleton.md (`69e1235`)
+- **AF-508**: fix: split Check 1 format string into per-round conditionals in review-integrity.md (`f6852a2`)
+- **AF-522**: fix: remove unused List import and normalize Dict to dict in test_mcp_server.py (`45fa5e4`)
+- **AF-527**: fix: cap fix-cycle agent batch size to 3 crumbs per agent in recon-planner.md and RULES-review.md (`395ab51`)
+- **AF-525**: fix: align error message wording in review-consolidator-skeleton.md with reviews.md (`9d3244b`)
+- **AF-509**: chore: remove historical Check 3b HTML comment from review-integrity.md (`191570e`)
+
+### Review Fixes (Round 1)
+
+- **AF-528, AF-529, AF-534**: fix: update check counts, MCP tool list, and remove duplicate paragraph in startup-check.md, RULES.md, work.md, implementation.md (`95f7fea`)
+- **AF-541**: fix: reformat orchestration-agent exclusion list as bullet list in recon-planner.md (`05183be`)
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 15 tasks | 0 | 4 | 22 | PASS WITH ISSUES |
+| 2 | 4 fix tasks | 0 | 0 | 0 | PASS |
+
+26 root causes consolidated. 4 P2 auto-fixed in fix cycle; 22 P3 filed as future crumbs (AF-530 through AF-553, excluding fix IDs).
+
+
 ## 2026-03-23 — Session 20260323-124227 (MCP Tool Expansion and Full Framework Migration)
 
 ### Summary
