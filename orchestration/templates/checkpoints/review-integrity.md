@@ -39,7 +39,9 @@ If any expected file is missing, FAIL immediately — consolidation should not h
 Count total findings across all individual reports (4 in round 1, 2 in round 2+).
 Count total findings referenced in the consolidated summary.
 Every finding must be accounted for — either standalone, merged into a group, or explicitly marked as duplicate in the deduplication log.
-Report the math: "Round 1: Clarity: N, Edge Cases: N, Correctness: N, Drift: N = N total. Round 2+: Correctness: N, Edge Cases: N = N total. Consolidated references N findings across N root causes. N findings merged as duplicates. RECONCILED / NOT RECONCILED — {list orphaned findings}"
+Report the math using the format for the current round:
+- **If Round 1**: "Round 1: Clarity: N, Edge Cases: N, Correctness: N, Drift: N = N total. Consolidated references N findings across N root causes. N findings merged as duplicates. RECONCILED / NOT RECONCILED — {list orphaned findings}"
+- **If Round 2+**: "Round 2+: Correctness: N, Edge Cases: N = N total. Consolidated references N findings across N root causes. N findings merged as duplicates. RECONCILED / NOT RECONCILED — {list orphaned findings}"
 
 ## Check 2: Crumb Existence Check
 For each crumb ID in the consolidated summary, use the `crumb_show` MCP tool with `crumb_id: "<id>"` (CLI fallback: `crumb show <id>`).
