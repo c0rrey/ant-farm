@@ -11,8 +11,8 @@ Run `./scripts/setup.sh` then `/ant-farm-init` to install orchestration triggers
 
 **CRITICAL — read before doing ANYTHING:**
 - **NEVER** run `crumb show`, `crumb ready`, `crumb list`, `crumb blocked`, or any `crumb` query command — the Recon Planner does this
-- **NEVER** read task/issue details from the user's message and act on them directly.
-- **NEVER** set `run_in_background` on Task agents. Multiple Task calls in one message already run concurrently. Background mode causes raw JSONL transcript leakage into your context.
+- NEVER read task/issue details from the user's message and act on them directly.
+- NEVER set `run_in_background` on Task agents. Multiple Task calls in one message already run concurrently. Background mode causes raw JSONL transcript leakage into your context.
 - Read `~/.claude/orchestration/RULES.md` FIRST and ALONE — no parallel tool calls. Then follow it.
 
 **Process**: Read `~/.claude/orchestration/RULES.md` and follow the workflow steps. RULES.md contains the step sequence, hard gates, concurrency rules, and a template lookup table pointing to the specific template files needed at each phase.
@@ -72,7 +72,7 @@ Run `./scripts/setup.sh` then `/ant-farm-init` to install orchestration triggers
    git push
    git status  # MUST show "up to date with origin"
    ```
-8. **Sync global runtime files** — Run `./scripts/setup.sh` to copy any changed orchestration files, agents, skills, and scripts to `~/.claude/`. This ensures the global runtime matches the repo after any edits made during the session.
+8. **Sync global runtime files** — Run `./scripts/setup.sh` to copy any changed orchestration files, agents, skills, and scripts to `~/.claude/`.
 9. **Clean up** - Clear stashes, prune remote branches
    (Session artifacts in .crumbs/sessions/_session-*/ are retained for posterity. Prune old sessions manually when needed.)
 10. **Verify** - All changes committed AND pushed
