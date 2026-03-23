@@ -37,12 +37,14 @@ const {
   detectSessionDir,
   extractSessionDirFromText,
   isBypassEnabled,
+  extractTaskIdFromPrompt,
+  RETRY_FAILURE_TYPE,
   SESSION_PATH_MARKER,
   PREDECESSOR_GATE,
 } = require('../ant-farm-gate-enforcer');
 
-const { writeGateVerdict } = require('../lib/gate-manager');
-const { GATE_STATUS_FILENAME } = require('../lib/gate-manager');
+const { writeGateVerdict, GATE_STATUS_FILENAME, readGateStatus } = require('../lib/gate-manager');
+const { recordRetry } = require('../lib/retry-tracker');
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -498,8 +500,6 @@ test('detectSessionDir: returns null when tool_input has no prompt', () => {
 // extractTaskIdFromPrompt unit tests
 // ===========================================================================
 
-const { extractTaskIdFromPrompt } = require('../ant-farm-gate-enforcer');
-
 test('extractTaskIdFromPrompt: extracts AF-NNN task ID from prompt', () => {
   assert.equal(
     extractTaskIdFromPrompt('Execute task for AF-466. Step 0: Read context.'),
@@ -533,9 +533,6 @@ test('extractTaskIdFromPrompt: returns "unknown" for non-string input', () => {
 // ===========================================================================
 // Integration: retry limit blocking (AC-1, AC-5)
 // ===========================================================================
-
-const { recordRetry } = require('../lib/retry-tracker');
-const { RETRY_FAILURE_TYPE } = require('../ant-farm-gate-enforcer');
 
 test('handler: blocks spawn when checkpoint retry limit exceeded (3 attempts, limit 2)', async () => {
   saveEnv();
@@ -666,8 +663,6 @@ test('handler: allows spawn when position matches expected next step', async () 
 // ===========================================================================
 // Integration: agent-spawn timestamp recorded in gate-status.json (AC-3)
 // ===========================================================================
-
-const { readGateStatus } = require('../lib/gate-manager');
 
 test('handler: records agent-spawn timestamp in gate-status.json when spawn allowed', async () => {
   saveEnv();
