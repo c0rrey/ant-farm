@@ -95,7 +95,7 @@ Your workflow:
    - Do NOT file any crumbs before receiving the Checkpoint Auditor's reply
 10. **End your turn now** — do NOT sleep or poll. The Checkpoint Auditor's reply arrives as a new conversation turn. Do not proceed to step 10a until you receive that reply.
 
-10a. **When the Checkpoint Auditor replies** — act on the verdict (follow the turn-based retry protocol in reviews.md, Review Consolidator Protocol > Step 4: Checkpoint Gate):
+10a. *(Async reply handler — executes only when the Checkpoint Auditor replies in a new conversation turn. Do NOT execute this step proactively.)* **When the Checkpoint Auditor replies** — act on the verdict (follow the turn-based retry protocol in reviews.md, Review Consolidator Protocol > Step 4: Checkpoint Gate):
     - If no reply after 2 subsequent turns (from any teammate), retry once; if still no reply after 2 more turns, escalate to Orchestrator
     - **PASS**: File ONE crumb per root cause (skip any marked as duplicates in the cross-session dedup step (step 7)). For each crumb, write a description to a temp file, then create:
       ```bash
