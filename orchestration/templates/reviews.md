@@ -578,7 +578,7 @@ If any report file is missing after the initial check, do NOT wait indefinitely.
 
 # REVIEW_ROUND is filled in by build-review-prompts.sh before this brief is delivered.
 # It is a shell integer (1, 2, 3, ...) used to gate round-1-only checks below.
-REVIEW_ROUND={{REVIEW_ROUND}}
+REVIEW_ROUND={{REVIEW_ROUND}}  # double-braces: build-review-prompts.sh substitutes this; single-brace form would be consumed prematurely by an outer template pass
 case "$REVIEW_ROUND" in
   *'{'*|*'}'*)
     echo "PLACEHOLDER ERROR: REVIEW_ROUND was not substituted by build-review-prompts.sh (got: $REVIEW_ROUND)"
