@@ -496,13 +496,6 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|DECOMPOSITION_CHECK|pass|trails=<N>|crumbs=
 
 **Step 6:** Handoff — copy artifacts, present results, and close the decomposition session.
 
-Copy the decomposition brief to the tracked `.crumbs/` directory and stage it:
-
-```bash
-cp "${DECOMPOSE_DIR}/decomposition-brief.md" ".crumbs/decomposition-brief.md"
-git add .crumbs/decomposition-brief.md
-```
-
 Report the following to the user:
 
 ```
