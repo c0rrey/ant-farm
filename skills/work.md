@@ -25,7 +25,7 @@ Before doing anything else, check for these fatal conditions. Surface clear erro
 ### Error: .crumbs/ not initialized
 
 ```bash
-[ -f .crumbs/tasks.jsonl ] && [ -f .crumbs/config.json ] || echo "NOT_INITIALIZED"
+[ -f .crumbs/tasks.jsonl ] && [ -f .crumbs/config.json ] && echo "INITIALIZED" || echo "NOT_INITIALIZED"
 ```
 
 If `.crumbs/tasks.jsonl` or `.crumbs/config.json` does not exist:
