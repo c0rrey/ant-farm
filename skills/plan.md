@@ -2,6 +2,11 @@
 description: This skill should be used when the user invokes "/ant-farm-plan", provides a spec file path or inline specification text to decompose, says "plan this", "decompose this spec", "break this into tasks", or asks to turn a requirement or idea into crumbs. Accepts a file path, inline text, or --prd <file> flag, classifies input as structured vs freeform (or PRD import), and routes to the RULES-decompose.md decomposition workflow.
 ---
 
+> **Tool invocation note**: Where this skill instructs the Orchestrator to call crumb operations directly
+> (e.g., `crumb create`), prefer the MCP tool equivalents (`crumb_list`, `crumb_show`,
+> `crumb_update`, `crumb_create`, `crumb_query`, `crumb_doctor`). If the MCP server is unavailable, fall
+> back to the equivalent `crumb <command>` CLI call via Bash.
+
 # /ant-farm-plan — Decomposition Skill
 
 This skill governs the `/ant-farm-plan` slash command. It accepts a spec file path or inline specification text, detects the input type, classifies the input as structured or freeform (or PRD import), creates a timestamped `DECOMPOSE_DIR` under `.crumbs/sessions/`, and routes to `orchestration/RULES-decompose.md` for execution.

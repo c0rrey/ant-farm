@@ -2,6 +2,11 @@
 description: This skill should be used when the user invokes "/ant-farm-quick" or "/ant-farm-quick <crumb-id>". Triggers lite mode execution for a single crumb: validates the crumb, then runs the RULES-lite.md workflow. If no crumb-id is provided, lists unblocked open crumbs and prompts user to pick one (or auto-selects if exactly one exists).
 ---
 
+> **Tool invocation note**: Where this skill instructs the Orchestrator to call crumb operations directly
+> (e.g., `crumb show`, `crumb list`, `crumb ready`, `crumb update`), prefer the MCP tool equivalents
+> (`crumb_list`, `crumb_show`, `crumb_update`, `crumb_create`, `crumb_query`, `crumb_doctor`). If the MCP
+> server is unavailable, fall back to the equivalent `crumb <command>` CLI call via Bash.
+
 # /ant-farm-quick — Lite Mode Execution Skill
 
 This skill governs the `/ant-farm-quick` slash command. It validates the target crumb, then launches the lite mode orchestration workflow defined in `~/.claude/orchestration/RULES-lite.md`.

@@ -2,6 +2,11 @@
 description: This skill should be used when the user invokes "/ant-farm-work", says "let's get to work", "start execution", "run the pipeline", "execute tasks", or asks to begin running crumbs or executing queued tasks. Triggers the ant-farm execution workflow: reads .crumbs/tasks.jsonl, runs a startup coherence check, creates a SESSION_DIR, then launches the Orchestrator orchestration pipeline (RULES.md).
 ---
 
+> **Tool invocation note**: Where this skill instructs the Orchestrator to call crumb operations directly
+> (e.g., `crumb list`, `crumb doctor`), prefer the MCP tool equivalents (`crumb_list`, `crumb_show`,
+> `crumb_update`, `crumb_create`, `crumb_query`, `crumb_doctor`). If the MCP server is unavailable, fall
+> back to the equivalent `crumb <command>` CLI call via Bash.
+
 # /ant-farm-work — Execution Session Skill
 
 This skill governs the `/ant-farm-work` slash command. It reads `.crumbs/tasks.jsonl`, runs a startup coherence check, and launches the Orchestrator orchestration pipeline defined in `orchestration/RULES.md`.

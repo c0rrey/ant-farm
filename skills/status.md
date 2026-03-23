@@ -2,6 +2,11 @@
 description: This skill should be used when the user invokes "/ant-farm-status", says "show project status", "what's the status", "show dashboard", "how many tasks are open", or asks for a quick overview of the current project's crumb task state. Displays a concise dashboard: hook installation status, trail completion counts, crumb status summary, and last session summary.
 ---
 
+> **Tool invocation note**: Where this skill instructs the Orchestrator to call crumb operations directly
+> (e.g., `crumb trail list`, `crumb list`), prefer the MCP tool equivalents (`crumb_list`, `crumb_show`,
+> `crumb_update`, `crumb_create`, `crumb_query`, `crumb_doctor`). If the MCP server is unavailable, fall
+> back to the equivalent `crumb <command>` CLI call via Bash.
+
 # /ant-farm-status — Quick View Dashboard Skill
 
 This skill governs the `/ant-farm-status` slash command. It renders a concise, scannable dashboard showing hook installation status, trail completion counts, crumb status totals by state, and the last session summary. It does not modify any data.

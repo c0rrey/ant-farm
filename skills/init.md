@@ -2,6 +2,11 @@
 description: This skill should be used when the user invokes "/ant-farm-init", says "initialize crumbs", "set up .crumbs", "init ant-farm", or asks to scaffold the crumbs task system in a new project. Bootstraps .crumbs/ directory structure, installs crumb.py, and configures the project for crumb-based task management.
 ---
 
+> **Tool invocation note**: Where this skill instructs the Orchestrator to call crumb operations directly
+> (e.g., `crumb create`), prefer the MCP tool equivalents (`crumb_list`, `crumb_show`,
+> `crumb_update`, `crumb_create`, `crumb_query`, `crumb_doctor`). If the MCP server is unavailable, fall
+> back to the equivalent `crumb <command>` CLI call via Bash.
+
 # /ant-farm-init — Project Initialization Skill
 
 This skill governs the `/ant-farm-init` slash command. It scaffolds the `.crumbs/` directory structure in the current project, installs `crumb.py`, configures `.gitignore`, and **installs the orchestration block into the project's CLAUDE.md**. It is safe to re-run on an already-initialized project (idempotent).
