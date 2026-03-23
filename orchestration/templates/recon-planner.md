@@ -136,7 +136,7 @@ Using the decision matrix from dependency-analysis.md:
    - **HIGH**: 3+ tasks on same file, or 2 tasks on same section
    - **MEDIUM**: 2 tasks on same file, different sections
    - **LOW**: independent files
-3. Identify dependency chains from `crumb blocked` output
+3. Identify dependency chains from `crumb_blocked` output (collected in Step 2)
 
 If any error tasks exist, add a note to the File Modification Matrix section:
 ```

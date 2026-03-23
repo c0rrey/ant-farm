@@ -329,7 +329,7 @@ Skipping Step 3b is a critical workflow violation.
 | pre-spawn-check PASS (impl) | Agent spawn | ${SESSION_DIR}/pc/*-pre-spawn-check-*.md |
 | pre-spawn-check PASS (review) | Reviewer team spawn | ${SESSION_DIR}/pc/pc-session-pre-spawn-check-review-<timestamp>.md |
 | scope-verify PASS | Serial mode: next agent spawn; Batch mode: claims-vs-code spawn (all wave agents checked before claims-vs-code) | ${SESSION_DIR}/pc/*-scope-verify-*.md |
-| claims-vs-code PASS | Task closure (crumb close) | ${SESSION_DIR}/pc/*-claims-vs-code-*.md |
+| claims-vs-code PASS | Task closure (`crumb_close`) | ${SESSION_DIR}/pc/*-claims-vs-code-*.md |
 | review-integrity PASS | Presenting results | ${SESSION_DIR}/pc/pc-session-review-integrity-<timestamp>.md |
 | Reviews | Presenting findings to user (Step 3c) | ${SESSION_DIR}/review-reports/review-consolidated-<timestamp>.md |
 | session-complete PASS | Git push (Step 7) | ${SESSION_DIR}/pc/pc-session-complete-<timestamp>.md |

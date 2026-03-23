@@ -80,6 +80,7 @@ Run this lightweight check before spawning the Recon Planner. It catches structu
 Verify every ID listed in any crumb's `blocked_by` array exists somewhere in `.crumbs/tasks.jsonl`.
 
 ```bash
+# Capture once; reused by both checks below
 DOCTOR_OUTPUT=$(crumb doctor 2>&1) || { echo "ERROR: crumb doctor failed: ${DOCTOR_OUTPUT}"; exit 1; }
 echo "${DOCTOR_OUTPUT}" | grep -i "dangling blocked_by" || echo "OK"
 ```
@@ -93,7 +94,6 @@ If dangling references are found:
 Verify every crumb's `links.parent` value (if set) points to an existing trail ID.
 
 ```bash
-DOCTOR_OUTPUT=$(crumb doctor 2>&1) || { echo "ERROR: crumb doctor failed: ${DOCTOR_OUTPUT}"; exit 1; }
 echo "${DOCTOR_OUTPUT}" | grep -i "dangling parent" || echo "OK"
 ```
 
