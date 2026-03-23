@@ -10,6 +10,13 @@ Tests are organized into:
   TestCrumbDoctor            — crumb_doctor tool
   TestRunCmdJsonHelper       — internal _run_cmd_json helper
   TestConcurrency            — concurrent calls do not corrupt tasks.jsonl
+  TestCrumbTrailList         — crumb_trail_list tool
+  TestCrumbTrailShow         — crumb_trail_show tool
+  TestCrumbTrailClose        — crumb_trail_close tool
+  TestCrumbClose             — crumb_close tool
+  TestCrumbReady             — crumb_ready tool
+  TestCrumbBlocked           — crumb_blocked tool
+  TestCrumbLink              — crumb_link tool
 
 All tests use the ``crumbs_env`` fixture from conftest.py which patches
 ``crumb.find_crumbs_dir`` to an isolated tmp directory.
@@ -32,11 +39,18 @@ import crumb as _crumb
 import mcp_server
 from mcp_server import (
     _run_cmd_json,
+    crumb_blocked,
+    crumb_close,
     crumb_create,
     crumb_doctor,
+    crumb_link,
     crumb_list,
     crumb_query,
+    crumb_ready,
     crumb_show,
+    crumb_trail_close,
+    crumb_trail_list,
+    crumb_trail_show,
     crumb_update,
     mcp,
 )
@@ -128,8 +142,8 @@ class TestMcpServerRegistration:
         assert mcp is not None
         assert mcp.name == "crumb"
 
-    def test_six_tools_registered(self) -> None:
-        """Exactly 6 tools are registered on the MCP server."""
+    def test_thirteen_tools_registered(self) -> None:
+        """Exactly 13 tools are registered on the MCP server."""
         tools_result = asyncio.run(mcp.list_tools())
         registered_names = {t.name for t in tools_result}
         expected = {
@@ -139,8 +153,29 @@ class TestMcpServerRegistration:
             "crumb_query",
             "crumb_create",
             "crumb_doctor",
+            "crumb_trail_list",
+            "crumb_trail_show",
+            "crumb_trail_close",
+            "crumb_close",
+            "crumb_ready",
+            "crumb_blocked",
+            "crumb_link",
         }
         assert expected == registered_names
+
+    def test_original_six_tools_still_registered(self) -> None:
+        """The original 6 tools remain registered unchanged."""
+        tools_result = asyncio.run(mcp.list_tools())
+        registered_names = {t.name for t in tools_result}
+        original = {
+            "crumb_list",
+            "crumb_show",
+            "crumb_update",
+            "crumb_query",
+            "crumb_create",
+            "crumb_doctor",
+        }
+        assert original.issubset(registered_names)
 
     def test_all_tools_have_descriptions(self) -> None:
         """Every registered tool has a non-empty description."""
@@ -726,3 +761,509 @@ class TestConcurrency:
         tasks_path = crumbs_env / "tasks.jsonl"
         disk_tasks = _crumb.read_tasks(tasks_path)
         assert len(disk_tasks) == 3  # AF-1 + A + B
+
+
+# ---------------------------------------------------------------------------
+# TestCrumbTrailList
+# ---------------------------------------------------------------------------
+
+
+class TestCrumbTrailList:
+    """Tests for the crumb_trail_list MCP tool."""
+
+    def test_returns_all_trails(self, crumbs_env: Path) -> None:
+        """Returns a list containing all trail records."""
+        _seed_trail(crumbs_env, "AF-T1", "First trail")
+        _seed_trail(crumbs_env, "AF-T2", "Second trail")
+
+        result = asyncio.run(crumb_trail_list())
+        assert isinstance(result, list)
+        ids = {r["id"] for r in result}
+        assert "AF-T1" in ids
+        assert "AF-T2" in ids
+
+    def test_excludes_non_trail_tasks(self, crumbs_env: Path) -> None:
+        """Regular tasks are not included in the trail list."""
+        _seed_trail(crumbs_env, "AF-T1", "A trail")
+        _seed_task(crumbs_env, "AF-1", "A task")
+
+        result = asyncio.run(crumb_trail_list())
+        ids = {r["id"] for r in result}
+        assert "AF-T1" in ids
+        assert "AF-1" not in ids
+
+    def test_includes_children_counts(self, crumbs_env: Path) -> None:
+        """Each trail object includes children_total and children_closed counts."""
+        _seed_trail(crumbs_env, "AF-T1", "Trail with children")
+        _seed_task(crumbs_env, "AF-1", "Open child", links={"parent": "AF-T1"})
+        _seed_task(
+            crumbs_env, "AF-2", "Closed child", status="closed",
+            links={"parent": "AF-T1"}
+        )
+
+        result = asyncio.run(crumb_trail_list())
+        trail = next(r for r in result if r["id"] == "AF-T1")
+        assert trail["children_total"] == 2
+        assert trail["children_closed"] == 1
+
+    def test_empty_list_when_no_trails(self, crumbs_env: Path) -> None:
+        """Returns empty list when no trails exist."""
+        _seed_task(crumbs_env, "AF-1", "Just a task")
+
+        result = asyncio.run(crumb_trail_list())
+        assert result == []
+
+    def test_trail_schema_fields_present(self, crumbs_env: Path) -> None:
+        """Each trail object has the required schema fields."""
+        _seed_trail(crumbs_env, "AF-T1", "Schema trail")
+
+        result = asyncio.run(crumb_trail_list())
+        assert len(result) == 1
+        trail = result[0]
+        for field in ("id", "title", "type", "status", "priority",
+                      "children_total", "children_closed"):
+            assert field in trail, f"Missing field '{field}' in crumb_trail_list result"
+
+
+# ---------------------------------------------------------------------------
+# TestCrumbTrailShow
+# ---------------------------------------------------------------------------
+
+
+class TestCrumbTrailShow:
+    """Tests for the crumb_trail_show MCP tool."""
+
+    def test_returns_trail_with_children_array(self, crumbs_env: Path) -> None:
+        """Returns trail object with populated children array."""
+        _seed_trail(crumbs_env, "AF-T1", "Parent trail")
+        _seed_task(crumbs_env, "AF-1", "Child task", links={"parent": "AF-T1"})
+
+        result = asyncio.run(crumb_trail_show("AF-T1"))
+        assert isinstance(result, dict)
+        assert result["id"] == "AF-T1"
+        assert isinstance(result["children"], list)
+        assert len(result["children"]) == 1
+        assert result["children"][0]["id"] == "AF-1"
+
+    def test_children_array_empty_when_no_children(self, crumbs_env: Path) -> None:
+        """Returns empty children array when trail has no child crumbs."""
+        _seed_trail(crumbs_env, "AF-T1", "Childless trail")
+
+        result = asyncio.run(crumb_trail_show("AF-T1"))
+        assert result["children"] == []
+        assert result["children_total"] == 0
+        assert result["children_closed"] == 0
+
+    def test_children_counts_correct(self, crumbs_env: Path) -> None:
+        """children_total and children_closed counts are accurate."""
+        _seed_trail(crumbs_env, "AF-T1", "Count trail")
+        _seed_task(crumbs_env, "AF-1", "Open child", links={"parent": "AF-T1"})
+        _seed_task(
+            crumbs_env, "AF-2", "Closed child", status="closed",
+            links={"parent": "AF-T1"}
+        )
+        _seed_task(crumbs_env, "AF-3", "Another open", links={"parent": "AF-T1"})
+
+        result = asyncio.run(crumb_trail_show("AF-T1"))
+        assert result["children_total"] == 3
+        assert result["children_closed"] == 1
+
+    def test_raises_for_unknown_trail_id(self, crumbs_env: Path) -> None:
+        """Raises RuntimeError when trail ID does not exist."""
+        with pytest.raises(RuntimeError, match="not found"):
+            asyncio.run(crumb_trail_show("AF-T9999"))
+
+    def test_raises_for_non_trail_id(self, crumbs_env: Path) -> None:
+        """Raises RuntimeError when the ID points to a task, not a trail."""
+        _seed_task(crumbs_env, "AF-1", "A task, not a trail")
+
+        with pytest.raises(RuntimeError, match="not a trail"):
+            asyncio.run(crumb_trail_show("AF-1"))
+
+    def test_trail_schema_fields_present(self, crumbs_env: Path) -> None:
+        """Result includes all required trail schema fields."""
+        _seed_trail(crumbs_env, "AF-T1", "Full schema trail")
+
+        result = asyncio.run(crumb_trail_show("AF-T1"))
+        for field in ("id", "title", "type", "status", "priority",
+                      "children", "children_total", "children_closed"):
+            assert field in result, f"Missing field '{field}' in crumb_trail_show result"
+
+
+# ---------------------------------------------------------------------------
+# TestCrumbTrailClose
+# ---------------------------------------------------------------------------
+
+
+class TestCrumbTrailClose:
+    """Tests for the crumb_trail_close MCP tool."""
+
+    def test_closes_trail_with_all_children_closed(self, crumbs_env: Path) -> None:
+        """Closes a trail when all children are already closed."""
+        _seed_trail(crumbs_env, "AF-T1", "Closeable trail")
+        _seed_task(
+            crumbs_env, "AF-1", "Done child", status="closed",
+            links={"parent": "AF-T1"}
+        )
+
+        result = asyncio.run(crumb_trail_close("AF-T1"))
+        assert result["success"] is True
+        assert result["status"] == "closed"
+
+    def test_closes_childless_trail(self, crumbs_env: Path) -> None:
+        """Closes a trail that has no children."""
+        _seed_trail(crumbs_env, "AF-T1", "Empty trail")
+
+        result = asyncio.run(crumb_trail_close("AF-T1"))
+        assert result["success"] is True
+        assert result["status"] == "closed"
+
+    def test_raises_when_open_children_exist(self, crumbs_env: Path) -> None:
+        """Raises RuntimeError when trail has open children."""
+        _seed_trail(crumbs_env, "AF-T1", "Blocked trail")
+        _seed_task(crumbs_env, "AF-1", "Open child", links={"parent": "AF-T1"})
+
+        with pytest.raises(RuntimeError, match="open child"):
+            asyncio.run(crumb_trail_close("AF-T1"))
+
+    def test_already_closed_returns_success_false(self, crumbs_env: Path) -> None:
+        """Returns success=False and message='already closed' for closed trails."""
+        _seed_trail(crumbs_env, "AF-T1", "Already closed trail")
+        # Manually mark it closed
+        tasks_path = crumbs_env / "tasks.jsonl"
+        records = _crumb.read_tasks(tasks_path)
+        for r in records:
+            if r.get("id") == "AF-T1":
+                r["status"] = "closed"
+        _crumb.write_tasks(tasks_path, records)
+
+        result = asyncio.run(crumb_trail_close("AF-T1"))
+        assert result["success"] is False
+        assert result["message"] == "already closed"
+
+    def test_raises_for_unknown_trail_id(self, crumbs_env: Path) -> None:
+        """Raises RuntimeError when trail ID does not exist."""
+        with pytest.raises(RuntimeError, match="not found"):
+            asyncio.run(crumb_trail_close("AF-T9999"))
+
+    def test_persists_closed_status_to_disk(self, crumbs_env: Path) -> None:
+        """Closed trail status is written to tasks.jsonl."""
+        _seed_trail(crumbs_env, "AF-T1", "Persist trail")
+
+        asyncio.run(crumb_trail_close("AF-T1"))
+
+        tasks_path = crumbs_env / "tasks.jsonl"
+        tasks = _crumb.read_tasks(tasks_path)
+        trail = next(t for t in tasks if t["id"] == "AF-T1")
+        assert trail["status"] == "closed"
+
+
+# ---------------------------------------------------------------------------
+# TestCrumbClose
+# ---------------------------------------------------------------------------
+
+
+class TestCrumbClose:
+    """Tests for the crumb_close MCP tool."""
+
+    def test_closes_single_crumb(self, crumbs_env: Path) -> None:
+        """Returns success with the closed ID in the 'closed' list."""
+        _seed_task(crumbs_env, "AF-1", "Task to close")
+
+        result = asyncio.run(crumb_close(["AF-1"]))
+        assert isinstance(result, dict)
+        assert "AF-1" in result["closed"]
+        assert result["skipped"] == []
+
+    def test_closes_multiple_crumbs(self, crumbs_env: Path) -> None:
+        """Can close multiple crumbs in one call."""
+        _seed_task(crumbs_env, "AF-1", "First")
+        _seed_task(crumbs_env, "AF-2", "Second")
+
+        result = asyncio.run(crumb_close(["AF-1", "AF-2"]))
+        assert set(result["closed"]) == {"AF-1", "AF-2"}
+        assert result["skipped"] == []
+
+    def test_skips_already_closed_crumbs(self, crumbs_env: Path) -> None:
+        """Already-closed crumbs appear in 'skipped', not 'closed'."""
+        _seed_task(crumbs_env, "AF-1", "Open task")
+        _seed_task(crumbs_env, "AF-2", "Closed task", status="closed")
+
+        result = asyncio.run(crumb_close(["AF-1", "AF-2"]))
+        assert "AF-1" in result["closed"]
+        assert "AF-2" in result["skipped"]
+
+    def test_raises_for_unknown_id(self, crumbs_env: Path) -> None:
+        """Raises RuntimeError when any provided ID does not exist."""
+        with pytest.raises(RuntimeError, match="not found"):
+            asyncio.run(crumb_close(["AF-9999"]))
+
+    def test_tasks_field_contains_affected_records(self, crumbs_env: Path) -> None:
+        """The 'tasks' field contains full crumb objects for all affected IDs."""
+        _seed_task(crumbs_env, "AF-1", "Closeable")
+
+        result = asyncio.run(crumb_close(["AF-1"]))
+        assert isinstance(result["tasks"], list)
+        assert len(result["tasks"]) == 1
+        task = result["tasks"][0]
+        assert task["id"] == "AF-1"
+        assert task["status"] == "closed"
+
+    def test_persists_closed_status_to_disk(self, crumbs_env: Path) -> None:
+        """Closed status is written to tasks.jsonl."""
+        _seed_task(crumbs_env, "AF-1", "Disk check")
+
+        asyncio.run(crumb_close(["AF-1"]))
+
+        tasks_path = crumbs_env / "tasks.jsonl"
+        disk_tasks = _crumb.read_tasks(tasks_path)
+        task = next(t for t in disk_tasks if t["id"] == "AF-1")
+        assert task["status"] == "closed"
+
+
+# ---------------------------------------------------------------------------
+# TestCrumbReady
+# ---------------------------------------------------------------------------
+
+
+class TestCrumbReady:
+    """Tests for the crumb_ready MCP tool."""
+
+    def test_returns_unblocked_open_crumbs(self, crumbs_env: Path) -> None:
+        """Returns open crumbs that have no unresolved blockers."""
+        _seed_task(crumbs_env, "AF-1", "Ready task")
+        _seed_task(crumbs_env, "AF-2", "Another ready task")
+
+        result = asyncio.run(crumb_ready())
+        assert isinstance(result, list)
+        ids = {r["id"] for r in result}
+        assert "AF-1" in ids
+        assert "AF-2" in ids
+
+    def test_excludes_blocked_crumbs(self, crumbs_env: Path) -> None:
+        """Crumbs blocked by an open blocker are not in ready list."""
+        _seed_task(crumbs_env, "AF-1", "Blocker task")
+        _seed_task(
+            crumbs_env, "AF-2", "Blocked task",
+            links={"blocked_by": ["AF-1"]}
+        )
+
+        result = asyncio.run(crumb_ready())
+        ids = {r["id"] for r in result}
+        assert "AF-1" in ids   # Blocker itself is ready
+        assert "AF-2" not in ids  # Blocked task excluded
+
+    def test_excludes_in_progress_crumbs(self, crumbs_env: Path) -> None:
+        """In-progress crumbs are not returned (already claimed)."""
+        _seed_task(crumbs_env, "AF-1", "In-progress task", status="in_progress")
+        _seed_task(crumbs_env, "AF-2", "Open task")
+
+        result = asyncio.run(crumb_ready())
+        ids = {r["id"] for r in result}
+        assert "AF-1" not in ids
+        assert "AF-2" in ids
+
+    def test_excludes_trails(self, crumbs_env: Path) -> None:
+        """Trail records are never included in the ready list."""
+        _seed_trail(crumbs_env, "AF-T1", "A trail")
+        _seed_task(crumbs_env, "AF-1", "A task")
+
+        result = asyncio.run(crumb_ready())
+        ids = {r["id"] for r in result}
+        assert "AF-T1" not in ids
+
+    def test_respects_limit(self, crumbs_env: Path) -> None:
+        """Respects the limit parameter."""
+        for i in range(1, 6):
+            _seed_task(crumbs_env, f"AF-{i}", f"Task {i}")
+
+        result = asyncio.run(crumb_ready(limit=2))
+        assert len(result) == 2
+
+    def test_resolved_blocker_makes_crumb_ready(self, crumbs_env: Path) -> None:
+        """A crumb whose blocker is closed is included in the ready list."""
+        _seed_task(crumbs_env, "AF-1", "Closed blocker", status="closed")
+        _seed_task(
+            crumbs_env, "AF-2", "Previously blocked",
+            links={"blocked_by": ["AF-1"]}
+        )
+
+        result = asyncio.run(crumb_ready())
+        ids = {r["id"] for r in result}
+        assert "AF-2" in ids
+
+    def test_empty_when_no_unblocked_open_tasks(self, crumbs_env: Path) -> None:
+        """Returns empty list when all open tasks are blocked."""
+        _seed_task(crumbs_env, "AF-1", "Blocker", status="in_progress")
+        _seed_task(
+            crumbs_env, "AF-2", "Blocked",
+            links={"blocked_by": ["AF-1"]}
+        )
+
+        result = asyncio.run(crumb_ready())
+        # AF-1 is in_progress (excluded), AF-2 is blocked by AF-1 (in_progress is not closed)
+        ids = {r["id"] for r in result}
+        assert "AF-2" not in ids
+
+
+# ---------------------------------------------------------------------------
+# TestCrumbBlocked
+# ---------------------------------------------------------------------------
+
+
+class TestCrumbBlocked:
+    """Tests for the crumb_blocked MCP tool."""
+
+    def test_returns_blocked_crumbs(self, crumbs_env: Path) -> None:
+        """Returns open crumbs with unresolved blockers."""
+        _seed_task(crumbs_env, "AF-1", "Blocker task")
+        _seed_task(
+            crumbs_env, "AF-2", "Blocked task",
+            links={"blocked_by": ["AF-1"]}
+        )
+
+        result = asyncio.run(crumb_blocked())
+        assert isinstance(result, list)
+        ids = {r["id"] for r in result}
+        assert "AF-2" in ids
+        assert "AF-1" not in ids
+
+    def test_includes_blockers_field(self, crumbs_env: Path) -> None:
+        """Each blocked crumb has a 'blockers' field listing unresolved blocker IDs."""
+        _seed_task(crumbs_env, "AF-1", "First blocker")
+        _seed_task(crumbs_env, "AF-2", "Second blocker")
+        _seed_task(
+            crumbs_env, "AF-3", "Multi-blocked",
+            links={"blocked_by": ["AF-1", "AF-2"]}
+        )
+
+        result = asyncio.run(crumb_blocked())
+        blocked_task = next(r for r in result if r["id"] == "AF-3")
+        assert set(blocked_task["blockers"]) == {"AF-1", "AF-2"}
+
+    def test_excludes_crumbs_with_closed_blockers(self, crumbs_env: Path) -> None:
+        """Crumbs whose all blockers are closed are not in the blocked list."""
+        _seed_task(crumbs_env, "AF-1", "Closed blocker", status="closed")
+        _seed_task(
+            crumbs_env, "AF-2", "Unblocked task",
+            links={"blocked_by": ["AF-1"]}
+        )
+
+        result = asyncio.run(crumb_blocked())
+        ids = {r["id"] for r in result}
+        assert "AF-2" not in ids
+
+    def test_excludes_trails(self, crumbs_env: Path) -> None:
+        """Trail records are never included even if theoretically blocked."""
+        _seed_trail(crumbs_env, "AF-T1", "A trail")
+        _seed_task(crumbs_env, "AF-1", "A regular blocker task")
+
+        result = asyncio.run(crumb_blocked())
+        ids = {r["id"] for r in result}
+        assert "AF-T1" not in ids
+
+    def test_empty_when_no_blocked_crumbs(self, crumbs_env: Path) -> None:
+        """Returns empty list when no crumbs are blocked."""
+        _seed_task(crumbs_env, "AF-1", "Free task")
+
+        result = asyncio.run(crumb_blocked())
+        assert result == []
+
+    def test_result_has_schema_fields(self, crumbs_env: Path) -> None:
+        """Each result object has required schema fields plus 'blockers'."""
+        _seed_task(crumbs_env, "AF-1", "A blocker")
+        _seed_task(
+            crumbs_env, "AF-2", "Blocked task",
+            links={"blocked_by": ["AF-1"]}
+        )
+
+        result = asyncio.run(crumb_blocked())
+        blocked_task = next(r for r in result if r["id"] == "AF-2")
+        for field in ("id", "title", "type", "status", "priority", "blockers"):
+            assert field in blocked_task, f"Missing '{field}' in crumb_blocked result"
+
+
+# ---------------------------------------------------------------------------
+# TestCrumbLink
+# ---------------------------------------------------------------------------
+
+
+class TestCrumbLink:
+    """Tests for the crumb_link MCP tool."""
+
+    def test_sets_parent_link(self, crumbs_env: Path) -> None:
+        """Sets a parent trail link on the crumb."""
+        _seed_trail(crumbs_env, "AF-T1", "Parent trail")
+        _seed_task(crumbs_env, "AF-1", "Child task")
+
+        result = asyncio.run(crumb_link("AF-1", parent="AF-T1"))
+        assert result["success"] is True
+        assert result["links"]["parent"] == "AF-T1"
+
+    def test_adds_blocked_by_link(self, crumbs_env: Path) -> None:
+        """Adds a blocked_by link to the crumb."""
+        _seed_task(crumbs_env, "AF-1", "Blocker")
+        _seed_task(crumbs_env, "AF-2", "Task to block")
+
+        result = asyncio.run(crumb_link("AF-2", blocked_by="AF-1"))
+        assert result["success"] is True
+        assert "AF-1" in result["links"]["blocked_by"]
+
+    def test_removes_blocked_by_link(self, crumbs_env: Path) -> None:
+        """Removes a blocked_by reference from the crumb."""
+        _seed_task(
+            crumbs_env, "AF-1", "Currently blocked",
+            links={"blocked_by": ["AF-99"]}
+        )
+
+        result = asyncio.run(crumb_link("AF-1", remove_blocked_by="AF-99"))
+        assert result["success"] is True
+        blocked_by = result["links"].get("blocked_by", [])
+        assert "AF-99" not in blocked_by
+
+    def test_sets_discovered_from_link(self, crumbs_env: Path) -> None:
+        """Sets a discovered_from provenance link."""
+        _seed_task(crumbs_env, "AF-1", "Discovered task")
+
+        result = asyncio.run(crumb_link("AF-1", discovered_from="some-source"))
+        assert result["success"] is True
+        assert result["links"]["discovered_from"] == "some-source"
+
+    def test_no_change_returns_success_false(self, crumbs_env: Path) -> None:
+        """Returns success=False and message when no link changes were made."""
+        _seed_task(crumbs_env, "AF-1", "Unchanged task")
+
+        result = asyncio.run(crumb_link("AF-1"))
+        assert result["success"] is False
+        assert "no link changes" in result.get("message", "")
+
+    def test_raises_for_unknown_crumb_id(self, crumbs_env: Path) -> None:
+        """Raises RuntimeError when crumb ID does not exist."""
+        with pytest.raises(RuntimeError, match="not found"):
+            asyncio.run(crumb_link("AF-9999", parent="AF-T1"))
+
+    def test_persists_link_to_disk(self, crumbs_env: Path) -> None:
+        """Link changes are persisted to tasks.jsonl."""
+        _seed_trail(crumbs_env, "AF-T1", "Trail")
+        _seed_task(crumbs_env, "AF-1", "Task")
+
+        asyncio.run(crumb_link("AF-1", parent="AF-T1"))
+
+        tasks_path = crumbs_env / "tasks.jsonl"
+        disk_tasks = _crumb.read_tasks(tasks_path)
+        task = next(t for t in disk_tasks if t["id"] == "AF-1")
+        assert task.get("links", {}).get("parent") == "AF-T1"
+
+    def test_duplicate_blocked_by_not_added_twice(self, crumbs_env: Path) -> None:
+        """Adding the same blocked_by reference twice does not duplicate it."""
+        _seed_task(crumbs_env, "AF-1", "Blocker")
+        _seed_task(
+            crumbs_env, "AF-2", "Already blocked",
+            links={"blocked_by": ["AF-1"]}
+        )
+
+        result = asyncio.run(crumb_link("AF-2", blocked_by="AF-1"))
+        # No-op: AF-1 already in blocked_by
+        assert result["success"] is False
+        blocked = result["links"].get("blocked_by", [])
+        assert blocked.count("AF-1") == 1
