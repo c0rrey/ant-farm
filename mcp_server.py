@@ -175,7 +175,10 @@ async def crumb_list(
         short=False,
         json_output=True,
     )
-    return await asyncio.to_thread(_run_cmd_json, _crumb.cmd_list, args)
+    try:
+        return await asyncio.to_thread(_run_cmd_json, _crumb.cmd_list, args)
+    except SystemExit as exc:
+        raise RuntimeError(f"crumb_list failed: exit code {exc.code}") from exc
 
 
 # ---------------------------------------------------------------------------
@@ -205,7 +208,7 @@ async def crumb_show(crumb_id: str) -> dict[str, Any]:
     try:
         return await asyncio.to_thread(_run_cmd_json, _crumb.cmd_show, args)
     except SystemExit as exc:
-        raise RuntimeError(f"crumb '{crumb_id}' not found") from exc
+        raise RuntimeError(f"crumb_show failed for '{crumb_id}': exit code {exc.code}") from exc
 
 
 # ---------------------------------------------------------------------------
@@ -232,7 +235,7 @@ async def crumb_update(
     Args:
         crumb_id: The crumb ID to update (e.g. "AF-123").
         status: New status: "open" or "in_progress". To close a crumb, use
-            ``crumb close <id>`` via the CLI (no MCP tool for close exists).
+            the ``crumb_close`` MCP tool (or ``crumb close <id>`` via the CLI as a fallback).
         title: New title string.
         priority: New priority: "P0", "P1", "P2", "P3", or "P4".
         description: New description string.
@@ -258,7 +261,7 @@ async def crumb_update(
     try:
         return await asyncio.to_thread(_run_cmd_json, _crumb.cmd_update, args)
     except SystemExit as exc:
-        raise RuntimeError(f"crumb_update failed for '{crumb_id}'") from exc
+        raise RuntimeError(f"crumb_update failed for '{crumb_id}': exit code {exc.code}") from exc
 
 
 # ---------------------------------------------------------------------------
@@ -284,7 +287,10 @@ async def crumb_query(query: str) -> list[dict[str, Any]]:
         List of crumb objects whose title or description contains the query.
     """
     args = argparse.Namespace(query=query, json_output=True)
-    return await asyncio.to_thread(_run_cmd_json, _crumb.cmd_search, args)
+    try:
+        return await asyncio.to_thread(_run_cmd_json, _crumb.cmd_search, args)
+    except SystemExit as exc:
+        raise RuntimeError(f"crumb_query failed: exit code {exc.code}") from exc
 
 
 # ---------------------------------------------------------------------------
@@ -334,7 +340,7 @@ async def crumb_create(
     try:
         return await asyncio.to_thread(_run_cmd_json, _crumb.cmd_create, args)
     except SystemExit as exc:
-        raise RuntimeError("crumb_create failed") from exc
+        raise RuntimeError(f"crumb_create failed for '{title}': exit code {exc.code}") from exc
 
 
 # ---------------------------------------------------------------------------
@@ -484,7 +490,7 @@ async def crumb_trail_show(trail_id: str) -> dict[str, Any]:
     except RuntimeError:
         raise
     except SystemExit as exc:
-        raise RuntimeError(f"trail '{trail_id}' not found") from exc
+        raise RuntimeError(f"crumb_trail_show failed for '{trail_id}': exit code {exc.code}") from exc
 
 
 # ---------------------------------------------------------------------------
@@ -554,6 +560,8 @@ async def crumb_trail_close(trail_id: str) -> dict[str, Any]:
         return await asyncio.to_thread(_run)
     except RuntimeError:
         raise
+    except SystemExit as exc:
+        raise RuntimeError(f"crumb_trail_close failed for '{trail_id}': exit code {exc.code}") from exc
 
 
 # ---------------------------------------------------------------------------
@@ -578,13 +586,15 @@ async def crumb_close(ids: list[str]) -> dict[str, Any]:
             closed (list[str]): IDs that were newly closed.
             skipped (list[str]): IDs that were already closed.
             tasks (list[dict]): Full JSON objects for every affected crumb
-                (closed + skipped), in the order provided.
+                (closed + skipped), sorted by the order of the input ``ids``.
 
     Raises:
         RuntimeError: If any provided ID does not exist.
     """
 
     def _run() -> dict[str, Any]:
+        if not ids:
+            return {"closed": [], "skipped": [], "tasks": []}
         with _crumb.FileLock():
             path = _crumb.require_tasks_jsonl()
             tasks = _crumb.read_tasks(path)
@@ -620,12 +630,12 @@ async def crumb_close(ids: list[str]) -> dict[str, Any]:
         # Re-read tasks to get the post-write state for the returned objects
         path = _crumb.require_tasks_jsonl()
         tasks = _crumb.read_tasks(path)
-        all_ids = closed + skipped
-        affected = [
-            _crumb._crumb_to_json_obj(t)
-            for t in tasks
-            if t.get("id") in all_ids
-        ]
+        all_ids = set(closed + skipped)
+        id_order = {cid: i for i, cid in enumerate(ids)}
+        affected = sorted(
+            [_crumb._crumb_to_json_obj(t) for t in tasks if t.get("id") in all_ids],
+            key=lambda t: id_order.get(t.get("id", ""), len(ids)),
+        )
         return {"closed": closed, "skipped": skipped, "tasks": affected}
 
     return await asyncio.to_thread(_run)
@@ -865,6 +875,8 @@ async def crumb_link(
         return await asyncio.to_thread(_run)
     except RuntimeError:
         raise
+    except SystemExit as exc:
+        raise RuntimeError(f"crumb_link failed for '{crumb_id}': exit code {exc.code}") from exc
 
 
 # ---------------------------------------------------------------------------
