@@ -27,6 +27,7 @@ const path = require('path');
 
 const { handler, extractTargetPath, isPermittedException, ADVISORY_MESSAGE } = require('../ant-farm-scope-advisor');
 const { SCOPE_SIDECAR_FILENAME } = require('../lib/scope-reader');
+const { DEBUG_LOG_PATH } = require('../lib/debug-log');
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -339,4 +340,70 @@ test('extractTargetPath: returns path from tool_input', () => {
 test('extractTargetPath: returns null when tool_input is absent', () => {
   assert.equal(extractTargetPath({}), null);
   assert.equal(extractTargetPath(null), null);
+});
+
+// ===========================================================================
+// Debug log output — ANT_FARM_DEBUG=1
+// ===========================================================================
+
+test('handler: enforcing mode — debug log receives entry for blocked write when ANT_FARM_DEBUG=1', async () => {
+  const tmpDir = createSidecar({
+    crumb_id: 'AF-99',
+    allowed_files: ['src/allowed.js'],
+    mode: 'enforcing',
+  });
+
+  // Ensure the log file and its parent directory exist before recording the baseline.
+  fs.mkdirSync(path.dirname(DEBUG_LOG_PATH), { recursive: true });
+  if (!fs.existsSync(DEBUG_LOG_PATH)) {
+    fs.writeFileSync(DEBUG_LOG_PATH, '', 'utf8');
+  }
+
+  const beforeSize = fs.statSync(DEBUG_LOG_PATH).size;
+  const prevDebug = process.env.ANT_FARM_DEBUG;
+
+  try {
+    process.env.ANT_FARM_DEBUG = '1';
+
+    const input = makeInput(tmpDir, path.join(tmpDir, 'src/blocked.js'));
+    const result = await handler(input);
+
+    // Confirm the write was blocked.
+    const parsed = JSON.parse(result);
+    assert.equal(parsed.continue, false, 'Should have blocked the write');
+
+    // Read only the bytes appended during this test.
+    const afterSize = fs.statSync(DEBUG_LOG_PATH).size;
+    assert.ok(afterSize > beforeSize, 'Debug log should have grown after a blocked write');
+
+    const appendedBytes = afterSize - beforeSize;
+    const logBuffer = Buffer.alloc(appendedBytes);
+    const fd = fs.openSync(DEBUG_LOG_PATH, 'r');
+    fs.readSync(fd, logBuffer, 0, appendedBytes, beforeSize);
+    fs.closeSync(fd);
+    const appendedContent = logBuffer.toString('utf8');
+
+    assert.ok(
+      appendedContent.includes('BLOCKED'),
+      'Debug log should include a BLOCKED entry for the blocked write'
+    );
+    assert.ok(
+      appendedContent.includes('AF-99'),
+      'Debug log should include the crumb_id for the blocked write'
+    );
+    assert.ok(
+      appendedContent.includes('ant-farm-scope-advisor'),
+      'Debug log should be tagged with the hook name'
+    );
+  } finally {
+    // Restore the env var.
+    if (prevDebug === undefined) {
+      delete process.env.ANT_FARM_DEBUG;
+    } else {
+      process.env.ANT_FARM_DEBUG = prevDebug;
+    }
+    // Truncate the log back to its pre-test size to avoid polluting the dev log.
+    fs.truncateSync(DEBUG_LOG_PATH, beforeSize);
+    cleanup(tmpDir);
+  }
 });
