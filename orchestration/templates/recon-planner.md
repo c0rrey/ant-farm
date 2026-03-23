@@ -55,7 +55,14 @@ Extract `Agent Name`, `Description`, and `File Path` columns from the catalog ta
 All agents appear in your internal catalog for reference, but implementation candidates are separate from orchestration agents. Orchestration agents (ant-farm-recon-planner, ant-farm-prompt-composer, ant-farm-checkpoint-auditor, etc.) coordinate the work; they do not implement tasks. Therefore, they are excluded from Implementer (see `~/.claude/orchestration/GLOSSARY.md` — Ant Metaphor Roles) recommendations. Implementation candidates are agents who will execute tasks (python-pro, debugger, etc.).
 
 **Exclusions from Implementer recommendations** (orchestration agents):
-ant-farm-recon-planner, ant-farm-prompt-composer, ant-farm-checkpoint-auditor, ant-farm-reviewer-clarity, ant-farm-reviewer-edge-cases, ant-farm-reviewer-correctness, ant-farm-reviewer-drift, ant-farm-review-consolidator
+- ant-farm-recon-planner
+- ant-farm-prompt-composer
+- ant-farm-checkpoint-auditor
+- ant-farm-reviewer-clarity
+- ant-farm-reviewer-edge-cases
+- ant-farm-reviewer-correctness
+- ant-farm-reviewer-drift
+- ant-farm-review-consolidator
 
 Build an internal two-tier catalog (keep in context, do NOT write to disk):
 
