@@ -13,7 +13,7 @@ Read term definitions from `~/.claude/orchestration/reference/terms.md` for cano
 
 ### Step 1: Read Templates
 
-You absorb the cost of reading this template, not the Orchestrator. Read the condensed workflow reference (you absorb the cost, not the Orchestrator):
+You absorb the cost of reading this template, not the Orchestrator. Read the condensed workflow reference:
 
 - `~/.claude/orchestration/templates/implementation-summary.md`
 
@@ -27,9 +27,6 @@ For each task ID in the input list:
    > **Filesystem assumption**: This read assumes local-FS synchronous flush — the Recon Planner completes and flushes all writes before the Prompt Composer is spawned. No retry logic is needed under this model. If remote/NFS filesystem support is introduced, add retry logic here.
 
    **FAIL-FAST CHECK**: Validate before proceeding — skip this task on any of these conditions:
-   _(Failure label definitions — INFRASTRUCTURE FAILURE vs SUBSTANCE FAILURE — see `orchestration/reference/terms.md` Failure Taxonomy section.)_
-
-   > **Sequential-check invariant**: Conditions 1, 2, and 3 are evaluated in order. The first matching condition fires and skips the task — subsequent conditions are not checked. Because of this sequential waterfall, all three conditions write to the same artifact path (`task-{TASK_SUFFIX}-FAILED.md`) without collision risk. The failure type is distinguished by the artifact content: the header line (`[INFRASTRUCTURE FAILURE]` vs `[SUBSTANCE FAILURE]`) and the `**Status**` field text identify which condition fired.
 
    **Condition 1 — File missing or Recon Planner error (INFRASTRUCTURE FAILURE)**: File is absent, unreadable, or contains `**Status**: error`.
    - **Failure artifact**: Write to `{session-dir}/prompts/task-{TASK_SUFFIX}-FAILED.md`:
@@ -84,6 +81,10 @@ For each task ID in the input list:
      ```
    - Report: `TASK FAILED: {TASK_ID} — Placeholder-contaminated metadata: found unfilled placeholders: {examples}`
    - Do NOT write a task brief for this task; skip to the next task
+
+   _(Failure label definitions — INFRASTRUCTURE FAILURE vs SUBSTANCE FAILURE — see `orchestration/reference/terms.md` Failure Taxonomy section.)_
+
+   > **Sequential-check invariant**: Conditions 1, 2, and 3 are evaluated in order. The first matching condition fires and skips the task — subsequent conditions are not checked. Because of this sequential waterfall, all three conditions write to the same artifact path (`task-{TASK_SUFFIX}-FAILED.md`) without collision risk. The failure type is distinguished by the artifact content: the header line (`[INFRASTRUCTURE FAILURE]` vs `[SUBSTANCE FAILURE]`) and the `**Status**` field text identify which condition fired.
 
    > **Note — file existence on disk**: The fail-fast checks above validate metadata *content* (non-empty, complete, no placeholders) but do NOT verify that the files listed in `**Affected Files**` exist on disk. This is by design — file existence is verified downstream by Reviewers at review time, when the actual file content is read and diffed. If a listed file is missing at that point, the Reviewer reports the discrepancy.
 
