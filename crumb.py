@@ -48,6 +48,9 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "default_priority": "P2",
     "next_crumb_id": 1,
     "next_trail_id": 1,
+    "min_crumbs_per_trail": 3,
+    "max_crumbs_per_trail": 8,
+    "max_files_per_crumb": 8,
 }
 
 VALID_STATUSES = ("open", "in_progress", "closed")
@@ -1339,6 +1342,203 @@ def _cmd_trail_close(args: argparse.Namespace) -> None:
     print(f"closed {args.id}")
 
 
+# ---------------------------------------------------------------------------
+# validate-trail helpers
+# ---------------------------------------------------------------------------
+
+
+def _count_crumb_files(crumb: Dict[str, Any]) -> int:
+    """Return the number of files referenced in a crumb's scope.files array.
+
+    Falls back to 0 when the field is absent or malformed.
+
+    Args:
+        crumb: A task record dict.
+
+    Returns:
+        Integer file count.
+    """
+    scope = crumb.get("scope")
+    if isinstance(scope, dict):
+        files = scope.get("files")
+        if isinstance(files, list):
+            return len(files)
+    return 0
+
+
+def _validate_single_trail(
+    tasks: List[Dict[str, Any]],
+    trail_id: str,
+    min_crumbs: int,
+    max_crumbs: int,
+    max_files: int,
+) -> Dict[str, Any]:
+    """Validate granularity constraints for one trail.
+
+    Checks:
+    - open/in_progress child crumb count is within [min_crumbs, max_crumbs]
+    - no child crumb references more than max_files files in scope.files
+
+    Args:
+        tasks: All task records.
+        trail_id: ID of the trail to validate.
+        min_crumbs: Minimum required open/in-progress crumb count.
+        max_crumbs: Maximum allowed open/in-progress crumb count.
+        max_files: Maximum allowed files per crumb.
+
+    Returns:
+        Dict with keys:
+            trail_id (str), crumb_count (int), status (str: PASS/WARN/FAIL),
+            violations (list of dicts with 'type', 'message', and optional 'crumb_id').
+    """
+    children = _get_trail_children(tasks, trail_id)
+    active_children = [
+        c for c in children if c.get("status") in ("open", "in_progress")
+    ]
+    crumb_count = len(active_children)
+
+    violations: List[Dict[str, Any]] = []
+    has_fail = False
+    has_warn = False
+
+    # --- crumb count checks (FAIL) ---
+    if crumb_count < min_crumbs:
+        violations.append({
+            "type": "FAIL",
+            "message": (
+                f"trail has {crumb_count} open/in-progress crumb(s); "
+                f"minimum is {min_crumbs}"
+            ),
+        })
+        has_fail = True
+    elif crumb_count > max_crumbs:
+        violations.append({
+            "type": "FAIL",
+            "message": (
+                f"trail has {crumb_count} open/in-progress crumb(s); "
+                f"maximum is {max_crumbs}"
+            ),
+        })
+        has_fail = True
+
+    # --- per-crumb file count checks (WARN) ---
+    for child in children:
+        file_count = _count_crumb_files(child)
+        if file_count > max_files:
+            violations.append({
+                "type": "WARN",
+                "crumb_id": child.get("id", "?"),
+                "message": (
+                    f"crumb {child.get('id', '?')} references {file_count} file(s); "
+                    f"maximum is {max_files}"
+                ),
+            })
+            has_warn = True
+
+    if has_fail:
+        status = "FAIL"
+    elif has_warn:
+        status = "WARN"
+    else:
+        status = "PASS"
+
+    return {
+        "trail_id": trail_id,
+        "crumb_count": crumb_count,
+        "status": status,
+        "violations": violations,
+    }
+
+
+def cmd_validate_trail(args: argparse.Namespace) -> None:
+    """Validate trail granularity constraints.
+
+    Checks open/in-progress crumb count and per-crumb file count against
+    configurable thresholds. Supports --all (validate every trail), --json
+    (structured output), and --strict (exit 1 on any FAIL).
+
+    Args:
+        args: Parsed CLI arguments.
+    """
+    path = require_tasks_jsonl()
+    tasks = read_tasks(path)
+    config = read_config()
+
+    min_crumbs = int(config.get("min_crumbs_per_trail", 3))
+    max_crumbs = int(config.get("max_crumbs_per_trail", 8))
+    max_files = int(config.get("max_files_per_crumb", 8))
+
+    validate_all: bool = getattr(args, "all_trails", False)
+    json_output: bool = getattr(args, "json_output", False)
+    strict: bool = getattr(args, "strict", False)
+    trail_id: Optional[str] = getattr(args, "id", None)
+
+    if validate_all:
+        trails = [t for t in tasks if t.get("type") == "trail"]
+        if not trails:
+            if json_output:
+                print(json.dumps([], indent=2))
+            else:
+                print("no trails found")
+            return
+
+        results = [
+            _validate_single_trail(
+                tasks, t["id"], min_crumbs, max_crumbs, max_files
+            )
+            for t in trails
+        ]
+    else:
+        if trail_id is None:
+            die("usage: crumb validate-trail <trail-id> | --all")
+        trail = _require_crumb(tasks, trail_id, label="trail")
+        if trail.get("type") != "trail":
+            die(f"'{trail_id}' is not a trail")
+        results = [
+            _validate_single_trail(
+                tasks, trail_id, min_crumbs, max_crumbs, max_files
+            )
+        ]
+
+    if json_output:
+        print(json.dumps(results if validate_all else results[0], indent=2))
+    else:
+        if validate_all:
+            # Summary table header
+            print(f"{'Trail':<14} {'Crumbs':>7}  {'Status':<6}  Violations")
+            print("-" * 60)
+            for r in results:
+                vcount = len(r["violations"])
+                print(
+                    f"{r['trail_id']:<14} {r['crumb_count']:>7}  "
+                    f"{r['status']:<6}  {vcount} violation(s)"
+                )
+            all_statuses = [r["status"] for r in results]
+            fail_count = all_statuses.count("FAIL")
+            warn_count = all_statuses.count("WARN")
+            pass_count = all_statuses.count("PASS")
+            print(
+                f"\n{len(results)} trail(s): "
+                f"{pass_count} PASS, {warn_count} WARN, {fail_count} FAIL"
+            )
+        else:
+            r = results[0]
+            print(f"trail: {r['trail_id']}")
+            print(f"crumb count (open/in-progress): {r['crumb_count']}")
+            print(f"status: {r['status']}")
+            if r["violations"]:
+                print("violations:")
+                for v in r["violations"]:
+                    print(f"  [{v['type']}] {v['message']}")
+            else:
+                print("no violations")
+
+    if strict:
+        any_fail = any(r["status"] == "FAIL" for r in results)
+        if any_fail:
+            sys.exit(1)
+
+
 def cmd_tree(args: argparse.Namespace) -> None:
     """Display trail/crumb hierarchy as an indented tree."""
     path = require_tasks_jsonl()
@@ -1922,6 +2122,7 @@ def build_parser() -> argparse.ArgumentParser:
             "  link        Manage crumb links (parent, blocked-by, discovered-from)\n"
             "  search      Full-text search titles and descriptions\n"
             "  trail       Trail subcommands (list, show, create, close)\n"
+            "  validate-trail  Validate trail granularity constraints\n"
             "  tree        Show trail/crumb hierarchy\n"
             "  import      Bulk import from JSONL\n"
             "  doctor      Validate tasks.jsonl integrity\n"
@@ -2049,6 +2250,31 @@ def build_parser() -> argparse.ArgumentParser:
     p_trail_close.set_defaults(func=cmd_trail, trail_command="close")
 
     p_trail.set_defaults(func=cmd_trail)
+
+    # --- validate-trail ---
+    p_validate_trail = sub.add_parser(
+        "validate-trail",
+        help="Validate trail granularity constraints (crumb count, file count per crumb)",
+    )
+    p_validate_trail.add_argument(
+        "id",
+        nargs="?",
+        metavar="ID",
+        help="Trail ID to validate (omit when using --all)",
+    )
+    p_validate_trail.add_argument(
+        "--all",
+        action="store_true",
+        dest="all_trails",
+        help="Validate every trail in tasks.jsonl",
+    )
+    p_validate_trail.add_argument(
+        "--strict",
+        action="store_true",
+        help="Exit code 1 when any trail has FAIL status",
+    )
+    _add_json_flag(p_validate_trail)
+    p_validate_trail.set_defaults(func=cmd_validate_trail)
 
     # --- tree ---
     p_tree = sub.add_parser("tree", help="Show trail/crumb hierarchy")
