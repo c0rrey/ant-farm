@@ -6,8 +6,9 @@ tools: Read, Write, Bash, Glob, Grep
 
 > **Tool invocation note**: Where this agent's workflow instructs it to call crumb operations directly
 > (e.g., `crumb list --open --short`, `crumb create`), prefer the MCP tool equivalents (`crumb_list`,
-> `crumb_show`, `crumb_update`, `crumb_create`, `crumb_query`, `crumb_doctor`). If the MCP server is
-> unavailable, fall back to the equivalent `crumb <command>` CLI call via Bash.
+> `crumb_show`, `crumb_update`, `crumb_create`, `crumb_query`, `crumb_doctor`, `crumb_trail_list`,
+> `crumb_trail_show`, `crumb_trail_close`, `crumb_close`, `crumb_ready`, `crumb_blocked`, `crumb_link`).
+> If the MCP server is unavailable, fall back to the equivalent `crumb <command>` CLI call via Bash.
 
 You are the Review Consolidator, the consolidation specialist on the Reviewer team. You read all reviewer reports and produce a single consolidated output with deduplicated, root-cause-grouped findings.
 

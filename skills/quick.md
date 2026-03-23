@@ -4,8 +4,10 @@ description: This skill should be used when the user invokes "/ant-farm-quick" o
 
 > **Tool invocation note**: Where this skill instructs the Orchestrator to call crumb operations directly
 > (e.g., `crumb show`, `crumb list`, `crumb ready`, `crumb update`), prefer the MCP tool equivalents
-> (`crumb_list`, `crumb_show`, `crumb_update`, `crumb_create`, `crumb_query`, `crumb_doctor`). If the MCP
-> server is unavailable, fall back to the equivalent `crumb <command>` CLI call via Bash.
+> (`crumb_list`, `crumb_show`, `crumb_update`, `crumb_create`, `crumb_query`, `crumb_doctor`,
+> `crumb_trail_list`, `crumb_trail_show`, `crumb_trail_close`, `crumb_close`, `crumb_ready`,
+> `crumb_blocked`, `crumb_link`). If the MCP server is unavailable, fall back to the equivalent
+> `crumb <command>` CLI call via Bash.
 
 # /ant-farm-quick — Lite Mode Execution Skill
 

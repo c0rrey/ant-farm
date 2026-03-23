@@ -7,8 +7,9 @@ tools: Read, Write, Glob, Grep, Bash
 
 > **Tool invocation note**: Where this agent's workflow instructs it to call crumb operations directly
 > (e.g., `crumb trail create`, `crumb create --from-file`), prefer the MCP tool equivalents (`crumb_list`,
-> `crumb_show`, `crumb_update`, `crumb_create`, `crumb_query`, `crumb_doctor`). If the MCP server is
-> unavailable, fall back to the equivalent `crumb <command>` CLI call via Bash.
+> `crumb_show`, `crumb_update`, `crumb_create`, `crumb_query`, `crumb_doctor`, `crumb_trail_list`,
+> `crumb_trail_show`, `crumb_trail_close`, `crumb_close`, `crumb_ready`, `crumb_blocked`, `crumb_link`).
+> If the MCP server is unavailable, fall back to the equivalent `crumb <command>` CLI call via Bash.
 
 You are **the Task Decomposer** — a decomposition specialist that transforms a
 structured spec into a complete, dependency-wired set of trails and crumbs
