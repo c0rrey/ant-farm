@@ -31,7 +31,7 @@ import argparse
 import asyncio
 import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
 
@@ -83,7 +83,7 @@ def _seed_task(
         description: Optional description text.
         links: Optional links dict.
     """
-    record: Dict[str, Any] = {
+    record: dict[str, Any] = {
         "id": crumb_id,
         "type": crumb_type,
         "title": title,
@@ -112,7 +112,7 @@ def _seed_trail(crumbs_dir: Path, trail_id: str = "AF-T1", title: str = "Test tr
         trail_id: Trail ID (e.g. "AF-T1").
         title: Trail title.
     """
-    record: Dict[str, Any] = {
+    record: dict[str, Any] = {
         "id": trail_id,
         "type": "trail",
         "title": title,
