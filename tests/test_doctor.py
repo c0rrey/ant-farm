@@ -828,22 +828,128 @@ class TestDoctorCycles:
         self,
         crumbs_env: Path,
     ) -> None:
-        """cmd_doctor completes in <1 second for 500 crumbs with complex dependency graph."""
-        # Build 500 tasks: 490 in a long acyclic chain, 10 in a cycle at the end
+        """cmd_doctor completes in <1s for 500 crumbs with 3+ distinct cycles.
+
+        Graph topology (500 tasks total):
+          - 300 tasks in a long acyclic chain (AF-1 -> AF-2 -> ... -> AF-300)
+          - Cycle 1 (3-node):  AF-301 -> AF-302 -> AF-303 -> AF-301
+          - Cycle 2 (5-node):  AF-304 -> AF-305 -> AF-306 -> AF-307 -> AF-308 -> AF-304
+          - Cycle 3 (10-node): AF-309 -> AF-310 -> ... -> AF-318 -> AF-309
+          - Self-referential cycle: AF-319 blocked_by itself
+          - AF-320 through AF-500: isolated tasks with no dependencies
+        """
         records: List[Dict[str, Any]] = []
-        for i in range(1, 491):
-            blocked = [f"AF-{i + 1}"] if i < 490 else []
+
+        # 300-node acyclic chain
+        for i in range(1, 301):
+            blocked: List[str] = [f"AF-{i + 1}"] if i < 300 else []
             records.append(_make_task(f"AF-{i}", blocked_by=blocked))
-        # Add a 10-node cycle: AF-491->AF-492->...->AF-500->AF-491
-        for i in range(491, 501):
-            next_id = f"AF-{491 if i == 500 else i + 1}"
-            records.append(_make_task(f"AF-{i}", blocked_by=[next_id]))
+
+        # Cycle 1: 3-node ring
+        for node, nxt in [(301, 302), (302, 303), (303, 301)]:
+            records.append(_make_task(f"AF-{node}", blocked_by=[f"AF-{nxt}"]))
+
+        # Cycle 2: 5-node ring
+        cycle2 = [304, 305, 306, 307, 308]
+        for idx, node in enumerate(cycle2):
+            nxt = cycle2[(idx + 1) % len(cycle2)]
+            records.append(_make_task(f"AF-{node}", blocked_by=[f"AF-{nxt}"]))
+
+        # Cycle 3: 10-node ring
+        cycle3 = list(range(309, 319))
+        for idx, node in enumerate(cycle3):
+            nxt = cycle3[(idx + 1) % len(cycle3)]
+            records.append(_make_task(f"AF-{node}", blocked_by=[f"AF-{nxt}"]))
+
+        # Self-referential cycle
+        records.append(_make_task("AF-319", blocked_by=["AF-319"]))
+
+        # Isolated tasks to reach 500 total
+        for i in range(320, 501):
+            records.append(_make_task(f"AF-{i}"))
 
         _write_tasks(crumbs_env, records)
 
-        start = time.monotonic()
+        start = time.perf_counter()
         with pytest.raises(SystemExit):
             cmd_doctor(_make_doctor_args())
-        elapsed = time.monotonic() - start
+        elapsed = time.perf_counter() - start
 
         assert elapsed < 1.0, f"cmd_doctor took {elapsed:.3f}s on 500 crumbs — must be <1s"
+
+    def test_detect_cycles_empty_jsonl_no_cycle_errors(
+        self,
+        crumbs_env: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """cmd_doctor on an empty JSONL file reports no cycle errors.
+
+        An empty tasks.jsonl contains no records, so _detect_cycles receives an
+        empty id_to_record mapping and must return an empty list.
+        """
+        # crumbs_env starts with an empty tasks.jsonl — no writes needed
+        cmd_doctor(_make_doctor_args())
+
+        captured = capsys.readouterr()
+        assert "cycle" not in captured.err.lower(), (
+            "Empty JSONL must not produce any cycle errors"
+        )
+        assert "cycle" not in captured.out.lower()
+
+    def test_detect_cycles_diamond_not_falsely_reported(
+        self,
+        crumbs_env: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """Diamond dependency (A->B, A->C, B->D, C->D) is NOT reported as a cycle.
+
+        A diamond is a valid DAG pattern: D is a common dependency of B and C,
+        both of which are dependencies of A. There is no directed cycle here.
+        """
+        records = [
+            _make_task("AF-A", blocked_by=["AF-B", "AF-C"]),
+            _make_task("AF-B", blocked_by=["AF-D"]),
+            _make_task("AF-C", blocked_by=["AF-D"]),
+            _make_task("AF-D"),
+        ]
+        _write_tasks(crumbs_env, records)
+
+        # Diamond is cycle-free — must not raise SystemExit from a cycle error.
+        # (It may still exit 1 for orphan warnings, so we just verify no cycle output.)
+        try:
+            cmd_doctor(_make_doctor_args())
+        except SystemExit:
+            pass
+
+        captured = capsys.readouterr()
+        assert "cycle" not in captured.err.lower(), (
+            "Diamond dependency pattern must not be falsely reported as a cycle"
+        )
+
+    def test_detect_cycles_200_crumb_chain_is_cycle_free(
+        self,
+        crumbs_env: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """A 200-crumb linear chain without any back-edges is correctly cycle-free.
+
+        Builds: AF-1 -> AF-2 -> ... -> AF-200 (each blocked by the next,
+        no wrap-around). _detect_cycles must return an empty list.
+        """
+        records: List[Dict[str, Any]] = [
+            _make_task(f"AF-{i}", blocked_by=[f"AF-{i + 1}"] if i < 200 else [])
+            for i in range(1, 201)
+        ]
+        _write_tasks(crumbs_env, records)
+
+        # May exit 1 due to orphan warnings (no parent trail), but must not
+        # report any cycles.
+        try:
+            cmd_doctor(_make_doctor_args())
+        except SystemExit:
+            pass
+
+        captured = capsys.readouterr()
+        assert "cycle" not in captured.err.lower(), (
+            "200-crumb linear chain must not be reported as cyclic"
+        )
