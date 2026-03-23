@@ -856,3 +856,343 @@ class TestCLIPrune:
         assert "timestamp not parseable" in result.stderr.lower(), (
             f"Expected 'timestamp not parseable' message.\nstderr: {result.stderr!r}"
         )
+
+
+# ---------------------------------------------------------------------------
+# validate-spec tests
+# ---------------------------------------------------------------------------
+
+
+class TestValidateSpec:
+    """Integration tests for ``crumb validate-spec``."""
+
+    # ------------------------------------------------------------------
+    # Spec file helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _write_spec(tmp_path: Path, content: str) -> Path:
+        """Write *content* to ``tmp_path/spec.md`` and return the path.
+
+        Args:
+            tmp_path: Pytest temporary directory.
+            content: Markdown content for the spec file.
+
+        Returns:
+            Absolute path to the written spec file.
+        """
+        spec_file = tmp_path / "spec.md"
+        spec_file.write_text(content, encoding="utf-8")
+        return spec_file
+
+    # ------------------------------------------------------------------
+    # AC-3.1 — scans AC lines, reports line/phrase/text
+    # ------------------------------------------------------------------
+
+    def test_reports_match_with_line_phrase_and_text(self, tmp_path: Path) -> None:
+        """A banned phrase in an AC line is reported with line number, phrase, and text.
+
+        Acceptance criterion AC-3.1: ``crumb validate-spec`` scans lines
+        matching ``AC-\\d+\\.\\d+:`` and reports each match with the line
+        number, the matched phrase, and the full AC text.
+        """
+        _make_crumbs_env(tmp_path)
+        spec = self._write_spec(
+            tmp_path,
+            "# Spec\n\n- AC-1.1: System works correctly under load.\n",
+        )
+
+        result = _run(["validate-spec", str(spec)], cwd=tmp_path)
+
+        assert result.returncode == 1, (
+            f"Expected exit code 1 for banned phrase.\nstdout: {result.stdout!r}"
+        )
+        output = result.stdout
+        assert "works correctly" in output, (
+            f"Expected matched phrase 'works correctly' in output.\nstdout: {output!r}"
+        )
+        # Line number 3 (header, blank, AC line)
+        assert "3" in output, (
+            f"Expected line number 3 in output.\nstdout: {output!r}"
+        )
+        assert "AC-1.1" in output, (
+            f"Expected AC text fragment in output.\nstdout: {output!r}"
+        )
+
+    def test_non_ac_lines_not_scanned(self, tmp_path: Path) -> None:
+        """Lines that do not match ``AC-\\d+\\.\\d+:`` are not scanned.
+
+        Acceptance criterion AC-3.1: only AC-tagged lines are checked.
+        """
+        _make_crumbs_env(tmp_path)
+        spec = self._write_spec(
+            tmp_path,
+            "# Title\n\nThis section works correctly but is not an AC line.\n",
+        )
+
+        result = _run(["validate-spec", str(spec)], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            "Banned phrase in a non-AC line must not trigger a failure.\n"
+            f"stdout: {result.stdout!r}"
+        )
+
+    # ------------------------------------------------------------------
+    # AC-3.2 — banned phrases read from config.json
+    # ------------------------------------------------------------------
+
+    def test_custom_phrase_in_config_triggers_failure(self, tmp_path: Path) -> None:
+        """A phrase added to ``banned_phrases`` in config.json is enforced.
+
+        Acceptance criterion AC-3.2 / AC-3.6: phrases are read from
+        config.json; custom additions require no code changes.
+        """
+        crumbs_dir = _make_crumbs_env(tmp_path)
+        # Inject a custom phrase into config.json
+        config_file = crumbs_dir / "config.json"
+        cfg = json.loads(config_file.read_text(encoding="utf-8"))
+        cfg["banned_phrases"] = ["totally custom phrase"]
+        config_file.write_text(json.dumps(cfg, indent=2) + "\n", encoding="utf-8")
+
+        spec = self._write_spec(
+            tmp_path,
+            "- AC-2.1: The system does a totally custom phrase validation.\n",
+        )
+
+        result = _run(["validate-spec", str(spec)], cwd=tmp_path)
+
+        assert result.returncode == 1, (
+            "Custom config phrase must trigger exit 1.\n"
+            f"stdout: {result.stdout!r}"
+        )
+        assert "totally custom phrase" in result.stdout, (
+            f"Expected custom phrase in output.\nstdout: {result.stdout!r}"
+        )
+
+    def test_empty_banned_phrases_list_always_passes(self, tmp_path: Path) -> None:
+        """``banned_phrases: []`` in config.json means every spec is clean.
+
+        Acceptance criterion AC-3.2: list is fully configurable.
+        """
+        crumbs_dir = _make_crumbs_env(tmp_path)
+        config_file = crumbs_dir / "config.json"
+        cfg = json.loads(config_file.read_text(encoding="utf-8"))
+        cfg["banned_phrases"] = []
+        config_file.write_text(json.dumps(cfg, indent=2) + "\n", encoding="utf-8")
+
+        spec = self._write_spec(
+            tmp_path,
+            "- AC-1.1: works correctly, as expected, robust, seamless.\n",
+        )
+
+        result = _run(["validate-spec", str(spec)], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            "Empty banned_phrases list must produce exit 0.\n"
+            f"stdout: {result.stdout!r}"
+        )
+
+    # ------------------------------------------------------------------
+    # AC-3.3 — case-insensitive + word boundary
+    # ------------------------------------------------------------------
+
+    def test_case_insensitive_match(self, tmp_path: Path) -> None:
+        """Matching is case-insensitive: mixed-case variants are caught.
+
+        Acceptance criterion AC-3.3.
+        """
+        _make_crumbs_env(tmp_path)
+        spec = self._write_spec(
+            tmp_path,
+            "- AC-1.1: System Works Correctly under load.\n"
+            "- AC-1.2: SYSTEM WORKS CORRECTLY ALWAYS.\n",
+        )
+
+        result = _run(["validate-spec", str(spec)], cwd=tmp_path)
+
+        assert result.returncode == 1, (
+            "Mixed-case banned phrase must trigger exit 1.\n"
+            f"stdout: {result.stdout!r}"
+        )
+        # Both lines should produce a match
+        assert result.stdout.count("works correctly") >= 2, (
+            f"Expected 2 matches for two case variants.\nstdout: {result.stdout!r}"
+        )
+
+    def test_word_boundary_no_false_positive(self, tmp_path: Path) -> None:
+        """'inappropriate' must NOT match the banned phrase 'appropriate'.
+
+        Acceptance criterion AC-3.3: word-boundary matching prevents false
+        positives on substrings.
+        """
+        _make_crumbs_env(tmp_path)
+        spec = self._write_spec(
+            tmp_path,
+            "- AC-1.1: System behaves in an inappropriate manner.\n",
+        )
+
+        result = _run(["validate-spec", str(spec)], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            "'inappropriate' must not match banned phrase 'appropriate'.\n"
+            f"stdout: {result.stdout!r}"
+        )
+
+    # ------------------------------------------------------------------
+    # AC-3.4 — exit codes
+    # ------------------------------------------------------------------
+
+    def test_clean_spec_exits_zero(self, tmp_path: Path) -> None:
+        """A spec with no banned phrases exits with code 0.
+
+        Acceptance criterion AC-3.4.
+        """
+        _make_crumbs_env(tmp_path)
+        spec = self._write_spec(
+            tmp_path,
+            "# Spec\n\n- AC-1.1: The service returns HTTP 200 within 200 ms.\n",
+        )
+
+        result = _run(["validate-spec", str(spec)], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Clean spec must exit 0.\nstdout: {result.stdout!r}"
+        )
+
+    def test_dirty_spec_exits_one(self, tmp_path: Path) -> None:
+        """A spec with a banned phrase exits with code 1.
+
+        Acceptance criterion AC-3.4.
+        """
+        _make_crumbs_env(tmp_path)
+        spec = self._write_spec(
+            tmp_path,
+            "- AC-1.1: System is robust and seamless.\n",
+        )
+
+        result = _run(["validate-spec", str(spec)], cwd=tmp_path)
+
+        assert result.returncode == 1, (
+            f"Dirty spec must exit 1.\nstdout: {result.stdout!r}"
+        )
+
+    # ------------------------------------------------------------------
+    # AC-3.5 — --json output
+    # ------------------------------------------------------------------
+
+    def test_json_output_clean_spec(self, tmp_path: Path) -> None:
+        """``--json`` on a clean spec outputs ``{"clean": true, "matches": []}``.
+
+        Acceptance criterion AC-3.5.
+        """
+        _make_crumbs_env(tmp_path)
+        spec = self._write_spec(
+            tmp_path,
+            "- AC-1.1: The widget returns the correct value.\n",
+        )
+
+        result = _run(["validate-spec", "--json", str(spec)], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Clean spec with --json must exit 0.\nstdout: {result.stdout!r}"
+        )
+        parsed = json.loads(result.stdout)
+        assert parsed["clean"] is True, (
+            f"Expected 'clean: true'.\nresult: {parsed}"
+        )
+        assert parsed["matches"] == [], (
+            f"Expected empty matches array.\nresult: {parsed}"
+        )
+
+    def test_json_output_dirty_spec(self, tmp_path: Path) -> None:
+        """``--json`` on a dirty spec outputs ``clean: false`` and non-empty matches.
+
+        Acceptance criterion AC-3.5.
+        """
+        _make_crumbs_env(tmp_path)
+        spec = self._write_spec(
+            tmp_path,
+            "- AC-1.1: System handles errors as expected.\n",
+        )
+
+        result = _run(["validate-spec", "--json", str(spec)], cwd=tmp_path)
+
+        assert result.returncode == 1, (
+            f"Dirty spec with --json must exit 1.\nstdout: {result.stdout!r}"
+        )
+        parsed = json.loads(result.stdout)
+        assert parsed["clean"] is False, (
+            f"Expected 'clean: false'.\nresult: {parsed}"
+        )
+        assert len(parsed["matches"]) > 0, (
+            f"Expected non-empty matches array.\nresult: {parsed}"
+        )
+        match = parsed["matches"][0]
+        assert "line" in match, f"Match must have 'line' field.\nresult: {parsed}"
+        assert "phrase" in match, f"Match must have 'phrase' field.\nresult: {parsed}"
+        assert "text" in match, f"Match must have 'text' field.\nresult: {parsed}"
+
+    def test_json_output_schema(self, tmp_path: Path) -> None:
+        """``--json`` match objects contain ``line`` (int), ``phrase``, and ``text``.
+
+        Acceptance criterion AC-3.5.
+        """
+        _make_crumbs_env(tmp_path)
+        spec = self._write_spec(
+            tmp_path,
+            "- AC-1.1: The UI is intuitive and user-friendly.\n",
+        )
+
+        result = _run(["validate-spec", "--json", str(spec)], cwd=tmp_path)
+
+        parsed = json.loads(result.stdout)
+        for m in parsed["matches"]:
+            assert isinstance(m["line"], int), (
+                f"'line' must be an integer.\nresult: {parsed}"
+            )
+            assert isinstance(m["phrase"], str), (
+                f"'phrase' must be a string.\nresult: {parsed}"
+            )
+            assert isinstance(m["text"], str), (
+                f"'text' must be a string.\nresult: {parsed}"
+            )
+
+    # ------------------------------------------------------------------
+    # Edge cases
+    # ------------------------------------------------------------------
+
+    def test_missing_spec_file_exits_nonzero(self, tmp_path: Path) -> None:
+        """Passing a non-existent spec file path exits non-zero with an error.
+
+        Guards against silent failures when a bad path is supplied.
+        """
+        _make_crumbs_env(tmp_path)
+
+        result = _run(["validate-spec", str(tmp_path / "no_such_file.md")], cwd=tmp_path)
+
+        assert result.returncode != 0, (
+            "Missing spec file must produce a non-zero exit code.\n"
+            f"stdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+
+    def test_multiple_phrases_on_same_line_all_reported(self, tmp_path: Path) -> None:
+        """Multiple banned phrases on one AC line each produce a separate match entry."""
+        _make_crumbs_env(tmp_path)
+        spec = self._write_spec(
+            tmp_path,
+            "- AC-1.1: System is robust, seamless, and intuitive.\n",
+        )
+
+        result = _run(["validate-spec", "--json", str(spec)], cwd=tmp_path)
+
+        parsed = json.loads(result.stdout)
+        phrases_found = {m["phrase"] for m in parsed["matches"]}
+        assert "robust" in phrases_found, (
+            f"Expected 'robust' in matches.\nresult: {parsed}"
+        )
+        assert "seamless" in phrases_found, (
+            f"Expected 'seamless' in matches.\nresult: {parsed}"
+        )
+        assert "intuitive" in phrases_found, (
+            f"Expected 'intuitive' in matches.\nresult: {parsed}"
+        )

@@ -51,6 +51,19 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "min_crumbs_per_trail": 3,
     "max_crumbs_per_trail": 8,
     "max_files_per_crumb": 8,
+    "banned_phrases": [
+        "works correctly",
+        "as expected",
+        "appropriate",
+        "well-structured",
+        "properly handles",
+        "handles gracefully",
+        "user-friendly",
+        "performant",
+        "intuitive",
+        "robust",
+        "seamless",
+    ],
 }
 
 VALID_STATUSES = ("open", "in_progress", "closed")
@@ -1981,6 +1994,83 @@ def cmd_render_template(args: argparse.Namespace) -> None:
 
 
 # ---------------------------------------------------------------------------
+# validate-spec subcommand — scan AC lines for banned phrases
+# ---------------------------------------------------------------------------
+
+#: Pattern matching acceptance-criteria lines, e.g. "AC-1.2: some text".
+_AC_LINE_RE: re.Pattern[str] = re.compile(r"AC-\d+\.\d+:")
+
+
+def cmd_validate_spec(args: argparse.Namespace) -> None:
+    """Scan a spec file's acceptance criteria lines for banned phrases.
+
+    Reads ``banned_phrases`` from config.json (with defaults from
+    ``DEFAULT_CONFIG``).  Each line matching ``AC-\\d+\\.\\d+:`` is tested
+    against every banned phrase using case-insensitive word-boundary regex so
+    that partial matches inside longer words are not reported (e.g.
+    ``inappropriate`` does **not** trigger the phrase ``appropriate``).
+
+    Exits 1 when any matches are found; exits 0 when the spec is clean.
+
+    Args:
+        args: Parsed CLI arguments.  Expected attributes:
+
+            - ``spec_file`` (str): Path to the spec markdown file.
+            - ``json_output`` (bool): Emit JSON instead of human-readable text.
+    """
+    spec_path = Path(args.spec_file)
+    if not spec_path.exists():
+        die(f"spec file not found: {spec_path}")
+
+    config = read_config()
+    banned_phrases: List[str] = config.get("banned_phrases", [])
+    if not isinstance(banned_phrases, list):
+        die("config field 'banned_phrases' must be a list")
+
+    # Pre-compile one pattern per phrase for word-boundary, case-insensitive matching.
+    phrase_patterns: List[Tuple[str, re.Pattern[str]]] = [
+        (phrase, re.compile(r"\b" + re.escape(phrase) + r"\b", re.IGNORECASE))
+        for phrase in banned_phrases
+        if isinstance(phrase, str) and phrase
+    ]
+
+    try:
+        lines = spec_path.read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        die(f"cannot read spec file: {exc}")
+
+    matches: List[Dict[str, Any]] = []
+    for lineno, line in enumerate(lines, start=1):
+        if not _AC_LINE_RE.search(line):
+            continue
+        for phrase, pattern in phrase_patterns:
+            if pattern.search(line):
+                matches.append(
+                    {
+                        "line": lineno,
+                        "phrase": phrase,
+                        "text": line.strip(),
+                    }
+                )
+
+    json_output: bool = getattr(args, "json_output", False)
+    clean = len(matches) == 0
+
+    if json_output:
+        print(json.dumps({"clean": clean, "matches": matches}, indent=2))
+    else:
+        if clean:
+            print("validate-spec: PASS — no banned phrases found")
+        else:
+            print(f"validate-spec: FAIL — {len(matches)} banned phrase(s) found")
+            for m in matches:
+                print(f"  line {m['line']}: [{m['phrase']}] {m['text']}")
+
+    if not clean:
+        sys.exit(1)
+
+
+# ---------------------------------------------------------------------------
 # Prune subcommand — remove old session directories
 # ---------------------------------------------------------------------------
 
@@ -2099,6 +2189,91 @@ def cmd_prune(args: argparse.Namespace) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Session retry commands
+# ---------------------------------------------------------------------------
+
+#: Filename written by hooks/lib/retry-tracker.js inside the session directory.
+_RETRIES_FILE = "retries.json"
+
+
+def cmd_session_retries(args: argparse.Namespace) -> None:
+    """Show retry counts for a session directory.
+
+    Reads retries.json from the given session directory and prints a summary
+    of retry events grouped by failure_type, plus the global total.  Supports
+    --json for machine-readable output.
+
+    Args:
+        args: Parsed CLI arguments.  Expects ``args.session_dir`` (str) and
+              ``args.json_output`` (bool).
+    """
+    session_dir = Path(args.session_dir).expanduser().resolve()
+    retries_path = session_dir / _RETRIES_FILE
+
+    if not retries_path.exists():
+        if args.json_output:
+            print(json.dumps({"total": 0, "by_type": {}, "events": []}))
+        else:
+            print("total: 0 (no retries.json found)")
+        return
+
+    try:
+        with open(retries_path, "r", encoding="utf-8") as fh:
+            events = json.load(fh)
+    except (json.JSONDecodeError, OSError) as exc:
+        die(f"cannot read retries.json: {exc}")
+
+    if not isinstance(events, list):
+        die("retries.json is malformed: expected a JSON array")
+
+    by_type: Dict[str, int] = {}
+    for event in events:
+        ft = event.get("failure_type", "unknown")
+        by_type[ft] = by_type.get(ft, 0) + 1
+
+    total = len(events)
+
+    if args.json_output:
+        print(json.dumps({"total": total, "by_type": by_type, "events": events}, indent=2))
+    else:
+        print(f"total: {total}")
+        if by_type:
+            print("by type:")
+            for ft, count in sorted(by_type.items()):
+                print(f"  {ft}: {count}")
+        else:
+            print("no retry events recorded")
+
+
+def cmd_session_reset_retries(args: argparse.Namespace) -> None:
+    """Clear the retry log for a session directory.
+
+    Overwrites retries.json in the given session directory with an empty JSON
+    array, atomically (tmp-then-rename).  Prints a confirmation message.
+
+    Args:
+        args: Parsed CLI arguments.  Expects ``args.session_dir`` (str).
+    """
+    session_dir = Path(args.session_dir).expanduser().resolve()
+    retries_path = session_dir / _RETRIES_FILE
+    tmp_path = retries_path.with_suffix(".json.tmp")
+
+    try:
+        with open(tmp_path, "w", encoding="utf-8") as fh:
+            json.dump([], fh)
+            fh.write("\n")
+        try:
+            os.rename(str(tmp_path), str(retries_path))
+        except OSError:
+            tmp_path.unlink(missing_ok=True)
+            raise
+    except OSError as exc:
+        die(f"cannot write retries.json: {exc}")
+
+    print(f"retries reset for session: {session_dir}")
+
+
+# ---------------------------------------------------------------------------
 # Argument parser
 # ---------------------------------------------------------------------------
 
@@ -2129,6 +2304,8 @@ def build_parser() -> argparse.ArgumentParser:
             "  init        Bootstrap .crumbs/ directory structure\n"
             "  prune       Delete old session directories under .crumbs/sessions/\n"
             "  render-template  Expand {{SLOT_NAME}} placeholders in a template file\n"
+            "  session-retries  Show retry counts for a session directory\n"
+            "  session-reset-retries  Clear the retry log for a session directory\n"
         ),
     )
     parser.set_defaults(func=None)
@@ -2276,6 +2453,19 @@ def build_parser() -> argparse.ArgumentParser:
     _add_json_flag(p_validate_trail)
     p_validate_trail.set_defaults(func=cmd_validate_trail)
 
+    # --- validate-spec ---
+    p_validate_spec = sub.add_parser(
+        "validate-spec",
+        help="Scan a spec file's acceptance criteria for banned phrases",
+    )
+    p_validate_spec.add_argument(
+        "spec_file",
+        metavar="FILE",
+        help="Path to the spec markdown file to validate",
+    )
+    _add_json_flag(p_validate_spec)
+    p_validate_spec.set_defaults(func=cmd_validate_spec)
+
     # --- tree ---
     p_tree = sub.add_parser("tree", help="Show trail/crumb hierarchy")
     p_tree.add_argument("id", nargs="?", metavar="ID")
@@ -2354,6 +2544,31 @@ def build_parser() -> argparse.ArgumentParser:
         help="List would-prune and would-retain directories without deleting.",
     )
     p_prune.set_defaults(func=cmd_prune)
+
+    # --- session-retries ---
+    p_session_retries = sub.add_parser(
+        "session-retries",
+        help="Show retry counts for a session directory",
+    )
+    p_session_retries.add_argument(
+        "session_dir",
+        metavar="SESSION_DIR",
+        help="Path to the session directory containing retries.json",
+    )
+    _add_json_flag(p_session_retries)
+    p_session_retries.set_defaults(func=cmd_session_retries)
+
+    # --- session-reset-retries ---
+    p_session_reset_retries = sub.add_parser(
+        "session-reset-retries",
+        help="Clear the retry log for a session directory",
+    )
+    p_session_reset_retries.add_argument(
+        "session_dir",
+        metavar="SESSION_DIR",
+        help="Path to the session directory containing retries.json",
+    )
+    p_session_reset_retries.set_defaults(func=cmd_session_reset_retries)
 
     return parser
 
