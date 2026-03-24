@@ -1135,10 +1135,10 @@ class TestWriteTasksCleanup:
 class TestCloseJSON:
     """Tests for cmd_close --json output mode."""
 
-    def test_json_single_close_returns_array_with_one_crumb(
+    def test_json_single_close_returns_object(
         self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
-        """cmd_close <id> --json returns a JSON array with the closed crumb object."""
+        """cmd_close <id> --json returns a single JSON object for single-ID close."""
         _seed_task(crumbs_env, id="AF-1", status="open")
 
         args = argparse.Namespace(ids=["AF-1"], json_output=True)
@@ -1146,10 +1146,9 @@ class TestCloseJSON:
 
         out = capsys.readouterr().out
         parsed = json.loads(out)
-        assert isinstance(parsed, list)
-        assert len(parsed) == 1
-        assert parsed[0]["id"] == "AF-1"
-        assert parsed[0]["status"] == "closed"
+        assert isinstance(parsed, dict)
+        assert parsed["id"] == "AF-1"
+        assert parsed["status"] == "closed"
 
     def test_json_multi_close_returns_array_of_all_closed(
         self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
@@ -1207,9 +1206,9 @@ class TestCloseJSON:
 
         out = capsys.readouterr().out
         parsed = json.loads(out)
-        obj = parsed[0]
+        assert isinstance(parsed, dict)
         for field in ("id", "title", "type", "status", "priority"):
-            assert field in obj, f"Required field '{field}' missing from JSON output"
+            assert field in parsed, f"Required field '{field}' missing from JSON output"
 
     def test_json_to_stdout_no_human_text(
         self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
@@ -1221,7 +1220,7 @@ class TestCloseJSON:
         cmd_close(args)
 
         out = capsys.readouterr().out
-        assert "closed" not in out or out.strip().startswith("[")
+        assert "closed" not in out or out.strip().startswith("{") or out.strip().startswith("[")
         json.loads(out)  # Must be valid JSON
 
     def test_human_readable_unchanged_without_json_flag(
