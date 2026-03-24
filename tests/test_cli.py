@@ -1348,6 +1348,330 @@ class TestSessionStatus:
 
 
 # ---------------------------------------------------------------------------
+# session-list tests
+# ---------------------------------------------------------------------------
+
+#: Filename used by session-list to detect completion inside a session directory.
+_HANDOFF_FILE = "handoff.json"
+
+
+def _make_session_dir(base: Path, name: str) -> Path:
+    """Create a session sub-directory under ``base/.crumbs/sessions/`` and return it.
+
+    Args:
+        base: Project root containing ``.crumbs/``.
+        name: Directory name (e.g. ``_session-20260101-120000``).
+
+    Returns:
+        Path to the newly created session directory.
+    """
+    sessions_root = base / ".crumbs" / "sessions"
+    sessions_root.mkdir(parents=True, exist_ok=True)
+    session_dir = sessions_root / name
+    session_dir.mkdir(exist_ok=True)
+    return session_dir
+
+
+class TestSessionList:
+    """Integration tests for ``crumb session-list`` subcommand."""
+
+    # ------------------------------------------------------------------
+    # Basic invocation
+    # ------------------------------------------------------------------
+
+    def test_session_list_exits_zero_no_sessions(self, tmp_path: Path) -> None:
+        """``crumb session-list`` exits 0 when no session directories exist."""
+        _make_crumbs_env(tmp_path)
+
+        result = _run(["session-list"], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected exit code 0 when no sessions exist.\n"
+            f"stdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+
+    def test_session_list_empty_output_when_no_sessions(self, tmp_path: Path) -> None:
+        """``crumb session-list`` prints nothing (or empty indicator) when no sessions."""
+        _make_crumbs_env(tmp_path)
+
+        result = _run(["session-list"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        # Output should be empty or contain a "no sessions" message, but NOT a session ID.
+        assert "_session-" not in result.stdout, (
+            f"Expected no session entries in stdout when sessions dir is empty.\n"
+            f"stdout: {result.stdout!r}"
+        )
+
+    # ------------------------------------------------------------------
+    # AC-1: shows sessions with status and timestamp
+    # ------------------------------------------------------------------
+
+    def test_session_list_shows_session_id(self, tmp_path: Path) -> None:
+        """``crumb session-list`` shows the session directory name."""
+        _make_crumbs_env(tmp_path)
+        _make_session_dir(tmp_path, "_session-20260101-120000")
+
+        result = _run(["session-list"], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected exit code 0.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        assert "_session-20260101-120000" in result.stdout, (
+            f"Expected session name in stdout.\nstdout: {result.stdout!r}"
+        )
+
+    def test_session_list_shows_timestamp(self, tmp_path: Path) -> None:
+        """``crumb session-list`` shows a last_activity timestamp for each session."""
+        _make_crumbs_env(tmp_path)
+        _make_session_dir(tmp_path, "_session-20260101-120000")
+
+        result = _run(["session-list"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        # Output should include some kind of timestamp (digits typical of ISO or epoch)
+        import re
+        assert re.search(r"\d{4}", result.stdout), (
+            f"Expected a timestamp (4+ digit sequence) in stdout.\nstdout: {result.stdout!r}"
+        )
+
+    # ------------------------------------------------------------------
+    # AC-2: Status determination logic
+    # ------------------------------------------------------------------
+
+    def test_session_list_completed_status(self, tmp_path: Path) -> None:
+        """Session with SESSION_COMPLETE in progress.log is marked 'completed'."""
+        _make_crumbs_env(tmp_path)
+        session_dir = _make_session_dir(tmp_path, "_session-20260101-120000")
+        _write_progress_log(session_dir, [
+            "2026-01-01T00:00:00.000Z|SESSION_INIT|wave=0",
+            "2026-01-01T00:01:00.000Z|SESSION_COMPLETE|wave=0",
+        ])
+
+        result = _run(["session-list"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        assert "completed" in result.stdout.lower(), (
+            f"Expected 'completed' status for session with SESSION_COMPLETE.\n"
+            f"stdout: {result.stdout!r}"
+        )
+
+    def test_session_list_paused_status(self, tmp_path: Path) -> None:
+        """Session with handoff.json (no SESSION_COMPLETE) is marked 'paused'."""
+        _make_crumbs_env(tmp_path)
+        session_dir = _make_session_dir(tmp_path, "_session-20260101-130000")
+        _write_progress_log(session_dir, [
+            "2026-01-01T00:00:00.000Z|SESSION_INIT|wave=0",
+        ])
+        # Write handoff.json to indicate a graceful pause
+        handoff_path = session_dir / _HANDOFF_FILE
+        handoff_path.write_text(
+            '{"paused_at": "2026-01-01T00:05:00Z", "current_step": "WAVE_SPAWNED"}',
+            encoding="utf-8",
+        )
+
+        result = _run(["session-list"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        assert "paused" in result.stdout.lower(), (
+            f"Expected 'paused' status for session with handoff.json but no SESSION_COMPLETE.\n"
+            f"stdout: {result.stdout!r}"
+        )
+
+    def test_session_list_crashed_status(self, tmp_path: Path) -> None:
+        """Session with no handoff.json and no SESSION_COMPLETE is marked 'crashed'."""
+        _make_crumbs_env(tmp_path)
+        session_dir = _make_session_dir(tmp_path, "_session-20260101-140000")
+        _write_progress_log(session_dir, [
+            "2026-01-01T00:00:00.000Z|SESSION_INIT|wave=0",
+            "2026-01-01T00:01:00.000Z|SCOUT_COMPLETE|wave=0",
+        ])
+        # No handoff.json — session crashed
+
+        result = _run(["session-list"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        assert "crashed" in result.stdout.lower(), (
+            f"Expected 'crashed' status for session with no handoff.json and no SESSION_COMPLETE.\n"
+            f"stdout: {result.stdout!r}"
+        )
+
+    def test_session_list_no_progress_log_is_crashed(self, tmp_path: Path) -> None:
+        """Session directory with no progress.log and no handoff.json is marked 'crashed'."""
+        _make_crumbs_env(tmp_path)
+        _make_session_dir(tmp_path, "_session-20260101-150000")
+        # Empty directory — no progress.log, no handoff.json
+
+        result = _run(["session-list"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        assert "crashed" in result.stdout.lower(), (
+            f"Expected 'crashed' for empty session directory.\nstdout: {result.stdout!r}"
+        )
+
+    # ------------------------------------------------------------------
+    # AC-3: --json output
+    # ------------------------------------------------------------------
+
+    def test_session_list_json_exits_zero(self, tmp_path: Path) -> None:
+        """``crumb session-list --json`` exits 0."""
+        _make_crumbs_env(tmp_path)
+
+        result = _run(["session-list", "--json"], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected exit code 0.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+
+    def test_session_list_json_is_valid_json_array(self, tmp_path: Path) -> None:
+        """``crumb session-list --json`` emits a valid JSON array."""
+        _make_crumbs_env(tmp_path)
+        _make_session_dir(tmp_path, "_session-20260101-120000")
+
+        result = _run(["session-list", "--json"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        try:
+            data = json.loads(result.stdout)
+        except json.JSONDecodeError as exc:
+            raise AssertionError(
+                f"stdout is not valid JSON: {exc}\nstdout: {result.stdout!r}"
+            ) from exc
+
+        assert isinstance(data, list), (
+            f"Expected JSON array, got {type(data).__name__}: {data!r}"
+        )
+
+    def test_session_list_json_empty_array_when_no_sessions(self, tmp_path: Path) -> None:
+        """``crumb session-list --json`` emits an empty array when no sessions exist."""
+        _make_crumbs_env(tmp_path)
+
+        result = _run(["session-list", "--json"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert data == [], (
+            f"Expected empty JSON array when no sessions, got {data!r}"
+        )
+
+    def test_session_list_json_has_required_fields(self, tmp_path: Path) -> None:
+        """``crumb session-list --json`` objects contain id, status, last_activity, path."""
+        _make_crumbs_env(tmp_path)
+        _make_session_dir(tmp_path, "_session-20260101-120000")
+
+        result = _run(["session-list", "--json"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert len(data) == 1, f"Expected exactly 1 session object, got {data!r}"
+        obj = data[0]
+        for field in ("id", "status", "last_activity", "path"):
+            assert field in obj, (
+                f"Expected field '{field}' in JSON object, got keys: {list(obj.keys())!r}"
+            )
+
+    def test_session_list_json_status_completed(self, tmp_path: Path) -> None:
+        """``crumb session-list --json`` reports 'completed' for a finished session."""
+        _make_crumbs_env(tmp_path)
+        session_dir = _make_session_dir(tmp_path, "_session-20260101-120000")
+        _write_progress_log(session_dir, [
+            "2026-01-01T00:00:00.000Z|SESSION_INIT|wave=0",
+            "2026-01-01T00:01:00.000Z|SESSION_COMPLETE|wave=0",
+        ])
+
+        result = _run(["session-list", "--json"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert data[0]["status"] == "completed", (
+            f"Expected status='completed', got {data[0]['status']!r}"
+        )
+
+    def test_session_list_json_status_paused(self, tmp_path: Path) -> None:
+        """``crumb session-list --json`` reports 'paused' when handoff.json exists."""
+        _make_crumbs_env(tmp_path)
+        session_dir = _make_session_dir(tmp_path, "_session-20260101-130000")
+        _write_progress_log(session_dir, [
+            "2026-01-01T00:00:00.000Z|SESSION_INIT|wave=0",
+        ])
+        handoff_path = session_dir / _HANDOFF_FILE
+        handoff_path.write_text('{"paused_at": "2026-01-01T00:05:00Z"}', encoding="utf-8")
+
+        result = _run(["session-list", "--json"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert data[0]["status"] == "paused", (
+            f"Expected status='paused', got {data[0]['status']!r}"
+        )
+
+    def test_session_list_json_status_crashed(self, tmp_path: Path) -> None:
+        """``crumb session-list --json`` reports 'crashed' with no handoff and no complete."""
+        _make_crumbs_env(tmp_path)
+        session_dir = _make_session_dir(tmp_path, "_session-20260101-140000")
+        _write_progress_log(session_dir, [
+            "2026-01-01T00:00:00.000Z|SESSION_INIT|wave=0",
+        ])
+
+        result = _run(["session-list", "--json"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert data[0]["status"] == "crashed", (
+            f"Expected status='crashed', got {data[0]['status']!r}"
+        )
+
+    def test_session_list_json_id_matches_dirname(self, tmp_path: Path) -> None:
+        """``crumb session-list --json`` id field matches directory name."""
+        _make_crumbs_env(tmp_path)
+        _make_session_dir(tmp_path, "_session-20260101-120000")
+
+        result = _run(["session-list", "--json"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert data[0]["id"] == "_session-20260101-120000", (
+            f"Expected id='_session-20260101-120000', got {data[0]['id']!r}"
+        )
+
+    def test_session_list_multiple_sessions(self, tmp_path: Path) -> None:
+        """``crumb session-list`` shows all session directories."""
+        _make_crumbs_env(tmp_path)
+        _make_session_dir(tmp_path, "_session-20260101-120000")
+        _make_session_dir(tmp_path, "_session-20260101-130000")
+        _make_session_dir(tmp_path, "_session-20260101-140000")
+
+        result = _run(["session-list", "--json"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert len(data) == 3, (
+            f"Expected 3 session objects, got {len(data)}: {data!r}"
+        )
+
+    def test_session_list_ignores_non_session_dirs(self, tmp_path: Path) -> None:
+        """``crumb session-list`` ignores directories not matching session prefixes."""
+        _make_crumbs_env(tmp_path)
+        # Create a real session dir
+        _make_session_dir(tmp_path, "_session-20260101-120000")
+        # Create a non-session dir alongside it
+        noise_dir = tmp_path / ".crumbs" / "sessions" / "some-random-dir"
+        noise_dir.mkdir(parents=True, exist_ok=True)
+
+        result = _run(["session-list", "--json"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        ids = [obj["id"] for obj in data]
+        assert "some-random-dir" not in ids, (
+            f"Expected non-session dir to be excluded, got {ids!r}"
+        )
+        assert "_session-20260101-120000" in ids, (
+            f"Expected session dir to be included, got {ids!r}"
+        )
+
+
+# ---------------------------------------------------------------------------
 # validate-spec tests
 # ---------------------------------------------------------------------------
 
