@@ -3,6 +3,8 @@
 **Date**: 2026-03-24
 **Crumb**: AF-489
 **Scope**: `orchestration/RULES.md` (all enforcement instructions mapped to mechanized gates)
+**Verification date**: 2026-03-24 (AF-491 — post-RULES.md cleanup)
+**Verification legend**: `PASS` — documentation claim matches actual code behavior; `FAIL` — documentation claim is inaccurate or overstated relative to what the code actually enforces
 **Status legend**:
 - `MECHANIZED` — a hook, CLI tool, or checkpoint fully enforces this rule without relying on the Orchestrator's prompt text
 - `PARTIALLY_MECHANIZED` — enforcement exists in code but does not cover all cases, or relies on a parameter the Orchestrator must supply correctly
@@ -17,33 +19,33 @@
 
 ## Quick Index
 
-| # | Instruction | RULES.md lines | Status | Action |
-|---|-------------|---------------|--------|--------|
-| 1 | Startup-check gate (predecessor gate blocks agent spawn) | L170–186, L332–342 | MECHANIZED | SIMPLIFIED |
-| 2 | Pre-spawn-check gate (prompt audit before agent spawn) | L192–207, L332–342 | MECHANIZED | SIMPLIFIED |
-| 3 | Scope-verify gate (post-commit file scope check) | L209–236, L332–342 | MECHANIZED | SIMPLIFIED |
-| 4 | Claims-vs-code gate (substance verification) | L231–236, L332–342 | MECHANIZED | SIMPLIFIED |
-| 5 | Position check (spawn matches expected next_step) | L109–155 | MECHANIZED | SIMPLIFIED |
-| 6 | Retry tracking (per-type limits + global cap) | L443–461 | MECHANIZED | SIMPLIFIED |
-| 7 | Wave failure threshold (>50% failure blocks next wave) | L475–489 | MECHANIZED | SIMPLIFIED |
-| 8 | Scope enforcement (file write advisory / enforcing block) | (implementation.md L142–163) | MECHANIZED | KEPT |
-| 9 | Cycle detection in dependency graph | L332–342 (startup-check) | MECHANIZED | KEPT |
-| 10 | Granularity constraint (crumb/file count per trail) | L332–342 (startup-check Check 1b) | PARTIALLY_MECHANIZED | KEPT |
-| 11 | Banned phrases in AC | (crumb.py validate-spec) | PARTIALLY_MECHANIZED | KEPT |
-| 12 | TDD ordering (tests before implementation) | (crumb.py validate-tdd) | PARTIALLY_MECHANIZED | KEPT |
-| 13 | Security scanner (dangerous patterns in writes/bash) | (hook: ant-farm-security-scanner.js) | MECHANIZED | KEPT |
-| 14 | Context monitor (warn at 35%/25% remaining) | L503–510 | MECHANIZED | SIMPLIFIED |
-| 15 | Pause instruction (inform user at critical context) | L503–510 | MECHANIZED | SIMPLIFIED |
-| 16 | JSON output for agents (machine-readable verdict) | (pre-spawn-check, claims-vs-code templates) | PROMPT_ONLY | KEPT |
-| 17 | Conflict matrix (file overlap between waves) | L353–360 (Concurrency Rules) | PARTIALLY_MECHANIZED | KEPT |
-| 18 | Stuck-agent detection (no commit within 15 turns) | L463–473 | PARTIALLY_MECHANIZED | SIMPLIFIED |
-| 19 | Spec coverage (`validate-coverage`) | (crumb.py validate-coverage) | PARTIALLY_MECHANIZED | KEPT |
-| 20 | Review-integrity gate (reviewer report audit) | L332–342 | MECHANIZED | SIMPLIFIED |
-| 21 | Session-complete gate (exec summary + CHANGELOG audit) | L289–308, L332–342 | MECHANIZED | SIMPLIFIED |
-| 22 | Orchestrator read restrictions (FORBIDDEN file list) | L56–65 | PROMPT_ONLY | KEPT |
-| 23 | Orchestrator prohibition (no crumb commands directly) | L23–33 | PROMPT_ONLY | KEPT |
-| 24 | Wave pipelining (wave N+1 Prompt Composer concurrent) | L198–206 | PROMPT_ONLY | KEPT |
-| 25 | Agent task cap (≤3 tasks per agent per wave) | L355–356 | PARTIALLY_MECHANIZED | KEPT |
+| # | Instruction | RULES.md lines | Status | Action | Verification |
+|---|-------------|---------------|--------|--------|-------------|
+| 1 | Startup-check gate (predecessor gate blocks agent spawn) | L170–186, L332–342 | MECHANIZED | SIMPLIFIED | PASS |
+| 2 | Pre-spawn-check gate (prompt audit before agent spawn) | L192–207, L332–342 | MECHANIZED | SIMPLIFIED | PASS |
+| 3 | Scope-verify gate (post-commit file scope check) | L209–236, L332–342 | MECHANIZED | SIMPLIFIED | PASS |
+| 4 | Claims-vs-code gate (substance verification) | L231–236, L332–342 | MECHANIZED | SIMPLIFIED | PASS |
+| 5 | Position check (spawn matches expected next_step) | L109–155 | MECHANIZED | SIMPLIFIED | PASS |
+| 6 | Retry tracking (per-type limits + global cap) | L443–461 | MECHANIZED | SIMPLIFIED | PASS |
+| 7 | Wave failure threshold (>50% failure blocks next wave) | L475–489 | MECHANIZED | SIMPLIFIED | PASS |
+| 8 | Scope enforcement (file write advisory / enforcing block) | (implementation.md L142–163) | MECHANIZED | KEPT | PASS |
+| 9 | Cycle detection in dependency graph | L332–342 (startup-check) | MECHANIZED | KEPT | PASS |
+| 10 | Granularity constraint (crumb/file count per trail) | L332–342 (startup-check Check 1b) | PARTIALLY_MECHANIZED | KEPT | PASS |
+| 11 | Banned phrases in AC | (crumb.py validate-spec) | PARTIALLY_MECHANIZED | KEPT | PASS |
+| 12 | TDD ordering (tests before implementation) | (crumb.py validate-tdd) | PARTIALLY_MECHANIZED | KEPT | PASS |
+| 13 | Security scanner (dangerous patterns in writes/bash) | (hook: ant-farm-security-scanner.js) | MECHANIZED | KEPT | PASS |
+| 14 | Context monitor (warn at 35%/25% remaining) | L503–510 | MECHANIZED | SIMPLIFIED | PASS |
+| 15 | Pause instruction (inform user at critical context) | L503–510 | MECHANIZED | SIMPLIFIED | PASS |
+| 16 | JSON output for agents (machine-readable verdict) | (pre-spawn-check, claims-vs-code templates) | PROMPT_ONLY | KEPT | PASS |
+| 17 | Conflict matrix (file overlap between waves) | L353–360 (Concurrency Rules) | PARTIALLY_MECHANIZED | KEPT | PASS |
+| 18 | Stuck-agent detection (no commit within 15 turns) | L463–473 | PARTIALLY_MECHANIZED | SIMPLIFIED | PASS |
+| 19 | Spec coverage (`validate-coverage`) | (crumb.py validate-coverage) | PARTIALLY_MECHANIZED | KEPT | PASS |
+| 20 | Review-integrity gate (reviewer report audit) | L332–342 | MECHANIZED | SIMPLIFIED | PASS |
+| 21 | Session-complete gate (exec summary + CHANGELOG audit) | L289–308, L332–342 | MECHANIZED | SIMPLIFIED | PASS |
+| 22 | Orchestrator read restrictions (FORBIDDEN file list) | L56–65 | PROMPT_ONLY | KEPT | PASS |
+| 23 | Orchestrator prohibition (no crumb commands directly) | L23–33 | PROMPT_ONLY | KEPT | PASS |
+| 24 | Wave pipelining (wave N+1 Prompt Composer concurrent) | L198–206 | PROMPT_ONLY | KEPT | PASS |
+| 25 | Agent task cap (≤3 tasks per agent per wave) | L355–356 | PARTIALLY_MECHANIZED | KEPT | PASS |
 
 ---
 
@@ -431,3 +433,36 @@ The following instructions are mechanized but should remain in RULES.md because 
 3. **review-integrity gate is in the Hard Gates table but not in the main step narrative**: Step 3b delegates to RULES-review.md but the Hard Gates table references review-integrity. A reader of RULES.md alone cannot locate where this gate is invoked.
 
 4. **session-complete gate**: Fully mechanized but the escalation paths (on second FAIL, present to user) are PROMPT_ONLY. These should remain in RULES.md.
+
+---
+
+## Documentation Verification (AC-17.4)
+
+**Scope**: Post-RULES.md cleanup (AF-490). Verified 2026-03-24 by AF-491.
+**Sources of truth**: `hooks/ant-farm-gate-enforcer.js`, `hooks/lib/gate-manager.js`, `hooks/ant-farm-security-scanner.js`, `hooks/ant-farm-scope-advisor.js`, `hooks/ant-farm-context-monitor.js`, `scripts/gate-manager.js` (lib), `scripts/retry-tracker.js`, `scripts/wave-tracker.js`, `scripts/progress-reader.js`
+
+### Claim Verification Table
+
+| File | Location | Claim | Verdict | Notes |
+|------|----------|-------|---------|-------|
+| `README.md` | L5 | "mechanical verification gates" | PASS | gate-enforcer.js is a real PreToolUse hook that mechanically blocks Task spawns |
+| `README.md` | L12 | "Six verification checkpoints block progression" | FAIL → FIXED | Correct count is seven (startup-check, pre-spawn-check, scope-verify, claims-vs-code, review-integrity, session-complete, decomposition-check); README.md L61 and Hard Gates table (L75-83) both list seven. Fixed to "Seven" in AF-491. |
+| `README.md` | L61 | "mechanically block progression" | PASS | Accurate: Checkpoint Auditor + gate-enforcer.js hook together constitute a mechanized system. startup-check is the direct PreToolUse hook enforcement; other gates enforce through the Checkpoint Auditor writing gate-status.json verdicts |
+| `README.md` | L201 | "Strategy approval is mechanical, not conversational" | PASS | gate-enforcer.js blocks all Task spawns until startup-check PASS is recorded in gate-status.json; no human approval required |
+| `CONTRIBUTING.md` | L72 | `RULES.md` Hard Gates table cross-reference instruction | PASS | Accurate: when adding a checkpoint, RULES.md Hard Gates table is a correct update target |
+| `CONTRIBUTING.md` | L74 | `README.md` Hard Gates table cross-reference instruction | PASS | Accurate: when adding a checkpoint, README.md Hard Gates table is a correct update target |
+| `CONTRIBUTING.md` | L220 | checkpoint verdict thresholds → `RULES.md` Hard Gates table dependency | PASS | Accurate: Hard Gates table describes blocking behavior that stems from checkpoint verdict thresholds |
+| `AGENTS.md` | L1-23 | No enforcement mechanism claims present | PASS | AGENTS.md contains only task management references and session completion cross-reference. No stale enforcement claims introduced by AF-490. |
+| `orchestration/GLOSSARY.md` | L23 | "hard gate" — "A checkpoint that must return PASS before the system proceeds to the next phase. All seven checkpoints ... are hard gates." | PASS | Correct count (7) and accurate definition. GATE_CHAIN in gate-manager.js lists 6 execution gates; decomposition-check is a planning-workflow gate not in GATE_CHAIN but documented as a hard gate in RULES.md and GLOSSARY.md. Both are accurate at their respective scopes. |
+| `orchestration/GLOSSARY.md` | L29 | `checkpoint` definition — "mandatory verification gate that blocks the next phase" | PASS | Accurate: checkpoints are enforced by Checkpoint Auditor + gate-enforcer.js hook |
+| `orchestration/GLOSSARY.md` | L43-51 | Checkpoint Names table — startup-check "Strategy mechanical correctness" | PASS | Accurate: "mechanical correctness" refers to structural/formulaic correctness (wave groupings, file conflicts, dependency violations) — not a claim about machine enforcement. The phrase correctly describes the check's purpose. |
+| `orchestration/templates/checkpoints/startup-check.md` | L8 | "misses mechanical errors like file/task mismatches, agent overloading, or intra-wave dependency violations" | PASS | "Mechanical errors" = formulaic, structural errors. Accurate usage — describes the category of defect caught, not the enforcement method. |
+| `orchestration/templates/checkpoints/startup-check.md` | L15 | "verify the Recon Planner's execution strategy for mechanical correctness" | PASS | Accurate: the four checks (file overlaps, task cap, file list match, dependency violations) are deterministic mechanical checks with no judgment required. |
+| `orchestration/templates/checkpoints/startup-check.md` | L120 | "The startup-check validates mechanical correctness (no file conflicts, no dependency violations); a PASS is sufficient to begin implementation without waiting for user approval." | PASS | Accurate: gate-enforcer.js enforces that startup-check PASS is recorded before allowing downstream spawns. No human approval gate exists in the hook. |
+
+### Summary
+
+- **Total claims verified**: 14
+- **PASS**: 13
+- **FAIL (corrected)**: 1 — README.md L12 "Six verification checkpoints" corrected to "Seven verification checkpoints"
+- **No inaccurate "mechanically enforced" claims** found in CONTRIBUTING.md, AGENTS.md, GLOSSARY.md, or startup-check.md. All uses of "mechanical" in these files refer to deterministic/formulaic checks (accurate) rather than overclaiming hook-level enforcement for prompt-only gates.

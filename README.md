@@ -9,7 +9,7 @@ It is not an open-ended autonomous coding agent. It is a constrained orchestrati
 > **TL;DR**
 >
 > - Decomposes specs into dependency-aware tasks, then executes them in parallel waves
-> - Six verification checkpoints block progression if agents cut corners or drift out of scope
+> - Seven verification checkpoints block progression if agents cut corners or drift out of scope
 > - The Orchestrator never reads source code. It reads briefings, verdicts, and commit messages. Everything else is delegated.
 > - Four parallel code reviewers (with automatic split-instancing for large file sets) consolidate findings by root cause, file fix tasks, and re-review until convergence
 > - Every session produces a full artifact trail: metadata, prompts, summaries, review reports, checkpoint audits, exec summary, and CHANGELOG entry

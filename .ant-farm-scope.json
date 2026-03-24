@@ -1,11 +1,12 @@
 {
-  "crumb_id": "AF-485",
+  "crumb_id": "AF-491",
   "allowed_files": [
-    "hooks/ant-farm-gate-enforcer.js:L288-415",
-    "hooks/lib/gate-manager.js:L165-204",
-    "hooks/test/gate-enforcer.test.js:L1-44",
-    "crumb.py:L47-70",
-    "tests/test_cli.py:L880-1656"
+    "README.md:L5,L61,L71-79,L201,L337",
+    "CONTRIBUTING.md:L72,L74,L220",
+    "AGENTS.md:L1-23",
+    "orchestration/GLOSSARY.md:L23,L29,L43-51",
+    "orchestration/templates/checkpoints/startup-check.md:L8,L15,L120",
+    "orchestration/mechanization-audit.md:L1-434"
   ],
   "mode": "enforcing",
   "permitted_exceptions": []
