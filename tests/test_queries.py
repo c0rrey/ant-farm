@@ -1080,10 +1080,10 @@ class TestReadyJSON:
         ids = [obj["id"] for obj in parsed]
         assert "AF-T1" not in ids
 
-    def test_json_output_empty_when_all_blocked(
+    def test_json_output_is_valid_list_when_some_blocked(
         self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
-        """cmd_ready --json returns empty array when every open crumb is blocked."""
+        """cmd_ready --json returns a valid list when some crumbs are blocked (AF-1 unblocked, AF-2 blocked by AF-1)."""
         _write(crumbs_env, [
             _task("AF-1", "Blocker", "open"),
             _task("AF-2", "Blocked", "open", blocked_by=["AF-1"]),

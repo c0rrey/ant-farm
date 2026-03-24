@@ -104,7 +104,7 @@ All checkpoints use the following verdict states:
 - FAIL: Scope creep (files outside task scope). Blocks queue pending investigation.
 
 **claims-vs-code Verdict Specifics:**
-- PASS: All 4 checks confirm (Check 1: git diff matches claims, Check 2: 2 criteria verified, Check 3: approaches distinct, Check 4: correctness evidence specific)
+- PASS: All 5 checks confirm (Check 1: git diff matches claims, Check 2: 2 criteria verified, Check 3: approaches distinct, Check 4: correctness evidence specific, Check 5: test-first ordering confirmed or skipped)
 - PARTIAL: Some checks fail (agent can resubmit)
 - FAIL: Multiple checks fail or critical fabrication (escalate to user)
 
