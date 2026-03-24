@@ -4,8 +4,8 @@
  * hooks-registration.js — Claude Code settings.json hook registration for ant-farm.
  *
  * Reads ~/.claude/settings.json, merges ant-farm hook entries (statusLine and
- * PreToolUse), and writes the result back atomically. Existing non-ant-farm
- * entries are preserved unchanged.
+ * PreToolUse/PostToolUse), and writes the result back atomically. Existing
+ * non-ant-farm entries are preserved unchanged.
  *
  * Hooks registered:
  *   statusLine:
@@ -19,6 +19,9 @@
  *
  *   PreToolUse (matcher "Write|Edit|Bash"):
  *     { "type": "command", "command": "node ~/.claude/hooks/ant-farm-security-scanner.js" }
+ *
+ *   PostToolUse (all tools):
+ *     { "type": "command", "command": "node ~/.claude/hooks/ant-farm-context-monitor.js" }
  *
  * Idempotency:
  *   Each function checks whether the entry is already present (by command string)
@@ -52,6 +55,7 @@ const STATUSLINE_COMMAND = 'node ~/.claude/hooks/ant-farm-statusline.js';
 const SCOPE_ADVISOR_COMMAND = 'node ~/.claude/hooks/ant-farm-scope-advisor.js';
 const GATE_ENFORCER_COMMAND = 'node ~/.claude/hooks/ant-farm-gate-enforcer.js';
 const SECURITY_SCANNER_COMMAND = 'node ~/.claude/hooks/ant-farm-security-scanner.js';
+const CONTEXT_MONITOR_COMMAND = 'node ~/.claude/hooks/ant-farm-context-monitor.js';
 
 /**
  * Matcher string for the PreToolUse scope advisor hook.
@@ -439,7 +443,70 @@ function unregisterGateEnforcerHook(settings) {
 }
 
 /**
- * Registers all ant-farm hooks (statusLine + PreToolUse scope advisor + gate enforcer + security scanner)
+ * Registers the ant-farm PostToolUse context monitor hook in the given settings object.
+ *
+ * The PostToolUse field is an array of `{ type, command }` objects (no matcher required —
+ * the hook fires for all tool uses). ant-farm's entry is appended if not already present.
+ * Detection is by exact command string.
+ *
+ * @param {object} settings  Mutable parsed settings object.
+ * @returns {{ changed: boolean }}
+ */
+function registerContextMonitorHook(settings) {
+  // Ensure hooks and PostToolUse array exist.
+  if (!settings.hooks || typeof settings.hooks !== 'object') {
+    settings.hooks = {};
+  }
+  if (!Array.isArray(settings.hooks.PostToolUse)) {
+    settings.hooks.PostToolUse = [];
+  }
+
+  const postToolUse = settings.hooks.PostToolUse;
+
+  // Check whether the ant-farm context monitor command is already present.
+  const alreadyPresent = postToolUse.some(
+    (h) => typeof h === 'object' && h.command === CONTEXT_MONITOR_COMMAND
+  );
+
+  if (alreadyPresent) {
+    return { changed: false };
+  }
+
+  // Append ant-farm's PostToolUse context monitor entry.
+  postToolUse.push({ type: 'command', command: CONTEXT_MONITOR_COMMAND });
+
+  return { changed: true };
+}
+
+/**
+ * Removes the ant-farm PostToolUse context monitor hook from the given settings object.
+ *
+ * Strips the ant-farm context monitor command from hooks.PostToolUse and prunes the
+ * array if it becomes empty. Preserves all non-ant-farm entries.
+ *
+ * @param {object} settings  Mutable parsed settings object.
+ * @returns {{ changed: boolean }}
+ */
+function unregisterContextMonitorHook(settings) {
+  if (
+    !settings.hooks ||
+    !Array.isArray(settings.hooks.PostToolUse) ||
+    settings.hooks.PostToolUse.length === 0
+  ) {
+    return { changed: false };
+  }
+
+  const before = settings.hooks.PostToolUse.length;
+  settings.hooks.PostToolUse = settings.hooks.PostToolUse.filter(
+    (h) => !(typeof h === 'object' && h.command === CONTEXT_MONITOR_COMMAND)
+  );
+  const changed = settings.hooks.PostToolUse.length !== before;
+
+  return { changed };
+}
+
+/**
+ * Registers all ant-farm hooks (statusLine + PreToolUse scope advisor + gate enforcer + security scanner + PostToolUse context monitor)
  * in Claude Code's settings.json.
  *
  * Reads the current settings, applies all registrations, and writes back
@@ -463,8 +530,9 @@ async function registerHooks({ dryRun = false, collector = null, settingsPath = 
   const { changed: saChanged } = registerScopeAdvisorHook(settings);
   const { changed: geChanged } = registerGateEnforcerHook(settings);
   const { changed: ssChanged } = registerSecurityScannerHook(settings);
+  const { changed: cmChanged } = registerContextMonitorHook(settings);
 
-  const anyChanged = slChanged || saChanged || geChanged || ssChanged;
+  const anyChanged = slChanged || saChanged || geChanged || ssChanged || cmChanged;
 
   if (dryRun) {
     if (collector) {
@@ -500,8 +568,9 @@ async function unregisterHooks({ dryRun = false, collector = null, settingsPath 
   const { changed: saChanged } = unregisterScopeAdvisorHook(settings);
   const { changed: geChanged } = unregisterGateEnforcerHook(settings);
   const { changed: ssChanged } = unregisterSecurityScannerHook(settings);
+  const { changed: cmChanged } = unregisterContextMonitorHook(settings);
 
-  const anyChanged = slChanged || saChanged || geChanged || ssChanged;
+  const anyChanged = slChanged || saChanged || geChanged || ssChanged || cmChanged;
 
   if (dryRun) {
     if (collector && anyChanged) {
@@ -524,16 +593,19 @@ module.exports = {
   registerScopeAdvisorHook,
   registerGateEnforcerHook,
   registerSecurityScannerHook,
+  registerContextMonitorHook,
   unregisterStatusLineHook,
   unregisterScopeAdvisorHook,
   unregisterGateEnforcerHook,
   unregisterSecurityScannerHook,
+  unregisterContextMonitorHook,
   registerHooks,
   unregisterHooks,
   STATUSLINE_COMMAND,
   SCOPE_ADVISOR_COMMAND,
   GATE_ENFORCER_COMMAND,
   SECURITY_SCANNER_COMMAND,
+  CONTEXT_MONITOR_COMMAND,
   SCOPE_ADVISOR_MATCHER,
   GATE_ENFORCER_MATCHER,
   SECURITY_SCANNER_MATCHER,

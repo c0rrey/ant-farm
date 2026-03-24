@@ -29,6 +29,7 @@ const {
   STATUSLINE_COMMAND,
   SCOPE_ADVISOR_COMMAND,
   SCOPE_ADVISOR_MATCHER,
+  CONTEXT_MONITOR_COMMAND,
 } = require('../lib/hooks-registration');
 
 // ---------------------------------------------------------------------------
@@ -764,5 +765,87 @@ test('install flow: registerHooks preserves existing non-ant-farm hook entries',
         group.hooks.some((h) => h.command === SCOPE_ADVISOR_COMMAND)
     );
     assert.ok(scopeAdvisorGroup, 'ant-farm scope advisor group should be added alongside user hook group');
+  });
+});
+
+// ===========================================================================
+// Test: install-manifest.json includes context monitor hook
+// ===========================================================================
+
+test('install-manifest.json includes ant-farm-context-monitor.js for PostToolUse hook registration', async () => {
+  const packageRoot = path.resolve(__dirname, '..');
+  const manifest = await readInstallManifest(packageRoot);
+
+  const contextMonitorEntry = manifest.files.find(
+    (f) =>
+      f.src === 'hooks/ant-farm-context-monitor.js' &&
+      f.dst === 'hooks/ant-farm-context-monitor.js'
+  );
+
+  assert.ok(
+    contextMonitorEntry,
+    'install-manifest.json must include an entry with src and dst equal to hooks/ant-farm-context-monitor.js'
+  );
+});
+
+// ===========================================================================
+// Test: registerHooks registers the context monitor PostToolUse hook
+// ===========================================================================
+
+test('install flow: registerHooks writes PostToolUse context monitor entry to settings.json', async () => {
+  await withTmpDir(async (tmpDir) => {
+    const settingsPath = path.join(tmpDir, 'settings.json');
+
+    const { warnings } = await registerHooks({ dryRun: false, collector: null, settingsPath });
+
+    assert.deepEqual(warnings, [], 'No warnings should be returned on fresh hooks registration');
+
+    const raw = await fs.readFile(settingsPath, 'utf8');
+    const settings = JSON.parse(raw);
+
+    // PostToolUse entry must be present with the context monitor command
+    assert.ok(
+      settings.hooks && Array.isArray(settings.hooks.PostToolUse),
+      'settings.json should have a hooks.PostToolUse array after registerHooks'
+    );
+    const contextMonitorEntry = settings.hooks.PostToolUse.find(
+      (h) => typeof h === 'object' && h.command === CONTEXT_MONITOR_COMMAND
+    );
+    assert.ok(
+      contextMonitorEntry,
+      'hooks.PostToolUse should contain the ant-farm context monitor command'
+    );
+    assert.equal(
+      contextMonitorEntry.type,
+      'command',
+      'context monitor PostToolUse entry should have type "command"'
+    );
+  });
+});
+
+test('install flow: registerHooks context monitor is idempotent on re-install', async () => {
+  await withTmpDir(async (tmpDir) => {
+    const settingsPath = path.join(tmpDir, 'settings.json');
+
+    // First install
+    await registerHooks({ dryRun: false, collector: null, settingsPath });
+
+    // Second install (re-run)
+    await registerHooks({ dryRun: false, collector: null, settingsPath });
+
+    const raw = await fs.readFile(settingsPath, 'utf8');
+    const settings = JSON.parse(raw);
+
+    const postToolUse = settings.hooks && settings.hooks.PostToolUse;
+    assert.ok(Array.isArray(postToolUse), 'hooks.PostToolUse should remain an array after re-install');
+
+    const matchingEntries = postToolUse.filter(
+      (h) => typeof h === 'object' && h.command === CONTEXT_MONITOR_COMMAND
+    );
+    assert.equal(
+      matchingEntries.length,
+      1,
+      'Idempotent re-install must not add duplicate PostToolUse context monitor entries'
+    );
   });
 });

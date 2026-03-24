@@ -506,3 +506,5 @@ Project-specific overrides belong in the project's CLAUDE.md or QUALITY_PROCESS.
 - File reads in the Orchestrator: <10 for 40+ task sessions
 - Concurrent agents: typical 5-6 Implementers, max 12 total
 - Commits per session: <20 (batch related work)
+
+The context monitor hook will warn you at 35% and 25% remaining.
