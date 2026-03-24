@@ -49,22 +49,22 @@
  * Exports:
  *   handler(input)                      — async hook entry point; accepts parsed JSON input,
  *                                         returns JSON response string (or '' for silent pass).
- *   detectSessionDir(text)              — extract session directory path from arbitrary text.
+ *   detectSessionDir(input)             — extract session directory from parsed JSON input object.
  *   extractSessionDirFromText(text)     — low-level regex helper used by detectSessionDir.
- *   detectSessionFromEnv()              — locate session dir from CLAUDE_SESSION_DIR env var.
- *   isBypassEnabled(input)              — return true when bypass flag is active for this call.
- *   extractTaskIdFromPrompt(text)       — parse the active crumb/task ID out of a prompt string.
- *   extractWaveNumberFromPrompt(text)   — parse the current wave number out of a prompt string.
- *   getWaveFailureThreshold()           — return the configured wave failure threshold (integer).
- *   getStuckAgentThresholds()           — return { timeout, escalation } minute thresholds.
- *   checkStuckAgents(sessionDir)        — scan agent spawn log and return stuck-agent report.
+ *   detectSessionFromEnv()              — locate session dir from SESSION_DIR env var.
+ *   isBypassEnabled(projectDir)         — return true when bypass flag is active in config.
+ *   extractTaskIdFromPrompt(prompt)     — parse the active crumb/task ID out of a prompt string.
+ *   extractWaveNumberFromPrompt(prompt) — parse the current wave number out of a prompt string.
+ *   getWaveFailureThreshold(projectDir) — return the configured wave failure threshold (number, 0–1).
+ *   getStuckAgentThresholds(projectDir) — return { timeoutMinutes, escalationMinutes } thresholds.
+ *   checkStuckAgents(sessionDir, projectDir) — scan agent spawn log and return stuck-agent report.
  *   SESSION_PATH_MARKER                 — string sentinel written to session files.
  *   PREDECESSOR_GATE                    — gate-type constant for predecessor checks.
  *   POSITION_CHECK_GATE                 — gate-type constant for position/step checks.
  *   RETRY_FAILURE_TYPE                  — failure-type constant used in retry verdicts.
  *   AGENT_SPAWN_GATE                    — gate-type constant for agent spawn limits.
- *   BYPASS_TOOLS                        — array of tool names exempt from gate enforcement.
- *   DEFAULT_WAVE_FAILURE_THRESHOLD      — default integer threshold for wave failures.
+ *   BYPASS_TOOLS                        — Set of tool names exempt from gate enforcement.
+ *   DEFAULT_WAVE_FAILURE_THRESHOLD      — default threshold for wave failures (0.5).
  *   DEFAULT_STUCK_AGENT_TIMEOUT_MINUTES — default minutes before an agent is considered stuck.
  *   DEFAULT_STUCK_AGENT_ESCALATION_MINUTES — default minutes before stuck agent is escalated.
  */
@@ -328,7 +328,8 @@ function getWaveFailureThreshold(projectDir) {
     return DEFAULT_WAVE_FAILURE_THRESHOLD;
   }
 
-  return parsed.wave_failure_threshold;
+  const val = parsed.wave_failure_threshold;
+  return Math.max(0, Math.min(1, val));
 }
 
 /**

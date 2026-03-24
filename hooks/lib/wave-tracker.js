@@ -57,7 +57,7 @@ function waveResultsFilename(waveNum) {
  * @param {number} waveNum     1-based wave number.
  * @returns {string}
  */
-function _waveFilePath(sessionDir, waveNum) {
+function waveFilePath(sessionDir, waveNum) {
   return path.join(sessionDir, waveResultsFilename(waveNum));
 }
 
@@ -69,8 +69,8 @@ function _waveFilePath(sessionDir, waveNum) {
  * @param {number} waveNum     1-based wave number.
  * @returns {Array<WaveResultEntry>}
  */
-function _readWaveResults(sessionDir, waveNum) {
-  const filePath = _waveFilePath(sessionDir, waveNum);
+function readWaveResults(sessionDir, waveNum) {
+  const filePath = waveFilePath(sessionDir, waveNum);
   try {
     const raw = fs.readFileSync(filePath, 'utf8');
     const parsed = JSON.parse(raw);
@@ -95,8 +95,8 @@ function _readWaveResults(sessionDir, waveNum) {
  * @param {Array<WaveResultEntry>} results  Array of result entries to persist.
  * @returns {void}
  */
-function _writeWaveResults(sessionDir, waveNum, results) {
-  const filePath = _waveFilePath(sessionDir, waveNum);
+function writeWaveResults(sessionDir, waveNum, results) {
+  const filePath = waveFilePath(sessionDir, waveNum);
   const tmpPath = filePath + '.tmp.' + process.pid;
   const content = JSON.stringify(results, null, 2) + '\n';
   try {
@@ -156,7 +156,7 @@ function recordAgentResult(sessionDir, waveNum, agentId, status) {
     throw new Error(`wave-tracker: invalid status "${status}" — must be "success" or "failure"`);
   }
 
-  const results = _readWaveResults(sessionDir, waveNum);
+  const results = readWaveResults(sessionDir, waveNum);
 
   /** @type {WaveResultEntry} */
   const entry = {
@@ -167,7 +167,7 @@ function recordAgentResult(sessionDir, waveNum, agentId, status) {
   };
 
   results.push(entry);
-  _writeWaveResults(sessionDir, waveNum, results);
+  writeWaveResults(sessionDir, waveNum, results);
 
   debugLog(HOOK_NAME, 'recorded agent result', {
     wave: waveNum,
@@ -193,7 +193,7 @@ function recordAgentResult(sessionDir, waveNum, agentId, status) {
  * @returns {WaveStatus}
  */
 function getWaveStatus(sessionDir, waveNum) {
-  const results = _readWaveResults(sessionDir, waveNum);
+  const results = readWaveResults(sessionDir, waveNum);
 
   const total = results.length;
   const succeeded = results.filter((e) => e.status === 'success').length;

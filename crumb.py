@@ -2891,7 +2891,7 @@ def cmd_session_agents(args: argparse.Namespace) -> None:
     if not isinstance(agents, list):
         die("agents.json is malformed: expected a JSON array")
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     agent_objects: List[Dict[str, Any]] = []
     for agent in agents:
@@ -2902,8 +2902,8 @@ def cmd_session_agents(args: argparse.Namespace) -> None:
         # Compute elapsed time from spawn timestamp.
         elapsed_minutes: float = 0.0
         try:
-            # Parse ISO 8601 UTC timestamp; strip trailing Z for fromisoformat compat.
-            spawned_dt = datetime.fromisoformat(spawned_at_str.rstrip("Z"))
+            # Parse ISO 8601 UTC timestamp; strip trailing Z and attach UTC tzinfo.
+            spawned_dt = datetime.fromisoformat(spawned_at_str.rstrip("Z")).replace(tzinfo=timezone.utc)
             elapsed_minutes = (now - spawned_dt).total_seconds() / 60.0
         except (ValueError, AttributeError):
             elapsed_minutes = 0.0
@@ -3121,9 +3121,11 @@ def _greedy_wave_plan(
 ) -> List[List[str]]:
     """Assign crumbs to waves using greedy graph-coloring to minimize intra-wave conflicts.
 
-    Builds a conflict graph where crumbs sharing a HIGH or MEDIUM risk file are
-    connected by an edge.  Then applies greedy coloring: each crumb is assigned to
-    the lowest-numbered wave that does not already contain a conflicting crumb.
+    Builds a conflict graph where crumbs sharing a HIGH-risk file are connected
+    by an edge.  Then applies greedy coloring: each crumb is assigned to the
+    lowest-numbered wave that does not already contain a conflicting crumb.
+    LOW and MEDIUM conflicts are tolerated within a wave (they can be resolved
+    via rebase-before-commit).
 
     Args:
         conflicts: List of conflict dicts with ``"crumbs"`` and ``"risk"`` fields,
@@ -3134,9 +3136,11 @@ def _greedy_wave_plan(
         A list of waves, where each wave is a list of crumb IDs.  Wave 1 is index 0.
         Crumbs with no conflicts are placed in Wave 1.
     """
-    # Build adjacency set: pairs of crumbs that conflict (any risk tier triggers separation)
+    # Build adjacency set: only HIGH-risk conflicts trigger wave separation
     neighbors: Dict[str, set] = {cid: set() for cid in all_crumb_ids}
     for conflict in conflicts:
+        if conflict.get("risk") != "HIGH":
+            continue
         crumbs = conflict["crumbs"]
         for i, a in enumerate(crumbs):
             for b in crumbs[i + 1 :]:
@@ -3228,7 +3232,7 @@ def cmd_conflict_matrix(args: argparse.Namespace) -> None:
         })
 
     # Collect ordered list of all active crumb IDs with scope.files (for wave-plan)
-    seen_ids: set = set()
+    seen_ids: Set[str] = set()
     all_active_ids: List[str] = []
     for crumb in active:
         scope = crumb.get("scope")
@@ -3301,7 +3305,7 @@ def _extract_req_ids(spec_text: str) -> List[str]:
     Returns:
         Ordered list of unique REQ IDs (e.g. ``["REQ-1", "REQ-2"]``).
     """
-    seen: dict[str, None] = {}
+    seen: Dict[str, None] = {}
     for match in _REQ_HEADING_RE.finditer(spec_text):
         req_id = match.group(1)
         seen[req_id] = None

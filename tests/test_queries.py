@@ -1500,17 +1500,19 @@ class TestConflictMatrix:
     def test_wave_plan_json_high_risk_crumbs_separated(
         self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
-        """HIGH-risk crumbs (sharing a file) appear in different waves in JSON output."""
+        """HIGH-risk crumbs (3+ sharing a file) appear in different waves in JSON output."""
         _write(crumbs_env, [
             _task_with_files("AF-1", ["hot.py"]),
             _task_with_files("AF-2", ["hot.py"]),
+            _task_with_files("AF-3", ["hot.py"]),
         ])
         cmd_conflict_matrix(_conflict_matrix_args(json_output=True, wave_plan=True))
         out = capsys.readouterr().out
         parsed = json.loads(out)
         wave_plan = parsed["wave_plan"]
-        # AF-1 and AF-2 share hot.py — they must be in separate waves
+        # AF-1, AF-2, AF-3 share hot.py (HIGH risk) — no wave should contain all three
         for wave in wave_plan:
-            assert not ("AF-1" in wave and "AF-2" in wave), (
-                "Conflicting crumbs AF-1 and AF-2 should not be in the same wave"
+            high_risk_in_wave = [c for c in ["AF-1", "AF-2", "AF-3"] if c in wave]
+            assert len(high_risk_in_wave) <= 1, (
+                f"HIGH-risk crumbs {high_risk_in_wave} should not share a wave"
             )

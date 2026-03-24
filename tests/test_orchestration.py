@@ -1,6 +1,6 @@
 """Structural integrity tests for the ant-farm orchestration system.
 
-Covers nine categories:
+Covers ten categories:
 1. Cross-reference integrity — every subagent_type string in RULES.md,
    RULES-decompose.md, RULES-review.md, and RULES-lite.md resolves to an
    agent file.
@@ -23,6 +23,8 @@ Covers nine categories:
    field, and the required JSON output keys.
 9. PRD import template placeholders — orchestration/templates/prd-import.md
    contains the expected {UPPERCASE} placeholder patterns.
+10. validate-coverage subcommand registration — ``crumb validate-coverage``
+    is wired up in ``build_parser`` and discoverable via ``--help``.
 
 All tests are self-contained: stdlib only, no external dependencies, no LLM
 calls.  The full suite should complete in well under 2 seconds.
@@ -30,7 +32,10 @@ calls.  The full suite should complete in well under 2 seconds.
 
 from __future__ import annotations
 
+import json
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -665,9 +670,6 @@ def test_prd_import_placeholders() -> None:
 # ---------------------------------------------------------------------------
 # Test 10: validate-coverage subcommand registration
 # ---------------------------------------------------------------------------
-
-import subprocess  # noqa: E402  (placed near usage for clarity)
-import sys  # noqa: E402
 
 CRUMB_PY: Path = REPO_ROOT / "crumb.py"
 

@@ -1060,8 +1060,8 @@ class TestSessionRetries:
 
         _run(["session-reset-retries", str(session_dir)], cwd=tmp_path)
 
-        tmp_path_check = session_dir / "retries.json.tmp"
-        assert not tmp_path_check.exists(), ".json.tmp should not exist after reset"
+        leftover_tmp = session_dir / "retries.json.tmp"
+        assert not leftover_tmp.exists(), ".json.tmp should not exist after reset"
 
     def test_session_reset_retries_prints_confirmation(self, tmp_path: Path) -> None:
         """``crumb session-reset-retries`` prints a confirmation message."""
