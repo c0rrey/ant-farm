@@ -52,7 +52,7 @@ const { debugLog } = require('./lib/debug-log');
 
 const HOOK_NAME = 'ant-farm-context-monitor';
 
-/** Number of tool uses to suppress repeated warnings after one fires. */
+/** Minimum tool-use gap before a same-severity warning re-fires (suppresses the next DEBOUNCE_TOOL_COUNT - 1 warnings). */
 const DEBOUNCE_TOOL_COUNT = 5;
 
 /** Filename for debounce state persistence. */

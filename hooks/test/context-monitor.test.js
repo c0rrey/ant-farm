@@ -290,10 +290,9 @@ test('handler: warning fires once, then debounced for next 4 tool uses', async (
     const fourth = await handler(makeInput(projectDir));
     assert.equal(fourth, '', 'Fourth call within debounce window should be silent');
 
-    // Fifth call: tool count = 15 (exactly at boundary: 15 - 10 = 5, window is < 5, so still debounced)
+    // Fifth call: tool count = 15 — at boundary: 15 - 10 = 5 >= DEBOUNCE_TOOL_COUNT (5), so NOT debounced → fires
     writeMetrics(sessionDir, 35, 15);
     const fifth = await handler(makeInput(projectDir));
-    // 15 - 10 = 5; DEBOUNCE_TOOL_COUNT is 5; isDebounced = toolsSince < 5 → 5 < 5 → false → fires
     assert.ok(fifth !== '', 'Fifth call (at boundary) should fire warning again');
   } finally {
     cleanup(projectDir);
