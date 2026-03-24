@@ -397,7 +397,7 @@ def _collect_script_slot_keys(script_path: Path) -> set[str]:
 def test_template_slot_coverage() -> None:
     """Every {UPPERCASE} slot in build-review-prompts.sh skeletons must be filled.
 
-    Scans ``reviewer-skeleton.md`` and ``big-head-skeleton.md`` — the two
+    Scans ``reviewer-skeleton.md`` and ``review-consolidator-skeleton.md`` — the two
     skeleton templates processed by ``scripts/build-review-prompts.sh`` — for
     ``{UPPERCASE}`` placeholder tokens in their agent-facing sections.  Each
     such slot must have a corresponding ``--slot "KEY=`` call somewhere in the
@@ -800,9 +800,6 @@ class TestValidateCoverageOrchestration:
     (Checkpoint Auditor, review templates) depend on.  Uses stdlib only —
     no pytest fixtures that require crumb.py internals.
     """
-
-    import sys as _sys
-    import json as _json
 
     @staticmethod
     def _make_env(tmp_path: Path, tasks_content: str = "") -> None:
