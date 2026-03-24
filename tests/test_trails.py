@@ -1488,3 +1488,182 @@ class TestCmdValidateTrail:
         fail_trail = next(r for r in results if r["trail_id"] == "AF-T1")
         assert fail_trail["status"] == "FAIL"
         assert len(fail_trail["violations"]) > 0
+
+
+# ---------------------------------------------------------------------------
+# TestTrailListJSON
+# ---------------------------------------------------------------------------
+
+
+class TestTrailListJSON:
+    """Tests for _cmd_trail_list --json output mode."""
+
+    def test_json_returns_array_of_trail_objects(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """_cmd_trail_list --json returns a JSON array of trail objects."""
+        _write_records(crumbs_env, [
+            {"id": "AF-T1", "type": "trail", "title": "Sprint 1", "status": "open",
+             "priority": "P1", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"},
+            {"id": "AF-T2", "type": "trail", "title": "Sprint 2", "status": "open",
+             "priority": "P2", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"},
+        ])
+        _cmd_trail_list(argparse.Namespace(json_output=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        assert isinstance(parsed, list)
+        assert len(parsed) == 2
+
+    def test_json_empty_returns_empty_array(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """_cmd_trail_list --json returns [] when no trails exist (not 'no trails found')."""
+        _write_records(crumbs_env, [])
+        _cmd_trail_list(argparse.Namespace(json_output=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        assert parsed == []
+
+    def test_json_contains_required_fields(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Each trail object in _cmd_trail_list --json has required schema fields."""
+        _write_records(crumbs_env, [
+            {"id": "AF-T1", "type": "trail", "title": "Trail", "status": "open",
+             "priority": "P2", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"},
+        ])
+        _cmd_trail_list(argparse.Namespace(json_output=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        obj = parsed[0]
+        for field in ("id", "title", "type", "status", "priority"):
+            assert field in obj, f"Required field '{field}' missing from JSON output"
+
+    def test_human_readable_unchanged_without_json_flag(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """_cmd_trail_list without --json outputs human-readable trail rows."""
+        _write_records(crumbs_env, [
+            {"id": "AF-T1", "type": "trail", "title": "Trail", "status": "open",
+             "priority": "P2", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"},
+        ])
+        _cmd_trail_list(argparse.Namespace(json_output=False))
+        out = capsys.readouterr().out
+        assert "AF-T1" in out
+        assert not out.strip().startswith("[")
+
+
+# ---------------------------------------------------------------------------
+# TestTrailShowJSON
+# ---------------------------------------------------------------------------
+
+
+class TestTrailShowJSON:
+    """Tests for _cmd_trail_show --json output mode."""
+
+    def test_json_returns_trail_with_children(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """_cmd_trail_show --json returns trail object with 'children' array."""
+        _write_records(crumbs_env, [
+            {"id": "AF-T1", "type": "trail", "title": "Sprint 1", "status": "open",
+             "priority": "P2", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"},
+            {"id": "AF-1", "type": "task", "title": "Child task", "status": "open",
+             "priority": "P2", "links": {"parent": "AF-T1"},
+             "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"},
+        ])
+        _cmd_trail_show(argparse.Namespace(id="AF-T1", json_output=True))
+        out = capsys.readouterr().out
+        obj = json.loads(out)
+        assert obj["id"] == "AF-T1"
+        assert "children" in obj
+        assert len(obj["children"]) == 1
+        assert obj["children"][0]["id"] == "AF-1"
+
+    def test_json_trail_no_children(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """_cmd_trail_show --json returns empty children array when trail has no children."""
+        _write_records(crumbs_env, [
+            {"id": "AF-T1", "type": "trail", "title": "Empty trail", "status": "open",
+             "priority": "P2", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"},
+        ])
+        _cmd_trail_show(argparse.Namespace(id="AF-T1", json_output=True))
+        out = capsys.readouterr().out
+        obj = json.loads(out)
+        assert obj["children"] == []
+
+    def test_human_readable_unchanged_without_json_flag(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """_cmd_trail_show without --json outputs human-readable fields."""
+        _write_records(crumbs_env, [
+            {"id": "AF-T1", "type": "trail", "title": "Trail", "status": "open",
+             "priority": "P2", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"},
+        ])
+        _cmd_trail_show(argparse.Namespace(id="AF-T1", json_output=False))
+        out = capsys.readouterr().out
+        assert "AF-T1" in out
+        assert not out.strip().startswith("{")
+
+
+# ---------------------------------------------------------------------------
+# TestTrailCreateJSON
+# ---------------------------------------------------------------------------
+
+
+class TestTrailCreateJSON:
+    """Tests for _cmd_trail_create --json output mode."""
+
+    def test_json_returns_created_trail_object(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """_cmd_trail_create --json returns the created trail object."""
+        args = argparse.Namespace(
+            title="Test Trail",
+            description=None,
+            priority=None,
+            acceptance_criteria=None,
+            json_output=True,
+        )
+        _cmd_trail_create(args)
+        out = capsys.readouterr().out
+        obj = json.loads(out)
+        assert obj["type"] == "trail"
+        assert obj["title"] == "Test Trail"
+        assert obj["status"] == "open"
+        assert obj["id"].endswith("T1")
+
+    def test_json_contains_required_fields(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Created trail JSON object includes required schema fields."""
+        args = argparse.Namespace(
+            title="Fields Trail",
+            description="A description",
+            priority="P1",
+            acceptance_criteria=None,
+            json_output=True,
+        )
+        _cmd_trail_create(args)
+        out = capsys.readouterr().out
+        obj = json.loads(out)
+        for field in ("id", "title", "type", "status", "priority"):
+            assert field in obj, f"Required field '{field}' missing from JSON output"
+        assert obj["priority"] == "P1"
+
+    def test_human_readable_unchanged_without_json_flag(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """_cmd_trail_create without --json prints 'created AF-TX' line."""
+        args = argparse.Namespace(
+            title="Human Trail",
+            description=None,
+            priority=None,
+            acceptance_criteria=None,
+            json_output=False,
+        )
+        _cmd_trail_create(args)
+        out = capsys.readouterr().out
+        assert "created" in out
+        assert not out.strip().startswith("{")

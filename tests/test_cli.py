@@ -1896,3 +1896,131 @@ class TestImportJSON:
         assert result.returncode == 0
         assert "imported" in result.stdout
         assert not result.stdout.strip().startswith("{")
+
+
+class TestInitJSON:
+    """Integration tests for 'crumb init --json' output."""
+
+    def test_json_init_returns_path_and_status_initialized(self, tmp_path: Path) -> None:
+        """crumb init --json returns object with 'path' and 'status': 'initialized'."""
+        result = _run(["init", "--json"], cwd=tmp_path)
+
+        assert result.returncode == 0, f"init --json failed: {result.stderr!r}"
+        parsed = json.loads(result.stdout)
+        assert "path" in parsed
+        assert parsed["status"] == "initialized"
+        assert parsed["path"].endswith(".crumbs")
+
+    def test_json_init_already_exists_returns_already_exists_status(self, tmp_path: Path) -> None:
+        """crumb init --json when .crumbs/ already exists returns 'already_exists' status."""
+        _make_crumbs_env(tmp_path)  # create .crumbs/ first
+
+        result = _run(["init", "--json"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        parsed = json.loads(result.stdout)
+        assert parsed["status"] == "already_exists"
+        assert "path" in parsed
+
+    def test_human_readable_unchanged_without_json_flag(self, tmp_path: Path) -> None:
+        """crumb init without --json outputs human-readable init message."""
+        result = _run(["init"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        assert "Initialised" in result.stdout or "nothing to do" in result.stdout
+        assert not result.stdout.strip().startswith("{")
+
+
+class TestRenderTemplateJSON:
+    """Integration tests for 'crumb render-template --json' output."""
+
+    def _write_template(self, tmp_path: Path, content: str) -> Path:
+        """Write a template file and return its path."""
+        tmpl = tmp_path / "template.md"
+        tmpl.write_text(content, encoding="utf-8")
+        return tmpl
+
+    def test_json_render_returns_content_field(self, tmp_path: Path) -> None:
+        """crumb render-template --json returns object with 'content' field."""
+        _make_crumbs_env(tmp_path)
+        tmpl = self._write_template(tmp_path, "Hello {{NAME}}!")
+
+        result = _run(
+            ["render-template", "--json", "--slot", "NAME=World", str(tmpl)],
+            cwd=tmp_path,
+        )
+
+        assert result.returncode == 0, f"render-template --json failed: {result.stderr!r}"
+        parsed = json.loads(result.stdout)
+        assert "content" in parsed
+        assert parsed["content"] == "Hello World!"
+
+    def test_json_render_no_slots(self, tmp_path: Path) -> None:
+        """crumb render-template --json on template with no slots returns full content."""
+        _make_crumbs_env(tmp_path)
+        tmpl = self._write_template(tmp_path, "Static content\n")
+
+        result = _run(["render-template", "--json", str(tmpl)], cwd=tmp_path)
+
+        assert result.returncode == 0
+        parsed = json.loads(result.stdout)
+        assert parsed["content"] == "Static content\n"
+
+    def test_human_readable_unchanged_without_json_flag(self, tmp_path: Path) -> None:
+        """crumb render-template without --json writes rendered content directly to stdout."""
+        _make_crumbs_env(tmp_path)
+        tmpl = self._write_template(tmp_path, "Hello {{NAME}}!")
+
+        result = _run(
+            ["render-template", "--slot", "NAME=World", str(tmpl)],
+            cwd=tmp_path,
+        )
+
+        assert result.returncode == 0
+        assert result.stdout == "Hello World!"
+        assert not result.stdout.strip().startswith("{")
+
+
+class TestPruneJSON:
+    """Integration tests for 'crumb prune --json' output."""
+
+    def test_json_prune_returns_pruned_and_retained(self, tmp_path: Path) -> None:
+        """crumb prune --json returns object with 'pruned' and 'retained' arrays."""
+        _make_crumbs_env(tmp_path)
+
+        result = _run(["prune", "--json", "--days", "0"], cwd=tmp_path)
+
+        assert result.returncode == 0, f"prune --json failed: {result.stderr!r}"
+        parsed = json.loads(result.stdout)
+        assert "pruned" in parsed
+        assert "retained" in parsed
+
+    def test_json_prune_dry_run_has_dry_run_true(self, tmp_path: Path) -> None:
+        """crumb prune --dry-run --json returns object with 'dry_run': true."""
+        _make_crumbs_env(tmp_path)
+
+        result = _run(["prune", "--json", "--dry-run"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        parsed = json.loads(result.stdout)
+        assert parsed.get("dry_run") is True
+
+    def test_json_prune_nothing_to_prune_returns_empty_pruned(self, tmp_path: Path) -> None:
+        """crumb prune --json with nothing to prune returns pruned=[]."""
+        _make_crumbs_env(tmp_path)
+
+        # Use --days 999 so nothing exceeds the threshold
+        result = _run(["prune", "--json", "--days", "999"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        parsed = json.loads(result.stdout)
+        assert parsed["pruned"] == []
+
+    def test_human_readable_unchanged_without_json_flag(self, tmp_path: Path) -> None:
+        """crumb prune without --json outputs human-readable text."""
+        _make_crumbs_env(tmp_path)
+
+        result = _run(["prune", "--days", "0"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        assert not result.stdout.strip().startswith("{")

@@ -1377,6 +1377,11 @@ def _cmd_trail_create(args: argparse.Namespace) -> None:
         tasks.append(record)
         write_tasks(path, tasks)
 
+    # --- JSON output branch ---
+    if getattr(args, "json_output", False):
+        print(json.dumps(_crumb_to_json_obj(record), indent=2))
+        return
+
     print(f"created {trail_id}")
 
 
@@ -1388,6 +1393,13 @@ def _cmd_trail_show(args: argparse.Namespace) -> None:
     trail = _require_crumb(tasks, args.id, label="trail")
     if trail.get("type") != "trail":
         die(f"'{args.id}' is not a trail")
+
+    # --- JSON output branch ---
+    if getattr(args, "json_output", False):
+        obj = _crumb_to_json_obj(trail)
+        obj["children"] = [_crumb_to_json_obj(c) for c in _get_trail_children(tasks, args.id)]
+        print(json.dumps(obj, indent=2))
+        return
 
     fields = [
         ("id", "ID"), ("type", "Type"), ("title", "Title"),
@@ -1417,6 +1429,12 @@ def _cmd_trail_list(args: argparse.Namespace) -> None:
     tasks = read_tasks(path)
 
     trails = [t for t in tasks if t.get("type") == "trail"]
+
+    # --- JSON output branch ---
+    if getattr(args, "json_output", False):
+        print(json.dumps([_crumb_to_json_obj(t) for t in trails], indent=2))
+        return
+
     if not trails:
         print("no trails found")
         return
@@ -2035,9 +2053,13 @@ def cmd_init(args: argparse.Namespace) -> None:
     """Bootstrap .crumbs/ directory with config.json and tasks.jsonl. Idempotent."""
     cwd = Path.cwd().resolve()
     crumbs = cwd / CRUMBS_DIR_NAME
+    json_output: bool = getattr(args, "json_output", False)
 
     if crumbs.is_dir():
-        print(f"{CRUMBS_DIR_NAME}/ already exists at {crumbs} — nothing to do.")
+        if json_output:
+            print(json.dumps({"path": str(crumbs), "status": "already_exists"}, indent=2))
+        else:
+            print(f"{CRUMBS_DIR_NAME}/ already exists at {crumbs} — nothing to do.")
         return
 
     prefix: str = args.prefix if args.prefix else DEFAULT_CONFIG["prefix"]
@@ -2081,12 +2103,19 @@ def cmd_init(args: argparse.Namespace) -> None:
                 if existing_entries and existing_entries[-1] != "":
                     fh.write("\n")
                 fh.write(f"{gitignore_entry}\n")
-            print(f"Added '{gitignore_entry}' to .gitignore")
+            if not json_output:
+                print(f"Added '{gitignore_entry}' to .gitignore")
         else:
-            print(f"'.gitignore' already contains '{gitignore_entry}' — skipped")
+            if not json_output:
+                print(f"'.gitignore' already contains '{gitignore_entry}' — skipped")
     except OSError as exc:
         # .gitignore update is best-effort; warn but do not abort
         print(f"warning: could not update .gitignore: {exc}", file=sys.stderr)
+
+    # --- JSON output branch ---
+    if json_output:
+        print(json.dumps({"path": str(crumbs), "status": "initialized"}, indent=2))
+        return
 
     print(
         f"Initialised {CRUMBS_DIR_NAME}/ in {cwd}\n"
@@ -2151,6 +2180,12 @@ def cmd_render_template(args: argparse.Namespace) -> None:
         slots[key] = value
 
     rendered = render_template(template_text, slots)
+
+    # --- JSON output branch ---
+    if getattr(args, "json_output", False):
+        print(json.dumps({"content": rendered}, indent=2))
+        return
+
     sys.stdout.write(rendered)
 
 
@@ -2251,7 +2286,10 @@ def cmd_prune(args: argparse.Namespace) -> None:
     sessions_dir = crumbs_path / "sessions"
 
     if not sessions_dir.is_dir():
-        print("nothing to prune (no sessions directory)")
+        if getattr(args, "json_output", False):
+            print(json.dumps({"dry_run": args.dry_run, "pruned": [], "retained": []}, indent=2))
+        else:
+            print("nothing to prune (no sessions directory)")
         return
 
     # Naive local-time datetime; see timezone note in docstring.
@@ -2300,7 +2338,18 @@ def cmd_prune(args: argparse.Namespace) -> None:
 
         to_prune.append((entry, age_days))
 
+    json_output: bool = getattr(args, "json_output", False)
+
     if args.dry_run:
+        # --- JSON output branch (dry-run) ---
+        if json_output:
+            print(json.dumps({
+                "dry_run": True,
+                "pruned": [p.name for p, _ in to_prune],
+                "retained": [p.name for p, _ in to_retain],
+            }, indent=2))
+            return
+
         if to_prune:
             print(f"would prune {len(to_prune)} director{'y' if len(to_prune) == 1 else 'ies'}:")
             for dir_path, age_days in to_prune:
@@ -2316,6 +2365,14 @@ def cmd_prune(args: argparse.Namespace) -> None:
         return
 
     if not to_prune:
+        # --- JSON output branch (nothing to prune) ---
+        if json_output:
+            print(json.dumps({
+                "dry_run": False,
+                "pruned": [],
+                "retained": [p.name for p, _ in to_retain],
+            }, indent=2))
+            return
         print(f"nothing to prune (0 directories exceed {days} days)")
         return
 
@@ -2341,6 +2398,15 @@ def cmd_prune(args: argparse.Namespace) -> None:
                 f"warning: could not remove {dir_path.name}: {exc}",
                 file=sys.stderr,
             )
+
+    # --- JSON output branch (after deletion) ---
+    if json_output:
+        print(json.dumps({
+            "dry_run": False,
+            "pruned": pruned_names,
+            "retained": [p.name for p, _ in to_retain],
+        }, indent=2))
+        return
 
     if pruned_names:
         names_str = ", ".join(pruned_names)
@@ -2699,10 +2765,12 @@ def build_parser() -> argparse.ArgumentParser:
     trail_sub = p_trail.add_subparsers(dest="trail_command", metavar="<trail-subcommand>")
 
     p_trail_list = trail_sub.add_parser("list", help="List trails with completion counts")
+    _add_json_flag(p_trail_list)
     p_trail_list.set_defaults(func=cmd_trail, trail_command="list")
 
     p_trail_show = trail_sub.add_parser("show", help="Show trail detail and child crumbs")
     p_trail_show.add_argument("id", metavar="ID")
+    _add_json_flag(p_trail_show)
     p_trail_show.set_defaults(func=cmd_trail, trail_command="show")
 
     p_trail_create = trail_sub.add_parser("create", help="Create a trail")
@@ -2712,6 +2780,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_trail_create.add_argument(
         "--acceptance-criteria", dest="acceptance_criteria", metavar="TEXT", action="append"
     )
+    _add_json_flag(p_trail_create)
     p_trail_create.set_defaults(func=cmd_trail, trail_command="create")
 
     p_trail_close = trail_sub.add_parser("close", help="Close a trail")
@@ -2794,6 +2863,7 @@ def build_parser() -> argparse.ArgumentParser:
             f"Defaults to '{DEFAULT_CONFIG['prefix']}' when omitted."
         ),
     )
+    _add_json_flag(p_init)
     p_init.set_defaults(func=cmd_init)
 
     # --- render-template ---
@@ -2813,6 +2883,7 @@ def build_parser() -> argparse.ArgumentParser:
         dest="slot",
         help="Slot assignment; repeat for multiple slots (e.g. --slot FOO=bar --slot BAZ=qux)",
     )
+    _add_json_flag(p_render_template)
     p_render_template.set_defaults(func=cmd_render_template)
 
     # --- prune ---
@@ -2837,6 +2908,7 @@ def build_parser() -> argparse.ArgumentParser:
         dest="dry_run",
         help="List would-prune and would-retain directories without deleting.",
     )
+    _add_json_flag(p_prune)
     p_prune.set_defaults(func=cmd_prune)
 
     # --- session-retries ---
