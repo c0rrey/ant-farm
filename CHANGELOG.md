@@ -1,5 +1,47 @@
 # Changelog
 
+## 2026-03-24 — Session c1921a4e (TDD Enforcement, Security Hooks, JSON CLI Completion, Session Management)
+
+### Summary
+
+Twenty tasks completed across five implementation waves plus a full review-fix cycle (~2.5 hours). The session wired three parallel capability tracks end-to-end: TDD enforcement (validate-tdd subcommand + checkpoint Check 5 + test suite), security hooks (patterns library, PreToolUse scanner, PostToolUse context monitor, full registration), and session management (ctx-metrics bridge, pause skill, session-list + resume). --json output was extended to the remaining crumb subcommands, completing full API coverage. Review Round 1 found 2 P1 and 4 P2 issues (all documentation/correctness bugs); Round 2 verified all 6 fixes clean. 18 commits total.
+
+### Implementation (Waves 1–5)
+
+- **AF-478**: feat: add --json output to `crumb ready`, `crumb blocked`, `crumb link` (`b744b67`)
+- **AF-479**: feat: add --json output to `crumb close`, `crumb reopen`, `crumb tree`, `crumb import` (`dd2579a`)
+- **AF-480**: feat: add --json output to trail subcommands, `init`, `render-template`, `prune` — completes --json for all 17+ subcommands (`f41eec1`)
+- **AF-470**: feat: create security patterns library and scanner module — 14 patterns across secrets/injection/unsafe_code categories (`6007b4f`)
+- **AF-473**: feat: extend statusline hook to write ctx-metrics.json bridge file — atomic tmp+rename to SESSION_DIR (`8980ae3`)
+- **AF-467**: feat: add TDD step 2.5 to implementer workflow — implementation.md, pre-spawn-check.md, crumb.py tdd field (`96ef969`)
+- **AF-471 + AF-474**: feat: implement security scanner PreToolUse hook and context monitor PostToolUse hook — enforcing/advisory scan + disk-debounced context warnings (`c7c7d2c`)
+- **AF-468**: feat: add validate-tdd subcommand and Check 5 to claims-vs-code checkpoint — git-log-based test-first ordering check (`48dca66`)
+- **AF-472**: feat: register security scanner hook in install manifest and hooks-registration (`c00b834`)
+- **AF-475**: feat: implement ant-farm-pause skill with handoff.json — 10-field schema, parse-progress-log.sh integration (`b059268`)
+- **AF-469**: test: add validate-tdd tests for same-commit ordering and TDD orchestration wiring (`b6393d5`)
+- **AF-477**: feat: register context monitor hook and add config defaults — DEFAULT_CONFIG thresholds 35/25 (`663e876`)
+- **AF-476**: feat: add crumb session-list command and session resume support to work skill — completed/paused/crashed classification (`6052682`, `b810835`)
+
+### Review Fixes (Round 1)
+
+- **AF-572**: fix: correct _session_last_activity docstring fallback value (`eb5407c`)
+- **AF-574**: fix: clarify _HANDOFF_FILE comment — signals pause, not completion (`eb5407c`)
+- **AF-576**: fix: cmd_close --json returns single object for single-ID, array for multi-ID (`eb5407c`, `8552bfe`)
+- **AF-575**: fix: rename misleading test `test_json_output_empty_when_all_blocked` (`e9ba027`)
+- **AF-577**: fix: correct stale check count in common.md — 4→5 checks (`e9ba027`)
+- **AF-573**: fix: clarify DEBOUNCE_TOOL_COUNT JSDoc — documents DEBOUNCE_TOOL_COUNT - 1 = 4 suppression semantics (`e5c3fbf`)
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|----|---------|
+| 1 | 27 files, 14 tasks | 2 | 4 | 21 | PASS WITH ISSUES |
+| 2 | fix commits (AF-572–577) | 0 | 0 | 0 | CLEAN PASS |
+
+27 root causes consolidated from 32 raw findings (5 merged, 3 cross-session duplicates skipped). All P1/P2 auto-fixed; 21 P3 deferred.
+
+# Changelog
+
 ## 2026-03-23 — Session 2ad19b6d (Gate Enforcement Infrastructure and crumb CLI Expansion)
 
 ### Summary
