@@ -134,7 +134,7 @@ describe('recordAgentResult', () => {
     try {
       recordAgentResult(tmpDir, 1, 'agent-1', 'success');
       const files = fs.readdirSync(tmpDir);
-      const tmpFiles = files.filter((f) => f.endsWith('.tmp'));
+      const tmpFiles = files.filter((f) => f.includes('.tmp.'));
       assert.equal(tmpFiles.length, 0, 'No tmp files should remain after write');
     } finally {
       cleanup(tmpDir);

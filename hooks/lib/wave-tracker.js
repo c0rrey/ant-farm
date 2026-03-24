@@ -97,7 +97,7 @@ function _readWaveResults(sessionDir, waveNum) {
  */
 function _writeWaveResults(sessionDir, waveNum, results) {
   const filePath = _waveFilePath(sessionDir, waveNum);
-  const tmpPath = filePath + '.tmp';
+  const tmpPath = filePath + '.tmp.' + process.pid;
   const content = JSON.stringify(results, null, 2) + '\n';
   try {
     fs.writeFileSync(tmpPath, content, 'utf8');
