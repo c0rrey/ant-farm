@@ -1,6 +1,6 @@
 """Structural integrity tests for the ant-farm orchestration system.
 
-Covers eight categories:
+Covers nine categories:
 1. Cross-reference integrity — every subagent_type string in RULES.md,
    RULES-decompose.md, RULES-review.md, and RULES-lite.md resolves to an
    agent file.
@@ -18,7 +18,10 @@ Covers eight categories:
 6. Skill file mapping — every skill file path referenced in orchestration
    templates exists on disk.
 7. Hook file existence — required hook scripts under hooks/ exist on disk.
-8. PRD import template placeholders — orchestration/templates/prd-import.md
+8. TDD enforcement integration — claims-vs-code.md contains the
+   ``crumb validate-tdd`` command reference, the ``tdd: false`` opt-out
+   field, and the required JSON output keys.
+9. PRD import template placeholders — orchestration/templates/prd-import.md
    contains the expected {UPPERCASE} placeholder patterns.
 
 All tests are self-contained: stdlib only, no external dependencies, no LLM
@@ -530,7 +533,95 @@ def test_hook_file_existence() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Test 8: PRD import template placeholders
+# Test 8: TDD enforcement integration
+# ---------------------------------------------------------------------------
+
+CLAIMS_VS_CODE_FILE: Path = (
+    REPO_ROOT / "orchestration" / "templates" / "checkpoints" / "claims-vs-code.md"
+)
+
+# Required strings that confirm ``crumb validate-tdd`` is wired into the
+# Checkpoint Auditor's claims-vs-code verification step.
+_REQUIRED_TDD_STRINGS: frozenset[str] = frozenset(
+    {
+        "crumb validate-tdd",    # the command invocation
+        "tdd: false",             # the opt-out field name
+        "ordering_violations",    # the JSON key the auditor must inspect
+        "test_files",             # the JSON key listing test files found
+    }
+)
+
+
+def test_tdd_enforcement_wired_in_checkpoint() -> None:
+    """claims-vs-code.md must reference the validate-tdd command and key fields.
+
+    The Checkpoint Auditor runs Check 5 using ``crumb validate-tdd``.
+    This test asserts that the checkpoint template hard-codes the required
+    command, opt-out field, and output key names so the auditor has
+    unambiguous instructions for TDD verification.
+
+    If any of these strings go missing the Check 5 instructions become
+    incomplete and the auditor may not run TDD enforcement correctly.
+    """
+    assert CLAIMS_VS_CODE_FILE.exists(), (
+        f"claims-vs-code.md not found at "
+        f"{CLAIMS_VS_CODE_FILE.relative_to(REPO_ROOT)}. "
+        "Has the file been moved or renamed?"
+    )
+
+    content = CLAIMS_VS_CODE_FILE.read_text(encoding="utf-8")
+    missing: list[str] = [s for s in sorted(_REQUIRED_TDD_STRINGS) if s not in content]
+
+    assert not missing, (
+        "The following required TDD-enforcement strings are absent from "
+        f"{CLAIMS_VS_CODE_FILE.relative_to(REPO_ROOT)}:\n"
+        + "\n".join(f"  - {s!r}" for s in missing)
+        + "\n\nCheck 5 of the Checkpoint Auditor relies on these strings to "
+        "instruct the auditor how to run and interpret validate-tdd."
+    )
+
+
+def test_tdd_skip_logic_documented_in_checkpoint() -> None:
+    """claims-vs-code.md must document the tdd: false early-exit path.
+
+    When a crumb carries ``tdd: false``, the Checkpoint Auditor must skip
+    Check 5 entirely.  This test verifies the checkpoint template contains
+    the SKIP verdict keyword alongside the tdd: false opt-out condition so
+    the auditor is not left guessing how to handle it.
+    """
+    assert CLAIMS_VS_CODE_FILE.exists(), (
+        f"claims-vs-code.md not found at "
+        f"{CLAIMS_VS_CODE_FILE.relative_to(REPO_ROOT)}. "
+        "Has the file been moved or renamed?"
+    )
+
+    content = CLAIMS_VS_CODE_FILE.read_text(encoding="utf-8")
+
+    assert "SKIP" in content, (
+        f"{CLAIMS_VS_CODE_FILE.relative_to(REPO_ROOT)}: "
+        "no SKIP verdict keyword found for the tdd: false early-exit path. "
+        "The Checkpoint Auditor needs an explicit SKIP outcome in Check 5."
+    )
+
+    # The SKIP verdict must appear near the tdd: false condition, not in an
+    # unrelated part of the file.  We check that both appear in the same
+    # 20-line window by scanning a sliding block of lines.
+    lines = content.splitlines()
+    window = 20
+    skip_near_tdd = any(
+        ("SKIP" in lines[i] and any("tdd" in lines[j] for j in range(i, min(i + window, len(lines)))))
+        or ("tdd" in lines[i] and any("SKIP" in lines[j] for j in range(i, min(i + window, len(lines)))))
+        for i in range(len(lines))
+    )
+    assert skip_near_tdd, (
+        f"{CLAIMS_VS_CODE_FILE.relative_to(REPO_ROOT)}: "
+        "'SKIP' and 'tdd' do not appear within 20 lines of each other. "
+        "Check 5 must co-locate the SKIP verdict with the tdd: false condition."
+    )
+
+
+# ---------------------------------------------------------------------------
+# Test 9: PRD import template placeholders
 # ---------------------------------------------------------------------------
 
 PRD_IMPORT_FILE: Path = REPO_ROOT / "orchestration" / "templates" / "prd-import.md"

@@ -2176,7 +2176,38 @@ class TestValidateTDD:
         assert "qux.test.ts" in test_file_paths
 
     # ------------------------------------------------------------------
-    # AC-3 — tdd: false skips Check 5
+    # AC-3 — PASS when test and implementation added in the same commit
+    # ------------------------------------------------------------------
+
+    def test_pass_when_test_and_impl_in_same_commit(self, tmp_path: Path) -> None:
+        """validate-tdd exits 0 when test and implementation files are in the same commit.
+
+        Acceptance criterion: files added together in a single commit have no
+        ordering violation because the test commit index equals the impl
+        commit index.
+        """
+        _make_crumbs_env(tmp_path)
+        root = _make_git_repo(tmp_path)
+
+        # Add both test and implementation file in one commit.
+        commit_both = _git_add_commit(
+            tmp_path,
+            {"test_widget.py": "# test", "widget.py": "# impl"},
+            "add test and impl together",
+        )
+
+        result = _run(["validate-tdd", f"{root}..{commit_both}"], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected PASS when test and impl are in the same commit.\n"
+            f"stdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        assert "PASS" in result.stdout, (
+            f"Expected 'PASS' in output.\nstdout: {result.stdout!r}"
+        )
+
+    # ------------------------------------------------------------------
+    # AC-4 — tdd: false skips Check 5
     # ------------------------------------------------------------------
 
     def test_skips_when_tdd_false(self, tmp_path: Path) -> None:
