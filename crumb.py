@@ -3107,6 +3107,131 @@ def cmd_conflict_matrix(args: argparse.Namespace) -> None:
         print(f"{file_str:<50} {crumbs_str:<30} {risk_str}")
 
 
+#: Pattern that matches REQ-N: headings in a spec file.
+#: Matches lines like "## REQ-1: Description" or "### REQ-42: ..." (any heading level).
+_REQ_HEADING_RE: re.Pattern[str] = re.compile(
+    r"^#{1,6}\s+(REQ-\d+)\s*:", re.MULTILINE
+)
+
+
+def _extract_req_ids(spec_text: str) -> List[str]:
+    """Return a list of unique REQ-N identifiers from a spec file, in order of appearance.
+
+    Matches headings of the form ``## REQ-1:``, ``### REQ-42:``, etc. (any heading level).
+
+    Args:
+        spec_text: Full text of the spec markdown file.
+
+    Returns:
+        Ordered list of unique REQ IDs (e.g. ``["REQ-1", "REQ-2"]``).
+    """
+    seen: dict[str, None] = {}
+    for match in _REQ_HEADING_RE.finditer(spec_text):
+        req_id = match.group(1)
+        seen[req_id] = None
+    return list(seen.keys())
+
+
+def cmd_validate_coverage(args: argparse.Namespace) -> None:
+    """Validate that every REQ-N heading in a spec is covered by at least one crumb.
+
+    Reads the spec file at ``args.spec_file``, extracts all ``REQ-N:`` headings,
+    then reads all open/in-progress crumbs from tasks.jsonl and maps their
+    ``requirements`` arrays to the extracted REQ IDs.
+
+    Output:
+    - **covered**: REQs with at least one open/in-progress crumb listing them.
+    - **uncovered**: REQs with no covering crumb.
+    - **unmapped**: Crumb IDs that have no ``requirements`` field (migration warning).
+
+    Exit codes:
+    - ``0`` — all REQs are covered (or the spec has no REQs).
+    - ``1`` — one or more REQs are uncovered, or the spec file is not found.
+
+    Args:
+        args: Parsed CLI arguments.  Expected attributes:
+
+            - ``spec_file`` (str): Path to the spec markdown file.
+            - ``json_output`` (bool): Emit JSON instead of human-readable text.
+    """
+    spec_path = Path(args.spec_file)
+    if not spec_path.exists():
+        die(f"spec file not found: {spec_path}")
+
+    try:
+        spec_text = spec_path.read_text(encoding="utf-8")
+    except OSError as exc:
+        die(f"cannot read spec file: {exc}")
+
+    req_ids = _extract_req_ids(spec_text)
+
+    path = require_tasks_jsonl()
+    tasks = read_tasks(path)
+
+    active_statuses = {"open", "in_progress"}
+    active = [t for t in tasks if t.get("status") in active_statuses]
+
+    # Build: req_id -> list of covering crumb IDs
+    coverage: Dict[str, List[str]] = {req: [] for req in req_ids}
+    unmapped: List[str] = []
+
+    for crumb in active:
+        crumb_id = crumb.get("id", "?")
+        reqs = crumb.get("requirements")
+        if reqs is None:
+            unmapped.append(crumb_id)
+            continue
+        if not isinstance(reqs, list):
+            unmapped.append(crumb_id)
+            continue
+        for req in reqs:
+            if isinstance(req, str) and req in coverage:
+                coverage[req].append(crumb_id)
+
+    covered: List[Dict[str, Any]] = []
+    uncovered: List[str] = []
+    for req_id in req_ids:
+        covering = coverage[req_id]
+        if covering:
+            covered.append({"req": req_id, "crumbs": covering})
+        else:
+            uncovered.append(req_id)
+
+    fully_covered = len(uncovered) == 0
+
+    if args.json_output:
+        print(json.dumps({
+            "covered": covered,
+            "uncovered": uncovered,
+            "unmapped": unmapped,
+        }, indent=2))
+        if not fully_covered:
+            sys.exit(1)
+        return
+
+    # Human-readable output
+    if covered:
+        print(f"Covered ({len(covered)}):")
+        for entry in covered:
+            crumbs_str = ", ".join(entry["crumbs"])
+            print(f"  {entry['req']:<10} covered by: {crumbs_str}")
+
+    if uncovered:
+        print(f"Uncovered ({len(uncovered)}):")
+        for req_id in uncovered:
+            print(f"  {req_id}")
+
+    if unmapped:
+        print(f"Warning: {len(unmapped)} crumb(s) have no requirements field: "
+              f"{', '.join(unmapped)}")
+
+    if not req_ids:
+        print("No REQ headings found in spec — nothing to validate.")
+
+    if not fully_covered:
+        sys.exit(1)
+
+
 # ---------------------------------------------------------------------------
 # Argument parser
 # ---------------------------------------------------------------------------
@@ -3144,6 +3269,7 @@ def build_parser() -> argparse.ArgumentParser:
             "  session-list     List all session directories with status and last activity\n"
             "  validate-tdd     Verify test-first ordering in a commit range\n"
             "  conflict-matrix  Report file overlap conflicts between open crumbs\n"
+            "  validate-coverage  Validate REQ coverage across open crumbs\n"
         ),
     )
     parser.set_defaults(func=None)
@@ -3481,6 +3607,19 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_json_flag(p_conflict_matrix)
     p_conflict_matrix.set_defaults(func=cmd_conflict_matrix)
+
+    # --- validate-coverage ---
+    p_validate_coverage = sub.add_parser(
+        "validate-coverage",
+        help="Validate that every REQ-N heading in a spec is covered by open crumbs",
+    )
+    p_validate_coverage.add_argument(
+        "spec_file",
+        metavar="SPEC_FILE",
+        help="Path to the spec markdown file containing REQ-N: headings",
+    )
+    _add_json_flag(p_validate_coverage)
+    p_validate_coverage.set_defaults(func=cmd_validate_coverage)
 
     return parser
 

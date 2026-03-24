@@ -660,3 +660,129 @@ def test_prd_import_placeholders() -> None:
         + "\n\nThese placeholders are required for the Planner to fill "
         "before spawning the PRD Importer agent."
     )
+
+
+# ---------------------------------------------------------------------------
+# Test 10: validate-coverage subcommand registration
+# ---------------------------------------------------------------------------
+
+import subprocess  # noqa: E402  (placed near usage for clarity)
+import sys  # noqa: E402
+
+CRUMB_PY: Path = REPO_ROOT / "crumb.py"
+
+
+def test_validate_coverage_registered_in_parser() -> None:
+    """``crumb validate-coverage`` is registered as a subcommand in build_parser.
+
+    Runs ``crumb --help`` as a subprocess and asserts that ``validate-coverage``
+    appears in the output.  This verifies the subcommand is wired up correctly
+    in ``build_parser`` and would be discovered by users via the help text.
+    """
+    import tempfile
+    import json as _json
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        # Bootstrap a minimal .crumbs/ so crumb.py can start without error
+        crumbs_dir = tmp_path / ".crumbs"
+        crumbs_dir.mkdir()
+        (crumbs_dir / "config.json").write_text(
+            _json.dumps({
+                "prefix": "AF",
+                "next_crumb_id": 1,
+                "default_priority": "P2",
+                "banned_phrases": [],
+            }) + "\n",
+            encoding="utf-8",
+        )
+        (crumbs_dir / "tasks.jsonl").write_text("", encoding="utf-8")
+
+        result = subprocess.run(
+            [sys.executable, str(CRUMB_PY), "--help"],
+            capture_output=True, text=True, cwd=str(tmp_path),
+        )
+    assert "validate-coverage" in result.stdout, (
+        "crumb --help output does not mention 'validate-coverage'. "
+        "Is the subcommand registered in build_parser()?\n"
+        f"stdout: {result.stdout!r}"
+    )
+
+
+def test_validate_coverage_empty_spec_exits_0() -> None:
+    """``crumb validate-coverage`` on a spec with no REQ headings exits 0.
+
+    A spec file with no REQ-N: headings has no requirements to cover, so the
+    command must exit 0 (100% coverage of an empty requirement set).
+    """
+    import tempfile
+    import json as _json
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        crumbs_dir = tmp_path / ".crumbs"
+        crumbs_dir.mkdir()
+        (crumbs_dir / "config.json").write_text(
+            _json.dumps({
+                "prefix": "AF",
+                "next_crumb_id": 1,
+                "default_priority": "P2",
+                "banned_phrases": [],
+            }) + "\n",
+            encoding="utf-8",
+        )
+        (crumbs_dir / "tasks.jsonl").write_text("", encoding="utf-8")
+
+        spec_file = tmp_path / "spec.md"
+        spec_file.write_text("# Overview\n\nNo requirements here.\n", encoding="utf-8")
+
+        result = subprocess.run(
+            [sys.executable, str(CRUMB_PY), "validate-coverage", str(spec_file)],
+            capture_output=True, text=True, cwd=str(tmp_path),
+        )
+    assert result.returncode == 0, (
+        "validate-coverage on an empty spec must exit 0.\n"
+        f"stdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+    )
+
+
+def test_validate_coverage_json_output_has_required_keys() -> None:
+    """``crumb validate-coverage --json`` output has 'covered', 'uncovered', 'unmapped'.
+
+    Structural contract: the JSON schema for validate-coverage must always
+    include these three top-level keys so downstream orchestration consumers
+    (e.g., Checkpoint Auditor) can rely on them without version checks.
+    """
+    import tempfile
+    import json as _json
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        crumbs_dir = tmp_path / ".crumbs"
+        crumbs_dir.mkdir()
+        (crumbs_dir / "config.json").write_text(
+            _json.dumps({
+                "prefix": "AF",
+                "next_crumb_id": 1,
+                "default_priority": "P2",
+                "banned_phrases": [],
+            }) + "\n",
+            encoding="utf-8",
+        )
+        (crumbs_dir / "tasks.jsonl").write_text("", encoding="utf-8")
+
+        spec_file = tmp_path / "spec.md"
+        spec_file.write_text("# Spec\n\n## REQ-1: Do something.\n", encoding="utf-8")
+
+        result = subprocess.run(
+            [sys.executable, str(CRUMB_PY), "validate-coverage", "--json", str(spec_file)],
+            capture_output=True, text=True, cwd=str(tmp_path),
+        )
+    # Exit code 1 because REQ-1 is uncovered, but output is still JSON
+    assert result.returncode == 1
+    parsed = _json.loads(result.stdout)
+    for key in ("covered", "uncovered", "unmapped"):
+        assert key in parsed, (
+            f"validate-coverage --json output missing required key '{key}'.\n"
+            f"stdout: {result.stdout!r}"
+        )

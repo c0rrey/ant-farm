@@ -2693,3 +2693,253 @@ class TestValidateTDD:
         assert "merge" in result.stderr.lower() or "merge" in result.stdout.lower(), (
             f"Expected merge warning.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
         )
+
+
+# ---------------------------------------------------------------------------
+# TestValidateCoverage
+# ---------------------------------------------------------------------------
+
+
+class TestValidateCoverage:
+    """Integration tests for ``crumb validate-coverage``."""
+
+    @staticmethod
+    def _write_spec(tmp_path: Path, content: str) -> Path:
+        """Write *content* to ``tmp_path/spec.md`` and return the path."""
+        spec_file = tmp_path / "spec.md"
+        spec_file.write_text(content, encoding="utf-8")
+        return spec_file
+
+    @staticmethod
+    def _create_crumb(tmp_path: Path, title: str, requirements: List[str]) -> str:
+        """Create a crumb with a requirements array via --from-json and return its ID."""
+        payload = json.dumps({
+            "title": title,
+            "requirements": requirements,
+        })
+        result = _run(["create", "--from-json", payload], cwd=tmp_path)
+        assert result.returncode == 0, f"create failed: {result.stderr}"
+        return result.stdout.strip().split()[-1]
+
+    # ------------------------------------------------------------------
+    # AC 1 — spec REQ extraction
+    # ------------------------------------------------------------------
+
+    def test_extracts_req_headings_from_spec(self, tmp_path: Path) -> None:
+        """validate-coverage extracts REQ-N: headings from the spec file."""
+        _make_crumbs_env(tmp_path)
+        spec = self._write_spec(
+            tmp_path,
+            "## REQ-1: The system must do X.\n## REQ-2: The system must do Y.\n",
+        )
+        result = _run(["validate-coverage", str(spec)], cwd=tmp_path)
+        output = result.stdout + result.stderr
+        assert "REQ-1" in output, f"Expected REQ-1 in output.\n{output!r}"
+        assert "REQ-2" in output, f"Expected REQ-2 in output.\n{output!r}"
+
+    def test_ignores_non_req_headings(self, tmp_path: Path) -> None:
+        """Headings without the REQ-N: pattern are not extracted."""
+        _make_crumbs_env(tmp_path)
+        spec = self._write_spec(
+            tmp_path,
+            "## Introduction\n## Overview\n## REQ-1: Only this one.\n",
+        )
+        result = _run(["validate-coverage", str(spec)], cwd=tmp_path)
+        output = result.stdout + result.stderr
+        assert "REQ-1" in output
+        assert "Introduction" not in output
+        assert "Overview" not in output
+
+    # ------------------------------------------------------------------
+    # AC 2 — requirements arrays from crumbs
+    # ------------------------------------------------------------------
+
+    def test_reads_requirements_from_open_crumbs(self, tmp_path: Path) -> None:
+        """validate-coverage reads requirements arrays from open/in-progress crumbs."""
+        _make_crumbs_env(tmp_path)
+        spec = self._write_spec(tmp_path, "## REQ-1: Do X.\n")
+        self._create_crumb(tmp_path, "Task A", ["REQ-1"])
+        result = _run(["validate-coverage", str(spec)], cwd=tmp_path)
+        assert result.returncode == 0, (
+            f"Expected exit 0 (all covered).\nstdout: {result.stdout!r}"
+        )
+
+    # ------------------------------------------------------------------
+    # AC 3 — output structure
+    # ------------------------------------------------------------------
+
+    def test_output_lists_covered_and_uncovered_reqs(self, tmp_path: Path) -> None:
+        """Output lists covered REQs (with crumb IDs) and uncovered REQs."""
+        _make_crumbs_env(tmp_path)
+        spec = self._write_spec(
+            tmp_path,
+            "## REQ-1: Covered.\n## REQ-2: Not covered.\n",
+        )
+        self._create_crumb(tmp_path, "Task A", ["REQ-1"])
+        result = _run(["validate-coverage", str(spec)], cwd=tmp_path)
+        output = result.stdout
+        assert "REQ-1" in output
+        assert "REQ-2" in output
+
+    # ------------------------------------------------------------------
+    # AC 4 — exit codes
+    # ------------------------------------------------------------------
+
+    def test_exits_1_when_any_req_uncovered(self, tmp_path: Path) -> None:
+        """Exit code is 1 when at least one REQ has no covering crumb."""
+        _make_crumbs_env(tmp_path)
+        spec = self._write_spec(tmp_path, "## REQ-1: Uncovered.\n")
+        result = _run(["validate-coverage", str(spec)], cwd=tmp_path)
+        assert result.returncode == 1, (
+            f"Expected exit 1 for uncovered REQ.\nstdout: {result.stdout!r}"
+        )
+
+    def test_exits_0_when_all_reqs_covered(self, tmp_path: Path) -> None:
+        """Exit code is 0 when every REQ has at least one covering crumb."""
+        _make_crumbs_env(tmp_path)
+        spec = self._write_spec(tmp_path, "## REQ-1: Covered.\n")
+        self._create_crumb(tmp_path, "Task A", ["REQ-1"])
+        result = _run(["validate-coverage", str(spec)], cwd=tmp_path)
+        assert result.returncode == 0, (
+            f"Expected exit 0 (all covered).\nstdout: {result.stdout!r}"
+        )
+
+    # ------------------------------------------------------------------
+    # AC 5 — --json output
+    # ------------------------------------------------------------------
+
+    def test_json_output_has_covered_uncovered_unmapped(self, tmp_path: Path) -> None:
+        """--json output has 'covered', 'uncovered', and 'unmapped' arrays."""
+        _make_crumbs_env(tmp_path)
+        spec = self._write_spec(
+            tmp_path,
+            "## REQ-1: Covered.\n## REQ-2: Not covered.\n",
+        )
+        self._create_crumb(tmp_path, "Task A", ["REQ-1"])
+        result = _run(["validate-coverage", "--json", str(spec)], cwd=tmp_path)
+        assert result.returncode == 1
+        parsed = json.loads(result.stdout)
+        assert "covered" in parsed
+        assert "uncovered" in parsed
+        assert "unmapped" in parsed
+
+    def test_json_covered_has_req_and_crumbs(self, tmp_path: Path) -> None:
+        """Each 'covered' entry has 'req' and 'crumbs' fields."""
+        _make_crumbs_env(tmp_path)
+        spec = self._write_spec(tmp_path, "## REQ-1: Covered.\n")
+        self._create_crumb(tmp_path, "Task A", ["REQ-1"])
+        result = _run(["validate-coverage", "--json", str(spec)], cwd=tmp_path)
+        assert result.returncode == 0
+        parsed = json.loads(result.stdout)
+        assert len(parsed["covered"]) == 1
+        entry = parsed["covered"][0]
+        assert "req" in entry
+        assert "crumbs" in entry
+        assert entry["req"] == "REQ-1"
+
+    def test_json_empty_spec_exits_0(self, tmp_path: Path) -> None:
+        """A spec with no REQ headings exits 0 with empty covered/uncovered."""
+        _make_crumbs_env(tmp_path)
+        spec = self._write_spec(tmp_path, "# Intro\n\nNo requirements here.\n")
+        result = _run(["validate-coverage", "--json", str(spec)], cwd=tmp_path)
+        assert result.returncode == 0
+        parsed = json.loads(result.stdout)
+        assert parsed["covered"] == []
+        assert parsed["uncovered"] == []
+
+    # ------------------------------------------------------------------
+    # AC 6 — migration-friendly: crumbs without requirements are warnings
+    # ------------------------------------------------------------------
+
+    def test_crumbs_without_requirements_reported_as_warnings(
+        self, tmp_path: Path
+    ) -> None:
+        """Crumbs with no requirements field appear in 'unmapped' (not failures)."""
+        _make_crumbs_env(tmp_path)
+        spec = self._write_spec(tmp_path, "## REQ-1: Covered.\n")
+        # Create a crumb WITHOUT requirements
+        result = _run(["create", "--title", "Old crumb"], cwd=tmp_path)
+        assert result.returncode == 0
+        # Create one WITH requirements
+        self._create_crumb(tmp_path, "New crumb", ["REQ-1"])
+        result = _run(["validate-coverage", str(spec)], cwd=tmp_path)
+        # Should still exit 0 (REQ-1 is covered) and not exit 1 for unmapped crumb
+        assert result.returncode == 0
+
+    def test_json_unmapped_contains_crumbs_without_requirements(
+        self, tmp_path: Path
+    ) -> None:
+        """'unmapped' array contains crumb IDs that have no requirements field."""
+        _make_crumbs_env(tmp_path)
+        spec = self._write_spec(tmp_path, "## REQ-1: Covered.\n")
+        result = _run(["create", "--title", "Unmapped crumb"], cwd=tmp_path)
+        crumb_id = result.stdout.strip().split()[-1]
+        self._create_crumb(tmp_path, "Mapped crumb", ["REQ-1"])
+        result = _run(["validate-coverage", "--json", str(spec)], cwd=tmp_path)
+        assert result.returncode == 0
+        parsed = json.loads(result.stdout)
+        assert crumb_id in parsed["unmapped"]
+
+    # ------------------------------------------------------------------
+    # AC 7 — requirements field via create and update
+    # ------------------------------------------------------------------
+
+    def test_create_with_requirements_via_from_json(self, tmp_path: Path) -> None:
+        """crumb create --from-json with requirements array stores the field."""
+        _make_crumbs_env(tmp_path)
+        payload = json.dumps({"title": "Task X", "requirements": ["REQ-1", "REQ-2"]})
+        result = _run(["create", "--from-json", payload], cwd=tmp_path)
+        assert result.returncode == 0
+        crumb_id = result.stdout.strip().split()[-1]
+        show = _run(["show", "--json", crumb_id], cwd=tmp_path)
+        assert result.returncode == 0
+        data = json.loads(show.stdout)
+        assert data["requirements"] == ["REQ-1", "REQ-2"]
+
+    def test_update_with_requirements_via_from_json(self, tmp_path: Path) -> None:
+        """crumb update --from-json sets requirements on an existing crumb."""
+        _make_crumbs_env(tmp_path)
+        result = _run(["create", "--title", "Task Y"], cwd=tmp_path)
+        crumb_id = result.stdout.strip().split()[-1]
+        payload = json.dumps({"requirements": ["REQ-3"]})
+        result = _run(["update", crumb_id, "--from-json", payload], cwd=tmp_path)
+        assert result.returncode == 0
+        show = _run(["show", "--json", crumb_id], cwd=tmp_path)
+        data = json.loads(show.stdout)
+        assert data["requirements"] == ["REQ-3"]
+
+    # ------------------------------------------------------------------
+    # Edge cases
+    # ------------------------------------------------------------------
+
+    def test_closed_crumbs_excluded_from_coverage(self, tmp_path: Path) -> None:
+        """Closed crumbs do not count toward coverage."""
+        _make_crumbs_env(tmp_path)
+        spec = self._write_spec(tmp_path, "## REQ-1: Needs coverage.\n")
+        crumb_id = self._create_crumb(tmp_path, "Closed task", ["REQ-1"])
+        _run(["close", crumb_id], cwd=tmp_path)
+        result = _run(["validate-coverage", str(spec)], cwd=tmp_path)
+        assert result.returncode == 1, (
+            "Closed crumb must not provide coverage.\n"
+            f"stdout: {result.stdout!r}"
+        )
+
+    def test_spec_file_not_found_exits_1(self, tmp_path: Path) -> None:
+        """Missing spec file exits with code 1 and reports an error."""
+        _make_crumbs_env(tmp_path)
+        result = _run(["validate-coverage", "nonexistent.md"], cwd=tmp_path)
+        assert result.returncode == 1
+        assert "not found" in result.stderr.lower() or "not found" in result.stdout.lower()
+
+    def test_multiple_crumbs_covering_same_req(self, tmp_path: Path) -> None:
+        """Multiple crumbs can cover the same REQ; all IDs appear in JSON output."""
+        _make_crumbs_env(tmp_path)
+        spec = self._write_spec(tmp_path, "## REQ-1: Shared coverage.\n")
+        id1 = self._create_crumb(tmp_path, "Task A", ["REQ-1"])
+        id2 = self._create_crumb(tmp_path, "Task B", ["REQ-1"])
+        result = _run(["validate-coverage", "--json", str(spec)], cwd=tmp_path)
+        assert result.returncode == 0
+        parsed = json.loads(result.stdout)
+        crumb_ids = parsed["covered"][0]["crumbs"]
+        assert id1 in crumb_ids
+        assert id2 in crumb_ids
