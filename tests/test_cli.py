@@ -3247,3 +3247,68 @@ class TestValidateCoverage:
         crumb_ids = parsed["covered"][0]["crumbs"]
         assert id1 in crumb_ids
         assert id2 in crumb_ids
+
+    # ------------------------------------------------------------------
+    # AC 6 — empty requirements array behavior
+    # ------------------------------------------------------------------
+
+    def test_empty_requirements_array_not_in_unmapped(self, tmp_path: Path) -> None:
+        """Crumbs with requirements=[] are NOT in 'unmapped' (empty list is valid).
+
+        Documents actual behavior: an explicit empty requirements array is treated
+        as "has requirements field, but no reqs listed" — distinct from a crumb
+        with no requirements field (which lands in unmapped).
+        """
+        _make_crumbs_env(tmp_path)
+        spec = self._write_spec(tmp_path, "## REQ-1: Covered by other.\n")
+        # Create crumb WITH requirements field set to empty array
+        payload = json.dumps({"title": "Empty reqs crumb", "requirements": []})
+        result = _run(["create", "--from-json", payload], cwd=tmp_path)
+        assert result.returncode == 0
+        empty_id = result.stdout.strip().split()[-1]
+        # Also create one that covers REQ-1 so exit code is 0
+        self._create_crumb(tmp_path, "Covering crumb", ["REQ-1"])
+
+        result = _run(["validate-coverage", "--json", str(spec)], cwd=tmp_path)
+
+        assert result.returncode == 0
+        parsed = json.loads(result.stdout)
+        # Empty-array crumb does NOT land in unmapped (no requirements field does)
+        assert empty_id not in parsed["unmapped"], (
+            f"Crumb with requirements=[] should NOT be in unmapped.\n"
+            f"unmapped: {parsed['unmapped']!r}"
+        )
+
+    def test_empty_requirements_array_does_not_cover_any_req(self, tmp_path: Path) -> None:
+        """Crumbs with requirements=[] provide no coverage — the REQ remains uncovered."""
+        _make_crumbs_env(tmp_path)
+        spec = self._write_spec(tmp_path, "## REQ-1: Needs coverage.\n")
+        payload = json.dumps({"title": "Empty reqs crumb", "requirements": []})
+        _run(["create", "--from-json", payload], cwd=tmp_path)
+
+        result = _run(["validate-coverage", "--json", str(spec)], cwd=tmp_path)
+
+        assert result.returncode == 1, (
+            "Expected exit 1 because REQ-1 has no covering crumb.\n"
+            f"stdout: {result.stdout!r}"
+        )
+        parsed = json.loads(result.stdout)
+        assert "REQ-1" in parsed["uncovered"], (
+            f"REQ-1 must be uncovered when only crumb has empty requirements.\n"
+            f"uncovered: {parsed['uncovered']!r}"
+        )
+
+    def test_in_progress_crumbs_provide_coverage(self, tmp_path: Path) -> None:
+        """in_progress crumbs count toward coverage (not just 'open')."""
+        _make_crumbs_env(tmp_path)
+        spec = self._write_spec(tmp_path, "## REQ-1: In progress coverage.\n")
+        crumb_id = self._create_crumb(tmp_path, "In-progress task", ["REQ-1"])
+        # Move to in_progress
+        _run(["update", crumb_id, "--status", "in_progress"], cwd=tmp_path)
+
+        result = _run(["validate-coverage", str(spec)], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            "in_progress crumb must count toward coverage.\n"
+            f"stdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )

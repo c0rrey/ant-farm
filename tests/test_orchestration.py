@@ -786,3 +786,112 @@ def test_validate_coverage_json_output_has_required_keys() -> None:
             f"validate-coverage --json output missing required key '{key}'.\n"
             f"stdout: {result.stdout!r}"
         )
+
+
+# ---------------------------------------------------------------------------
+# TestValidateCoverageOrchestration — contract tests for orchestration consumers
+# ---------------------------------------------------------------------------
+
+
+class TestValidateCoverageOrchestration:
+    """Orchestration integration tests for ``crumb validate-coverage``.
+
+    Verifies structural contracts that downstream orchestration consumers
+    (Checkpoint Auditor, review templates) depend on.  Uses stdlib only —
+    no pytest fixtures that require crumb.py internals.
+    """
+
+    import sys as _sys
+    import json as _json
+
+    @staticmethod
+    def _make_env(tmp_path: Path, tasks_content: str = "") -> None:
+        """Write minimal .crumbs/ environment to *tmp_path*."""
+        import json as _json
+        crumbs_dir = tmp_path / ".crumbs"
+        crumbs_dir.mkdir(parents=True, exist_ok=True)
+        (crumbs_dir / "config.json").write_text(
+            _json.dumps({
+                "prefix": "AF",
+                "next_crumb_id": 1,
+                "default_priority": "P2",
+                "banned_phrases": [],
+            }) + "\n",
+            encoding="utf-8",
+        )
+        (crumbs_dir / "tasks.jsonl").write_text(tasks_content, encoding="utf-8")
+
+    def test_json_schema_always_has_three_keys_when_all_covered(
+        self, tmp_path: Path
+    ) -> None:
+        """JSON output always includes covered/uncovered/unmapped even when fully covered."""
+        import json as _json
+        import sys
+        self._make_env(tmp_path, tasks_content=(
+            '{"id":"AF-1","title":"Task","status":"open","requirements":["REQ-1"]}\n'
+        ))
+        spec = tmp_path / "spec.md"
+        spec.write_text("## REQ-1: Fully covered.\n", encoding="utf-8")
+
+        result = subprocess.run(
+            [sys.executable, str(CRUMB_PY), "validate-coverage", "--json", str(spec)],
+            capture_output=True, text=True, cwd=str(tmp_path),
+        )
+
+        assert result.returncode == 0, (
+            f"Expected exit 0.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        parsed = _json.loads(result.stdout)
+        for key in ("covered", "uncovered", "unmapped"):
+            assert key in parsed, (
+                f"JSON output missing key '{key}' even when fully covered.\n"
+                f"stdout: {result.stdout!r}"
+            )
+        assert parsed["covered"] != [], "covered must be non-empty when REQ-1 is covered"
+        assert parsed["uncovered"] == [], "uncovered must be empty when all REQs covered"
+
+    def test_json_schema_always_has_three_keys_when_no_reqs(
+        self, tmp_path: Path
+    ) -> None:
+        """JSON output always includes covered/uncovered/unmapped for a no-REQ spec."""
+        import json as _json
+        import sys
+        self._make_env(tmp_path)
+        spec = tmp_path / "spec.md"
+        spec.write_text("# Intro\n\nNo requirements.\n", encoding="utf-8")
+
+        result = subprocess.run(
+            [sys.executable, str(CRUMB_PY), "validate-coverage", "--json", str(spec)],
+            capture_output=True, text=True, cwd=str(tmp_path),
+        )
+
+        assert result.returncode == 0
+        parsed = _json.loads(result.stdout)
+        for key in ("covered", "uncovered", "unmapped"):
+            assert key in parsed, f"Missing key '{key}' for empty spec.\n{result.stdout!r}"
+        assert parsed["covered"] == []
+        assert parsed["uncovered"] == []
+
+    def test_unmapped_key_present_when_crumb_has_no_requirements_field(
+        self, tmp_path: Path
+    ) -> None:
+        """'unmapped' is non-empty when active crumbs have no requirements field."""
+        import json as _json
+        import sys
+        self._make_env(tmp_path, tasks_content=(
+            '{"id":"AF-1","title":"Old task","status":"open"}\n'
+        ))
+        spec = tmp_path / "spec.md"
+        spec.write_text("## REQ-1: Uncovered.\n", encoding="utf-8")
+
+        result = subprocess.run(
+            [sys.executable, str(CRUMB_PY), "validate-coverage", "--json", str(spec)],
+            capture_output=True, text=True, cwd=str(tmp_path),
+        )
+
+        assert result.returncode == 1  # REQ-1 uncovered
+        parsed = _json.loads(result.stdout)
+        assert "AF-1" in parsed["unmapped"], (
+            f"Crumb with no requirements field must appear in unmapped.\n"
+            f"unmapped: {parsed['unmapped']!r}"
+        )
