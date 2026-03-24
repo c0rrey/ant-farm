@@ -1,6 +1,7 @@
-"""Tests for query commands: list, ready, blocked, and search.
+"""Tests for query commands: list, ready, blocked, search, and conflict-matrix.
 
-Covers cmd_list, cmd_ready, cmd_blocked, and cmd_search from crumb.py.
+Covers cmd_list, cmd_ready, cmd_blocked, cmd_search, and cmd_conflict_matrix
+from crumb.py.
 All tests use the crumbs_env fixture for an isolated .crumbs/ directory
 and call command functions directly with argparse.Namespace mocks,
 capturing stdout with capsys.
@@ -16,7 +17,15 @@ import pytest
 
 import json
 
-from crumb import cmd_blocked, cmd_list, cmd_ready, cmd_search, cmd_show, write_tasks
+from crumb import (
+    cmd_blocked,
+    cmd_conflict_matrix,
+    cmd_list,
+    cmd_ready,
+    cmd_search,
+    cmd_show,
+    write_tasks,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -1211,3 +1220,205 @@ class TestBlockedJSON:
         out = capsys.readouterr().out
         assert "AF-2" in out
         assert not out.strip().startswith("[")
+
+
+# ---------------------------------------------------------------------------
+# TestConflictMatrix
+# ---------------------------------------------------------------------------
+
+
+def _conflict_matrix_args(**kwargs: Any) -> Namespace:
+    """Build a Namespace for cmd_conflict_matrix with json_output support."""
+    defaults = {"json_output": False}
+    defaults.update(kwargs)
+    return Namespace(**defaults)
+
+
+def _task_with_files(
+    task_id: str,
+    files: List[str],
+    status: str = "open",
+    title: str = "Untitled",
+) -> Dict[str, Any]:
+    """Build a task dict with a scope.files array for conflict-matrix tests."""
+    record = _task(task_id, title, status)
+    record["scope"] = {"files": files}
+    return record
+
+
+class TestConflictMatrix:
+    """Tests for cmd_conflict_matrix subcommand."""
+
+    def test_no_overlaps_reports_no_conflicts(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """When no files overlap, outputs 'No file conflicts detected' and exits 0."""
+        _write(crumbs_env, [
+            _task_with_files("AF-1", ["a.py"]),
+            _task_with_files("AF-2", ["b.py"]),
+        ])
+        cmd_conflict_matrix(_conflict_matrix_args())
+        out = capsys.readouterr().out
+        assert "No file conflicts detected" in out
+
+    def test_two_crumbs_same_file_medium_risk(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Two crumbs sharing one file → MEDIUM risk tier in output."""
+        _write(crumbs_env, [
+            _task_with_files("AF-1", ["shared.py"]),
+            _task_with_files("AF-2", ["shared.py"]),
+        ])
+        cmd_conflict_matrix(_conflict_matrix_args())
+        out = capsys.readouterr().out
+        assert "shared.py" in out
+        assert "MEDIUM" in out
+        assert "AF-1" in out
+        assert "AF-2" in out
+
+    def test_three_crumbs_same_file_high_risk(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Three or more crumbs sharing a file → HIGH risk tier."""
+        _write(crumbs_env, [
+            _task_with_files("AF-1", ["hot.py"]),
+            _task_with_files("AF-2", ["hot.py"]),
+            _task_with_files("AF-3", ["hot.py"]),
+        ])
+        cmd_conflict_matrix(_conflict_matrix_args())
+        out = capsys.readouterr().out
+        assert "HIGH" in out
+        assert "hot.py" in out
+
+    def test_same_file_same_section_high_risk(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Two crumbs referencing the same file:section → HIGH risk (section overlap)."""
+        _write(crumbs_env, [
+            _task_with_files("AF-1", ["crumb.py:L100-200"]),
+            _task_with_files("AF-2", ["crumb.py:L100-200"]),
+        ])
+        cmd_conflict_matrix(_conflict_matrix_args())
+        out = capsys.readouterr().out
+        assert "HIGH" in out
+
+    def test_same_file_different_sections_low_risk(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Two crumbs referencing the same base file but different sections → LOW."""
+        _write(crumbs_env, [
+            _task_with_files("AF-1", ["crumb.py:L1-50"]),
+            _task_with_files("AF-2", ["crumb.py:L200-300"]),
+        ])
+        cmd_conflict_matrix(_conflict_matrix_args())
+        out = capsys.readouterr().out
+        assert "LOW" in out
+
+    def test_closed_crumbs_excluded(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Closed crumbs are excluded from conflict analysis."""
+        _write(crumbs_env, [
+            _task_with_files("AF-1", ["shared.py"], status="open"),
+            _task_with_files("AF-2", ["shared.py"], status="closed"),
+        ])
+        cmd_conflict_matrix(_conflict_matrix_args())
+        out = capsys.readouterr().out
+        assert "No file conflicts detected" in out
+
+    def test_json_output_returns_list(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """--json returns a parseable JSON array."""
+        _write(crumbs_env, [
+            _task_with_files("AF-1", ["shared.py"]),
+            _task_with_files("AF-2", ["shared.py"]),
+        ])
+        cmd_conflict_matrix(_conflict_matrix_args(json_output=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        assert isinstance(parsed, list)
+        assert len(parsed) == 1
+
+    def test_json_output_entry_has_required_fields(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Each JSON entry has 'file', 'crumbs', and 'risk' fields."""
+        _write(crumbs_env, [
+            _task_with_files("AF-1", ["shared.py"]),
+            _task_with_files("AF-2", ["shared.py"]),
+        ])
+        cmd_conflict_matrix(_conflict_matrix_args(json_output=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        entry = parsed[0]
+        assert "file" in entry
+        assert "crumbs" in entry
+        assert "risk" in entry
+
+    def test_json_output_no_conflicts_returns_empty_list(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """--json with no overlaps returns an empty array []."""
+        _write(crumbs_env, [
+            _task_with_files("AF-1", ["a.py"]),
+            _task_with_files("AF-2", ["b.py"]),
+        ])
+        cmd_conflict_matrix(_conflict_matrix_args(json_output=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        assert parsed == []
+
+    def test_crumb_without_scope_files_is_skipped(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Crumbs with no scope.files field are silently skipped."""
+        _write(crumbs_env, [
+            _task("AF-1", "No files"),
+            _task_with_files("AF-2", ["only.py"]),
+        ])
+        cmd_conflict_matrix(_conflict_matrix_args())
+        out = capsys.readouterr().out
+        assert "No file conflicts detected" in out
+
+    def test_json_crumb_ids_in_entry(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """JSON entry 'crumbs' array contains the IDs of conflicting crumbs."""
+        _write(crumbs_env, [
+            _task_with_files("AF-10", ["conflict.py"]),
+            _task_with_files("AF-20", ["conflict.py"]),
+        ])
+        cmd_conflict_matrix(_conflict_matrix_args(json_output=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        entry = parsed[0]
+        assert set(entry["crumbs"]) == {"AF-10", "AF-20"}
+        assert entry["risk"] == "MEDIUM"
+
+    def test_json_high_risk_three_crumbs(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """JSON risk is 'HIGH' when 3+ crumbs share the same file."""
+        _write(crumbs_env, [
+            _task_with_files("AF-1", ["hot.py"]),
+            _task_with_files("AF-2", ["hot.py"]),
+            _task_with_files("AF-3", ["hot.py"]),
+        ])
+        cmd_conflict_matrix(_conflict_matrix_args(json_output=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        entry = parsed[0]
+        assert entry["risk"] == "HIGH"
+
+    def test_in_progress_crumbs_included(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """In-progress crumbs are included in conflict analysis."""
+        _write(crumbs_env, [
+            _task_with_files("AF-1", ["shared.py"], status="open"),
+            _task_with_files("AF-2", ["shared.py"], status="in_progress"),
+        ])
+        cmd_conflict_matrix(_conflict_matrix_args())
+        out = capsys.readouterr().out
+        assert "MEDIUM" in out

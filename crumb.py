@@ -2971,6 +2971,142 @@ def cmd_session_list(args: argparse.Namespace) -> None:
         print(f"{obj['id']}  status={obj['status']}  last_activity={obj['last_activity']}")
 
 
+def _extract_base_file(file_entry: str) -> str:
+    """Return the base filename from a scope.files entry, stripping :L<range> suffixes.
+
+    Examples:
+        ``"crumb.py:L100-200"``  → ``"crumb.py"``
+        ``"crumb.py"``           → ``"crumb.py"``
+
+    Args:
+        file_entry: A string from scope.files, optionally with a line-range annotation.
+
+    Returns:
+        The file path without any ``:L<range>`` suffix.
+    """
+    # Strip :L<digits>-<digits> or :L<digits> suffixes
+    return re.sub(r":L\d+(-\d+)?$", "", file_entry)
+
+
+def _has_section_annotation(entry: str) -> bool:
+    """Return True if a scope.files entry has a line-range section annotation.
+
+    Args:
+        entry: A raw scope.files string, e.g. ``"crumb.py:L100-200"``.
+
+    Returns:
+        True when the entry contains a ``:L<range>`` suffix.
+    """
+    return bool(re.search(r":L\d+(-\d+)?$", entry))
+
+
+def _classify_risk(crumb_ids: List[str], file_entries: List[str]) -> str:
+    """Determine the risk tier for a set of crumbs that reference the same base file.
+
+    Risk tiers:
+    - HIGH   — 3+ crumbs reference the same base file, OR 2+ crumbs reference the
+               exact same annotated section (e.g. ``file.py:L10-20``).
+    - MEDIUM — exactly 2 crumbs reference the same bare file (no section annotation
+               on either entry).
+    - LOW    — exactly 2 crumbs reference the same base file but with different
+               explicit section annotations (different line ranges noted).
+
+    Args:
+        crumb_ids: List of crumb IDs sharing this file (deduplicated, ordered).
+        file_entries: List of raw scope.files entries (including section annotations)
+            that map to the same base file, in the same order as ``crumb_ids``.
+
+    Returns:
+        ``"HIGH"``, ``"MEDIUM"``, or ``"LOW"``.
+    """
+    if len(crumb_ids) >= 3:
+        return "HIGH"
+    # HIGH when two entries share the exact same explicit section annotation
+    annotated = [e for e in file_entries if _has_section_annotation(e)]
+    if len(annotated) != len(set(annotated)):
+        return "HIGH"
+    # LOW when all entries carry explicit (but distinct) section annotations
+    if len(annotated) == len(file_entries) and len(file_entries) >= 2:
+        return "LOW"
+    # MEDIUM: same bare file, 2 crumbs, mixed or no section annotations
+    return "MEDIUM"
+
+
+def cmd_conflict_matrix(args: argparse.Namespace) -> None:
+    """Read open/in-progress crumbs and report file overlap conflicts with risk tiers.
+
+    Reads all non-closed crumbs from tasks.jsonl, extracts ``scope.files`` arrays,
+    builds a file-to-crumbs overlap map, assigns risk tiers (MEDIUM/HIGH), and
+    outputs either a human-readable table or ``--json`` structured output.
+
+    Risk tiers:
+    - HIGH   — 3+ crumbs share the same base file, or 2+ crumbs cite the exact
+               same file:section entry.
+    - MEDIUM — exactly 2 crumbs share the same base file (different sections).
+
+    When no overlaps are detected, prints ``No file conflicts detected`` and exits 0.
+
+    Args:
+        args: Parsed CLI arguments.  Expects ``args.json_output`` (bool).
+    """
+    path = require_tasks_jsonl()
+    tasks = read_tasks(path)
+
+    # Only open and in_progress crumbs participate in conflict analysis
+    active_statuses = {"open", "in_progress"}
+    active = [t for t in tasks if t.get("status") in active_statuses]
+
+    # Build: base_file -> list of (crumb_id, raw_entry) tuples
+    file_to_entries: Dict[str, List[tuple]] = {}
+    for crumb in active:
+        scope = crumb.get("scope")
+        if not isinstance(scope, dict):
+            continue
+        files = scope.get("files")
+        if not isinstance(files, list):
+            continue
+        crumb_id = crumb.get("id", "?")
+        for entry in files:
+            if not isinstance(entry, str):
+                continue
+            base = _extract_base_file(entry)
+            if base not in file_to_entries:
+                file_to_entries[base] = []
+            file_to_entries[base].append((crumb_id, entry))
+
+    # Collect conflicts: files referenced by 2+ distinct crumbs
+    conflicts: List[Dict[str, Any]] = []
+    for base_file, entries in sorted(file_to_entries.items()):
+        crumb_ids = [cid for cid, _ in entries]
+        raw_entries = [raw for _, raw in entries]
+        unique_crumb_ids = list(dict.fromkeys(crumb_ids))  # preserve order, dedupe
+        if len(unique_crumb_ids) < 2:
+            continue
+        risk = _classify_risk(unique_crumb_ids, raw_entries)
+        conflicts.append({
+            "file": base_file,
+            "crumbs": unique_crumb_ids,
+            "risk": risk,
+        })
+
+    if args.json_output:
+        print(json.dumps(conflicts, indent=2))
+        return
+
+    if not conflicts:
+        print("No file conflicts detected")
+        return
+
+    # Human-readable table output
+    print(f"{'FILE':<50} {'CRUMBS':<30} RISK")
+    print("-" * 90)
+    for entry in conflicts:
+        file_str = entry["file"]
+        crumbs_str = ", ".join(entry["crumbs"])
+        risk_str = entry["risk"]
+        print(f"{file_str:<50} {crumbs_str:<30} {risk_str}")
+
+
 # ---------------------------------------------------------------------------
 # Argument parser
 # ---------------------------------------------------------------------------
@@ -3007,6 +3143,7 @@ def build_parser() -> argparse.ArgumentParser:
             "  session-status   Show current position, last step, and next step for a session\n"
             "  session-list     List all session directories with status and last activity\n"
             "  validate-tdd     Verify test-first ordering in a commit range\n"
+            "  conflict-matrix  Report file overlap conflicts between open crumbs\n"
         ),
     )
     parser.set_defaults(func=None)
@@ -3336,6 +3473,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_json_flag(p_session_list)
     p_session_list.set_defaults(func=cmd_session_list)
+
+    # --- conflict-matrix ---
+    p_conflict_matrix = sub.add_parser(
+        "conflict-matrix",
+        help="Report file overlap conflicts between open/in-progress crumbs",
+    )
+    _add_json_flag(p_conflict_matrix)
+    p_conflict_matrix.set_defaults(func=cmd_conflict_matrix)
 
     return parser
 
