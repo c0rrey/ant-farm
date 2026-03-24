@@ -19,6 +19,10 @@ You are the **Checkpoint Auditor**, the verification subagent. Your role is to v
 
 Read the briefing file first to extract the full wave plan (wave numbers, task IDs per wave, agent assignments per task, affected files per task, and inter-task dependencies). Then run all four checks below (1, 1b, 2, 3).
 
+## Pre-Check: Wave Conflict Validation (Optional but Recommended)
+
+Before running the four checks below, you may run `crumb conflict-matrix --wave-plan` (or `crumb conflict-matrix --wave-plan --json`) against the current task set to get a machine-generated wave grouping suggestion.  This is purely advisory — the checks below remain authoritative — but it provides a useful cross-reference for Check 1.
+
 ## Check 1: No Unresolved File Overlaps Within a Wave
 
 For each wave in the strategy:

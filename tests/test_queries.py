@@ -1228,8 +1228,8 @@ class TestBlockedJSON:
 
 
 def _conflict_matrix_args(**kwargs: Any) -> Namespace:
-    """Build a Namespace for cmd_conflict_matrix with json_output support."""
-    defaults = {"json_output": False}
+    """Build a Namespace for cmd_conflict_matrix with json_output and wave_plan support."""
+    defaults = {"json_output": False, "wave_plan": False}
     defaults.update(kwargs)
     return Namespace(**defaults)
 
@@ -1422,3 +1422,95 @@ class TestConflictMatrix:
         cmd_conflict_matrix(_conflict_matrix_args())
         out = capsys.readouterr().out
         assert "MEDIUM" in out
+
+    # ------------------------------------------------------------------
+    # Wave-plan tests (AF-482)
+    # ------------------------------------------------------------------
+
+    def test_wave_plan_three_crumbs_same_file_in_different_waves(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """3 crumbs all sharing the same file are placed in 3 different waves."""
+        _write(crumbs_env, [
+            _task_with_files("AF-1", ["hot.py"]),
+            _task_with_files("AF-2", ["hot.py"]),
+            _task_with_files("AF-3", ["hot.py"]),
+        ])
+        cmd_conflict_matrix(_conflict_matrix_args(wave_plan=True))
+        out = capsys.readouterr().out
+        # Each crumb must appear in a distinct wave line
+        wave_lines = [ln for ln in out.splitlines() if ln.strip().startswith("Wave")]
+        crumb_wave: Dict[str, int] = {}
+        for line in wave_lines:
+            # "Wave 1: AF-1" or "Wave 1: AF-1, AF-2"
+            parts = line.split(":", 1)
+            wave_num = int(parts[0].strip().split()[-1])
+            ids_part = parts[1] if len(parts) > 1 else ""
+            for cid in ["AF-1", "AF-2", "AF-3"]:
+                if cid in ids_part:
+                    crumb_wave[cid] = wave_num
+        assert len(set(crumb_wave.values())) == 3, (
+            f"Expected 3 distinct waves for 3 HIGH-risk crumbs, got {crumb_wave}"
+        )
+
+    def test_wave_plan_no_conflicts_single_wave(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """When no files overlap, all crumbs can go in Wave 1."""
+        _write(crumbs_env, [
+            _task_with_files("AF-1", ["a.py"]),
+            _task_with_files("AF-2", ["b.py"]),
+        ])
+        cmd_conflict_matrix(_conflict_matrix_args(wave_plan=True))
+        out = capsys.readouterr().out
+        wave_lines = [ln for ln in out.splitlines() if ln.strip().startswith("Wave")]
+        assert len(wave_lines) == 1, f"Expected 1 wave for independent crumbs, got {wave_lines}"
+
+    def test_wave_plan_json_contains_wave_plan_field(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """--wave-plan --json output contains 'matrix', 'risk_tiers', and 'wave_plan' fields."""
+        _write(crumbs_env, [
+            _task_with_files("AF-1", ["shared.py"]),
+            _task_with_files("AF-2", ["shared.py"]),
+        ])
+        cmd_conflict_matrix(_conflict_matrix_args(json_output=True, wave_plan=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        assert "matrix" in parsed
+        assert "risk_tiers" in parsed
+        assert "wave_plan" in parsed
+
+    def test_wave_plan_json_wave_plan_is_list_of_lists(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """wave_plan in JSON is a list of lists of crumb IDs."""
+        _write(crumbs_env, [
+            _task_with_files("AF-1", ["shared.py"]),
+            _task_with_files("AF-2", ["shared.py"]),
+        ])
+        cmd_conflict_matrix(_conflict_matrix_args(json_output=True, wave_plan=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        wave_plan = parsed["wave_plan"]
+        assert isinstance(wave_plan, list)
+        for wave in wave_plan:
+            assert isinstance(wave, list)
+
+    def test_wave_plan_json_high_risk_crumbs_separated(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """HIGH-risk crumbs (sharing a file) appear in different waves in JSON output."""
+        _write(crumbs_env, [
+            _task_with_files("AF-1", ["hot.py"]),
+            _task_with_files("AF-2", ["hot.py"]),
+        ])
+        cmd_conflict_matrix(_conflict_matrix_args(json_output=True, wave_plan=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        wave_plan = parsed["wave_plan"]
+        # AF-1 and AF-2 share hot.py — they must be in separate waves
+        for wave in wave_plan:
+            assert not ("AF-1" in wave and "AF-2" in wave), (
+                "Conflicting crumbs AF-1 and AF-2 should not be in the same wave"
+            )

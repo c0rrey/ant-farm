@@ -3116,12 +3116,65 @@ def _classify_risk(crumb_ids: List[str], file_entries: List[str]) -> str:
     return "MEDIUM"
 
 
+def _greedy_wave_plan(
+    conflicts: List[Dict[str, Any]], all_crumb_ids: List[str]
+) -> List[List[str]]:
+    """Assign crumbs to waves using greedy graph-coloring to minimize intra-wave conflicts.
+
+    Builds a conflict graph where crumbs sharing a HIGH or MEDIUM risk file are
+    connected by an edge.  Then applies greedy coloring: each crumb is assigned to
+    the lowest-numbered wave that does not already contain a conflicting crumb.
+
+    Args:
+        conflicts: List of conflict dicts with ``"crumbs"`` and ``"risk"`` fields,
+            as produced by ``cmd_conflict_matrix``.
+        all_crumb_ids: Ordered list of every active crumb ID (determines iteration order).
+
+    Returns:
+        A list of waves, where each wave is a list of crumb IDs.  Wave 1 is index 0.
+        Crumbs with no conflicts are placed in Wave 1.
+    """
+    # Build adjacency set: pairs of crumbs that conflict (any risk tier triggers separation)
+    neighbors: Dict[str, set] = {cid: set() for cid in all_crumb_ids}
+    for conflict in conflicts:
+        crumbs = conflict["crumbs"]
+        for i, a in enumerate(crumbs):
+            for b in crumbs[i + 1 :]:
+                if a in neighbors:
+                    neighbors[a].add(b)
+                if b in neighbors:
+                    neighbors[b].add(a)
+
+    # Greedy coloring: assign lowest available wave index to each crumb
+    assignment: Dict[str, int] = {}  # crumb_id -> 0-based wave index
+    for cid in all_crumb_ids:
+        used_by_neighbors = {assignment[nb] for nb in neighbors[cid] if nb in assignment}
+        wave_idx = 0
+        while wave_idx in used_by_neighbors:
+            wave_idx += 1
+        assignment[cid] = wave_idx
+
+    # Build wave lists from assignments
+    if not assignment:
+        return []
+    max_wave = max(assignment.values())
+    waves: List[List[str]] = [[] for _ in range(max_wave + 1)]
+    for cid in all_crumb_ids:
+        waves[assignment[cid]].append(cid)
+    return waves
+
+
 def cmd_conflict_matrix(args: argparse.Namespace) -> None:
     """Read open/in-progress crumbs and report file overlap conflicts with risk tiers.
 
     Reads all non-closed crumbs from tasks.jsonl, extracts ``scope.files`` arrays,
     builds a file-to-crumbs overlap map, assigns risk tiers (MEDIUM/HIGH), and
     outputs either a human-readable table or ``--json`` structured output.
+
+    When ``args.wave_plan`` is True, runs greedy graph-coloring to suggest wave
+    groupings that minimise intra-wave file conflicts.  With ``--json``, returns a
+    structured object with ``matrix``, ``risk_tiers``, and ``wave_plan`` fields
+    instead of the flat conflict array.
 
     Risk tiers:
     - HIGH   — 3+ crumbs share the same base file, or 2+ crumbs cite the exact
@@ -3131,7 +3184,8 @@ def cmd_conflict_matrix(args: argparse.Namespace) -> None:
     When no overlaps are detected, prints ``No file conflicts detected`` and exits 0.
 
     Args:
-        args: Parsed CLI arguments.  Expects ``args.json_output`` (bool).
+        args: Parsed CLI arguments.  Expects ``args.json_output`` (bool) and
+            ``args.wave_plan`` (bool).
     """
     path = require_tasks_jsonl()
     tasks = read_tasks(path)
@@ -3173,8 +3227,46 @@ def cmd_conflict_matrix(args: argparse.Namespace) -> None:
             "risk": risk,
         })
 
+    # Collect ordered list of all active crumb IDs with scope.files (for wave-plan)
+    seen_ids: set = set()
+    all_active_ids: List[str] = []
+    for crumb in active:
+        scope = crumb.get("scope")
+        if not isinstance(scope, dict):
+            continue
+        if not isinstance(scope.get("files"), list):
+            continue
+        cid = crumb.get("id", "?")
+        if cid not in seen_ids:
+            seen_ids.add(cid)
+            all_active_ids.append(cid)
+
+    wave_plan = getattr(args, "wave_plan", False)
+
     if args.json_output:
-        print(json.dumps(conflicts, indent=2))
+        if wave_plan:
+            waves = _greedy_wave_plan(conflicts, all_active_ids)
+            risk_tiers = {
+                entry["file"]: entry["risk"] for entry in conflicts
+            }
+            print(json.dumps({
+                "matrix": conflicts,
+                "risk_tiers": risk_tiers,
+                "wave_plan": waves,
+            }, indent=2))
+        else:
+            print(json.dumps(conflicts, indent=2))
+        return
+
+    if wave_plan:
+        waves = _greedy_wave_plan(conflicts, all_active_ids)
+        if not waves:
+            print("No active crumbs with scope.files found")
+            return
+        print("Suggested wave plan (greedy graph-coloring by file conflicts):")
+        print()
+        for i, wave in enumerate(waves, start=1):
+            print(f"Wave {i}: {', '.join(wave)}")
         return
 
     if not conflicts:
@@ -3703,6 +3795,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="Report file overlap conflicts between open/in-progress crumbs",
     )
     _add_json_flag(p_conflict_matrix)
+    p_conflict_matrix.add_argument(
+        "--wave-plan",
+        dest="wave_plan",
+        action="store_true",
+        default=False,
+        help="Output suggested wave groupings using greedy graph-coloring to minimize intra-wave file conflicts",
+    )
     p_conflict_matrix.set_defaults(func=cmd_conflict_matrix)
 
     # --- validate-coverage ---
