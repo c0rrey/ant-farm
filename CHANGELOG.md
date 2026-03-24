@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-03-24 — Session aecb1282 (RULES.md Mechanization Audit, Simplification, and Doc Verification)
+
+### Summary
+
+Three-task trail (AF-T79) executed a complete audit-simplify-verify cycle on `RULES.md`: AF-489 produced a gate-first mechanization audit mapping 25 enforcement instructions across P0/P1/P2 categories; AF-490 applied the 12 SIMPLIFIED actions, cutting `RULES.md` from 510 → 357 lines (30%); AF-491 verified all "mechanical" and "hard gate" claims against ground-truth hook source, fixing one README inaccuracy in the process. Two rounds of Nitpicker review ran: Round 1 found 2 P2 doc-accuracy issues (auto-fixed as AF-594, AF-595) and 5 P3 findings (deferred); Round 2 verified the fixes clean. 5 commits total.
+
+### Implementation (Wave 1–3, Trail AF-T79)
+
+- **AF-489**: docs: produce mechanization-audit.md — 25-instruction gate-first audit with Quick Index, mechanization status, action recommendations, and defense-in-depth justifications (`orchestration/mechanization-audit.md`) (`367d36b`)
+- **AF-490**: refactor: simplify RULES.md — 12 SIMPLIFIED actions applied (1-line mechanic references replacing verbose prose), 510 → 357 lines (-30%); all 15 KEPT items retained (`orchestration/RULES.md`) (`e789a94`)
+- **AF-491**: docs: verify documentation accuracy — source-of-truth-first claim verification against `gate-enforcer.js`; fixed README.md checkpoint count "Six" → "Seven"; added verification column to mechanization-audit.md (`README.md`, `orchestration/mechanization-audit.md`, `.ant-farm-scope.json`) (`ccfb447`)
+
+### Review Fixes (Round 1)
+
+- **AF-594**: fix: correct Summary Statistics counts in mechanization-audit.md — MECHANIZED 11 → 14, P0 7 → 8, matching Quick Index ground truth (`orchestration/mechanization-audit.md`) (`40c9dbd`)
+- **AF-595**: fix: correct misleading next_step comment in RULES.md — replaced false "match step labels" claim with accurate legacy-to-current name mapping (`orchestration/RULES.md`) (`a8e2167`)
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|----|---------|
+| 1 | 4 files, 3 tasks | 0 | 2 | 5 | PASS WITH ISSUES |
+| 2 | 2 fix commits | 0 | 0 | 0 | PASS |
+
+7 root causes consolidated. 2 P2s fixed this session; 5 P3s deferred as AF-596–AF-600.
+
+# Changelog
+
 ## 2026-03-24 — Session 411b8187 (Conflict Matrix, Wave Tracker, Stuck-Agent Detection, Validate Coverage)
 
 ### Summary
