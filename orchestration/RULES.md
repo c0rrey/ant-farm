@@ -73,8 +73,7 @@ On position-check mismatch:
 no subsequent WAVE_SPAWNED entry is present, the next action MUST be Step 3b (Review).
 Skipping Step 3b is a critical workflow violation.
 
-**next_step value convention**: Progress log entries use descriptive step identifiers
-            that match the step labels in this file. Valid values:
+**next_step value convention**: Progress log entries use legacy identifiers from prior workflow phases (SCOUT=Recon, PANTRY=Prompt Composer, ESV=session-complete) — these do NOT match the current step labels in this file. Use only the values listed below:
             `STEP_1_SCOUT`, `STEP_2_PANTRY`, `STEP_3_VERIFY`, `STEP_3_CLAIMS_VS_CODE`,
             `REVIEW_3B`, `NEXT_WAVE`, `STEP_3C_TRIAGE`, `FIX_SCOUT`, `FIX_AGENTS_SPAWN`,
             `FIX_INNER_LOOP`, `ROUND_TRANSITION`, `STEP_4_DOCS`, `STEP_4B_XREF`,
