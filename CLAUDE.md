@@ -54,7 +54,7 @@ Run `./scripts/setup.sh` then `/ant-farm-init` to install orchestration triggers
 
 ## Landing the Plane (Session Completion)
 
-(Corresponds to RULES.md Steps 4–7; Step 7 is titled "Land the plane".)
+(Corresponds to RULES.md Step 6.)
 
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
 

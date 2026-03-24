@@ -1,0 +1,12 @@
+{
+  "crumb_id": "AF-485",
+  "allowed_files": [
+    "hooks/ant-farm-gate-enforcer.js:L288-415",
+    "hooks/lib/gate-manager.js:L165-204",
+    "hooks/test/gate-enforcer.test.js:L1-44",
+    "crumb.py:L47-70",
+    "tests/test_cli.py:L880-1656"
+  ],
+  "mode": "enforcing",
+  "permitted_exceptions": []
+}
