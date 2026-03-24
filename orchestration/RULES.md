@@ -92,9 +92,14 @@ The Orchestrator's window is restricted to prevent context bloat, but certain fi
                If the directory does not exist, surface the message to the user and await instruction.
                Do NOT proceed to run `parse-progress-log.sh` on a missing directory.
             2. Run `bash scripts/parse-progress-log.sh "${PRIOR_SESSION_DIR}"`
+               `parse-progress-log.sh` automatically detects `handoff.json` in the session directory
+               (written by `/ant-farm-pause`) and includes handoff state — current step, next action,
+               context notes — in the resume plan. No additional steps are needed to surface handoff data.
             3. On exit 0: read `{PRIOR_SESSION_DIR}/resume-plan.md` and present it verbatim to the user.
                Wait for the user to reply `resume` or `fresh start` before taking any further action.
                - `resume`: restore SESSION_DIR to the prior value and continue from the indicated step.
+                 If the resume plan includes a **Handoff State** section, use `context_notes` and
+                 `next_action` from `handoff.json` to orient the session before spawning any agents.
                - `fresh start`: generate a new SESSION_ID and proceed normally.
             4. On exit 2: the prior session completed — proceed normally with a new SESSION_ID.
             5. On exit 1: surface the error (including the path that was not found) to the user and await instruction.

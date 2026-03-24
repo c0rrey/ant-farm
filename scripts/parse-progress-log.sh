@@ -36,6 +36,7 @@ fi
 
 SESSION_DIR="$1"
 PROGRESS_LOG="${SESSION_DIR}/progress.log"
+HANDOFF_FILE="${SESSION_DIR}/handoff.json"
 
 if [ ! -d "$SESSION_DIR" ]; then
     echo "ERROR: Session directory not found: $SESSION_DIR" >&2
@@ -50,6 +51,45 @@ fi
 if [ ! -r "$PROGRESS_LOG" ]; then
     echo "ERROR: progress.log not readable: $PROGRESS_LOG" >&2
     exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# Handoff state detection: read handoff.json if present alongside progress.log.
+# Produced by /ant-farm-pause. Provides richer resume context when available.
+# Requires `jq` for JSON parsing. If jq is absent, handoff data is skipped with
+# a warning (non-fatal: the progress.log-based resume plan still works).
+# ---------------------------------------------------------------------------
+
+HANDOFF_PAUSED_AT=""
+HANDOFF_CURRENT_STEP=""
+HANDOFF_NEXT_ACTION=""
+HANDOFF_CONTEXT_NOTES=""
+HANDOFF_ACTIVE_WAVE=""
+HANDOFF_RETRY_BUDGET=""
+HAS_HANDOFF=0
+
+if [ -f "$HANDOFF_FILE" ]; then
+    if command -v jq >/dev/null 2>&1; then
+        # Read fields defensively — jq returns "null" (literal string) for missing keys.
+        # We convert those to empty strings so downstream logic treats them as absent.
+        # `|| true` prevents set -e from aborting the script if jq fails (e.g. malformed JSON).
+        _jq_str() {
+            local val
+            val="$(jq -r "$1 // empty" "$HANDOFF_FILE" 2>/dev/null || true)"
+            printf '%s' "$val"
+        }
+        HANDOFF_PAUSED_AT="$(_jq_str '.paused_at')"
+        HANDOFF_CURRENT_STEP="$(_jq_str '.current_step')"
+        HANDOFF_NEXT_ACTION="$(_jq_str '.next_action')"
+        HANDOFF_CONTEXT_NOTES="$(_jq_str '.context_notes')"
+        HANDOFF_ACTIVE_WAVE="$(_jq_str '.active_wave')"
+        HANDOFF_RETRY_BUDGET="$(_jq_str '.retry_budget_remaining')"
+        HAS_HANDOFF=1
+        echo "INFO: handoff.json found at ${HANDOFF_FILE} — paused_at=${HANDOFF_PAUSED_AT}" >&2
+    else
+        echo "WARNING: handoff.json found but jq is not installed — handoff state will not be surfaced in resume plan." >&2
+        echo "         Install jq to enable enriched handoff resumption." >&2
+    fi
 fi
 
 # ---------------------------------------------------------------------------
@@ -325,6 +365,44 @@ fi
         if [ -n "$next_step_val" ]; then
             echo "- **Next step breadcrumb**: \`next_step=${next_step_val}\`"
         fi
+        echo ""
+    fi
+
+    # Surface handoff.json state when available (written by /ant-farm-pause).
+    # Provides resume context richer than progress.log alone: Orchestrator's current
+    # understanding, next action, active wave, and retry budget at pause time.
+    if [ "$HAS_HANDOFF" -eq 1 ]; then
+        echo "---"
+        echo ""
+        echo "## Handoff State (from /ant-farm-pause)"
+        echo ""
+        echo "This session was gracefully paused using \`/ant-farm-pause\`. The following"
+        echo "state was recorded at pause time."
+        echo ""
+        if [ -n "$HANDOFF_PAUSED_AT" ]; then
+            echo "- **Paused at**: ${HANDOFF_PAUSED_AT}"
+        fi
+        if [ -n "$HANDOFF_CURRENT_STEP" ]; then
+            echo "- **Step at pause**: \`${HANDOFF_CURRENT_STEP}\`"
+        fi
+        if [ -n "$HANDOFF_ACTIVE_WAVE" ]; then
+            echo "- **Active wave**: ${HANDOFF_ACTIVE_WAVE}"
+        fi
+        if [ -n "$HANDOFF_RETRY_BUDGET" ]; then
+            echo "- **Retry budget remaining**: ${HANDOFF_RETRY_BUDGET}"
+        fi
+        if [ -n "$HANDOFF_NEXT_ACTION" ]; then
+            echo ""
+            echo "**Next action**: ${HANDOFF_NEXT_ACTION}"
+        fi
+        if [ -n "$HANDOFF_CONTEXT_NOTES" ]; then
+            echo ""
+            echo "**Context notes from paused session**:"
+            echo ""
+            echo "> ${HANDOFF_CONTEXT_NOTES}"
+        fi
+        echo ""
+        echo "Full handoff data: \`${HANDOFF_FILE}\`"
         echo ""
     fi
 
