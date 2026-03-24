@@ -1165,6 +1165,11 @@ def cmd_ready(args: argparse.Namespace) -> None:
     if limit is not None and limit > 0:
         results = results[:limit]
 
+    # --- JSON output branch ---
+    if getattr(args, "json_output", False):
+        print(json.dumps([_crumb_to_json_obj(t) for t in results], indent=2))
+        return
+
     for t in results:
         print(_format_row(t))
 
@@ -1190,6 +1195,24 @@ def cmd_blocked(args: argparse.Namespace) -> None:
     ]
 
     _sort_crumbs(results, "created_at")
+
+    # --- JSON output branch ---
+    if getattr(args, "json_output", False):
+        output: List[Dict[str, Any]] = []
+        for t in results:
+            obj = _crumb_to_json_obj(t)
+            blockers: List[Dict[str, Any]] = []
+            for bid in _get_blocked_by(t):
+                blocker = id_to_record.get(bid)
+                blockers.append({
+                    "id": bid,
+                    "status": blocker.get("status") if blocker else None,
+                })
+            obj["blockers"] = blockers
+            output.append(obj)
+        print(json.dumps(output, indent=2))
+        return
+
     for t in results:
         print(_format_row(t))
 
@@ -1255,6 +1278,11 @@ def cmd_link(args: argparse.Namespace) -> None:
             _auto_reopen_trail_if_needed(
                 tasks, path, args.link_parent, crumb.get("status", "open")
             )
+
+    # --- JSON output branch ---
+    if getattr(args, "json_output", False):
+        print(json.dumps(_crumb_to_json_obj(crumb), indent=2))
+        return
 
     print(f"updated links for {args.id}")
 
@@ -2592,10 +2620,12 @@ def build_parser() -> argparse.ArgumentParser:
         choices=["priority", "created_at", "status"],
         default="created_at",
     )
+    _add_json_flag(p_ready)
     p_ready.set_defaults(func=cmd_ready)
 
     # --- blocked ---
     p_blocked = sub.add_parser("blocked", help="List blocked crumbs")
+    _add_json_flag(p_blocked)
     p_blocked.set_defaults(func=cmd_blocked)
 
     # --- link ---
@@ -2605,6 +2635,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_link.add_argument("--blocked-by", metavar="ID", dest="blocked_by")
     p_link.add_argument("--remove-blocked-by", metavar="ID", dest="remove_blocked_by")
     p_link.add_argument("--discovered-from", metavar="ID", dest="discovered_from")
+    _add_json_flag(p_link)
     p_link.set_defaults(func=cmd_link)
 
     # --- search ---

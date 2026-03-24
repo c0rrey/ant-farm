@@ -312,6 +312,103 @@ class TestLink:
         with pytest.raises(SystemExit):
             cmd_link(args)
 
+
+# ---------------------------------------------------------------------------
+# TestLinkJSON
+# ---------------------------------------------------------------------------
+
+
+class TestLinkJSON:
+    """Tests for cmd_link --json output mode."""
+
+    def test_json_output_parent_returns_updated_crumb(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_link --parent --json returns the updated crumb object with new links state."""
+        _seed_task(crumbs_env, {"id": "AF-1", "title": "Child", "status": "open"})
+        _seed_task(crumbs_env, {"id": "AF-T1", "title": "Trail", "status": "open", "type": "trail"})
+
+        args = argparse.Namespace(
+            id="AF-1",
+            link_parent="AF-T1",
+            blocked_by=None,
+            remove_blocked_by=None,
+            discovered_from=None,
+            json_output=True,
+        )
+        cmd_link(args)
+
+        out = capsys.readouterr().out
+        obj = json.loads(out)
+        assert obj["id"] == "AF-1"
+        assert isinstance(obj["links"], dict)
+        assert obj["links"].get("parent") == "AF-T1"
+
+    def test_json_output_blocked_by_returns_updated_crumb(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_link --blocked-by --json returns the updated crumb with its new links state."""
+        _seed_task(crumbs_env, {"id": "AF-1", "title": "Blocked", "status": "open"})
+        _seed_task(crumbs_env, {"id": "AF-2", "title": "Blocker", "status": "open"})
+
+        args = argparse.Namespace(
+            id="AF-1",
+            link_parent=None,
+            blocked_by="AF-2",
+            remove_blocked_by=None,
+            discovered_from=None,
+            json_output=True,
+        )
+        cmd_link(args)
+
+        out = capsys.readouterr().out
+        obj = json.loads(out)
+        assert obj["id"] == "AF-1"
+        assert isinstance(obj["links"], dict)
+        assert "AF-2" in obj["links"].get("blocked_by", [])
+
+    def test_json_output_contains_required_fields(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """JSON object from cmd_link contains all required schema fields."""
+        _seed_task(crumbs_env, {"id": "AF-1", "title": "Task", "status": "open", "priority": "P1"})
+
+        args = argparse.Namespace(
+            id="AF-1",
+            link_parent=None,
+            blocked_by="AF-999",
+            remove_blocked_by=None,
+            discovered_from=None,
+            json_output=True,
+        )
+        cmd_link(args)
+
+        out = capsys.readouterr().out
+        obj = json.loads(out)
+        for field in ("id", "title", "type", "status", "priority", "links"):
+            assert field in obj, f"Required field '{field}' missing from JSON output"
+
+    def test_json_to_stdout_no_human_text(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """With --json, no human-readable 'updated links for' text is printed."""
+        _seed_task(crumbs_env, {"id": "AF-1", "title": "Task", "status": "open"})
+
+        args = argparse.Namespace(
+            id="AF-1",
+            link_parent=None,
+            blocked_by="AF-2",
+            remove_blocked_by=None,
+            discovered_from=None,
+            json_output=True,
+        )
+        cmd_link(args)
+
+        out = capsys.readouterr().out
+        assert "updated links" not in out
+        # Ensure it's valid JSON
+        json.loads(out)
+
     def test_link_blocked_by_nonexistent_blocker_is_allowed(self, crumbs_env: Path) -> None:
         """cmd_link allows a nonexistent blocker ID — dangling references are permitted.
 

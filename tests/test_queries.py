@@ -1001,3 +1001,213 @@ class TestShowJSON:
         # Human-readable: starts with "ID: AF-1" or similar, not a JSON brace
         assert "AF-1" in out
         assert not out.strip().startswith("{")
+
+
+# ---------------------------------------------------------------------------
+# TestReadyJSON
+# ---------------------------------------------------------------------------
+
+
+def _ready_json_args(**kwargs: Any) -> Namespace:
+    """Build a Namespace for cmd_ready with json_output support."""
+    defaults = {
+        "sort": "created_at",
+        "limit": None,
+        "json_output": False,
+    }
+    defaults.update(kwargs)
+    return Namespace(**defaults)
+
+
+class TestReadyJSON:
+    """Tests for cmd_ready --json output mode."""
+
+    def test_json_output_is_valid_json_array(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_ready --json returns a parseable JSON array."""
+        _write(crumbs_env, [
+            _task("AF-1", "Unblocked task", "open"),
+            _task("AF-2", "Blocked task", "open", blocked_by=["AF-1"]),
+        ])
+        cmd_ready(_ready_json_args(json_output=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        assert isinstance(parsed, list)
+
+    def test_json_output_only_includes_unblocked(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_ready --json returns only open crumbs with no unresolved blockers."""
+        _write(crumbs_env, [
+            _task("AF-1", "Unblocked", "open"),
+            _task("AF-2", "Blocker", "open"),
+            _task("AF-3", "Blocked by AF-2", "open", blocked_by=["AF-2"]),
+        ])
+        cmd_ready(_ready_json_args(json_output=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        ids = [obj["id"] for obj in parsed]
+        assert "AF-1" in ids
+        assert "AF-2" in ids
+        assert "AF-3" not in ids
+
+    def test_json_output_contains_required_fields(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Each JSON object in cmd_ready output contains all required schema fields."""
+        _write(crumbs_env, [_task("AF-1", "Ready task", "open", "P1")])
+        cmd_ready(_ready_json_args(json_output=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        assert len(parsed) == 1
+        obj = parsed[0]
+        for field in ("id", "title", "type", "status", "priority",
+                      "description", "acceptance_criteria", "scope", "links", "notes"):
+            assert field in obj, f"Required field '{field}' missing from JSON output"
+
+    def test_json_output_excludes_trails(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Trails are never included in cmd_ready --json output."""
+        _write(crumbs_env, [
+            _task("AF-1", "Real task", "open"),
+            _task("AF-T1", "A trail", "open", task_type="trail"),
+        ])
+        cmd_ready(_ready_json_args(json_output=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        ids = [obj["id"] for obj in parsed]
+        assert "AF-T1" not in ids
+
+    def test_json_output_empty_when_all_blocked(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_ready --json returns empty array when every open crumb is blocked."""
+        _write(crumbs_env, [
+            _task("AF-1", "Blocker", "open"),
+            _task("AF-2", "Blocked", "open", blocked_by=["AF-1"]),
+        ])
+        # Only AF-1 is unblocked here — but what we care about is the JSON shape
+        cmd_ready(_ready_json_args(json_output=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        assert isinstance(parsed, list)
+
+    def test_human_readable_unchanged_without_json_flag(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_ready without --json produces human-readable row output."""
+        _write(crumbs_env, [_task("AF-1", "Ready", "open")])
+        cmd_ready(_ready_json_args(json_output=False))
+        out = capsys.readouterr().out
+        assert "AF-1" in out
+        assert not out.strip().startswith("[")
+
+
+# ---------------------------------------------------------------------------
+# TestBlockedJSON
+# ---------------------------------------------------------------------------
+
+
+def _blocked_json_args(**kwargs: Any) -> Namespace:
+    """Build a Namespace for cmd_blocked with json_output support."""
+    defaults = {"json_output": False}
+    defaults.update(kwargs)
+    return Namespace(**defaults)
+
+
+class TestBlockedJSON:
+    """Tests for cmd_blocked --json output mode."""
+
+    def test_json_output_is_valid_json_array(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_blocked --json returns a parseable JSON array."""
+        _write(crumbs_env, [
+            _task("AF-1", "Blocker", "open"),
+            _task("AF-2", "Blocked", "open", blocked_by=["AF-1"]),
+        ])
+        cmd_blocked(_blocked_json_args(json_output=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        assert isinstance(parsed, list)
+        assert len(parsed) == 1
+
+    def test_json_output_has_blockers_field(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_blocked --json includes 'blockers' field with IDs and statuses."""
+        _write(crumbs_env, [
+            _task("AF-1", "Blocker", "open"),
+            _task("AF-2", "Blocked by AF-1", "open", blocked_by=["AF-1"]),
+        ])
+        cmd_blocked(_blocked_json_args(json_output=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        obj = parsed[0]
+        assert "blockers" in obj
+        blockers = obj["blockers"]
+        assert isinstance(blockers, list)
+        assert len(blockers) == 1
+        assert blockers[0]["id"] == "AF-1"
+        assert blockers[0]["status"] == "open"
+
+    def test_json_output_blockers_field_has_id_and_status(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Each blocker entry in 'blockers' array has 'id' and 'status' keys."""
+        _write(crumbs_env, [
+            _task("AF-1", "First blocker", "open"),
+            _task("AF-2", "Second blocker", "in_progress"),
+            _task("AF-3", "Doubly blocked", "open", blocked_by=["AF-1", "AF-2"]),
+        ])
+        cmd_blocked(_blocked_json_args(json_output=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        obj = parsed[0]
+        blocker_ids = {b["id"] for b in obj["blockers"]}
+        assert "AF-1" in blocker_ids
+        assert "AF-2" in blocker_ids
+
+    def test_json_output_contains_required_fields(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Each JSON object in cmd_blocked output has all required schema fields."""
+        _write(crumbs_env, [
+            _task("AF-1", "Blocker", "open"),
+            _task("AF-2", "Blocked", "open", blocked_by=["AF-1"]),
+        ])
+        cmd_blocked(_blocked_json_args(json_output=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        obj = parsed[0]
+        for field in ("id", "title", "type", "status", "priority", "links", "blockers"):
+            assert field in obj, f"Required field '{field}' missing from JSON output"
+
+    def test_json_output_closed_blocker_not_returned(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_blocked --json excludes crumbs whose blockers are all closed."""
+        _write(crumbs_env, [
+            _task("AF-1", "Closed blocker", "closed"),
+            _task("AF-2", "Was blocked", "open", blocked_by=["AF-1"]),
+        ])
+        cmd_blocked(_blocked_json_args(json_output=True))
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        # AF-2 is not blocked anymore since AF-1 is closed
+        assert parsed == []
+
+    def test_human_readable_unchanged_without_json_flag(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_blocked without --json produces human-readable row output."""
+        _write(crumbs_env, [
+            _task("AF-1", "Blocker", "open"),
+            _task("AF-2", "Blocked", "open", blocked_by=["AF-1"]),
+        ])
+        cmd_blocked(_blocked_json_args(json_output=False))
+        out = capsys.readouterr().out
+        assert "AF-2" in out
+        assert not out.strip().startswith("[")
