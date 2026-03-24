@@ -947,7 +947,10 @@ def cmd_close(args: argparse.Namespace) -> None:
 
     # --- JSON output branch ---
     if getattr(args, "json_output", False):
-        print(json.dumps([_crumb_to_json_obj(c) for c in closed_crumbs], indent=2))
+        if len(closed_crumbs) == 1 and len(args.ids) == 1:
+            print(json.dumps(_crumb_to_json_obj(closed_crumbs[0]), indent=2))
+        else:
+            print(json.dumps([_crumb_to_json_obj(c) for c in closed_crumbs], indent=2))
         return
 
     for crumb_id in closed:
@@ -2891,7 +2894,7 @@ def _session_last_activity(session_dir: Path) -> str:
     """Return the last-activity timestamp for a session directory as an ISO 8601 string.
 
     Uses the directory's mtime as a proxy for last activity.  Falls back to
-    the empty string if ``os.stat`` fails.
+    ``"unknown"`` if ``os.stat`` fails.
 
     Args:
         session_dir: Absolute path to the session directory.

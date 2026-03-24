@@ -1351,7 +1351,7 @@ class TestSessionStatus:
 # session-list tests
 # ---------------------------------------------------------------------------
 
-#: Filename used by session-list to detect completion inside a session directory.
+#: Filename written by /ant-farm-pause; session-list uses its presence to identify gracefully-paused sessions.
 _HANDOFF_FILE = "handoff.json"
 
 
