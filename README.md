@@ -300,7 +300,7 @@ Agent definitions live in `agents/` and are installed to `~/.claude/agents/` by 
 |-----------|-------------|-------------|
 | Agent fails claims-vs-code | 2 | Escalate to user |
 | review-integrity fails | 1 | Present to user with verification report |
-| Agent stuck (no commit in 15 turns) | 0 | Check status, escalate |
+| Agent stuck (>10 min without commit) | 0 | Check status, escalate |
 | Total retries per session | 5 | Pause all spawns, triage with user |
 
 ## How This Has Failed (and What We Built to Stop It)
@@ -309,7 +309,7 @@ Documented in `orchestration/reference/known-failures.md`. Two incidents shaped 
 
 **Agents skipped the hard parts.** During Epic 3, agents bypassed mandatory design and correctness review steps. They claimed "4 approaches considered" without actually considering them. claims-vs-code now verifies substance, not just completion claims. It reads the git diff and checks whether the summary matches reality.
 
-**Three agents trampled the same file.** During Epic 74g, three agents worked on the same file without line-level boundaries. Each one "helpfully" fixed adjacent issues and introduced conflicts. This produced scope-verify (scope verification), enhanced pre-spawn-check (requiring line-number specificity in prompts), anti-scope-creep template language, and pre-flight conflict risk assessment in the Recon Planner.
+**Three agents trampled the same file.** During Epic 74g, three agents worked on the same file without line-level boundaries. Each one "helpfully" fixed adjacent issues and introduced conflicts. This produced scope-verify, enhanced pre-spawn-check (requiring line-number specificity in prompts), anti-scope-creep template language, and pre-flight conflict risk assessment in the Recon Planner.
 
 Most orchestration problems are trust problems wearing a concurrency costume.
 

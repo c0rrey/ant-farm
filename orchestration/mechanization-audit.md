@@ -17,6 +17,8 @@
 
 ---
 
+**Note**: RULES.md line references in this document are against the pre-simplification version (510 lines, commit 367d36b). AF-490 simplified RULES.md to 357 lines; current line numbers will differ. Search by instruction name rather than line number to navigate RULES.md.
+
 ## Quick Index
 
 | # | Instruction | RULES.md lines | Status | Action | Verification |
@@ -38,7 +40,7 @@
 | 15 | Pause instruction (inform user at critical context) | L503–510 | MECHANIZED | SIMPLIFIED | PASS |
 | 16 | JSON output for agents (machine-readable verdict) | (pre-spawn-check, claims-vs-code templates) | PROMPT_ONLY | KEPT | PASS |
 | 17 | Conflict matrix (file overlap between waves) | L353–360 (Concurrency Rules) | PARTIALLY_MECHANIZED | KEPT | PASS |
-| 18 | Stuck-agent detection (no commit within 15 turns) | L463–473 | PARTIALLY_MECHANIZED | SIMPLIFIED | PASS |
+| 18 | Stuck-agent detection (>10 min without commit) | L463–473 | PARTIALLY_MECHANIZED | SIMPLIFIED | PASS |
 | 19 | Spec coverage (`validate-coverage`) | (crumb.py validate-coverage) | PARTIALLY_MECHANIZED | KEPT | PASS |
 | 20 | Review-integrity gate (reviewer report audit) | L332–342 | MECHANIZED | SIMPLIFIED | PASS |
 | 21 | Session-complete gate (exec summary + CHANGELOG audit) | L289–308, L332–342 | MECHANIZED | SIMPLIFIED | PASS |
@@ -47,11 +49,13 @@
 | 24 | Wave pipelining (wave N+1 Prompt Composer concurrent) | L198–206 | PROMPT_ONLY | KEPT | PASS |
 | 25 | Agent task cap (≤3 tasks per agent per wave) | L355–356 | PARTIALLY_MECHANIZED | KEPT | PASS |
 
+*Quick Index row numbers (#1–#25) are sequential and don't correspond to section labels (P0-1, P1-1, etc.). Search for the instruction name to navigate to its detailed section.*
+
 ---
 
 ## P0 Gates
 
-### P0-1: Startup-Check Gate (Gate Enforcement — Predecessor Gate)
+### P0-1: Startup-Check Gate (Gate Enforcement — Root Gate)
 
 **RULES.md lines**: L170–186 (Step 1b description), L332–342 (Hard Gates table)
 **Mechanization**: `MECHANIZED`
@@ -298,21 +302,21 @@
 
 ---
 
-### P2-3: Stuck-Agent Detection (No Commit Within 15 Turns)
+### P2-3: Stuck-Agent Detection (>10 Min Without Commit)
 
 **RULES.md lines**: L463–473 (Stuck-Agent Diagnostic Procedure)
 **Mechanization**: `PARTIALLY_MECHANIZED`
 **Action**: `SIMPLIFIED`
 
-**What the rule says**: When an agent has no commit within 15 turns, follow a diagnostic procedure before escalating.
+**What the rule says**: When an agent has been active for >10 minutes without a commit, follow a diagnostic procedure before escalating. *(Updated from "15 turns" to wall-clock time in AF-490.)*
 
 **What is mechanized**: `ant-farm-gate-enforcer.js` implements `checkStuckAgents()` which reads agent spawn timestamps from `agents.json` and emits WARNING (≥10 min, configurable) and CRITICAL (≥15 min, configurable) advisories. The advisory is injected into the Orchestrator's context via the PreToolUse response.
 
-**Gap**: The mechanic uses wall-clock time (minutes since spawn), not turn count (15 turns). "15 turns" in RULES.md is a proxy for elapsed time that the hook implements as minutes. The semantic match is approximate, not exact.
+**Gap**: ~~The mechanic uses wall-clock time (minutes since spawn), not turn count (15 turns). "15 turns" in RULES.md is a proxy for elapsed time that the hook implements as minutes. The semantic match is approximate, not exact.~~ *(Resolved in AF-490: RULES.md now uses wall-clock time, matching the hook.)*
 
 **Residual prompt value**: The 5-step diagnostic procedure (read task brief, check partial summaries, check git log, check last output, escalate) is PROMPT_ONLY — the hook flags but does not diagnose. KEPT.
 
-**Recommended simplification**: Update RULES.md to reference wall-clock time (matching the hook's actual implementation): "When an agent has been active for >10 minutes without a commit, the context monitor raises a WARNING advisory; at >15 minutes it escalates to CRITICAL." Remove the "15 turns" framing.
+**Recommended simplification**: ~~Update RULES.md to reference wall-clock time~~ *(Done in AF-490.)*
 
 ---
 
@@ -428,7 +432,7 @@ The following instructions are mechanized but should remain in RULES.md because 
 
 1. **validate-coverage has no defined trigger**: `crumb validate-coverage` exists but RULES.md does not specify when the Orchestrator or Recon Planner should invoke it. Recommend adding to startup-check or Recon Planner workflow.
 
-2. **"15 turns" vs. wall-clock time mismatch**: RULES.md says "no commit within 15 turns" but the hook uses minutes. The units are inconsistent. A follow-up crumb should align the prose to "15 minutes" or parameterize the hook to support turn counting.
+2. **~~"15 turns" vs. wall-clock time mismatch~~** *(RESOLVED in AF-490)*: RULES.md was updated to ">10 min without commit", aligning with the hook's wall-clock implementation.
 
 3. **review-integrity gate is in the Hard Gates table but not in the main step narrative**: Step 3b delegates to RULES-review.md but the Hard Gates table references review-integrity. A reader of RULES.md alone cannot locate where this gate is invoked.
 
