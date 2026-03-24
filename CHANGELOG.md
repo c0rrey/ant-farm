@@ -1,5 +1,45 @@
 # Changelog
 
+## 2026-03-24 — Session 411b8187 (Conflict Matrix, Wave Tracker, Stuck-Agent Detection, Validate Coverage)
+
+### Summary
+
+Eight implementation tasks across epics AF-T77 and AF-T78 landed in three serialized waves, delivering four new capabilities: `crumb conflict-matrix` (file-overlap risk matrix + wave-plan generation), `crumb validate-coverage` (REQ-N spec coverage auditing), `hooks/lib/wave-tracker.js` (per-wave failure-rate gate), and stuck-agent detection with `crumb session-agents`. Round 1 review found 1 P1 + 4 P2 across 15 root causes; an auto-fix cycle resolved all five in one pass. Round 2 confirmed all fixes and terminated with 0 P1/P2. Python test suite grew to 774 tests; JS gate-enforcer suite reached 51 tests. 13 commits total.
+
+### Implementation (Three-Wave Serialized)
+
+**Wave 1**
+- **AF-481**: feat: implement `crumb conflict-matrix` subcommand with risk tiers and `--json` output (`crumb.py`, `tests/test_queries.py`) (`a286406`)
+- **AF-487**: feat: implement `crumb validate-coverage` subcommand with REQ-N: spec scanning and exit-1 on gaps (`crumb.py`, `tests/test_cli.py`, `tests/test_orchestration.py`) (`3605467`)
+
+**Wave 2**
+- **AF-483**: feat: implement `hooks/lib/wave-tracker.js` with atomic per-wave result files and gate-enforcer wave-failure gate (`hooks/lib/wave-tracker.js`, `hooks/ant-farm-gate-enforcer.js`) (`5c6a828`)
+- **AF-485**: feat: implement stuck-agent detection and `crumb session-agents` subcommand (`hooks/lib/gate-manager.js`, `hooks/ant-farm-gate-enforcer.js`, `crumb.py`) (`5700948`)
+
+**Wave 3**
+- **AF-482**: feat: add `--wave-plan` greedy graph-coloring flag to `crumb conflict-matrix`; add advisory Pre-Check to `startup-check.md` (`crumb.py`, `orchestration/templates/checkpoints/startup-check.md`) (`3555c31`)
+- **AF-484**: test: add AC6/AC7 mixed-results and gate-enforcer integration tests for wave-tracker (`hooks/lib/test/wave-tracker.test.js`) (`d393809`)
+- **AF-486**: test: add configurable-timeout and edge-case tests for `checkStuckAgents` and `session-agents` (`hooks/test/gate-enforcer.test.js`, `tests/test_cli.py`) (`39e3106`)
+- **AF-488**: test: add empty-requirements edge cases and `TestValidateCoverageOrchestration` schema contract class (`tests/test_cli.py`, `tests/test_orchestration.py`) (`2c21c94`)
+
+### Review Fixes (Round 1 auto-fix)
+
+- **AF-578 + AF-582**: fix: update stale `big-head-skeleton.md` docstring and remove dead class-level imports (`tests/test_orchestration.py`) (`93c3161`)
+- **AF-579**: docs: expand Exports header to list all 19 exported symbols (`hooks/ant-farm-gate-enforcer.js`) (`0e9da36`)
+- **AF-580**: fix: rename `WAVE_RESULTS_FILENAME` to camelCase `waveResultsFilename`; 20 references updated (`hooks/lib/wave-tracker.js`, `hooks/lib/test/wave-tracker.test.js`) (`281f051`)
+- **AF-581**: fix: add PID suffix to wave-tracker tmp path to prevent concurrent clobber (`hooks/lib/wave-tracker.js`) (`74512be`)
+
+### Review Statistics
+
+| Round | Scope | P1 | P2 | P3 | Verdict |
+|-------|-------|----|----|-----|---------|
+| 1 | 8 tasks, 12 files | 1 | 4 | 10 | PASS WITH ISSUES |
+| 2 | 5 fix tasks | 0 | 0 | 1 | PASS |
+
+15 root causes consolidated from 19 raw findings (round 1). All P1/P2 auto-fixed; 10 P3s deferred. 1 residual P3 from round 2 filed as AF-593 (Future Work).
+
+# Changelog
+
 ## 2026-03-24 — Session c1921a4e (TDD Enforcement, Security Hooks, JSON CLI Completion, Session Management)
 
 ### Summary
