@@ -1,22 +1,11 @@
 # Orchestration Rules
 <!-- .local override: To customize, create RULES.local.md in the same directory. Your local file will not be overwritten by setup.sh. -->
 
-> **Tool invocation note**: Where this file instructs the Orchestrator to call crumb operations directly
-> (e.g., `crumb prune`), prefer the MCP tool equivalents (`crumb_list`, `crumb_show`, `crumb_update`,
-> `crumb_close`, `crumb_ready`, `crumb_blocked`, `crumb_create`, `crumb_link`, `crumb_trail_list`,
-> `crumb_trail_show`, `crumb_trail_close`). If the MCP server is unavailable, fall back to the
-> equivalent `crumb <command>` CLI call via Bash.
+> **Tool invocation**: Prefer MCP tool equivalents (`crumb_show`, `crumb_update`, `crumb_close`, `crumb_ready`, `crumb_blocked`, `crumb_create`, `crumb_link`, `crumb_trail_list`, `crumb_trail_show`, `crumb_trail_close`) over CLI calls. Fall back to `crumb <command>` via Bash if MCP is unavailable.
 
 ## Path Reference Convention
 
-All file paths in this document use **repo-root relative** format: `orchestration/templates/recon-planner.md`.
-
-When code runs at runtime, agent files are synced to `~/.claude/agents/` and orchestration files are
-accessible at `~/.claude/orchestration/templates/recon-planner.md`. To translate repo paths to runtime paths:
-- Replace `orchestration/` with `~/.claude/orchestration/`
-- Replace `agents/` with `~/.claude/agents/`
-
-**In-document shorthand** (e.g., "templates/recon-planner.md") is informal and always refers to the repo-root path with the `orchestration/` prefix implied.
+File paths in this document use **repo-root relative** format. At runtime: `orchestration/` → `~/.claude/orchestration/`; `agents/` → `~/.claude/agents/`. Shorthand like "templates/recon-planner.md" implies the `orchestration/` prefix.
 
 ## Orchestrator Prohibitions (read FIRST)
 
@@ -25,44 +14,29 @@ accessible at `~/.claude/orchestration/templates/recon-planner.md`. To translate
 - **NEVER** read source code, tests, project data files, or config files — agents do this
 - **NEVER** read agent **instruction files** (recon-planner.md, prompt-composer.md, implementation.md, checkpoints/*.md, reviews.md, etc.) — pass the path to the agent, let it read its own instructions
 - **NEVER** send `shutdown_request` to any Reviewer team member before Step 4.
-  - **Authorization**: The only event that authorizes shutdown is the termination check in Step 3c (zero P1/P2 findings). This sets a flag -- it does not trigger immediate dispatch.
-  - **Dispatch timing**: The actual `shutdown_request` is sent later, after the review loop fully converges and the session reaches Step 4+. Do NOT send shutdown_request at the Step 3c decision fork or anywhere else before convergence.
-
-Your first instinct will be to "gather context" by running `crumb show` on the task list.
-**Do not do this.** Spawn the Recon Planner and let it gather context for you.
+  - **Authorization**: Shutdown is authorized only by the Step 3c termination check (zero P1/P2 findings) — this sets a flag, not immediate dispatch.
+  - **Dispatch timing**: Send `shutdown_request` only after the review loop fully converges and the session reaches Step 4+. Do NOT send at Step 3c or earlier.
 
 ## Orchestrator Read Permissions
 
-The Orchestrator's window is restricted to prevent context bloat, but certain files are explicitly PERMITTED.
+**PERMITTED (must read):** `{SESSION_DIR}/briefing.md`, `{SESSION_DIR}/task-metadata/*.md`,
+`{SESSION_DIR}/previews/*.md`, `{SESSION_DIR}/review-reports/*.md`, verdict tables from Checkpoint Auditor,
+commit messages and git status/log/diff --stat output, agent notifications.
 
-**PERMITTED (Orchestrator must read these):**
-- `{SESSION_DIR}/briefing.md` — Recon Planner-generated strategy summary; Orchestrator reads after startup-check PASS to confirm task count before auto-proceeding to Step 2
-- `{SESSION_DIR}/task-metadata/*.md` — Per-task scope, acceptance criteria (pre-digested by Recon Planner)
-- `{SESSION_DIR}/previews/*.md` — Combined prompt previews (pre-digested by Prompt Composer)
-- `{SESSION_DIR}/review-reports/*.md` — Individual reviewer reports and Review Consolidator consolidated summary
-- Verdict tables from Prompt Composer and Checkpoint Auditor — pre-spawn-check, scope-verify, claims-vs-code, review-integrity verdicts
-- Commit messages and git status/log/diff --stat output
-- Agent notifications (as they complete)
-
-**PERMITTED (Orchestrator reads once per phase, for context only):**
-- `orchestration/templates/implementer-skeleton.md` — Once per implementation wave (skeleton structure; see [Glossary: wave](GLOSSARY.md#workflow-concepts))
-- `orchestration/templates/reviewer-skeleton.md` — Once per review cycle (skeleton structure)
-- `orchestration/templates/review-consolidator-skeleton.md` — Once per review cycle (skeleton structure)
-- `orchestration/templates/scribe-skeleton.md` — Once per session (read to fill placeholders before spawning the Session Scribe at Step 5)
-- Project's `CLAUDE.md` — Global project rules
-- `{SESSION_DIR}/exec-summary.md` — Session Scribe output; read only when session-complete checkpoint escalates to user with a failed exec summary
-- `orchestration/reference/crumb-cheatsheet.md` — crumb CLI quick reference; read when composing agent prompts that invoke crumb commands
+**PERMITTED (once per phase):** `orchestration/templates/implementer-skeleton.md` (per implementation wave),
+`orchestration/templates/reviewer-skeleton.md` (per review cycle),
+`orchestration/templates/review-consolidator-skeleton.md` (per review cycle),
+`orchestration/templates/scribe-skeleton.md` (per session, to fill placeholders before spawning Session Scribe),
+project `CLAUDE.md`, `{SESSION_DIR}/exec-summary.md` (only on session-complete escalation),
+`orchestration/reference/crumb-cheatsheet.md` (when composing prompts with crumb commands).
 
 **FORBIDDEN (agents read; Orchestrator never reads):**
-- `orchestration/templates/recon-planner.md` — Recon Planner's instruction file
-- `orchestration/templates/prompt-composer.md` — Prompt Composer's instruction file
-- `orchestration/templates/implementation.md` — Implementation details (read by Prompt Composer)
-- `orchestration/templates/checkpoints/` — Checkpoint definitions (read by Checkpoint Auditor; common.md + specific checkpoint file)
-- `orchestration/templates/reviews.md` — Review protocol (read by build-review-prompts.sh)
-- `orchestration/reference/dependency-analysis.md` — Used by Recon Planner for conflict analysis
-- `orchestration/reference/known-failures.md` — Reference material; for post-mortem only
-- Source code files, tests, project configs, application data files
-- Raw `crumb show`, `crumb ready`, `crumb blocked`, `crumb list` output (let the Recon Planner digest this)
+- `orchestration/templates/recon-planner.md`, `orchestration/templates/prompt-composer.md`,
+  `orchestration/templates/implementation.md`, `orchestration/templates/checkpoints/`,
+  `orchestration/templates/reviews.md`, `orchestration/reference/dependency-analysis.md`,
+  `orchestration/reference/known-failures.md`
+- Source code, tests, project configs, application data files
+- Raw `crumb show`, `crumb ready`, `crumb blocked`, `crumb list` output
 
 ## Workflow: "Let's Get to Work"
 
@@ -73,86 +47,38 @@ The Orchestrator's window is restricted to prevent context bloat, but certain fi
             **Progress log:** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SESSION_INIT|complete|session_dir=${SESSION_DIR}|next_step=STEP_1_SCOUT" >> ${SESSION_DIR}/progress.log`
 
 **Step 0a: Crash Recovery Check**
-            > **[CONDITIONAL -- only run if a prior session is indicated in the user's message]**
-            > If no prior session is indicated, skip this block entirely and proceed to Step 1.
+            > **[CONDITIONAL — only run if a prior session is indicated in the user's message.]**
 
-            Run BEFORE generating a new SESSION_ID.
-            Check whether the user's message contains a session directory path
-            (e.g. `.crumbs/sessions/_session-<id>`). If a prior SESSION_DIR is
-            supplied or you can identify an incomplete session from context,
-            set a variable for the prior path:
-            ```bash
-            PRIOR_SESSION_DIR="<path from user message>"
-            ```
-            Then:
-            1. Verify the session directory exists:
-               ```bash
-               [ -d "${PRIOR_SESSION_DIR}" ] || echo "Session directory not found: ${PRIOR_SESSION_DIR}"
-               ```
-               If the directory does not exist, surface the message to the user and await instruction.
-               Do NOT proceed to run `parse-progress-log.sh` on a missing directory.
-            2. Run `bash scripts/parse-progress-log.sh "${PRIOR_SESSION_DIR}"`
-               `parse-progress-log.sh` automatically detects `handoff.json` in the session directory
-               (written by `/ant-farm-pause`) and includes handoff state — current step, next action,
-               context notes — in the resume plan. No additional steps are needed to surface handoff data.
-            3. On exit 0: read `{PRIOR_SESSION_DIR}/resume-plan.md` and present it verbatim to the user.
-               Wait for the user to reply `resume` or `fresh start` before taking any further action.
-               - `resume`: restore SESSION_DIR to the prior value and continue from the indicated step.
-                 If the resume plan includes a **Handoff State** section, use `context_notes` and
-                 `next_action` from `handoff.json` to orient the session before spawning any agents.
+            Run BEFORE generating a new SESSION_ID. If the user's message contains a session directory
+            path, set `PRIOR_SESSION_DIR="<path from user message>"`. Then:
+            1. Verify the directory exists: `[ -d "${PRIOR_SESSION_DIR}" ]` — if not, surface error and await instruction.
+            2. Run `bash scripts/parse-progress-log.sh "${PRIOR_SESSION_DIR}"` (detects `handoff.json` automatically).
+            3. **Exit 0**: read `{PRIOR_SESSION_DIR}/resume-plan.md` and present verbatim to user. Await `resume` or `fresh start`.
+               - `resume`: restore SESSION_DIR to the prior value; use `context_notes`/`next_action` from `handoff.json` if present.
                - `fresh start`: generate a new SESSION_ID and proceed normally.
-            4. On exit 2: the prior session completed — proceed normally with a new SESSION_ID.
-            5. On exit 1: surface the error (including the path that was not found) to the user and await instruction.
-
----
+            4. **Exit 2**: prior session completed — proceed normally with a new SESSION_ID.
+            5. **Exit 1**: surface the error to the user and await instruction.
 
 ## Position Check (MANDATORY — GLOBAL, applies at ALL phase transitions)
 
-> **This is a global rule, not part of any single Step.** It applies at every major phase boundary
-> throughout the entire workflow (Steps 0→1, 1→2, 2→3, 3→3b, 3b→3c, etc.).
+> **Global rule** — applies at every phase boundary (Steps 0→1, 1→2, 2→3, 3→3b, 3b→3c, etc.).
+> `ant-farm-gate-enforcer.js` enforces this mechanically on every Task spawn. This prose covers the response path.
 
-**Run this check before every major phase transition.** This is required after every wave
-completion (WAVE_VERIFIED) and after every fix agent completion (FIX_CLAIMS_VS_CODE_COMPLETE).
-It is also recommended at any Step boundary where context may have been refreshed.
-
-```bash
-tail -1 "${SESSION_DIR}/progress.log" | grep -o 'next_step=[^|]*'
-```
-
-Compare the `next_step=` value against the step you are about to execute:
+On position-check mismatch:
 - **Match**: proceed normally.
-- **Mismatch**: STOP. Do not execute the intended step. Re-read the full progress log
-  to determine the actual workflow position, then reconcile before continuing.
-- **Empty / no match**: progress.log may be missing or malformed. Run
-  `parse-progress-log.sh ${SESSION_DIR}` to diagnose and present the resume plan.
+- **Mismatch**: STOP. Re-read the full progress log to determine actual position, then reconcile.
+- **Empty / no match**: Run `parse-progress-log.sh ${SESSION_DIR}` to diagnose and present the resume plan.
 
 **Hard requirement**: If the last WAVE_VERIFIED entry shows `next_step=REVIEW_3B` and
 no subsequent WAVE_SPAWNED entry is present, the next action MUST be Step 3b (Review).
 Skipping Step 3b is a critical workflow violation.
 
 **next_step value convention**: Progress log entries use descriptive step identifiers
-            rather than the shorthand abbreviations from the original AF-140 task table. Descriptive
-            names are self-documenting and match the step labels in this file. Valid values:
-
-            | next_step value | Meaning |
-            |-----------------|---------|
-            | `STEP_1_SCOUT` | About to run Step 1 (Recon Planner recon) |
-            | `STEP_2_PANTRY` | About to run Step 2 (Prompt Composer) |
-            | `STEP_3_VERIFY` | About to run Step 3 scope-verify for the current wave |
-            | `STEP_3_CLAIMS_VS_CODE` | About to run claims-vs-code for the current wave |
-            | `REVIEW_3B` | About to run Step 3b (review team) — final wave complete |
-            | `NEXT_WAVE` | About to spawn the next wave (non-final wave complete) |
-            | `STEP_3C_TRIAGE` | About to triage review findings (Step 3c) |
-            | `FIX_SCOUT` | About to spawn fix Recon Planner for a fix round |
-            | `FIX_AGENTS_SPAWN` | About to spawn fix Implementers |
-            | `FIX_INNER_LOOP` | Fix agents spawned; waiting for fix-cycle scope-verify and claims-vs-code checks |
-            | `ROUND_TRANSITION` | About to transition to the next review round |
-            | `STEP_4_DOCS` | About to run Step 4 (doc/CHANGELOG update) |
-            | `STEP_4B_XREF` | About to run Step 4b (cross-reference / issue status check) |
-            | `STEP_5_SCRIBE` | About to run Step 5 (Session Scribe exec summary) |
-            | `STEP_6_ESV` | About to run Step 6 (session-complete checkpoint) |
-            | `STEP_7_PUSH` | About to run Step 7 (git push) |
-            | `DONE` | Session complete; no further steps |
+            that match the step labels in this file. Valid values:
+            `STEP_1_SCOUT`, `STEP_2_PANTRY`, `STEP_3_VERIFY`, `STEP_3_CLAIMS_VS_CODE`,
+            `REVIEW_3B`, `NEXT_WAVE`, `STEP_3C_TRIAGE`, `FIX_SCOUT`, `FIX_AGENTS_SPAWN`,
+            `FIX_INNER_LOOP`, `ROUND_TRANSITION`, `STEP_4_DOCS`, `STEP_4B_XREF`,
+            `STEP_5_SCRIBE`, `STEP_6_ESV`, `STEP_7_PUSH`, `DONE`.
 
 **Step 1:** Recon — Read `{SESSION_DIR}/briefing.md` written by the Recon Planner's previous run, or spawn the Recon Planner
             (`ant-farm-recon-planner` subagent, `model: "opus"`) if this is the first session. Include in Recon Planner's prompt:
@@ -163,42 +89,18 @@ Skipping Step 3b is a critical workflow violation.
                 - User describes a filter → `filter <description>`
                 - User gives no specific scope (e.g., just "let's get to work") → `ready`
             (3) the path `orchestration/templates/recon-planner.md` as its instruction file.
-            Do NOT read the scout template yourself. Do NOT run `crumb show`, `crumb ready`, `crumb blocked`,
-            or any other `crumb` commands — the Recon Planner handles all task discovery and metadata gathering.
             WAIT for the Recon Planner to return its briefing verdict (written to `{SESSION_DIR}/briefing.md`).
 
-**Step 1b:** startup-check gate — After Recon Planner writes `{SESSION_DIR}/briefing.md`, spawn Checkpoint Auditor
-            (`ant-farm-checkpoint-auditor`, `model: "haiku"`) for Recon Planner Strategy Verification.
-            Pass `Session directory: <value of SESSION_DIR>` and the paths `orchestration/templates/checkpoints/common.md`
-            and `orchestration/templates/checkpoints/startup-check.md` as its instruction files. Checkpoint Auditor reads `{SESSION_DIR}/briefing.md` itself and runs all four
-            mechanical checks (Check 1: no unresolved file overlaps within a wave, Check 1b: agent task cap ≤3 per wave,
-            Check 2: file lists match crumb descriptions, Check 3: no intra-wave dependency violations). **startup-check must PASS before proceeding.**
+**Step 1b:** startup-check gate — Spawn Checkpoint Auditor (`ant-farm-checkpoint-auditor`, `model: "haiku"`) with `Session directory: <SESSION_DIR>` and paths `orchestration/templates/checkpoints/common.md` + `startup-check.md`. `ant-farm-gate-enforcer.js` blocks all downstream spawns until startup-check records a PASS.
 
-            **On startup-check PASS**: Proceed directly to Step 2. Do NOT wait for user approval. startup-check is the
-            mechanical safety gate — a passing strategy is structurally sound and ready to execute.
-            No complexity threshold applies; auto-approve regardless of task count.
-            **Zero-task guard:** If the briefing's task count is 0, do NOT auto-proceed to Step 2.
-            Escalate to the user with the zero-task briefing for review and await instruction.
-            **On startup-check FAIL**: Re-run Recon Planner with the specific violations from the startup-check report (do NOT present
-            a failed strategy to the user). After Recon Planner revises briefing.md, re-run startup-check.
-            **Retry cap:** The startup-check FAIL -> re-Recon Planner cycle has a maximum of 1 retry. If startup-check fails again
-            after one re-Recon Planner run, do NOT re-run Recon Planner a second time. Surface the startup-check violations to
-            the user and await instruction.
+            **On PASS**: Proceed directly to Step 2 (no user approval needed). Zero-task guard: if task count is 0, escalate to user instead.
+            **On FAIL**: Re-run Recon Planner with specific violations (do NOT present a failed strategy to the user); re-run startup-check. **Max 1 retry** — if still failing, surface to user.
 
-            **Progress log (after startup-check PASS):** The `SCOUT_COMPLETE` milestone covers both Step 1 (Recon Planner recon) and Step 1b (startup-check). Step 1 does not log a separate milestone — the Recon Planner phase is considered complete only after startup-check PASS.
-            `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SCOUT_COMPLETE|briefing=${SESSION_DIR}/briefing.md|startup_check=pass|tasks_accepted=<N>|next_step=STEP_2_PANTRY" >> ${SESSION_DIR}/progress.log`
-            where `<N>` is the count of tasks in the briefing task list after startup-check PASS (N=0 is not logged — it is caught by the zero-task guard earlier in Step 1b).
+            **Progress log (after startup-check PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SCOUT_COMPLETE|briefing=${SESSION_DIR}/briefing.md|startup_check=pass|tasks_accepted=<N>|next_step=STEP_2_PANTRY" >> ${SESSION_DIR}/progress.log`
 
-**Step 2:** Spawn — Spawn the Prompt Composer (`ant-farm-prompt-composer`, `model: "opus"`) for task briefs + combined previews
-            (→ orchestration/templates/prompt-composer.md, Section 1). Include `Session directory: <value of SESSION_DIR>`
-            in Prompt Composer's prompt. Pass preview file paths and SESSION_DIR to Checkpoint Auditor
-            (`ant-farm-checkpoint-auditor`, `model: "haiku"`) for pre-spawn-check; Checkpoint Auditor reads `orchestration/templates/checkpoints/common.md` and `orchestration/templates/checkpoints/pre-spawn-check.md` itself.
-            Only after all pre-spawn-check PASS: spawn agents using skeleton
-            (→ orchestration/templates/implementer-skeleton.md, using Agent Type from Prompt Composer verdict table, `model: "sonnet"` for all Implementers regardless of subagent_type).
+**Step 2:** Spawn — Spawn Prompt Composer (`ant-farm-prompt-composer`, `model: "opus"`, → templates/prompt-composer.md) with `Session directory: <SESSION_DIR>`. Then spawn Checkpoint Auditor (`ant-farm-checkpoint-auditor`, `model: "haiku"`) for pre-spawn-check (reads common.md + pre-spawn-check.md). Only after all pre-spawn-check PASS: spawn agents via implementer-skeleton.md (`model: "sonnet"`, Agent Type from Prompt Composer verdict table).
             **Wave pipelining**: When spawning wave N Implementers, include the wave N+1 Prompt Composer
-            (`ant-farm-prompt-composer`, `model: "opus"`) in the SAME message so they launch concurrently.
-            The Prompt Composer reads from task-metadata (written by Recon Planner) and has no dependency on wave N's output.
-            This eliminates the idle gap between waves. The flow per wave boundary:
+            (`ant-farm-prompt-composer`, `model: "opus"`) in the SAME message. Flow per wave boundary:
             1. Wave N pre-spawn-check PASS → spawn wave N Implementers + wave N+1 Prompt Composer (in a single Task call to achieve concurrency)
             2. Wave N+1 Prompt Composer returns → spawn wave N+1 pre-spawn-check
             3. Wave N Implementers finish → run scope-verify/claims-vs-code (Step 3)
@@ -206,55 +108,30 @@ Skipping Step 3b is a critical workflow violation.
             For the final wave (no wave N+1), skip the Prompt Composer — just spawn Implementers alone.
             **Progress log (after each wave's Implementers are spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_SPAWNED|wave=<N>|spawned=<agent-ids>|previews_dir=${SESSION_DIR}/previews|next_step=STEP_3_VERIFY" >> ${SESSION_DIR}/progress.log`
 
-**Step 3:** Verify — Run scope-verify, then claims-vs-code, for each wave.
+**Step 3:** Verify — Run scope-verify, then claims-vs-code, for each wave. PASS/FAIL/WARN verdict behavior lives in the checkpoint templates (`ant-farm-gate-enforcer.js` records gate state in `gate-status.json`).
 
-            **scope-verify execution mode depends on how agents in the wave were spawned:**
-            - **Serial mode** (agents spawned sequentially, one at a time): After each agent commits, spawn
-              one Checkpoint Auditor (`model: "haiku"`) instance for that agent's commit. This is a true per-agent
-              gate — the next agent must not be spawned until scope-verify PASS is received for the previous one.
-            - **Batch mode** (agents spawned in parallel in a single message): After ALL wave agents have
-              committed, spawn one Checkpoint Auditor (`model: "haiku"`) instance per committed task (can be
-              concurrent). Wait for ALL scope-verify reports before proceeding to claims-vs-code. This is a post-hoc batch
-              check — per-agent serial gating is mechanically impossible when commits arrive nearly
-              simultaneously.
-            **Mode selection rule**: If you spawned agents in a single message (parallel wave), use batch
-            mode. If you spawned agents individually in separate messages, use serial mode.
-            **Boundary conditions:**
-            - **N=1 (single-agent wave)**: Use serial mode. A single agent does not benefit from batch mode's
-              concurrent scope-verify spawns, and serial mode's per-agent gating is simpler.
-            - **Partial wave commit (batch mode)**: If some agents in a parallel wave crash without committing,
-              run scope-verify for the committed subset only. Do not wait indefinitely for crashed agents.
-              Log the crashed agents as failures (see Wave Management > Agent failure), then proceed with
-              scope-verify and claims-vs-code for the agents that did commit.
-            **Progress log (after all scope-verify reports PASS for the wave):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_SCOPE_VERIFY_PASS|wave=<N>|mode=<serial|batch>|tasks_checked=<ids>|next_step=STEP_3_CLAIMS_VS_CODE" >> ${SESSION_DIR}/progress.log`
+            **scope-verify mode** — spawn Checkpoint Auditor (`model: "haiku"`) per committed task:
+            - **Serial mode** (agents spawned individually): gate each agent before spawning the next.
+            - **Batch mode** (agents spawned in parallel): run all scope-verify checks concurrently after all commits arrive.
+            **Mode selection rule**: single message → batch; separate messages → serial. N=1 → use serial.
+            **Partial wave commit (batch mode)**: run scope-verify for the committed subset; log crashes as failures.
+            **Progress log (after all scope-verify reports PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_SCOPE_VERIFY_PASS|wave=<N>|mode=<serial|batch>|tasks_checked=<ids>|next_step=STEP_3_CLAIMS_VS_CODE" >> ${SESSION_DIR}/progress.log`
 
-            After all scope-verify reports PASS, spawn Checkpoint Auditor (`model: "sonnet"`) for claims-vs-code
-            (pass task IDs, commit hashes, summary doc paths; Checkpoint Auditor reads
-            `orchestration/templates/checkpoints/common.md` + `orchestration/templates/checkpoints/claims-vs-code.md` + task-metadata/ + git diffs itself).
-            Failed claims-vs-code → resume agent (max 2 retries).
+            After all scope-verify reports PASS, spawn Checkpoint Auditor (`model: "sonnet"`) for claims-vs-code (pass task IDs, commit hashes, summary doc paths; Auditor reads common.md + claims-vs-code.md itself). Failed claims-vs-code → resume agent (max 2 retries).
             **Progress log (after claims-vs-code PASS for each wave):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|WAVE_VERIFIED|wave=<N>|claims_vs_code=pass|tasks_verified=<ids>|commits=<hashes>|next_step=REVIEW_3B" >> ${SESSION_DIR}/progress.log`
-            Note: For non-final waves, use `next_step=NEXT_WAVE` instead. The Position Check (see above) uses this value to confirm the correct next action.
+            Note: For non-final waves, use `next_step=NEXT_WAVE` instead.
 
-**Step 3b:** Review (round 1: Clarity, Edge Cases, Correctness, Drift; round 2+: Correctness, Edge Cases only) — Read `orchestration/RULES-review.md` now for the full Step 3b workflow.
-            **Prerequisite**: Before composing review briefs, validate commit range format and file list completeness
-            per RULES-review.md 3b-i.5. Invalid inputs (empty file list, malformed commit range) must produce a
-            clear error — never pass through silently to reviewers.
+**Step 3b:** Review (round 1: Clarity, Edge Cases, Correctness, Drift; round 2+: Correctness, Edge Cases only) — Read `orchestration/RULES-review.md` now for the full Step 3b workflow. Validate commit range format and file list completeness before composing review briefs (RULES-review.md 3b-i.5).
 
             **Progress log (after reviewer team completes round 1):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_COMPLETE|round=<N>|team=complete|report=${SESSION_DIR}/review-reports/review-consolidated-${TIMESTAMP}.md|next_step=STEP_3C_TRIAGE" >> ${SESSION_DIR}/progress.log`
 
 **Step 3c:** User triage — Read `orchestration/RULES-review.md` now for the full Step 3c workflow.
 
             **Progress log (after fix Recon Planner startup-check PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_SCOUT_COMPLETE|round=<N>|startup_check=pass|fix_crumbs=<crumb-ids>|next_step=FIX_AGENTS_SPAWN" >> ${SESSION_DIR}/progress.log`
-
             **Progress log (after fix agents spawned):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_AGENTS_SPAWNED|round=<N>|fix_cgs=<names>|fix_pcs=fix-pc-scope-verify,fix-pc-claims-vs-code|next_step=FIX_INNER_LOOP" >> ${SESSION_DIR}/progress.log`
-            _(In the log format above, `fix_cgs` and `verified_cgs` list fix implementer agent names; "CG" is the internal label for fix implementer agents (Code Generator).)_
-
-            **Progress log (after all fix CGs verified by fix-pc-claims-vs-code):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_CLAIMS_VS_CODE_COMPLETE|round=<N>|verified_cgs=<names>|commits=<hashes>|next_step=ROUND_TRANSITION" >> ${SESSION_DIR}/progress.log`
-
-            **Progress log (after round transition messages sent):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|ROUND_TRANSITION|from_round=<N>|to_round=<N+1>|fix_commits=<range>|next_step=REVIEW_3B" >> ${SESSION_DIR}/progress.log`
-
+            **Progress log (after all fix CGs verified):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|FIX_CLAIMS_VS_CODE_COMPLETE|round=<N>|verified_cgs=<names>|commits=<hashes>|next_step=ROUND_TRANSITION" >> ${SESSION_DIR}/progress.log`
+            **Progress log (after round transition):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|ROUND_TRANSITION|from_round=<N>|to_round=<N+1>|fix_commits=<range>|next_step=REVIEW_3B" >> ${SESSION_DIR}/progress.log`
             **Progress log (after triage decision — fix path):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_TRIAGED|round=<N>|p1=<count>|p2=<count>|decision=<auto_fix|fix_now>|root_causes=<count>|next_step=FIX_SCOUT" >> ${SESSION_DIR}/progress.log`
-
             **Progress log (after triage decision — non-fix path):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|REVIEW_TRIAGED|round=<N>|p1=<count>|p2=<count>|decision=<defer|terminated>|root_causes=<count>|next_step=STEP_4_DOCS" >> ${SESSION_DIR}/progress.log`
 
 **Step 4:** Documentation — update README and CLAUDE.md in single commit.
@@ -279,11 +156,6 @@ Skipping Step 3b is a critical workflow violation.
                       Read orchestration/templates/scribe-skeleton.md for full instructions."
             )
             ```
-            The Session Scribe reads all session artifacts ({SESSION_DIR}/briefing.md, summaries/*.md,
-            review-reports/review-consolidated-*.md, progress.log), runs git diff/log for the commit
-            range, and produces two outputs:
-            1. `{SESSION_DIR}/exec-summary.md` — canonical session record
-            2. Prepends a CHANGELOG entry to `CHANGELOG.md`
             **Progress log (after Session Scribe completes):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SCRIBE_COMPLETE|exec_summary=${SESSION_DIR}/exec-summary.md|next_step=STEP_6_ESV" >> ${SESSION_DIR}/progress.log`
 
 **Step 6:** session-complete — spawn Checkpoint Auditor for Exec Summary Verification. **Hard gate: must PASS before Step 7.**
@@ -299,12 +171,8 @@ Skipping Step 3b is a critical workflow violation.
                       Read orchestration/templates/checkpoints/common.md and orchestration/templates/checkpoints/session-complete.md for full instructions."
             )
             ```
-            > **Field derivation**: `SESSION_START_COMMIT` is the first commit the Orchestrator or any agent made this session (visible in `git log` since the pre-session HEAD). `SESSION_END_COMMIT` is the commit at HEAD immediately before Step 7's `git add CHANGELOG.md` commit. `SESSION_START_DATE` is the calendar date (UTC) when Step 0 ran (stored in orchestrator-state.md or derivable from `SESSION_ID`).
-            session-complete checks: task coverage, commit coverage, open crumb accuracy, CHANGELOG derivation
-            fidelity, section completeness, metric consistency.
-            Artifact written to `{SESSION_DIR}/pc/pc-session-complete-{timestamp}.md`.
-            **On session-complete FAIL**: Re-spawn Session Scribe with specific violations from session-complete report (max 1 retry).
-            **On second session-complete FAIL**: Escalate to user — present failed checks, await decision.
+            > `SESSION_START_COMMIT` = first commit this session; `SESSION_END_COMMIT` = HEAD before Step 7's CHANGELOG commit; `SESSION_START_DATE` = UTC date of Step 0 (derivable from `SESSION_ID`).
+            **On FAIL**: Re-spawn Session Scribe with violations (max 1 retry). On second FAIL: escalate to user.
             **Progress log (after session-complete PASS):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SESSION_COMPLETE_PASS|artifact=${SESSION_DIR}/pc/pc-session-complete-$(date +%Y%m%d-%H%M%S).md|next_step=STEP_7_PUSH" >> ${SESSION_DIR}/progress.log`
 
 **Step 7:** Land the plane — Orchestrator commits the Session Scribe's CHANGELOG.md, copies the exec summary to history (local only), then pulls and pushes. NEVER `git add` any file under `.crumbs/` — the entire directory is gitignored.
@@ -317,24 +185,20 @@ Skipping Step 3b is a critical workflow violation.
             ```
             Run `git status` after push — output MUST show "up to date with origin".
 
-            **Post-push sync**: After push succeeds, run `./scripts/setup.sh` to copy orchestration files
-            from the repo to `~/.claude/`. This ensures the global runtime matches the repo. If a pre-push
-            hook is installed (see CHANGELOG for history), it provides a non-fatal early warning on sync
-            drift but does not block the push. The post-push `setup.sh` run is the authoritative sync —
-            it catches silent failures that a non-fatal hook would miss. Both layers exist for
-            defense-in-depth: the hook warns early, `setup.sh` guarantees correctness.
-
+            **Post-push sync**: Run `./scripts/setup.sh` to sync orchestration files from repo to `~/.claude/`.
             Clean up stashes and remote branches. Provide hand-off context for the next session.
             **Progress log (after git push succeeds):** `echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|SESSION_COMPLETE|pushed=true|next_step=DONE" >> ${SESSION_DIR}/progress.log`
 
 ## Hard Gates
+
+> Gate ordering (startup-check → pre-spawn-check → scope-verify → claims-vs-code → review-integrity → session-complete) is enforced by `ant-farm-gate-enforcer.js`. This table documents artifact paths.
 
 | Gate | Blocks | Artifact |
 |------|--------|----------|
 | startup-check PASS | Prompt Composer spawn (and all downstream steps) | ${SESSION_DIR}/pc/pc-session-startup-check-<timestamp>.md |
 | pre-spawn-check PASS (impl) | Agent spawn | ${SESSION_DIR}/pc/*-pre-spawn-check-*.md |
 | pre-spawn-check PASS (review) | Reviewer team spawn | ${SESSION_DIR}/pc/pc-session-pre-spawn-check-review-<timestamp>.md |
-| scope-verify PASS | Serial mode: next agent spawn; Batch mode: claims-vs-code spawn (all wave agents checked before claims-vs-code) | ${SESSION_DIR}/pc/*-scope-verify-*.md |
+| scope-verify PASS | Serial mode: next agent spawn; Batch mode: claims-vs-code spawn | ${SESSION_DIR}/pc/*-scope-verify-*.md |
 | claims-vs-code PASS | Task closure (`crumb_close`) | ${SESSION_DIR}/pc/*-claims-vs-code-*.md |
 | review-integrity PASS | Presenting results | ${SESSION_DIR}/pc/pc-session-review-integrity-<timestamp>.md |
 | Reviews | Presenting findings to user (Step 3c) | ${SESSION_DIR}/review-reports/review-consolidated-<timestamp>.md |
@@ -342,13 +206,10 @@ Skipping Step 3b is a critical workflow violation.
 
 > **Note (Reviews gate):** Reviews are mandatory after ALL implementation completes (round 1). If findings require a fix cycle, reviews re-run with reduced scope — Correctness and Edge Cases only; Clarity and Drift are dropped (round 2+).
 
-## Agent Types
+## Agent Types and Models
 
-Read `orchestration/reference/agent-types.md` for the full Agent Types table.
-
-## Model Assignments
-
-Read `orchestration/reference/model-assignments.md` for the full Model Assignments table. Every `Task` tool call the Orchestrator makes MUST include the `model` parameter — omitting it causes the agent to inherit the Orchestrator's opus model, wasting tokens.
+- Agent types: `orchestration/reference/agent-types.md`
+- Model assignments: `orchestration/reference/model-assignments.md` — MUST include `model` parameter on every `Task` call (omitting inherits Orchestrator's opus model, wasting tokens)
 
 ## Concurrency Rules
 
@@ -357,8 +218,8 @@ Read `orchestration/reference/model-assignments.md` for the full Model Assignmen
 - No two agents edit the same file — queue conflicting tasks sequentially
 - Each agent runs `git pull --rebase` before committing
 - Only the Orchestrator pushes to remote
-- Only the Orchestrator updates README; the Session Scribe writes CHANGELOG.md (Orchestrator commits it at Step 7)
-- Pipeline wave N Implementers with wave N+1 Prompt Composer in a single message (see Step 2 wave pipelining)
+- Only the Orchestrator updates README; the Session Scribe writes CHANGELOG.md (committed by Orchestrator at Step 7)
+- Pipeline wave N Implementers with wave N+1 Prompt Composer in a single message
 
 ### Wave Management
 
@@ -403,9 +264,7 @@ Store SESSION_DIR in your context and pass it explicitly to every agent that nee
 
 ## Sentinel-File Completion Protocol
 
-When the Orchestrator spawns background subagents (`run_in_background: true`), do NOT use TaskOutput or Read
-on the agent's output file. TaskOutput returns the full JSONL session transcript, flooding the Orchestrator's
-context with thousands of tokens of hook events and tool results.
+Do NOT use TaskOutput or Read on background agent output files — use sentinel files instead.
 
 **Protocol**: Background agents write a sentinel file as their absolute last action:
 ```bash
@@ -442,11 +301,13 @@ SUMMARY: {one-line-description}" > "${SESSION_DIR}/signals/{TASK_SUFFIX}.done"
 
 ## Retry Limits
 
+> Global retry cap and per-type limits are tracked by `retry-tracker.js` (`retries.json`). Escalation paths below are PROMPT_ONLY — the hook enforces counts but cannot supply them.
+
 | Situation | Max Retries | After Limit |
 |-----------|-------------|-------------|
 | Agent fails claims-vs-code | 2 | Escalate to user with full context |
 | review-integrity fails | 1 | Present to user with verification report attached |
-| Agent stuck (no commit within 15 turns — see Stuck-Agent Diagnostic Procedure) | 0 | Run stuck-agent diagnostic; escalate to user |
+| Agent stuck (>10 min without commit — see Stuck-Agent Diagnostic Procedure) | 0 | Run stuck-agent diagnostic; escalate to user |
 | Prompt Composer pre-spawn-check fails | 1 | Escalate to user; do not spawn Implementers without verified prompts |
 | Recon Planner fails or returns no tasks | 1 | Escalate to user; do not proceed to Step 2 without task list |
 | startup-check FAIL -> re-Recon Planner cycle | 1 | Escalate to user with startup-check violations; do not re-run Recon Planner a third time |
@@ -458,45 +319,31 @@ SUMMARY: {one-line-description}" > "${SESSION_DIR}/signals/{TASK_SUFFIX}.done"
 | Session Scribe fails session-complete | 1 | Escalate to user with session-complete report; user decides fix manually or push as-is |
 | Total retries per session | 5 | Pause all new spawns; triage with user |
 
-Track retry count in the Orchestrator's state file (→ templates/orchestrator-state.md).
-
 ### Stuck-Agent Diagnostic Procedure
 
-When an agent has not produced a commit within 15 turns, follow these steps before escalating:
+`ant-farm-gate-enforcer.js` emits WARNING at >10 min and CRITICAL at >15 min without a commit. Procedure is PROMPT_ONLY:
 
-1. Read the agent's task brief to confirm the scope and acceptance criteria were unambiguous.
-2. Check `.crumbs/sessions/_session-*/` for any partial summary the agent may have written, which can reveal how far it progressed before stalling.
-3. Check `git log --oneline -10` to determine whether a commit was made but not reported back correctly.
-4. If the agent is still running, check its most recent output for a blocking question, permission error, or tool failure message.
-5. If the agent exited without a commit and no diagnostic information is available, escalate to the user with: the task ID, the agent type, the turn count, and any last-known output.
-
-Do not re-spawn the agent or attempt a fix without user approval after the stuck-agent limit (0 retries) is reached.
+1. Read the task brief — confirm scope was unambiguous.
+2. Check `.crumbs/sessions/_session-*/` for a partial summary showing how far it progressed.
+3. Run `git log --oneline -10` — confirm no commit was silently made.
+4. If still running: check most recent output for blocking question, permission error, or tool failure.
+5. Escalate with: task ID, agent type, elapsed time, last-known output. Do NOT re-spawn without user approval.
 
 ### Wave Failure Threshold
 
-If more than 50% of agents in a single wave fail (after all applicable retries are exhausted), the Orchestrator must:
+`ant-farm-gate-enforcer.js` blocks new spawns when the previous wave's failure rate exceeds 50% (configurable). When this threshold is hit: stop new spawns → collect failure summaries → notify user (task ID, failure type, retry count) → await instruction (re-run subset, abort, or resolve blockers and resume).
 
-1. Stop spawning new agents for the remainder of the current wave.
-2. Collect failure summaries from all failed agents in the wave.
-3. Notify the user immediately: list each failed task ID, the failure type, and retry count consumed.
-4. Await explicit user instruction before continuing — options include: re-run the failed subset, abort the session, or manually resolve blockers and resume.
-
-**When an agent counts as "failed" for threshold purposes:**
-- **claims-vs-code failure**: After 2 retries exhausted (see Retry Limits table). An agent still within its retry budget is not yet counted.
-- **Stuck agent** (no commit within 15 turns): Immediately (0 retries). Stuck agents count toward the threshold as soon as the stuck-agent diagnostic completes.
-- **Unrecoverable error** (crash, tool failure): Immediately. No retry applies.
-
-A wave is defined as a set of agents spawned concurrently in a single Step 2 batch. Failures from earlier waves do not carry over into the threshold calculation for a new wave.
+**Failure counting**: claims-vs-code failure counts after 2 retries exhausted; stuck agent (>10 min) counts immediately; crash counts immediately. A wave = agents spawned concurrently in a single Step 2 batch; failures do not carry across waves.
 
 ## Crumb Priority Calibration
 
-> **Note**: This section defines project-level issue priorities for crumbs filed in the tracker. Reviewer severity (P1/P2/P3) is defined separately in `orchestration/templates/reviews.md` and applies to review findings, not crumb filing priority.
+> For crumbs filed in the tracker (not reviewer severity, which is defined in `reviews.md`).
 
-**P1** = build failure, broken links, data loss, security vulnerability
-
-**P2** = visual regression, accessibility issue, functional degradation
-
-**P3** = style, naming, cleanup, polish
+| Priority | Examples |
+|----------|---------|
+| **P1** | build failure, broken links, data loss, security vulnerability |
+| **P2** | visual regression, accessibility issue, functional degradation |
+| **P3** | style, naming, cleanup, polish |
 
 Project-specific overrides belong in the project's CLAUDE.md or QUALITY_PROCESS.md.
 
@@ -507,4 +354,4 @@ Project-specific overrides belong in the project's CLAUDE.md or QUALITY_PROCESS.
 - Concurrent agents: typical 5-6 Implementers, max 12 total
 - Commits per session: <20 (batch related work)
 
-The context monitor hook will warn you at 35% and 25% remaining.
+`ant-farm-context-monitor.js` warns at 35%/25% remaining; CRITICAL advisory instructs you to tell the user to run `/ant-farm-pause`.
