@@ -55,6 +55,8 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "context_warning_threshold": 35,
     "context_critical_threshold": 25,
     "wave_failure_threshold": 0.5,
+    "stuck_agent_timeout_minutes": 10,
+    "stuck_agent_escalation_minutes": 15,
     "banned_phrases": [
         "works correctly",
         "as expected",
@@ -2850,6 +2852,87 @@ def cmd_session_reset_retries(args: argparse.Namespace) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Session agents command
+# ---------------------------------------------------------------------------
+
+#: Filename for the agent spawn accumulation file inside a session directory.
+_AGENTS_FILE = "agents.json"
+
+
+def cmd_session_agents(args: argparse.Namespace) -> None:
+    """Show agents spawned in a session with status and elapsed time.
+
+    Reads agents.json from the given session directory and prints a summary
+    of each spawned agent including task_id, spawned_at timestamp, status,
+    and elapsed time since spawn.  Supports --json for machine-readable output.
+
+    JSON output includes an ``elapsed_minutes`` field computed at read time.
+
+    Args:
+        args: Parsed CLI arguments.  Expects ``args.session_dir`` (str) and
+              ``args.json_output`` (bool).
+    """
+    session_dir = Path(args.session_dir).expanduser().resolve()
+    agents_path = session_dir / _AGENTS_FILE
+
+    if not agents_path.exists():
+        if args.json_output:
+            print(json.dumps([]))
+        else:
+            print("no agents recorded (agents.json not found)")
+        return
+
+    try:
+        with open(agents_path, "r", encoding="utf-8") as fh:
+            agents = json.load(fh)
+    except (json.JSONDecodeError, OSError) as exc:
+        die(f"cannot read agents.json: {exc}")
+
+    if not isinstance(agents, list):
+        die("agents.json is malformed: expected a JSON array")
+
+    now = datetime.utcnow()
+
+    agent_objects: List[Dict[str, Any]] = []
+    for agent in agents:
+        task_id = agent.get("task_id", "unknown")
+        spawned_at_str = agent.get("spawned_at", "")
+        status = agent.get("status", "spawned")
+
+        # Compute elapsed time from spawn timestamp.
+        elapsed_minutes: float = 0.0
+        try:
+            # Parse ISO 8601 UTC timestamp; strip trailing Z for fromisoformat compat.
+            spawned_dt = datetime.fromisoformat(spawned_at_str.rstrip("Z"))
+            elapsed_minutes = (now - spawned_dt).total_seconds() / 60.0
+        except (ValueError, AttributeError):
+            elapsed_minutes = 0.0
+
+        agent_objects.append({
+            "task_id": task_id,
+            "spawned_at": spawned_at_str,
+            "status": status,
+            "elapsed_minutes": round(elapsed_minutes, 1),
+        })
+
+    if args.json_output:
+        print(json.dumps(agent_objects, indent=2))
+        return
+
+    if not agent_objects:
+        print("no agents recorded")
+        return
+
+    for obj in agent_objects:
+        elapsed = obj["elapsed_minutes"]
+        if elapsed >= 60:
+            elapsed_str = f"{elapsed / 60:.1f}hr elapsed"
+        else:
+            elapsed_str = f"{elapsed:.0f}min elapsed"
+        print(f"{obj['task_id']}  status={obj['status']}  spawned_at={obj['spawned_at']}  {elapsed_str}")
+
+
+# ---------------------------------------------------------------------------
 # Session list command
 # ---------------------------------------------------------------------------
 
@@ -3579,6 +3662,19 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to the session directory containing retries.json",
     )
     p_session_reset_retries.set_defaults(func=cmd_session_reset_retries)
+
+    # --- session-agents ---
+    p_session_agents = sub.add_parser(
+        "session-agents",
+        help="Show agents spawned in a session with status and elapsed time",
+    )
+    p_session_agents.add_argument(
+        "session_dir",
+        metavar="SESSION_DIR",
+        help="Path to the session directory containing agents.json",
+    )
+    _add_json_flag(p_session_agents)
+    p_session_agents.set_defaults(func=cmd_session_agents)
 
     # --- session-status ---
     p_session_status = sub.add_parser(

@@ -55,7 +55,7 @@
 const fs = require('fs');
 const path = require('path');
 const { debugLog } = require('./lib/debug-log');
-const { isGatePassed, writeGateVerdict } = require('./lib/gate-manager');
+const { isGatePassed, writeGateVerdict, appendAgentSpawn, readAgentSpawns } = require('./lib/gate-manager');
 const { getExpectedNextStep } = require('./lib/progress-reader');
 const { canRetry } = require('./lib/retry-tracker');
 const { getWaveStatus } = require('./lib/wave-tracker');
@@ -91,6 +91,20 @@ const AGENT_SPAWN_GATE = 'agent-spawn';
  * failureRate exceeds this value. Configurable via config.json wave_failure_threshold.
  */
 const DEFAULT_WAVE_FAILURE_THRESHOLD = 0.5;
+
+/**
+ * Default stuck-agent timeout in minutes. An advisory WARNING is injected when
+ * an agent has been running longer than this without producing a commit.
+ * Configurable via config.json stuck_agent_timeout_minutes.
+ */
+const DEFAULT_STUCK_AGENT_TIMEOUT_MINUTES = 10;
+
+/**
+ * Default stuck-agent escalation threshold in minutes. The advisory escalates
+ * to CRITICAL when an agent has been running longer than this.
+ * Configurable via config.json stuck_agent_escalation_minutes.
+ */
+const DEFAULT_STUCK_AGENT_ESCALATION_MINUTES = 15;
 
 // ---------------------------------------------------------------------------
 // Session detection
@@ -332,6 +346,102 @@ function extractWaveNumberFromPrompt(prompt) {
   return waveNum;
 }
 
+/**
+ * Reads stuck-agent timeout and escalation thresholds from .crumbs/config.json.
+ *
+ * Returns defaults when the file is absent, unparseable, or the fields are missing.
+ * Conservative fallback — a config read failure does NOT disable stuck-agent checks.
+ *
+ * @param {string} projectDir  Absolute path to the project root.
+ * @returns {{ timeoutMinutes: number, escalationMinutes: number }}
+ */
+function getStuckAgentThresholds(projectDir) {
+  const configPath = path.join(projectDir, '.crumbs', 'config.json');
+  let parsed;
+  try {
+    const raw = fs.readFileSync(configPath, 'utf8');
+    parsed = JSON.parse(raw);
+  } catch (_err) {
+    return {
+      timeoutMinutes: DEFAULT_STUCK_AGENT_TIMEOUT_MINUTES,
+      escalationMinutes: DEFAULT_STUCK_AGENT_ESCALATION_MINUTES,
+    };
+  }
+
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    return {
+      timeoutMinutes: DEFAULT_STUCK_AGENT_TIMEOUT_MINUTES,
+      escalationMinutes: DEFAULT_STUCK_AGENT_ESCALATION_MINUTES,
+    };
+  }
+
+  return {
+    timeoutMinutes: typeof parsed.stuck_agent_timeout_minutes === 'number'
+      ? parsed.stuck_agent_timeout_minutes
+      : DEFAULT_STUCK_AGENT_TIMEOUT_MINUTES,
+    escalationMinutes: typeof parsed.stuck_agent_escalation_minutes === 'number'
+      ? parsed.stuck_agent_escalation_minutes
+      : DEFAULT_STUCK_AGENT_ESCALATION_MINUTES,
+  };
+}
+
+/**
+ * Checks whether any spawned agents in the session are stuck.
+ *
+ * Reads agent spawn records from agents.json and computes elapsed time for each
+ * agent since its spawned_at timestamp. Returns an advisory string when any agent
+ * exceeds the configured timeout, or null when all agents are within limits.
+ *
+ * Advisory levels:
+ *   - WARNING  : elapsed >= stuck_agent_timeout_minutes (default 10)
+ *   - CRITICAL : elapsed >= stuck_agent_escalation_minutes (default 15)
+ *
+ * Returns the highest severity advisory found. Returns null when no agents are
+ * spawned or all agents are within the timeout window.
+ *
+ * @param {string} sessionDir  Absolute path to the session directory.
+ * @param {string} projectDir  Absolute path to the project root.
+ * @returns {string|null}  Advisory message string, or null.
+ */
+function checkStuckAgents(sessionDir, projectDir) {
+  const spawns = readAgentSpawns(sessionDir);
+  if (spawns.length === 0) {
+    return null;
+  }
+
+  const { timeoutMinutes, escalationMinutes } = getStuckAgentThresholds(projectDir);
+  const now = Date.now();
+
+  let maxElapsedMinutes = 0;
+  let stuckTaskId = null;
+
+  for (const spawn of spawns) {
+    if (!spawn.spawned_at) {
+      continue;
+    }
+    const spawnedAt = new Date(spawn.spawned_at).getTime();
+    if (isNaN(spawnedAt)) {
+      continue;
+    }
+    const elapsedMs = now - spawnedAt;
+    const elapsedMinutes = elapsedMs / (60 * 1000);
+    if (elapsedMinutes > maxElapsedMinutes) {
+      maxElapsedMinutes = elapsedMinutes;
+      stuckTaskId = spawn.task_id;
+    }
+  }
+
+  if (maxElapsedMinutes >= escalationMinutes) {
+    return `CRITICAL: Agent ${stuckTaskId} has been active for ${Math.floor(maxElapsedMinutes)} minutes without a commit (escalation threshold: ${escalationMinutes} min)`;
+  }
+
+  if (maxElapsedMinutes >= timeoutMinutes) {
+    return `WARNING: Agent ${stuckTaskId} has been active for ${Math.floor(maxElapsedMinutes)} minutes without a commit (timeout threshold: ${timeoutMinutes} min)`;
+  }
+
+  return null;
+}
+
 // ---------------------------------------------------------------------------
 // Task ID extraction
 // ---------------------------------------------------------------------------
@@ -511,6 +621,19 @@ async function handler(input) {
       debugLog(HOOK_NAME, 'failed to write agent-spawn verdict', spawnWriteErr && spawnWriteErr.message);
     }
 
+    // Append agent spawn record to agents.json for stuck-agent detection and
+    // crumb session-agents reporting. This accumulates across all spawns;
+    // unlike gate-status.json's single-entry-per-gate, agents.json is an array.
+    try {
+      appendAgentSpawn(sessionDir, {
+        task_id: taskId,
+        spawned_at: new Date().toISOString(),
+        status: 'spawned',
+      });
+    } catch (appendErr) {
+      debugLog(HOOK_NAME, 'failed to append agent spawn record', appendErr && appendErr.message);
+    }
+
     // Gate has passed — allow spawn silently.
     debugLog(HOOK_NAME, 'gate passed — allowing Task spawn');
     return '';
@@ -568,6 +691,8 @@ module.exports = {
   extractTaskIdFromPrompt,
   extractWaveNumberFromPrompt,
   getWaveFailureThreshold,
+  getStuckAgentThresholds,
+  checkStuckAgents,
   SESSION_PATH_MARKER,
   PREDECESSOR_GATE,
   POSITION_CHECK_GATE,
@@ -575,4 +700,6 @@ module.exports = {
   AGENT_SPAWN_GATE,
   BYPASS_TOOLS,
   DEFAULT_WAVE_FAILURE_THRESHOLD,
+  DEFAULT_STUCK_AGENT_TIMEOUT_MINUTES,
+  DEFAULT_STUCK_AGENT_ESCALATION_MINUTES,
 };

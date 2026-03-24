@@ -226,13 +226,95 @@ function isGatePassed(sessionDir, gateName) {
 }
 
 // ---------------------------------------------------------------------------
+// Agent spawn tracking
+// ---------------------------------------------------------------------------
+
+/**
+ * Filename for the agent spawn accumulation file inside a session directory.
+ * Unlike gate-status.json which holds single-entry verdicts per gate, agents.json
+ * accumulates all agent spawn records across the session.
+ */
+const AGENTS_FILENAME = 'agents.json';
+
+/**
+ * @typedef {Object} AgentSpawnRecord
+ * @property {string} task_id     Crumb task ID or label of the spawned agent.
+ * @property {string} spawned_at  ISO 8601 timestamp when the agent was spawned.
+ * @property {string} [status]    Optional status field (e.g. 'spawned').
+ */
+
+/**
+ * Reads and parses agents.json from the given session directory.
+ * Returns an empty array when the file does not exist, is empty, or cannot be parsed.
+ *
+ * @param {string} sessionDir  Absolute path to the session directory.
+ * @returns {Array<AgentSpawnRecord>}
+ */
+function readAgentSpawns(sessionDir) {
+  const filePath = path.join(sessionDir, AGENTS_FILENAME);
+  try {
+    const raw = fs.readFileSync(filePath, 'utf8');
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      debugLog('gate-manager', 'agents.json contained non-array; returning []', { filePath });
+      return [];
+    }
+    return parsed;
+  } catch (err) {
+    if (err.code !== 'ENOENT') {
+      debugLog('gate-manager', 'failed to read agents.json; returning []', { error: err.message });
+    }
+    return [];
+  }
+}
+
+/**
+ * Atomically appends a single agent spawn record to agents.json in the given
+ * session directory using a tmp-file + rename pattern.
+ *
+ * Creates agents.json on first call. Existing records are preserved (append-only).
+ * Any I/O error is re-thrown so callers are aware of write failures.
+ *
+ * @param {string} sessionDir              Absolute path to the session directory.
+ * @param {AgentSpawnRecord} spawnRecord   The spawn record to append.
+ * @returns {void}
+ */
+function appendAgentSpawn(sessionDir, spawnRecord) {
+  const filePath = path.join(sessionDir, AGENTS_FILENAME);
+
+  const existing = readAgentSpawns(sessionDir);
+  existing.push(spawnRecord);
+
+  const json = JSON.stringify(existing, null, 2) + '\n';
+  const tmpPath = path.join(sessionDir, `.agents.tmp.${process.pid}`);
+
+  try {
+    fs.writeFileSync(tmpPath, json, 'utf8');
+    fs.renameSync(tmpPath, filePath);
+  } catch (err) {
+    try {
+      fs.unlinkSync(tmpPath);
+    } catch (_cleanupErr) {
+      // Best-effort cleanup only.
+    }
+    debugLog('gate-manager', 'appendAgentSpawn failed', { error: err.message });
+    throw err;
+  }
+
+  debugLog('gate-manager', 'appended agent spawn', { task_id: spawnRecord.task_id });
+}
+
+// ---------------------------------------------------------------------------
 // Exports
 // ---------------------------------------------------------------------------
 
 module.exports = {
   GATE_CHAIN,
   GATE_STATUS_FILENAME,
+  AGENTS_FILENAME,
   readGateStatus,
   writeGateVerdict,
   isGatePassed,
+  readAgentSpawns,
+  appendAgentSpawn,
 };

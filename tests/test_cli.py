@@ -1676,6 +1676,249 @@ class TestSessionList:
 
 
 # ---------------------------------------------------------------------------
+# session-agents tests
+# ---------------------------------------------------------------------------
+
+#: Filename for agent spawn records inside a session directory.
+_AGENTS_FILE = "agents.json"
+
+
+def _write_agents(session_dir: Path, agents: list) -> None:
+    """Write *agents* as JSON to ``session_dir/agents.json``.
+
+    Args:
+        session_dir: Directory that acts as the session directory.
+        agents: List of agent spawn record dicts.
+    """
+    agents_path = session_dir / _AGENTS_FILE
+    agents_path.write_text(json.dumps(agents, indent=2) + "\n", encoding="utf-8")
+
+
+class TestSessionAgents:
+    """Integration tests for ``crumb session-agents`` subcommand."""
+
+    # ------------------------------------------------------------------
+    # session-agents — no agents.json
+    # ------------------------------------------------------------------
+
+    def test_session_agents_no_file_exits_zero(self, tmp_path: Path) -> None:
+        """``crumb session-agents`` exits 0 when agents.json is absent."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        result = _run(["session-agents", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected exit code 0 for missing agents.json.\n"
+            f"stdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+
+    def test_session_agents_no_file_json_returns_empty_array(self, tmp_path: Path) -> None:
+        """``crumb session-agents --json`` returns empty array when agents.json absent."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        result = _run(["session-agents", "--json", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert data == [], f"Expected empty array, got {data!r}"
+
+    # ------------------------------------------------------------------
+    # session-agents — with agents
+    # ------------------------------------------------------------------
+
+    def test_session_agents_shows_task_id(self, tmp_path: Path) -> None:
+        """``crumb session-agents`` shows agent task IDs in output."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        spawned_at = "2026-01-01T00:00:00.000Z"
+        _write_agents(session_dir, [
+            {"task_id": "AF-42", "spawned_at": spawned_at, "status": "spawned"},
+        ])
+
+        result = _run(["session-agents", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected exit code 0.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        assert "AF-42" in result.stdout, (
+            f"Expected task ID 'AF-42' in stdout.\nstdout: {result.stdout!r}"
+        )
+
+    def test_session_agents_shows_spawned_at(self, tmp_path: Path) -> None:
+        """``crumb session-agents`` shows the spawn timestamp in output."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        spawned_at = "2026-01-01T00:00:00.000Z"
+        _write_agents(session_dir, [
+            {"task_id": "AF-42", "spawned_at": spawned_at, "status": "spawned"},
+        ])
+
+        result = _run(["session-agents", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0
+        assert "2026-01-01" in result.stdout, (
+            f"Expected spawn timestamp in stdout.\nstdout: {result.stdout!r}"
+        )
+
+    def test_session_agents_shows_elapsed_time(self, tmp_path: Path) -> None:
+        """``crumb session-agents`` shows elapsed time for each agent."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        spawned_at = "2026-01-01T00:00:00.000Z"
+        _write_agents(session_dir, [
+            {"task_id": "AF-99", "spawned_at": spawned_at, "status": "spawned"},
+        ])
+
+        result = _run(["session-agents", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0
+        # Should include some indication of elapsed time (minutes, hours, or elapsed keyword)
+        output_lower = result.stdout.lower()
+        assert any(word in output_lower for word in ("elapsed", "min", "h ", "hr")), (
+            f"Expected elapsed time indicator in stdout.\nstdout: {result.stdout!r}"
+        )
+
+    def test_session_agents_multiple_agents(self, tmp_path: Path) -> None:
+        """``crumb session-agents`` shows all agents when multiple are present."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        spawned_at = "2026-01-01T00:00:00.000Z"
+        _write_agents(session_dir, [
+            {"task_id": "AF-1", "spawned_at": spawned_at, "status": "spawned"},
+            {"task_id": "AF-2", "spawned_at": spawned_at, "status": "spawned"},
+            {"task_id": "AF-3", "spawned_at": spawned_at, "status": "spawned"},
+        ])
+
+        result = _run(["session-agents", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0
+        assert "AF-1" in result.stdout and "AF-2" in result.stdout and "AF-3" in result.stdout, (
+            f"Expected all three agents in stdout.\nstdout: {result.stdout!r}"
+        )
+
+    # ------------------------------------------------------------------
+    # session-agents --json
+    # ------------------------------------------------------------------
+
+    def test_session_agents_json_returns_array(self, tmp_path: Path) -> None:
+        """``crumb session-agents --json`` returns a JSON array."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        spawned_at = "2026-01-01T00:00:00.000Z"
+        _write_agents(session_dir, [
+            {"task_id": "AF-42", "spawned_at": spawned_at, "status": "spawned"},
+        ])
+
+        result = _run(["session-agents", "--json", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected exit code 0.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        try:
+            data = json.loads(result.stdout)
+        except json.JSONDecodeError as exc:
+            raise AssertionError(
+                f"stdout is not valid JSON: {exc}\nstdout: {result.stdout!r}"
+            ) from exc
+
+        assert isinstance(data, list), f"Expected JSON array, got {type(data)!r}"
+        assert len(data) == 1, f"Expected 1 agent object, got {len(data)}: {data!r}"
+
+    def test_session_agents_json_has_required_fields(self, tmp_path: Path) -> None:
+        """``crumb session-agents --json`` objects contain task_id, spawned_at, status, elapsed_minutes."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        spawned_at = "2026-01-01T00:00:00.000Z"
+        _write_agents(session_dir, [
+            {"task_id": "AF-42", "spawned_at": spawned_at, "status": "spawned"},
+        ])
+
+        result = _run(["session-agents", "--json", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        obj = data[0]
+        for field in ("task_id", "spawned_at", "status", "elapsed_minutes"):
+            assert field in obj, (
+                f"Expected field '{field}' in JSON object, got keys: {list(obj.keys())!r}"
+            )
+
+    def test_session_agents_json_task_id_correct(self, tmp_path: Path) -> None:
+        """``crumb session-agents --json`` returns correct task_id."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        spawned_at = "2026-01-01T00:00:00.000Z"
+        _write_agents(session_dir, [
+            {"task_id": "AF-99", "spawned_at": spawned_at, "status": "spawned"},
+        ])
+
+        result = _run(["session-agents", "--json", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert data[0]["task_id"] == "AF-99", (
+            f"Expected task_id='AF-99', got {data[0]['task_id']!r}"
+        )
+
+    def test_session_agents_json_elapsed_minutes_is_numeric(self, tmp_path: Path) -> None:
+        """``crumb session-agents --json`` elapsed_minutes is a number."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        spawned_at = "2026-01-01T00:00:00.000Z"
+        _write_agents(session_dir, [
+            {"task_id": "AF-10", "spawned_at": spawned_at, "status": "spawned"},
+        ])
+
+        result = _run(["session-agents", "--json", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert isinstance(data[0]["elapsed_minutes"], (int, float)), (
+            f"Expected elapsed_minutes to be numeric, got {type(data[0]['elapsed_minutes'])!r}"
+        )
+
+    def test_session_agents_json_multiple_agents(self, tmp_path: Path) -> None:
+        """``crumb session-agents --json`` returns all agents in the array."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        spawned_at = "2026-01-01T00:00:00.000Z"
+        _write_agents(session_dir, [
+            {"task_id": "AF-1", "spawned_at": spawned_at, "status": "spawned"},
+            {"task_id": "AF-2", "spawned_at": spawned_at, "status": "spawned"},
+        ])
+
+        result = _run(["session-agents", "--json", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert len(data) == 2, f"Expected 2 agent objects, got {len(data)}: {data!r}"
+        task_ids = {obj["task_id"] for obj in data}
+        assert task_ids == {"AF-1", "AF-2"}, f"Expected both task IDs, got {task_ids!r}"
+
+
+# ---------------------------------------------------------------------------
 # validate-spec tests
 # ---------------------------------------------------------------------------
 

@@ -38,12 +38,13 @@ const {
   extractSessionDirFromText,
   isBypassEnabled,
   extractTaskIdFromPrompt,
+  checkStuckAgents,
   RETRY_FAILURE_TYPE,
   SESSION_PATH_MARKER,
   PREDECESSOR_GATE,
 } = require('../ant-farm-gate-enforcer');
 
-const { writeGateVerdict, GATE_STATUS_FILENAME, readGateStatus } = require('../lib/gate-manager');
+const { writeGateVerdict, GATE_STATUS_FILENAME, readGateStatus, appendAgentSpawn, readAgentSpawns } = require('../lib/gate-manager');
 const { recordRetry } = require('../lib/retry-tracker');
 
 // ---------------------------------------------------------------------------
@@ -692,5 +693,152 @@ test('handler: records agent-spawn timestamp in gate-status.json when spawn allo
   } finally {
     cleanup(projectDir);
     restoreEnv();
+  }
+});
+
+// ===========================================================================
+// Integration: agent spawn record accumulation in agents.json (AC-15.1)
+// ===========================================================================
+
+test('handler: records agent spawn in agents.json when spawn is allowed', async () => {
+  saveEnv();
+  const { projectDir, sessionDir } = createSessionDir({ 'startup-check': 'PASS' });
+  try {
+    const input = makeTaskInput(projectDir, sessionDir);
+    const before = Date.now();
+    await handler(input);
+    const after = Date.now();
+
+    const spawns = readAgentSpawns(sessionDir);
+    assert.ok(Array.isArray(spawns), 'agents.json must be an array');
+    assert.equal(spawns.length, 1, 'one spawn record must be written');
+    assert.ok(typeof spawns[0].task_id === 'string', 'spawn record must have task_id');
+    assert.ok(typeof spawns[0].spawned_at === 'string', 'spawn record must have spawned_at');
+
+    const spawnTs = new Date(spawns[0].spawned_at).getTime();
+    assert.ok(spawnTs >= before && spawnTs <= after, 'spawned_at must be within test window');
+  } finally {
+    cleanup(projectDir);
+    restoreEnv();
+  }
+});
+
+test('handler: accumulates multiple agent spawns in agents.json', async () => {
+  saveEnv();
+  const { projectDir, sessionDir } = createSessionDir({ 'startup-check': 'PASS' });
+  try {
+    // First spawn
+    await handler(makeTaskInput(projectDir, sessionDir));
+    // Second spawn (different task ID)
+    const input2 = {
+      tool_name: 'Task',
+      workspace: { project_dir: projectDir },
+      tool_input: { prompt: `Run task AF-200. Session: ${sessionDir}/task-200.md` },
+    };
+    await handler(input2);
+
+    const spawns = readAgentSpawns(sessionDir);
+    assert.equal(spawns.length, 2, 'Both spawn records must be accumulated in agents.json');
+  } finally {
+    cleanup(projectDir);
+    restoreEnv();
+  }
+});
+
+// ===========================================================================
+// Unit: appendAgentSpawn / readAgentSpawns in gate-manager (AC-15.1)
+// ===========================================================================
+
+test('appendAgentSpawn: creates agents.json on first call', () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'spawn-test-'));
+  try {
+    appendAgentSpawn(tmpDir, { task_id: 'AF-1', spawned_at: new Date().toISOString() });
+    const spawns = readAgentSpawns(tmpDir);
+    assert.equal(spawns.length, 1, 'First append creates file with one entry');
+  } finally {
+    cleanup(tmpDir);
+  }
+});
+
+test('appendAgentSpawn: accumulates entries without overwriting', () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'spawn-test-'));
+  try {
+    appendAgentSpawn(tmpDir, { task_id: 'AF-1', spawned_at: new Date().toISOString() });
+    appendAgentSpawn(tmpDir, { task_id: 'AF-2', spawned_at: new Date().toISOString() });
+    const spawns = readAgentSpawns(tmpDir);
+    assert.equal(spawns.length, 2, 'Both entries must be present');
+    assert.equal(spawns[0].task_id, 'AF-1');
+    assert.equal(spawns[1].task_id, 'AF-2');
+  } finally {
+    cleanup(tmpDir);
+  }
+});
+
+test('readAgentSpawns: returns empty array when agents.json absent', () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'spawn-test-'));
+  try {
+    const result = readAgentSpawns(tmpDir);
+    assert.deepEqual(result, [], 'Missing file returns empty array');
+  } finally {
+    cleanup(tmpDir);
+  }
+});
+
+// ===========================================================================
+// Unit: checkStuckAgents (AC-15.2, AC-15.3, AC-15.4)
+// ===========================================================================
+
+test('checkStuckAgents: returns null when no agents have been spawned', () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'stuck-test-'));
+  try {
+    const result = checkStuckAgents(tmpDir, tmpDir);
+    assert.equal(result, null, 'No spawns means no stuck agent advisory');
+  } finally {
+    cleanup(tmpDir);
+  }
+});
+
+test('checkStuckAgents: returns null when agent was spawned recently (under timeout)', () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'stuck-test-'));
+  try {
+    // Spawn recorded 1 minute ago — well under 10 min default
+    const recentTs = new Date(Date.now() - 60 * 1000).toISOString();
+    appendAgentSpawn(tmpDir, { task_id: 'AF-1', spawned_at: recentTs });
+
+    const result = checkStuckAgents(tmpDir, tmpDir);
+    assert.equal(result, null, 'Recently spawned agent should not trigger advisory');
+  } finally {
+    cleanup(tmpDir);
+  }
+});
+
+test('checkStuckAgents: returns WARNING when agent exceeds timeout (default 10 min)', () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'stuck-test-'));
+  try {
+    // Spawn recorded 11 minutes ago — over default 10 min timeout
+    const oldTs = new Date(Date.now() - 11 * 60 * 1000).toISOString();
+    appendAgentSpawn(tmpDir, { task_id: 'AF-1', spawned_at: oldTs });
+
+    const result = checkStuckAgents(tmpDir, tmpDir);
+    assert.ok(result !== null, 'Should return advisory when agent exceeds timeout');
+    assert.ok(typeof result === 'string', 'Advisory must be a string');
+    assert.ok(result.toUpperCase().includes('WARNING'), 'Advisory must include WARNING for first timeout');
+  } finally {
+    cleanup(tmpDir);
+  }
+});
+
+test('checkStuckAgents: returns CRITICAL when agent exceeds escalation threshold (default 15 min)', () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'stuck-test-'));
+  try {
+    // Spawn recorded 16 minutes ago — over default 15 min escalation
+    const oldTs = new Date(Date.now() - 16 * 60 * 1000).toISOString();
+    appendAgentSpawn(tmpDir, { task_id: 'AF-1', spawned_at: oldTs });
+
+    const result = checkStuckAgents(tmpDir, tmpDir);
+    assert.ok(result !== null, 'Should return advisory when agent exceeds escalation timeout');
+    assert.ok(result.toUpperCase().includes('CRITICAL'), 'Advisory must include CRITICAL for escalation');
+  } finally {
+    cleanup(tmpDir);
   }
 });
