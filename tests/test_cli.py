@@ -1355,8 +1355,12 @@ class TestSessionStatus:
 _HANDOFF_FILE = "handoff.json"
 
 
-def _make_session_dir(base: Path, name: str) -> Path:
+def _make_session_list_dir(base: Path, name: str) -> Path:
     """Create a session sub-directory under ``base/.crumbs/sessions/`` and return it.
+
+    Used by ``TestSessionList`` tests only.  Uses a different name from the
+    prune-test helper ``_make_session_dir`` (which takes a ``sessions_dir``
+    argument) to avoid shadowing it.
 
     Args:
         base: Project root containing ``.crumbs/``.
@@ -1410,7 +1414,7 @@ class TestSessionList:
     def test_session_list_shows_session_id(self, tmp_path: Path) -> None:
         """``crumb session-list`` shows the session directory name."""
         _make_crumbs_env(tmp_path)
-        _make_session_dir(tmp_path, "_session-20260101-120000")
+        _make_session_list_dir(tmp_path, "_session-20260101-120000")
 
         result = _run(["session-list"], cwd=tmp_path)
 
@@ -1424,7 +1428,7 @@ class TestSessionList:
     def test_session_list_shows_timestamp(self, tmp_path: Path) -> None:
         """``crumb session-list`` shows a last_activity timestamp for each session."""
         _make_crumbs_env(tmp_path)
-        _make_session_dir(tmp_path, "_session-20260101-120000")
+        _make_session_list_dir(tmp_path, "_session-20260101-120000")
 
         result = _run(["session-list"], cwd=tmp_path)
 
@@ -1442,7 +1446,7 @@ class TestSessionList:
     def test_session_list_completed_status(self, tmp_path: Path) -> None:
         """Session with SESSION_COMPLETE in progress.log is marked 'completed'."""
         _make_crumbs_env(tmp_path)
-        session_dir = _make_session_dir(tmp_path, "_session-20260101-120000")
+        session_dir = _make_session_list_dir(tmp_path, "_session-20260101-120000")
         _write_progress_log(session_dir, [
             "2026-01-01T00:00:00.000Z|SESSION_INIT|wave=0",
             "2026-01-01T00:01:00.000Z|SESSION_COMPLETE|wave=0",
@@ -1459,7 +1463,7 @@ class TestSessionList:
     def test_session_list_paused_status(self, tmp_path: Path) -> None:
         """Session with handoff.json (no SESSION_COMPLETE) is marked 'paused'."""
         _make_crumbs_env(tmp_path)
-        session_dir = _make_session_dir(tmp_path, "_session-20260101-130000")
+        session_dir = _make_session_list_dir(tmp_path, "_session-20260101-130000")
         _write_progress_log(session_dir, [
             "2026-01-01T00:00:00.000Z|SESSION_INIT|wave=0",
         ])
@@ -1481,7 +1485,7 @@ class TestSessionList:
     def test_session_list_crashed_status(self, tmp_path: Path) -> None:
         """Session with no handoff.json and no SESSION_COMPLETE is marked 'crashed'."""
         _make_crumbs_env(tmp_path)
-        session_dir = _make_session_dir(tmp_path, "_session-20260101-140000")
+        session_dir = _make_session_list_dir(tmp_path, "_session-20260101-140000")
         _write_progress_log(session_dir, [
             "2026-01-01T00:00:00.000Z|SESSION_INIT|wave=0",
             "2026-01-01T00:01:00.000Z|SCOUT_COMPLETE|wave=0",
@@ -1499,7 +1503,7 @@ class TestSessionList:
     def test_session_list_no_progress_log_is_crashed(self, tmp_path: Path) -> None:
         """Session directory with no progress.log and no handoff.json is marked 'crashed'."""
         _make_crumbs_env(tmp_path)
-        _make_session_dir(tmp_path, "_session-20260101-150000")
+        _make_session_list_dir(tmp_path, "_session-20260101-150000")
         # Empty directory — no progress.log, no handoff.json
 
         result = _run(["session-list"], cwd=tmp_path)
@@ -1526,7 +1530,7 @@ class TestSessionList:
     def test_session_list_json_is_valid_json_array(self, tmp_path: Path) -> None:
         """``crumb session-list --json`` emits a valid JSON array."""
         _make_crumbs_env(tmp_path)
-        _make_session_dir(tmp_path, "_session-20260101-120000")
+        _make_session_list_dir(tmp_path, "_session-20260101-120000")
 
         result = _run(["session-list", "--json"], cwd=tmp_path)
 
@@ -1557,7 +1561,7 @@ class TestSessionList:
     def test_session_list_json_has_required_fields(self, tmp_path: Path) -> None:
         """``crumb session-list --json`` objects contain id, status, last_activity, path."""
         _make_crumbs_env(tmp_path)
-        _make_session_dir(tmp_path, "_session-20260101-120000")
+        _make_session_list_dir(tmp_path, "_session-20260101-120000")
 
         result = _run(["session-list", "--json"], cwd=tmp_path)
 
@@ -1573,7 +1577,7 @@ class TestSessionList:
     def test_session_list_json_status_completed(self, tmp_path: Path) -> None:
         """``crumb session-list --json`` reports 'completed' for a finished session."""
         _make_crumbs_env(tmp_path)
-        session_dir = _make_session_dir(tmp_path, "_session-20260101-120000")
+        session_dir = _make_session_list_dir(tmp_path, "_session-20260101-120000")
         _write_progress_log(session_dir, [
             "2026-01-01T00:00:00.000Z|SESSION_INIT|wave=0",
             "2026-01-01T00:01:00.000Z|SESSION_COMPLETE|wave=0",
@@ -1590,7 +1594,7 @@ class TestSessionList:
     def test_session_list_json_status_paused(self, tmp_path: Path) -> None:
         """``crumb session-list --json`` reports 'paused' when handoff.json exists."""
         _make_crumbs_env(tmp_path)
-        session_dir = _make_session_dir(tmp_path, "_session-20260101-130000")
+        session_dir = _make_session_list_dir(tmp_path, "_session-20260101-130000")
         _write_progress_log(session_dir, [
             "2026-01-01T00:00:00.000Z|SESSION_INIT|wave=0",
         ])
@@ -1608,7 +1612,7 @@ class TestSessionList:
     def test_session_list_json_status_crashed(self, tmp_path: Path) -> None:
         """``crumb session-list --json`` reports 'crashed' with no handoff and no complete."""
         _make_crumbs_env(tmp_path)
-        session_dir = _make_session_dir(tmp_path, "_session-20260101-140000")
+        session_dir = _make_session_list_dir(tmp_path, "_session-20260101-140000")
         _write_progress_log(session_dir, [
             "2026-01-01T00:00:00.000Z|SESSION_INIT|wave=0",
         ])
@@ -1624,7 +1628,7 @@ class TestSessionList:
     def test_session_list_json_id_matches_dirname(self, tmp_path: Path) -> None:
         """``crumb session-list --json`` id field matches directory name."""
         _make_crumbs_env(tmp_path)
-        _make_session_dir(tmp_path, "_session-20260101-120000")
+        _make_session_list_dir(tmp_path, "_session-20260101-120000")
 
         result = _run(["session-list", "--json"], cwd=tmp_path)
 
@@ -1637,9 +1641,9 @@ class TestSessionList:
     def test_session_list_multiple_sessions(self, tmp_path: Path) -> None:
         """``crumb session-list`` shows all session directories."""
         _make_crumbs_env(tmp_path)
-        _make_session_dir(tmp_path, "_session-20260101-120000")
-        _make_session_dir(tmp_path, "_session-20260101-130000")
-        _make_session_dir(tmp_path, "_session-20260101-140000")
+        _make_session_list_dir(tmp_path, "_session-20260101-120000")
+        _make_session_list_dir(tmp_path, "_session-20260101-130000")
+        _make_session_list_dir(tmp_path, "_session-20260101-140000")
 
         result = _run(["session-list", "--json"], cwd=tmp_path)
 
@@ -1653,7 +1657,7 @@ class TestSessionList:
         """``crumb session-list`` ignores directories not matching session prefixes."""
         _make_crumbs_env(tmp_path)
         # Create a real session dir
-        _make_session_dir(tmp_path, "_session-20260101-120000")
+        _make_session_list_dir(tmp_path, "_session-20260101-120000")
         # Create a non-session dir alongside it
         noise_dir = tmp_path / ".crumbs" / "sessions" / "some-random-dir"
         noise_dir.mkdir(parents=True, exist_ok=True)

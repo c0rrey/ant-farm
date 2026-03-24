@@ -2846,6 +2846,129 @@ def cmd_session_reset_retries(args: argparse.Namespace) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Session list command
+# ---------------------------------------------------------------------------
+
+#: Filename written by /ant-farm-pause to record graceful-pause state.
+_HANDOFF_FILE = "handoff.json"
+
+
+def _classify_session(session_dir: Path) -> str:
+    """Determine status for a session directory.
+
+    Classification rules (in priority order):
+
+    1. ``completed`` — ``progress.log`` contains a ``SESSION_COMPLETE`` event.
+    2. ``paused``    — ``handoff.json`` exists (graceful pause via /ant-farm-pause).
+    3. ``crashed``   — neither of the above (session stopped without clean handoff).
+
+    Args:
+        session_dir: Absolute path to the session directory.
+
+    Returns:
+        One of ``"completed"``, ``"paused"``, or ``"crashed"``.
+    """
+    progress_path = session_dir / _PROGRESS_LOG_FILE
+    handoff_path = session_dir / _HANDOFF_FILE
+
+    if progress_path.exists():
+        try:
+            text = progress_path.read_text(encoding="utf-8")
+            for line in text.splitlines():
+                parts = line.split("|")
+                if len(parts) >= 2 and parts[1].strip() == "SESSION_COMPLETE":
+                    return "completed"
+        except OSError:
+            pass
+
+    if handoff_path.exists():
+        return "paused"
+
+    return "crashed"
+
+
+def _session_last_activity(session_dir: Path) -> str:
+    """Return the last-activity timestamp for a session directory as an ISO 8601 string.
+
+    Uses the directory's mtime as a proxy for last activity.  Falls back to
+    the empty string if ``os.stat`` fails.
+
+    Args:
+        session_dir: Absolute path to the session directory.
+
+    Returns:
+        ISO 8601 datetime string (UTC, no microseconds) or ``"unknown"``.
+    """
+    try:
+        mtime = os.stat(session_dir).st_mtime
+        return datetime.utcfromtimestamp(mtime).strftime("%Y-%m-%dT%H:%M:%SZ")
+    except OSError:
+        return "unknown"
+
+
+def cmd_session_list(args: argparse.Namespace) -> None:
+    """List session directories under .crumbs/sessions/ with status and timestamp.
+
+    Enumerates all directories under ``.crumbs/sessions/`` whose names match a
+    known session prefix (``SESSION_DIR_PREFIXES``).  For each session directory,
+    determines its status:
+
+    * ``completed`` — ``progress.log`` contains a ``SESSION_COMPLETE`` event.
+    * ``paused``    — ``handoff.json`` exists (graceful pause via /ant-farm-pause).
+    * ``crashed``   — neither of the above.
+
+    Supports ``--json`` for machine-readable output with fields ``id``,
+    ``status``, ``last_activity``, and ``path``.
+
+    Args:
+        args: Parsed CLI arguments.  Expects ``args.json_output`` (bool).
+    """
+    crumbs_path = find_crumbs_dir()
+    sessions_dir = crumbs_path / "sessions"
+
+    if not sessions_dir.is_dir():
+        if args.json_output:
+            print(json.dumps([]))
+        return
+
+    try:
+        entries = sorted(sessions_dir.iterdir())
+    except OSError as exc:
+        die(f"error: cannot read sessions directory: {sessions_dir}: {exc}")
+
+    session_objects: List[Dict[str, Any]] = []
+    for entry in entries:
+        if not entry.is_dir():
+            continue
+        # Only include directories matching known session prefixes.
+        if not any(entry.name.startswith(p) for p in SESSION_DIR_PREFIXES):
+            continue
+        # Skip entries whose timestamps are not parseable — be lenient but quiet.
+        if _parse_session_dir_timestamp(entry.name) is None:
+            continue
+
+        status = _classify_session(entry)
+        last_activity = _session_last_activity(entry)
+
+        session_objects.append({
+            "id": entry.name,
+            "status": status,
+            "last_activity": last_activity,
+            "path": str(entry),
+        })
+
+    if args.json_output:
+        print(json.dumps(session_objects, indent=2))
+        return
+
+    if not session_objects:
+        return
+
+    for obj in session_objects:
+        print(f"{obj['id']}  status={obj['status']}  last_activity={obj['last_activity']}")
+
+
+# ---------------------------------------------------------------------------
 # Argument parser
 # ---------------------------------------------------------------------------
 
@@ -2879,6 +3002,7 @@ def build_parser() -> argparse.ArgumentParser:
             "  session-retries  Show retry counts for a session directory\n"
             "  session-reset-retries  Clear the retry log for a session directory\n"
             "  session-status   Show current position, last step, and next step for a session\n"
+            "  session-list     List all session directories with status and last activity\n"
             "  validate-tdd     Verify test-first ordering in a commit range\n"
         ),
     )
@@ -3201,6 +3325,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_json_flag(p_session_status)
     p_session_status.set_defaults(func=cmd_session_status)
+
+    # --- session-list ---
+    p_session_list = sub.add_parser(
+        "session-list",
+        help="List all session directories under .crumbs/sessions/ with status and last activity",
+    )
+    _add_json_flag(p_session_list)
+    p_session_list.set_defaults(func=cmd_session_list)
 
     return parser
 

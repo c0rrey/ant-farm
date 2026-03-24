@@ -119,6 +119,41 @@ If any in_progress crumbs are found:
 
 Wait for user decision before proceeding if in_progress crumbs are found.
 
+### Check 4: existing paused or crashed sessions
+
+Detect prior sessions that did not complete so the user can choose to resume or start fresh.
+
+```bash
+SESSIONS_JSON=$(crumb session-list --json 2>&1)
+```
+
+Parse the JSON array. Filter for sessions with `status` of `paused` or `crashed` (exclude `completed`). If any non-completed sessions exist, present them to the user:
+
+> **Prior sessions detected**:
+>
+> | ID | Status | Last Activity |
+> |----|--------|---------------|
+> | `<session-id>` | `<status>` | `<last_activity>` |
+>
+> Options:
+> - **Resume** a prior session: reply `resume <session-id>`. The Orchestrator will run `scripts/parse-progress-log.sh <SESSION_DIR>` to generate a resume plan from `progress.log` (and `handoff.json` if present), then present the plan for approval before taking any action.
+> - **Start fresh**: reply `fresh start` to create a new session directory and proceed normally.
+
+**If the user chooses resume**:
+
+1. Set `SESSION_DIR` to the chosen session directory path (from the `path` field in the JSON output).
+2. Run `scripts/parse-progress-log.sh "${SESSION_DIR}"` to generate `${SESSION_DIR}/resume-plan.md`.
+   - Exit code 2 means the session already completed — inform the user and fall back to fresh start.
+   - Exit code 1 means an error — surface it to the user.
+3. Read and present `${SESSION_DIR}/resume-plan.md` verbatim to the user for approval.
+4. After the user approves, delete `handoff.json` if it exists:
+   ```bash
+   rm -f "${SESSION_DIR}/handoff.json"
+   ```
+5. Proceed to Step 3 (Launch Orchestrator), passing the existing `SESSION_DIR` rather than creating a new one.
+
+Wait for user decision before proceeding if non-completed sessions are found.
+
 ## Step 2 — Session Directory Setup
 
 Generate a session ID and create the session artifact directory:
