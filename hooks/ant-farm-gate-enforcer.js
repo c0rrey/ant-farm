@@ -19,6 +19,8 @@
  *   - If 'startup-check' has NOT passed: blocks the spawn ({ continue: false }).
  *   - If 'startup-check' has passed: allows the spawn (empty string / silent).
  *   - If bypass_gates is true in .crumbs/config.json: logs a warning and allows all spawns.
+ *   - Checks wave failure rate when spawning wave N > 1: blocks if wave N-1 failure rate
+ *     exceeds wave_failure_threshold (default 0.5, configurable via config.json).
  *   - If no ant-farm session is detected: silent no-op.
  *
  * Response format:
@@ -56,6 +58,7 @@ const { debugLog } = require('./lib/debug-log');
 const { isGatePassed, writeGateVerdict } = require('./lib/gate-manager');
 const { getExpectedNextStep } = require('./lib/progress-reader');
 const { canRetry } = require('./lib/retry-tracker');
+const { getWaveStatus } = require('./lib/wave-tracker');
 
 const HOOK_NAME = 'ant-farm-gate-enforcer';
 
@@ -82,6 +85,12 @@ const RETRY_FAILURE_TYPE = 'checkpoint';
  * Written with a PASS verdict each time a spawn is allowed through.
  */
 const AGENT_SPAWN_GATE = 'agent-spawn';
+
+/**
+ * Default wave failure threshold. Spawning is blocked when the previous wave's
+ * failureRate exceeds this value. Configurable via config.json wave_failure_threshold.
+ */
+const DEFAULT_WAVE_FAILURE_THRESHOLD = 0.5;
 
 // ---------------------------------------------------------------------------
 // Session detection
@@ -249,6 +258,81 @@ function isBypassEnabled(projectDir) {
 }
 
 // ---------------------------------------------------------------------------
+// Wave number extraction and threshold config
+// ---------------------------------------------------------------------------
+
+/**
+ * Reads wave_failure_threshold from .crumbs/config.json.
+ *
+ * Returns DEFAULT_WAVE_FAILURE_THRESHOLD (0.5) on any failure (file absent,
+ * parse error, missing field, non-numeric value). Conservative fallback —
+ * a config read failure does NOT disable wave checks.
+ *
+ * @param {string} projectDir  Absolute path to the project root.
+ * @returns {number}  Threshold value in range [0, 1].
+ */
+function getWaveFailureThreshold(projectDir) {
+  const configPath = path.join(projectDir, '.crumbs', 'config.json');
+  let raw;
+  try {
+    raw = fs.readFileSync(configPath, 'utf8');
+  } catch (_err) {
+    return DEFAULT_WAVE_FAILURE_THRESHOLD;
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (_err) {
+    debugLog(HOOK_NAME, 'config.json parse error — using default wave_failure_threshold');
+    return DEFAULT_WAVE_FAILURE_THRESHOLD;
+  }
+
+  if (
+    parsed === null ||
+    typeof parsed !== 'object' ||
+    Array.isArray(parsed) ||
+    typeof parsed.wave_failure_threshold !== 'number'
+  ) {
+    return DEFAULT_WAVE_FAILURE_THRESHOLD;
+  }
+
+  return parsed.wave_failure_threshold;
+}
+
+/**
+ * Scans a prompt string for a wave number indicator.
+ *
+ * Recognized patterns (case-insensitive):
+ *   - "Wave 2", "wave 3", "WAVE 1"
+ *   - "wave=2" (progress.log style key=value)
+ *
+ * Returns the parsed wave number, or null if no wave indicator is found.
+ * Returns null for wave numbers <= 0 (invalid).
+ *
+ * @param {string} prompt  The Task tool prompt string.
+ * @returns {number|null}  Parsed wave number, or null.
+ */
+function extractWaveNumberFromPrompt(prompt) {
+  if (typeof prompt !== 'string') {
+    return null;
+  }
+
+  // Match "Wave N" (case-insensitive) or "wave=N".
+  const match = prompt.match(/\bwave[= ](\d+)\b/i);
+  if (!match) {
+    return null;
+  }
+
+  const waveNum = parseInt(match[1], 10);
+  if (isNaN(waveNum) || waveNum <= 0) {
+    return null;
+  }
+
+  return waveNum;
+}
+
+// ---------------------------------------------------------------------------
 // Task ID extraction
 // ---------------------------------------------------------------------------
 
@@ -349,6 +433,28 @@ async function handler(input) {
       const reason = `Retry limit exceeded: ${RETRY_FAILURE_TYPE} retries for task ${taskId} have reached the maximum`;
       debugLog(HOOK_NAME, 'blocking Task spawn — retry limit exceeded', { reason });
       return JSON.stringify({ continue: false, reason });
+    }
+
+    // Wave failure check: if this spawn is for wave N (N > 1), verify that the
+    // previous wave (N-1) did not exceed the failure threshold. Blocks next-wave
+    // spawning when the prior wave's failure rate is too high.
+    const currentWave = extractWaveNumberFromPrompt(prompt);
+    debugLog(HOOK_NAME, 'wave number extracted from prompt', { currentWave });
+
+    if (currentWave !== null && currentWave > 1) {
+      const prevWave = currentWave - 1;
+      const waveFailureThreshold = getWaveFailureThreshold(projectDir);
+      const prevWaveStatus = getWaveStatus(sessionDir, prevWave);
+      debugLog(HOOK_NAME, 'previous wave status', { prevWave, prevWaveStatus, threshold: waveFailureThreshold });
+
+      if (prevWaveStatus.total > 0 && prevWaveStatus.failureRate > waveFailureThreshold) {
+        const reason =
+          `Wave failure threshold exceeded: wave ${prevWave} had ` +
+          `${prevWaveStatus.failed}/${prevWaveStatus.total} failures ` +
+          `(rate ${prevWaveStatus.failureRate.toFixed(2)} > threshold ${waveFailureThreshold})`;
+        debugLog(HOOK_NAME, 'blocking Task spawn — wave failure threshold exceeded', { reason });
+        return JSON.stringify({ continue: false, reason });
+      }
     }
 
     // Position check: verify the spawn matches the expected next step from progress.log.
@@ -460,10 +566,13 @@ module.exports = {
   detectSessionFromEnv,
   isBypassEnabled,
   extractTaskIdFromPrompt,
+  extractWaveNumberFromPrompt,
+  getWaveFailureThreshold,
   SESSION_PATH_MARKER,
   PREDECESSOR_GATE,
   POSITION_CHECK_GATE,
   RETRY_FAILURE_TYPE,
   AGENT_SPAWN_GATE,
   BYPASS_TOOLS,
+  DEFAULT_WAVE_FAILURE_THRESHOLD,
 };

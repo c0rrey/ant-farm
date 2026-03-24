@@ -54,6 +54,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "max_files_per_crumb": 8,
     "context_warning_threshold": 35,
     "context_critical_threshold": 25,
+    "wave_failure_threshold": 0.5,
     "banned_phrases": [
         "works correctly",
         "as expected",
