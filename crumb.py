@@ -907,6 +907,7 @@ def cmd_close(args: argparse.Namespace) -> None:
                 die(f"crumb '{crumb_id}' not found")
 
         closed: List[str] = []
+        closed_crumbs: List[Dict[str, Any]] = []
         skipped: List[str] = []
 
         for crumb_id in args.ids:
@@ -925,12 +926,18 @@ def cmd_close(args: argparse.Namespace) -> None:
             crumb["closed_at"] = now
             crumb["updated_at"] = now
             closed.append(crumb_id)
+            closed_crumbs.append(crumb)
 
         if closed:
             write_tasks(path, tasks)
             # Auto-close any parent trail whose last open child just closed
             for crumb_id in closed:
                 _auto_close_trail_if_complete(tasks, path, crumb_id)
+
+    # --- JSON output branch ---
+    if getattr(args, "json_output", False):
+        print(json.dumps([_crumb_to_json_obj(c) for c in closed_crumbs], indent=2))
+        return
 
     for crumb_id in closed:
         print(f"closed {crumb_id}")
@@ -954,6 +961,11 @@ def cmd_reopen(args: argparse.Namespace) -> None:
         crumb.pop("closed_at", None)
         crumb["updated_at"] = now
         write_tasks(path, tasks)
+
+    # --- JSON output branch ---
+    if getattr(args, "json_output", False):
+        print(json.dumps(_crumb_to_json_obj(crumb), indent=2))
+        return
 
     print(f"reopened {args.id}")
 
@@ -1665,6 +1677,14 @@ def cmd_tree(args: argparse.Namespace) -> None:
         trail = _require_crumb(tasks, trail_id_filter, label="trail")
         if trail.get("type") != "trail":
             die(f"'{trail_id_filter}' is not a trail")
+
+        # --- JSON output branch (single trail) ---
+        if getattr(args, "json_output", False):
+            obj = _crumb_to_json_obj(trail)
+            obj["children"] = [_crumb_to_json_obj(c) for c in _get_trail_children(tasks, trail_id_filter)]
+            print(json.dumps(obj, indent=2))
+            return
+
         print(_format_row(trail))
         for child in _get_trail_children(tasks, trail_id_filter):
             print(_format_row(child, indent=2))
@@ -1674,6 +1694,25 @@ def cmd_tree(args: argparse.Namespace) -> None:
     trails = [t for t in tasks if t.get("type") == "trail"]
     non_trails = [t for t in tasks if t.get("type") != "trail"]
     child_ids: Set[str] = set()
+
+    # --- JSON output branch (full tree) ---
+    if getattr(args, "json_output", False):
+        trail_objs: List[Dict[str, Any]] = []
+        json_child_ids: Set[str] = set()
+        for trail in trails:
+            obj = _crumb_to_json_obj(trail)
+            children = _get_trail_children(tasks, trail.get("id", "?"))
+            obj["children"] = [_crumb_to_json_obj(c) for c in children]
+            for c in children:
+                json_child_ids.add(c.get("id", "?"))
+            trail_objs.append(obj)
+        orphans_json = [
+            _crumb_to_json_obj(t)
+            for t in non_trails
+            if t.get("id") not in json_child_ids
+        ]
+        print(json.dumps({"trails": trail_objs, "orphans": orphans_json}, indent=2))
+        return
 
     for trail in trails:
         print(_format_row(trail))
@@ -1793,6 +1832,15 @@ def cmd_import(args: argparse.Namespace) -> None:
         # imported_count, and must be persisted even when all records were
         # duplicates or the file contained only malformed lines.
         write_config(config)
+
+    # --- JSON output branch ---
+    if getattr(args, "json_output", False):
+        print(json.dumps({
+            "imported_count": imported_count,
+            "skipped_malformed": skipped_malformed,
+            "skipped_duplicate": skipped_duplicate,
+        }, indent=2))
+        return
 
     print(
         f"imported {imported_count} record(s)"
@@ -2605,11 +2653,13 @@ def build_parser() -> argparse.ArgumentParser:
     # --- close ---
     p_close = sub.add_parser("close", help="Close one or more crumbs")
     p_close.add_argument("ids", nargs="+", metavar="ID")
+    _add_json_flag(p_close)
     p_close.set_defaults(func=cmd_close)
 
     # --- reopen ---
     p_reopen = sub.add_parser("reopen", help="Reopen a closed crumb")
     p_reopen.add_argument("id", metavar="ID")
+    _add_json_flag(p_reopen)
     p_reopen.set_defaults(func=cmd_reopen)
 
     # --- ready ---
@@ -2711,11 +2761,13 @@ def build_parser() -> argparse.ArgumentParser:
     # --- tree ---
     p_tree = sub.add_parser("tree", help="Show trail/crumb hierarchy")
     p_tree.add_argument("id", nargs="?", metavar="ID")
+    _add_json_flag(p_tree)
     p_tree.set_defaults(func=cmd_tree)
 
     # --- import ---
     p_import = sub.add_parser("import", help="Bulk import from JSONL")
     p_import.add_argument("file", metavar="FILE")
+    _add_json_flag(p_import)
     p_import.set_defaults(func=cmd_import)
 
     # --- doctor ---

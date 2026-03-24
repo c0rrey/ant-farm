@@ -1034,3 +1034,178 @@ class TestWriteTasksCleanup:
         assert not tmp_path_file.exists(), (
             ".jsonl.tmp must not remain after a successful write"
         )
+
+
+# ---------------------------------------------------------------------------
+# TestCloseJSON
+# ---------------------------------------------------------------------------
+
+
+class TestCloseJSON:
+    """Tests for cmd_close --json output mode."""
+
+    def test_json_single_close_returns_array_with_one_crumb(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_close <id> --json returns a JSON array with the closed crumb object."""
+        _seed_task(crumbs_env, id="AF-1", status="open")
+
+        args = argparse.Namespace(ids=["AF-1"], json_output=True)
+        cmd_close(args)
+
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        assert isinstance(parsed, list)
+        assert len(parsed) == 1
+        assert parsed[0]["id"] == "AF-1"
+        assert parsed[0]["status"] == "closed"
+
+    def test_json_multi_close_returns_array_of_all_closed(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_close <id1> <id2> --json returns an array of all closed crumb objects."""
+        tasks_file = crumbs_env / "tasks.jsonl"
+        write_tasks(tasks_file, [
+            {"id": "AF-1", "type": "task", "title": "Task one", "status": "open",
+             "priority": "P2", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"},
+            {"id": "AF-2", "type": "task", "title": "Task two", "status": "open",
+             "priority": "P2", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"},
+        ])
+
+        args = argparse.Namespace(ids=["AF-1", "AF-2"], json_output=True)
+        cmd_close(args)
+
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        assert isinstance(parsed, list)
+        assert len(parsed) == 2
+        ids = {obj["id"] for obj in parsed}
+        assert ids == {"AF-1", "AF-2"}
+        for obj in parsed:
+            assert obj["status"] == "closed"
+
+    def test_json_close_skipped_not_in_array(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_close --json returns only actually-closed crumbs, not already-closed ones."""
+        tasks_file = crumbs_env / "tasks.jsonl"
+        write_tasks(tasks_file, [
+            {"id": "AF-1", "type": "task", "title": "Open task", "status": "open",
+             "priority": "P2", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"},
+            {"id": "AF-2", "type": "task", "title": "Already closed", "status": "closed",
+             "priority": "P2", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"},
+        ])
+
+        args = argparse.Namespace(ids=["AF-1", "AF-2"], json_output=True)
+        cmd_close(args)
+
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        # AF-2 was already closed — only AF-1 appears in output
+        assert len(parsed) == 1
+        assert parsed[0]["id"] == "AF-1"
+
+    def test_json_contains_required_fields(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Each closed crumb JSON object contains all required schema fields."""
+        _seed_task(crumbs_env, id="AF-1", status="open")
+
+        args = argparse.Namespace(ids=["AF-1"], json_output=True)
+        cmd_close(args)
+
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        obj = parsed[0]
+        for field in ("id", "title", "type", "status", "priority"):
+            assert field in obj, f"Required field '{field}' missing from JSON output"
+
+    def test_json_to_stdout_no_human_text(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """With --json, no 'closed AF-X' human-readable text appears in stdout."""
+        _seed_task(crumbs_env, id="AF-1", status="open")
+
+        args = argparse.Namespace(ids=["AF-1"], json_output=True)
+        cmd_close(args)
+
+        out = capsys.readouterr().out
+        assert "closed" not in out or out.strip().startswith("[")
+        json.loads(out)  # Must be valid JSON
+
+    def test_human_readable_unchanged_without_json_flag(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_close without --json prints the 'closed AF-X' line, not JSON."""
+        _seed_task(crumbs_env, id="AF-1", status="open")
+
+        args = argparse.Namespace(ids=["AF-1"], json_output=False)
+        cmd_close(args)
+
+        out = capsys.readouterr().out
+        assert "closed AF-1" in out
+        assert not out.strip().startswith("[")
+
+
+# ---------------------------------------------------------------------------
+# TestReopenJSON
+# ---------------------------------------------------------------------------
+
+
+class TestReopenJSON:
+    """Tests for cmd_reopen --json output mode."""
+
+    def test_json_reopen_returns_updated_crumb_object(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_reopen <id> --json returns the reopened crumb object with status 'open'."""
+        _seed_task(crumbs_env, id="AF-1", status="closed")
+
+        args = argparse.Namespace(id="AF-1", json_output=True)
+        cmd_reopen(args)
+
+        out = capsys.readouterr().out
+        obj = json.loads(out)
+        assert obj["id"] == "AF-1"
+        assert obj["status"] == "open"
+
+    def test_json_reopen_contains_required_fields(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """JSON object from cmd_reopen contains all required schema fields."""
+        _seed_task(crumbs_env, id="AF-1", status="closed", priority="P0")
+
+        args = argparse.Namespace(id="AF-1", json_output=True)
+        cmd_reopen(args)
+
+        out = capsys.readouterr().out
+        obj = json.loads(out)
+        for field in ("id", "title", "type", "status", "priority"):
+            assert field in obj, f"Required field '{field}' missing from JSON output"
+        assert obj["priority"] == "P0"
+
+    def test_json_to_stdout_no_human_text(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """With --json, no 'reopened AF-X' human-readable text appears in stdout."""
+        _seed_task(crumbs_env, id="AF-1", status="closed")
+
+        args = argparse.Namespace(id="AF-1", json_output=True)
+        cmd_reopen(args)
+
+        out = capsys.readouterr().out
+        assert "reopened" not in out
+        json.loads(out)  # Must be valid JSON
+
+    def test_human_readable_unchanged_without_json_flag(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_reopen without --json prints the 'reopened AF-X' line, not JSON."""
+        _seed_task(crumbs_env, id="AF-1", status="closed")
+
+        args = argparse.Namespace(id="AF-1", json_output=False)
+        cmd_reopen(args)
+
+        out = capsys.readouterr().out
+        assert "reopened AF-1" in out
+        assert not out.strip().startswith("{")

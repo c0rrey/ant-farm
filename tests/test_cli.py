@@ -1755,3 +1755,144 @@ class TestValidateSpec:
         assert parsed["matches"] == [], (
             f"Expected empty matches array for empty spec.\nresult: {parsed}"
         )
+
+
+class TestTreeJSON:
+    """Integration tests for 'crumb tree --json' output."""
+
+    def test_json_full_tree_has_trails_and_orphans_keys(self, tmp_path: Path) -> None:
+        """crumb tree --json returns object with 'trails' and 'orphans' keys."""
+        _make_crumbs_env(tmp_path)
+        # Create a trail and a task
+        _run(["trail", "create", "--title", "My Trail"], cwd=tmp_path)
+        _run(["create", "--title", "Orphan task"], cwd=tmp_path)
+
+        result = _run(["tree", "--json"], cwd=tmp_path)
+
+        assert result.returncode == 0, f"tree --json failed: {result.stderr!r}"
+        parsed = json.loads(result.stdout)
+        assert "trails" in parsed
+        assert "orphans" in parsed
+
+    def test_json_full_tree_trails_contain_children(self, tmp_path: Path) -> None:
+        """crumb tree --json: each trail object includes a 'children' array."""
+        _make_crumbs_env(tmp_path)
+        _run(["trail", "create", "--title", "Sprint 1"], cwd=tmp_path)
+        # Create a task and link it to the trail
+        _run(["create", "--title", "Child task"], cwd=tmp_path)
+        _run(["link", "AF-1", "--parent", "AF-T1"], cwd=tmp_path)
+
+        result = _run(["tree", "--json"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        parsed = json.loads(result.stdout)
+        assert len(parsed["trails"]) == 1
+        trail = parsed["trails"][0]
+        assert "children" in trail
+        assert len(trail["children"]) == 1
+        assert trail["children"][0]["id"] == "AF-1"
+
+    def test_json_full_tree_orphan_not_in_trail_children(self, tmp_path: Path) -> None:
+        """crumb tree --json: tasks with no parent trail appear in 'orphans'."""
+        _make_crumbs_env(tmp_path)
+        _run(["create", "--title", "Orphan"], cwd=tmp_path)
+
+        result = _run(["tree", "--json"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        parsed = json.loads(result.stdout)
+        assert len(parsed["orphans"]) == 1
+        assert parsed["orphans"][0]["id"] == "AF-1"
+
+    def test_json_single_trail_returns_trail_with_children(self, tmp_path: Path) -> None:
+        """crumb tree <trail-id> --json returns the trail object with children array."""
+        _make_crumbs_env(tmp_path)
+        _run(["trail", "create", "--title", "Trail"], cwd=tmp_path)
+        _run(["create", "--title", "Child"], cwd=tmp_path)
+        _run(["link", "AF-1", "--parent", "AF-T1"], cwd=tmp_path)
+
+        result = _run(["tree", "AF-T1", "--json"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        obj = json.loads(result.stdout)
+        assert obj["id"] == "AF-T1"
+        assert "children" in obj
+        assert len(obj["children"]) == 1
+
+    def test_human_readable_unchanged_without_json_flag(self, tmp_path: Path) -> None:
+        """crumb tree without --json outputs human-readable indented tree."""
+        _make_crumbs_env(tmp_path)
+        _run(["trail", "create", "--title", "Trail"], cwd=tmp_path)
+
+        result = _run(["tree"], cwd=tmp_path)
+
+        assert result.returncode == 0
+        assert "AF-T1" in result.stdout
+        assert not result.stdout.strip().startswith("{")
+
+
+class TestImportJSON:
+    """Integration tests for 'crumb import --json' output."""
+
+    def _write_jsonl(self, tmp_path: Path, records: list) -> Path:
+        """Write records to a JSONL file and return its path."""
+        import_file = tmp_path / "import.jsonl"
+        lines = "\n".join(json.dumps(r) for r in records) + "\n"
+        import_file.write_text(lines, encoding="utf-8")
+        return import_file
+
+    def test_json_import_returns_imported_count(self, tmp_path: Path) -> None:
+        """crumb import <file> --json returns object with 'imported_count' field."""
+        _make_crumbs_env(tmp_path)
+        import_file = self._write_jsonl(tmp_path, [
+            {"id": "AF-1", "title": "Task 1", "status": "open", "type": "task"},
+            {"id": "AF-2", "title": "Task 2", "status": "open", "type": "task"},
+        ])
+
+        result = _run(["import", "--json", str(import_file)], cwd=tmp_path)
+
+        assert result.returncode == 0, f"import --json failed: {result.stderr!r}"
+        parsed = json.loads(result.stdout)
+        assert "imported_count" in parsed
+        assert parsed["imported_count"] == 2
+
+    def test_json_import_has_skip_counts(self, tmp_path: Path) -> None:
+        """crumb import --json includes skipped_malformed and skipped_duplicate fields."""
+        _make_crumbs_env(tmp_path)
+        import_file = self._write_jsonl(tmp_path, [
+            {"id": "AF-1", "title": "Good", "status": "open", "type": "task"},
+        ])
+
+        result = _run(["import", "--json", str(import_file)], cwd=tmp_path)
+
+        assert result.returncode == 0
+        parsed = json.loads(result.stdout)
+        assert "skipped_malformed" in parsed
+        assert "skipped_duplicate" in parsed
+        assert parsed["skipped_malformed"] == 0
+        assert parsed["skipped_duplicate"] == 0
+
+    def test_json_import_empty_file_returns_zero_count(self, tmp_path: Path) -> None:
+        """crumb import --json on empty file returns imported_count of 0."""
+        _make_crumbs_env(tmp_path)
+        import_file = tmp_path / "empty.jsonl"
+        import_file.write_text("", encoding="utf-8")
+
+        result = _run(["import", "--json", str(import_file)], cwd=tmp_path)
+
+        assert result.returncode == 0
+        parsed = json.loads(result.stdout)
+        assert parsed["imported_count"] == 0
+
+    def test_human_readable_unchanged_without_json_flag(self, tmp_path: Path) -> None:
+        """crumb import without --json outputs human-readable 'imported N record(s)'."""
+        _make_crumbs_env(tmp_path)
+        import_file = self._write_jsonl(tmp_path, [
+            {"id": "AF-1", "title": "Task", "status": "open", "type": "task"},
+        ])
+
+        result = _run(["import", str(import_file)], cwd=tmp_path)
+
+        assert result.returncode == 0
+        assert "imported" in result.stdout
+        assert not result.stdout.strip().startswith("{")
