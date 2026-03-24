@@ -19,7 +19,7 @@
  * Public API:
  *   recordAgentResult(sessionDir, waveNum, agentId, status) — record a result entry
  *   getWaveStatus(sessionDir, waveNum)  — return { total, succeeded, failed, failureRate }
- *   WAVE_RESULTS_FILENAME(waveNum)      — returns the per-wave filename (for tests)
+ *   waveResultsFilename(waveNum)        — returns the per-wave filename (for tests)
  *
  * No external dependencies. Uses synchronous fs operations (consistent with all
  * other hook libraries in this project).
@@ -46,7 +46,7 @@ const VALID_STATUSES = new Set(['success', 'failure']);
  * @param {number} waveNum  1-based wave number.
  * @returns {string}  e.g. 'wave-1-results.json'
  */
-function WAVE_RESULTS_FILENAME(waveNum) {
+function waveResultsFilename(waveNum) {
   return `wave-${waveNum}-results.json`;
 }
 
@@ -58,7 +58,7 @@ function WAVE_RESULTS_FILENAME(waveNum) {
  * @returns {string}
  */
 function _waveFilePath(sessionDir, waveNum) {
-  return path.join(sessionDir, WAVE_RESULTS_FILENAME(waveNum));
+  return path.join(sessionDir, waveResultsFilename(waveNum));
 }
 
 /**
@@ -212,5 +212,5 @@ function getWaveStatus(sessionDir, waveNum) {
 module.exports = {
   recordAgentResult,
   getWaveStatus,
-  WAVE_RESULTS_FILENAME,
+  waveResultsFilename,
 };

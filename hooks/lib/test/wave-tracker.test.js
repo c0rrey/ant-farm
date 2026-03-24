@@ -14,7 +14,7 @@
  *   - getWaveStatus(): failureRate = failed / total (not 1/0)
  *   - getWaveStatus(): failureRate is 0 when total is 0 (no divide-by-zero)
  *   - getWaveStatus(): correctly tracks separate wave files independently
- *   - WAVE_RESULTS_FILENAME is exported and follows the expected pattern
+ *   - waveResultsFilename is exported and follows the expected pattern
  */
 
 const { test, describe } = require('node:test');
@@ -26,7 +26,7 @@ const path = require('path');
 const {
   recordAgentResult,
   getWaveStatus,
-  WAVE_RESULTS_FILENAME,
+  waveResultsFilename,
 } = require('../wave-tracker');
 
 // ---------------------------------------------------------------------------
@@ -44,19 +44,19 @@ function cleanup(dir) {
 }
 
 // ---------------------------------------------------------------------------
-// WAVE_RESULTS_FILENAME helper
+// waveResultsFilename helper
 // ---------------------------------------------------------------------------
 
-describe('WAVE_RESULTS_FILENAME', () => {
+describe('waveResultsFilename', () => {
   test('is a function that returns a per-wave filename', () => {
-    const name = WAVE_RESULTS_FILENAME(1);
-    assert.equal(typeof name, 'string', 'WAVE_RESULTS_FILENAME(1) must return a string');
+    const name = waveResultsFilename(1);
+    assert.equal(typeof name, 'string', 'waveResultsFilename(1) must return a string');
     assert.ok(name.includes('1'), 'filename must include the wave number');
   });
 
   test('returns different filenames for different wave numbers', () => {
-    const name1 = WAVE_RESULTS_FILENAME(1);
-    const name2 = WAVE_RESULTS_FILENAME(2);
+    const name1 = waveResultsFilename(1);
+    const name2 = waveResultsFilename(2);
     assert.notEqual(name1, name2, 'Different waves must have different filenames');
   });
 });
@@ -70,7 +70,7 @@ describe('recordAgentResult', () => {
     const tmpDir = mkTmpDir();
     try {
       recordAgentResult(tmpDir, 1, 'agent-1', 'success');
-      const filePath = path.join(tmpDir, WAVE_RESULTS_FILENAME(1));
+      const filePath = path.join(tmpDir, waveResultsFilename(1));
       assert.ok(fs.existsSync(filePath), 'wave results file should be created');
 
       const raw = fs.readFileSync(filePath, 'utf8');
@@ -89,7 +89,7 @@ describe('recordAgentResult', () => {
     const tmpDir = mkTmpDir();
     try {
       recordAgentResult(tmpDir, 2, 'agent-x', 'failure');
-      const filePath = path.join(tmpDir, WAVE_RESULTS_FILENAME(2));
+      const filePath = path.join(tmpDir, waveResultsFilename(2));
       assert.ok(fs.existsSync(filePath), 'wave results file should be created');
 
       const raw = fs.readFileSync(filePath, 'utf8');
@@ -108,7 +108,7 @@ describe('recordAgentResult', () => {
       recordAgentResult(tmpDir, 1, 'agent-b', 'failure');
       recordAgentResult(tmpDir, 1, 'agent-c', 'success');
 
-      const filePath = path.join(tmpDir, WAVE_RESULTS_FILENAME(1));
+      const filePath = path.join(tmpDir, waveResultsFilename(1));
       const raw = fs.readFileSync(filePath, 'utf8');
       const parsed = JSON.parse(raw);
       assert.equal(parsed.length, 3, 'all three agent results should be in the file');
@@ -121,7 +121,7 @@ describe('recordAgentResult', () => {
     const tmpDir = mkTmpDir();
     try {
       recordAgentResult(tmpDir, 3, 'agent-q', 'success');
-      const filePath = path.join(tmpDir, WAVE_RESULTS_FILENAME(3));
+      const filePath = path.join(tmpDir, waveResultsFilename(3));
       const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
       assert.equal(parsed[0].wave, 3, 'wave number must be stored in the entry');
     } finally {
@@ -158,11 +158,11 @@ describe('recordAgentResult', () => {
     const tmpDir = mkTmpDir();
     try {
       recordAgentResult(tmpDir, 1, 'agent-a', 'success');
-      const before = JSON.parse(fs.readFileSync(path.join(tmpDir, WAVE_RESULTS_FILENAME(1)), 'utf8'));
+      const before = JSON.parse(fs.readFileSync(path.join(tmpDir, waveResultsFilename(1)), 'utf8'));
       assert.equal(before.length, 1);
 
       recordAgentResult(tmpDir, 1, 'agent-b', 'success');
-      const after = JSON.parse(fs.readFileSync(path.join(tmpDir, WAVE_RESULTS_FILENAME(1)), 'utf8'));
+      const after = JSON.parse(fs.readFileSync(path.join(tmpDir, waveResultsFilename(1)), 'utf8'));
       assert.equal(after.length, 2, 'second write must append, not overwrite');
       assert.equal(after[0].agent_id, 'agent-a', 'first entry must be preserved');
     } finally {
@@ -176,8 +176,8 @@ describe('recordAgentResult', () => {
       recordAgentResult(tmpDir, 1, 'agent-a', 'success');
       recordAgentResult(tmpDir, 2, 'agent-b', 'failure');
 
-      const wave1 = JSON.parse(fs.readFileSync(path.join(tmpDir, WAVE_RESULTS_FILENAME(1)), 'utf8'));
-      const wave2 = JSON.parse(fs.readFileSync(path.join(tmpDir, WAVE_RESULTS_FILENAME(2)), 'utf8'));
+      const wave1 = JSON.parse(fs.readFileSync(path.join(tmpDir, waveResultsFilename(1)), 'utf8'));
+      const wave2 = JSON.parse(fs.readFileSync(path.join(tmpDir, waveResultsFilename(2)), 'utf8'));
 
       assert.equal(wave1.length, 1, 'wave 1 should have 1 entry');
       assert.equal(wave2.length, 1, 'wave 2 should have 1 entry');
@@ -258,7 +258,7 @@ describe('getWaveStatus', () => {
     const tmpDir = mkTmpDir();
     try {
       // Write an empty array file manually
-      const filePath = path.join(tmpDir, WAVE_RESULTS_FILENAME(1));
+      const filePath = path.join(tmpDir, waveResultsFilename(1));
       fs.writeFileSync(filePath, '[]', 'utf8');
 
       const status = getWaveStatus(tmpDir, 1);
