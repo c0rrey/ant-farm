@@ -318,4 +318,133 @@ describe('getWaveStatus', () => {
       cleanup(tmpDir);
     }
   });
+
+  // AC6: explicit mixed-results test — 1 success + 1 failure = 0.5 failureRate
+  test('returns failureRate 0.5 after one success and one failure (AC6 mixed-results)', () => {
+    const tmpDir = mkTmpDir();
+    try {
+      recordAgentResult(tmpDir, 1, 'agent-pass', 'success');
+      recordAgentResult(tmpDir, 1, 'agent-fail', 'failure');
+
+      const status = getWaveStatus(tmpDir, 1);
+      assert.equal(status.total, 2);
+      assert.equal(status.succeeded, 1);
+      assert.equal(status.failed, 1);
+      assert.equal(status.failureRate, 0.5);
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Gate-enforcer wave blocking integration (AC7)
+// ---------------------------------------------------------------------------
+//
+// Tests that the gate-enforcer's handler() blocks a Wave N+1 spawn when
+// Wave N's failureRate exceeds the threshold (default 0.5). This verifies
+// the end-to-end path: recordAgentResult → getWaveStatus → gate-enforcer block.
+// ---------------------------------------------------------------------------
+
+const { handler } = require('../../ant-farm-gate-enforcer');
+const { writeGateVerdict } = require('../gate-manager');
+
+/**
+ * Build a minimal PreToolUse input object for a Task spawn.
+ * The prompt includes the session path marker and a Wave indicator so the
+ * gate-enforcer can detect the session and extract the wave number.
+ *
+ * sessionDir MUST contain the '.crumbs/sessions/_session-' substring so that
+ * the gate-enforcer's path-scan detects it as an active ant-farm session.
+ *
+ * @param {string} sessionDir  Absolute path to the session directory (must include marker).
+ * @param {number} waveNum     Wave number to embed in the prompt.
+ * @returns {object}
+ */
+function _makeTaskInput(sessionDir, waveNum) {
+  return {
+    tool_name: 'Task',
+    tool_input: {
+      prompt: `Execute Wave ${waveNum} tasks. Session dir: ${sessionDir}`,
+    },
+  };
+}
+
+/**
+ * Create a session directory whose path contains the '.crumbs/sessions/_session-' marker
+ * required by the gate-enforcer's path-scan logic.
+ *
+ * @param {string} baseDir  A real existing directory (e.g. from mkTmpDir()) to nest under.
+ * @returns {string}  Absolute path to the created session directory.
+ */
+function mkSessionDir(baseDir) {
+  const sessionDir = path.join(baseDir, '.crumbs', 'sessions', '_session-test-ac7');
+  fs.mkdirSync(sessionDir, { recursive: true });
+  return sessionDir;
+}
+
+describe('gate-enforcer wave blocking (AC7)', () => {
+  test('blocks Wave 2 spawn when Wave 1 failureRate exceeds 0.5', async () => {
+    const tmpDir = mkTmpDir();
+    try {
+      // Create a session directory whose path contains the gate-enforcer's
+      // SESSION_PATH_MARKER ('.crumbs/sessions/_session-') so path-scan detects it.
+      const sessionDir = mkSessionDir(tmpDir);
+
+      // Satisfy startup-check gate so the wave-check code path is reached.
+      writeGateVerdict(sessionDir, 'startup-check', 'PASS');
+
+      // Record Wave 1 results: 1 success, 2 failures → failureRate = 0.67 > 0.5
+      recordAgentResult(sessionDir, 1, 'agent-a', 'success');
+      recordAgentResult(sessionDir, 1, 'agent-b', 'failure');
+      recordAgentResult(sessionDir, 1, 'agent-c', 'failure');
+
+      const input = _makeTaskInput(sessionDir, 2);
+      const result = await handler(input);
+
+      assert.ok(result !== '', 'handler should return a non-empty block response');
+      const parsed = JSON.parse(result);
+      assert.equal(parsed.continue, false, 'continue must be false when wave threshold exceeded');
+      assert.ok(
+        typeof parsed.reason === 'string' && parsed.reason.length > 0,
+        'reason must be a non-empty string'
+      );
+      assert.ok(
+        parsed.reason.toLowerCase().includes('wave') || parsed.reason.toLowerCase().includes('failure'),
+        `reason should mention wave or failure, got: ${parsed.reason}`
+      );
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+
+  test('allows Wave 2 spawn when Wave 1 failureRate is at or below 0.5', async () => {
+    const tmpDir = mkTmpDir();
+    try {
+      // Create a session directory with the required path marker.
+      const sessionDir = mkSessionDir(tmpDir);
+
+      // Satisfy startup-check gate.
+      writeGateVerdict(sessionDir, 'startup-check', 'PASS');
+
+      // Record Wave 1 results: 1 success, 1 failure → failureRate = 0.5 (not > 0.5)
+      recordAgentResult(sessionDir, 1, 'agent-a', 'success');
+      recordAgentResult(sessionDir, 1, 'agent-b', 'failure');
+
+      const input = _makeTaskInput(sessionDir, 2);
+      const result = await handler(input);
+
+      // Should be allowed through (empty string or allowed-through JSON without continue:false)
+      if (result !== '') {
+        const parsed = JSON.parse(result);
+        assert.notEqual(
+          parsed.continue,
+          false,
+          'Wave 2 must not be blocked when Wave 1 failureRate is exactly 0.5'
+        );
+      }
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
 });
