@@ -1917,6 +1917,67 @@ class TestSessionAgents:
         task_ids = {obj["task_id"] for obj in data}
         assert task_ids == {"AF-1", "AF-2"}, f"Expected both task IDs, got {task_ids!r}"
 
+    # ------------------------------------------------------------------
+    # session-agents — status field coverage (AC-5)
+    # ------------------------------------------------------------------
+
+    def test_session_agents_text_shows_status_field(self, tmp_path: Path) -> None:
+        """``crumb session-agents`` text output includes status= for each agent."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        spawned_at = "2026-01-01T00:00:00.000Z"
+        _write_agents(session_dir, [
+            {"task_id": "AF-55", "spawned_at": spawned_at, "status": "spawned"},
+        ])
+
+        result = _run(["session-agents", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0
+        assert "status=" in result.stdout, (
+            f"Expected 'status=' in text output.\nstdout: {result.stdout!r}"
+        )
+
+    def test_session_agents_json_status_matches_input(self, tmp_path: Path) -> None:
+        """``crumb session-agents --json`` status field matches the value in agents.json."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        spawned_at = "2026-01-01T00:00:00.000Z"
+        _write_agents(session_dir, [
+            {"task_id": "AF-77", "spawned_at": spawned_at, "status": "done"},
+        ])
+
+        result = _run(["session-agents", "--json", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert data[0]["status"] == "done", (
+            f"Expected status='done', got {data[0]['status']!r}"
+        )
+
+    def test_session_agents_json_elapsed_minutes_positive_for_old_agent(self, tmp_path: Path) -> None:
+        """``crumb session-agents --json`` elapsed_minutes is positive for an old agent."""
+        _make_crumbs_env(tmp_path)
+        session_dir = tmp_path / "session-001"
+        session_dir.mkdir()
+
+        # Use a timestamp far in the past so elapsed_minutes is definitely > 0
+        spawned_at = "2020-01-01T00:00:00.000Z"
+        _write_agents(session_dir, [
+            {"task_id": "AF-88", "spawned_at": spawned_at, "status": "spawned"},
+        ])
+
+        result = _run(["session-agents", "--json", str(session_dir)], cwd=tmp_path)
+
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert data[0]["elapsed_minutes"] > 0, (
+            f"Expected elapsed_minutes > 0 for old agent, got {data[0]['elapsed_minutes']!r}"
+        )
+
 
 # ---------------------------------------------------------------------------
 # validate-spec tests

@@ -842,3 +842,107 @@ test('checkStuckAgents: returns CRITICAL when agent exceeds escalation threshold
     cleanup(tmpDir);
   }
 });
+
+// ===========================================================================
+// Unit: checkStuckAgents — configurable timeouts (AC-4)
+// ===========================================================================
+
+test('checkStuckAgents: respects custom stuck_agent_timeout_minutes from config.json', () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'stuck-config-test-'));
+  try {
+    // Write config with a 5-minute warning threshold (instead of default 10)
+    writeConfig(tmpDir, { stuck_agent_timeout_minutes: 5, stuck_agent_escalation_minutes: 20 });
+
+    // Spawn recorded 7 minutes ago — exceeds custom 5-min threshold, well under default 10
+    const ts = new Date(Date.now() - 7 * 60 * 1000).toISOString();
+    appendAgentSpawn(tmpDir, { task_id: 'AF-100', spawned_at: ts });
+
+    const result = checkStuckAgents(tmpDir, tmpDir);
+    assert.ok(result !== null, 'Should produce advisory when elapsed exceeds custom timeout');
+    assert.ok(result.toUpperCase().includes('WARNING'), 'Advisory must be WARNING (under custom escalation)');
+  } finally {
+    cleanup(tmpDir);
+  }
+});
+
+test('checkStuckAgents: respects custom stuck_agent_escalation_minutes from config.json', () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'stuck-config-test-'));
+  try {
+    // Write config with a 5-minute warning and 8-minute escalation threshold
+    writeConfig(tmpDir, { stuck_agent_timeout_minutes: 5, stuck_agent_escalation_minutes: 8 });
+
+    // Spawn recorded 10 minutes ago — exceeds both custom thresholds → should be CRITICAL
+    const ts = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    appendAgentSpawn(tmpDir, { task_id: 'AF-101', spawned_at: ts });
+
+    const result = checkStuckAgents(tmpDir, tmpDir);
+    assert.ok(result !== null, 'Should produce advisory when elapsed exceeds custom escalation');
+    assert.ok(result.toUpperCase().includes('CRITICAL'), 'Advisory must be CRITICAL for custom escalation');
+  } finally {
+    cleanup(tmpDir);
+  }
+});
+
+test('checkStuckAgents: returns null when agent is under custom timeout threshold', () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'stuck-config-test-'));
+  try {
+    // Write config with a 30-minute warning threshold
+    writeConfig(tmpDir, { stuck_agent_timeout_minutes: 30, stuck_agent_escalation_minutes: 60 });
+
+    // Spawn recorded 11 minutes ago — would trigger default but not custom 30-min threshold
+    const ts = new Date(Date.now() - 11 * 60 * 1000).toISOString();
+    appendAgentSpawn(tmpDir, { task_id: 'AF-102', spawned_at: ts });
+
+    const result = checkStuckAgents(tmpDir, tmpDir);
+    assert.equal(result, null, 'Agent under custom timeout threshold must not trigger advisory');
+  } finally {
+    cleanup(tmpDir);
+  }
+});
+
+// ===========================================================================
+// Unit: checkStuckAgents — edge cases
+// ===========================================================================
+
+test('checkStuckAgents: uses longest-running agent when multiple agents are spawned', () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'stuck-multi-test-'));
+  try {
+    // Two agents: one recent (2 min), one old (16 min → CRITICAL)
+    const recentTs = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+    const oldTs = new Date(Date.now() - 16 * 60 * 1000).toISOString();
+    appendAgentSpawn(tmpDir, { task_id: 'AF-Fresh', spawned_at: recentTs });
+    appendAgentSpawn(tmpDir, { task_id: 'AF-Stale', spawned_at: oldTs });
+
+    const result = checkStuckAgents(tmpDir, tmpDir);
+    assert.ok(result !== null, 'Should return advisory based on longest-running agent');
+    assert.ok(result.toUpperCase().includes('CRITICAL'), 'Advisory should reflect the stale agent level');
+    assert.ok(result.includes('AF-Stale'), 'Advisory should reference the stuck agent task ID');
+  } finally {
+    cleanup(tmpDir);
+  }
+});
+
+test('checkStuckAgents: skips agents with missing spawned_at without crashing', () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'stuck-invalid-test-'));
+  try {
+    // Agent with no spawned_at field — should be skipped gracefully
+    appendAgentSpawn(tmpDir, { task_id: 'AF-Bad' });
+
+    const result = checkStuckAgents(tmpDir, tmpDir);
+    assert.equal(result, null, 'Agent missing spawned_at must be skipped without advisory');
+  } finally {
+    cleanup(tmpDir);
+  }
+});
+
+test('checkStuckAgents: skips agents with invalid spawned_at timestamps without crashing', () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'stuck-invalid-ts-test-'));
+  try {
+    appendAgentSpawn(tmpDir, { task_id: 'AF-Corrupt', spawned_at: 'not-a-date' });
+
+    const result = checkStuckAgents(tmpDir, tmpDir);
+    assert.equal(result, null, 'Agent with invalid timestamp must be skipped without advisory');
+  } finally {
+    cleanup(tmpDir);
+  }
+});
