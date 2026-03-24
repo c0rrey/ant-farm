@@ -394,11 +394,11 @@
 
 | Status | Count | Instructions |
 |--------|-------|-------------|
-| MECHANIZED | 11 | startup-check gate, pre-spawn-check gate, scope-verify gate, claims-vs-code gate, position check, retry tracking, wave failure threshold, security scanner, context monitor, review-integrity gate, session-complete gate |
+| MECHANIZED | 14 | startup-check gate, pre-spawn-check gate, scope-verify gate, claims-vs-code gate, position check, retry tracking, wave failure threshold, scope enforcement, cycle detection, security scanner, context monitor, pause instruction, review-integrity gate, session-complete gate |
 | PARTIALLY_MECHANIZED | 7 | granularity constraint, banned phrases, TDD ordering, conflict matrix, stuck-agent detection, spec coverage, agent task cap |
 | PROMPT_ONLY | 4 | JSON output format, orchestrator read restrictions, orchestrator prohibition, wave pipelining |
 
-**P0 gates**: 7 mapped (cycle detection, granularity, banned phrases, scope enforcement, gate enforcement, retry tracking, position check) — all covered above
+**P0 gates**: 8 mapped (startup-check gate, pre-spawn-check gate, scope-verify gate, gate enforcement, position check, retry tracking, cycle detection, banned phrases) — all covered above
 **P1 gates**: 5 mapped (TDD, security, context monitor, pause, JSON output) — all covered above
 **P2 gates**: 4 mapped (conflict matrix, wave failure, stuck-agent, spec coverage) — all covered above
 
