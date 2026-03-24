@@ -53,6 +53,7 @@ def _make_create_args(**kwargs: Any) -> argparse.Namespace:
         "priority": None,
         "crumb_type": None,
         "description": None,
+        "tdd": None,
         "json_output": False,
     }
     defaults.update(kwargs)
@@ -89,6 +90,7 @@ def _make_update_args(**kwargs: Any) -> argparse.Namespace:
         "priority": None,
         "description": None,
         "from_json": None,
+        "tdd": None,
         "json_output": False,
     }
     defaults.update(kwargs)
@@ -464,6 +466,51 @@ class TestCreate:
         assert "created AF-1" in captured.out
         assert not captured.out.startswith("{"), "Output must not be JSON when --json absent"
 
+    def test_create_tdd_defaults_to_true(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_create sets tdd=True by default when no tdd flag is passed."""
+        args = _make_create_args(title="TDD default test")
+        cmd_create(args)
+
+        tasks_file = crumbs_env / "tasks.jsonl"
+        tasks = read_tasks(tasks_file)
+        assert tasks[0].get("tdd") is True
+
+    def test_create_tdd_flag_true_sets_tdd_true(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_create with tdd=True in args stores tdd=True in the record."""
+        args = _make_create_args(title="TDD explicit true", tdd=True)
+        cmd_create(args)
+
+        tasks_file = crumbs_env / "tasks.jsonl"
+        tasks = read_tasks(tasks_file)
+        assert tasks[0].get("tdd") is True
+
+    def test_create_tdd_flag_false_sets_tdd_false(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_create with tdd=False in args stores tdd=False in the record (opt-out)."""
+        args = _make_create_args(title="TDD opt-out test", tdd=False)
+        cmd_create(args)
+
+        tasks_file = crumbs_env / "tasks.jsonl"
+        tasks = read_tasks(tasks_file)
+        assert tasks[0].get("tdd") is False
+
+    def test_create_from_json_tdd_false_preserved(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_create --from-json with tdd=false preserves the opt-out value."""
+        payload = {"title": "JSON TDD opt-out", "tdd": False}
+        args = _make_create_args(from_json=json.dumps(payload))
+        cmd_create(args)
+
+        tasks_file = crumbs_env / "tasks.jsonl"
+        tasks = read_tasks(tasks_file)
+        assert tasks[0].get("tdd") is False
+
 
 # ---------------------------------------------------------------------------
 # TestShow
@@ -772,6 +819,50 @@ class TestUpdate:
         for field in ("success", "id", "title", "type", "status", "priority",
                       "description", "acceptance_criteria", "scope", "links", "notes"):
             assert field in parsed, f"Required field '{field}' missing from update --json output"
+
+    def test_update_tdd_sets_tdd_false(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_update with tdd=False stores tdd=False in the crumb record (opt-out)."""
+        _seed_task(crumbs_env, id="AF-1", tdd=True)
+        cmd_update(_make_update_args(id="AF-1", tdd=False))
+
+        tasks_file = crumbs_env / "tasks.jsonl"
+        tasks = read_tasks(tasks_file)
+        assert tasks[0].get("tdd") is False
+
+    def test_update_tdd_sets_tdd_true(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_update with tdd=True stores tdd=True in the crumb record."""
+        _seed_task(crumbs_env, id="AF-1", tdd=False)
+        cmd_update(_make_update_args(id="AF-1", tdd=True))
+
+        tasks_file = crumbs_env / "tasks.jsonl"
+        tasks = read_tasks(tasks_file)
+        assert tasks[0].get("tdd") is True
+
+    def test_update_tdd_none_does_not_change_tdd(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_update with tdd=None (no flag) leaves existing tdd value unchanged."""
+        _seed_task(crumbs_env, id="AF-1", tdd=False, status="open")
+        cmd_update(_make_update_args(id="AF-1", status="in_progress"))
+
+        tasks_file = crumbs_env / "tasks.jsonl"
+        tasks = read_tasks(tasks_file)
+        assert tasks[0].get("tdd") is False
+
+    def test_update_from_json_tdd_false_sets_tdd_false(
+        self, crumbs_env: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """cmd_update --from-json with tdd=false stores tdd=False via the JSON merge path."""
+        _seed_task(crumbs_env, id="AF-1", tdd=True)
+        cmd_update(_make_update_args(id="AF-1", from_json=json.dumps({"tdd": False})))
+
+        tasks_file = crumbs_env / "tasks.jsonl"
+        tasks = read_tasks(tasks_file)
+        assert tasks[0].get("tdd") is False
 
 
 # ---------------------------------------------------------------------------

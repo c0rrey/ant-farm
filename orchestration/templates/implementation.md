@@ -3,7 +3,7 @@
 
 ## Agent Prompt Template
 
-**(MANDATORY)**: Every spawned Implementer MUST receive ALL sections below. All 6 steps are required — skipping Step 2 (Design), Step 4 (Correctness Review), or Step 6 (Summary Doc) is a process failure. Copy this template verbatim and fill in the placeholders.
+**(MANDATORY)**: Every spawned Implementer MUST receive ALL sections below. All 7 steps are required — skipping Step 2 (Design), Step 2.5 (Write Tests), Step 4 (Correctness Review), or Step 6 (Summary Doc) is a process failure. Copy this template verbatim and fill in the placeholders.
 
 ```markdown
 Execute {task-type} for {file-or-component}:
@@ -19,7 +19,7 @@ Tasks: {TASK_ID_1}, {TASK_ID_2}, ...
 
 ---
 
-For each task, execute these 6 steps in order:
+For each task, execute these 7 steps in order:
 
 ## Step 1: Claim
 - Use the `crumb_show` MCP tool with `crumb_id: "<id>"` to get full details and acceptance criteria (CLI fallback: `crumb show <id>`)
@@ -38,8 +38,18 @@ For each approach:
 
 Then select the best approach (or create a hybrid that combines strengths from multiple approaches). Document your choice and reasoning before writing any code. When rejecting an approach, reference at least one specific weakness from a rejected alternative.
 
+## Step 2.5: Write Tests (MANDATORY)
+Before writing any implementation code, write failing tests that cover the acceptance criteria.
+
+- Identify the test files relevant to this task (check `tests/` or the test suite for the affected component)
+- Write failing tests for each acceptance criterion — tests should assert the expected post-implementation behavior
+- Run the tests to confirm they fail (red phase): `python -m pytest <test-file> -x` or equivalent
+- Commit the test files before implementing: `git add <test-files> && git commit -m "test: write failing tests for <task-id>"`
+
+If the task has no testable code changes (e.g., pure documentation or config), note this explicitly and skip to Step 3.
+
 ## Step 3: Implement
-Implement the chosen approach. Write clean, minimal code that satisfies the acceptance criteria.
+Implement the chosen approach. Write clean, minimal code that satisfies the acceptance criteria. Run your tests after implementation to confirm they pass (green phase).
 
 ## Step 4: Per-File Correctness Review (MANDATORY)
 After implementation, review EVERY file you changed or created:
@@ -165,6 +175,7 @@ Before sending any agent prompt, confirm it includes:
 - [ ] Root cause and acceptance criteria extracted from crumb
 - [ ] **Step 1**: `crumb_show` MCP tool + `crumb_update` with `status: "in_progress"` (CLI fallback: `crumb show` + `crumb update --status=in_progress`)
 - [ ] **Step 2**: "Design at least 4 approaches" with pros/cons (MANDATORY)
+- [ ] **Step 2.5**: "Write failing tests" before implementation (MANDATORY)
 - [ ] **Step 3**: Implementation instructions
 - [ ] **Step 4**: "Review EVERY file you changed" with explicit checks (MANDATORY)
 - [ ] **Step 5**: Commit instructions with `git pull --rebase`

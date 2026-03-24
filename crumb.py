@@ -708,6 +708,8 @@ def cmd_create(args: argparse.Namespace) -> None:
             payload["type"] = args.crumb_type
         if args.description:
             payload["description"] = args.description
+        if getattr(args, "tdd", None) is not None:
+            payload["tdd"] = args.tdd
 
         # Reject empty or whitespace-only titles
         if not payload.get("title", "").strip():
@@ -756,6 +758,7 @@ def cmd_create(args: argparse.Namespace) -> None:
             "title": payload.get("title", ""),
             "status": payload.get("status", "open"),
             "priority": payload.get("priority", config.get("default_priority", "P2")),
+            "tdd": payload.get("tdd", True),
             "created_at": payload.get("created_at", now),
             "updated_at": payload.get("updated_at", now),
         }
@@ -827,6 +830,11 @@ def cmd_update(args: argparse.Namespace) -> None:
         if args.description is not None:
             if crumb.get("description") != args.description:
                 crumb["description"] = args.description
+                changed = True
+
+        if getattr(args, "tdd", None) is not None:
+            if crumb.get("tdd") != args.tdd:
+                crumb["tdd"] = args.tdd
                 changed = True
 
         # --- partial JSON merge ---
@@ -2700,6 +2708,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_create.add_argument("--priority", choices=VALID_PRIORITIES)
     p_create.add_argument("--type", dest="crumb_type", choices=["task", "bug", "feature"])
     p_create.add_argument("--description", metavar="TEXT")
+    tdd_group = p_create.add_mutually_exclusive_group()
+    tdd_group.add_argument("--tdd", dest="tdd", action="store_true", default=None,
+                           help="Enable TDD for this crumb (default)")
+    tdd_group.add_argument("--no-tdd", dest="tdd", action="store_false",
+                           help="Disable TDD for this crumb")
+    p_create.set_defaults(tdd=None)
     _add_json_flag(p_create)
     p_create.set_defaults(func=cmd_create)
 
@@ -2713,6 +2727,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_update.add_argument("--description", metavar="TEXT")
     p_update.add_argument("--from-json", dest="from_json", metavar="JSON",
                           help="Merge a JSON object into the crumb (partial update)")
+    tdd_update_group = p_update.add_mutually_exclusive_group()
+    tdd_update_group.add_argument("--tdd", dest="tdd", action="store_true", default=None,
+                                  help="Enable TDD for this crumb")
+    tdd_update_group.add_argument("--no-tdd", dest="tdd", action="store_false",
+                                  help="Disable TDD for this crumb")
+    p_update.set_defaults(tdd=None)
     _add_json_flag(p_update)
     p_update.set_defaults(func=cmd_update)
 

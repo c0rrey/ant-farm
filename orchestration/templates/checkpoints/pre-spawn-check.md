@@ -39,9 +39,10 @@ Do NOT execute the prompt — only verify its contents.
 1. **Real task IDs**: Contains actual task IDs (e.g., `my-project-abc`), NOT placeholders like `<task-id>` or `<id>`
 2. **Real file paths**: Contains actual file paths with line numbers (e.g., `build.py:L200`), NOT placeholders like `<list from crumb>` or `<file>`
 3. **Root cause text**: Contains a specific root cause description, NOT `<copy from crumb>` or similar placeholders
-4. **All 6 mandatory steps present**:
+4. **All 7 mandatory steps present**:
    - Step 1: `crumb_show` MCP tool + `crumb_update` with `status: "in_progress"` (or CLI: `crumb show` + `crumb update --status=in_progress`)
    - Step 2: "Design at least 4 approaches" (MANDATORY keyword present)
+   - Step 2.5: "Write failing tests" before implementation (MANDATORY keyword present)
    - Step 3: Implementation instructions
    - Step 4: "Review EVERY file" or per-file correctness review (MANDATORY keyword present)
    - Step 5: Commit with `git pull --rebase`
