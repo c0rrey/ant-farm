@@ -17,6 +17,9 @@
  *   PreToolUse (matcher "Task|TeamCreate|SendMessage"):
  *     { "type": "command", "command": "node ~/.claude/hooks/ant-farm-gate-enforcer.js" }
  *
+ *   PreToolUse (matcher "Write|Edit|Bash"):
+ *     { "type": "command", "command": "node ~/.claude/hooks/ant-farm-security-scanner.js" }
+ *
  * Idempotency:
  *   Each function checks whether the entry is already present (by command string)
  *   before inserting. Re-running install does not add duplicate entries.
@@ -48,6 +51,7 @@ const SETTINGS_PATH = path.join(os.homedir(), '.claude', 'settings.json');
 const STATUSLINE_COMMAND = 'node ~/.claude/hooks/ant-farm-statusline.js';
 const SCOPE_ADVISOR_COMMAND = 'node ~/.claude/hooks/ant-farm-scope-advisor.js';
 const GATE_ENFORCER_COMMAND = 'node ~/.claude/hooks/ant-farm-gate-enforcer.js';
+const SECURITY_SCANNER_COMMAND = 'node ~/.claude/hooks/ant-farm-security-scanner.js';
 
 /**
  * Matcher string for the PreToolUse scope advisor hook.
@@ -60,6 +64,12 @@ const SCOPE_ADVISOR_MATCHER = 'Write|Edit';
  * Must match Task, TeamCreate, and SendMessage tools (the tools that spawn agents).
  */
 const GATE_ENFORCER_MATCHER = 'Task|TeamCreate|SendMessage';
+
+/**
+ * Matcher string for the PreToolUse security scanner hook.
+ * Must match Write, Edit, and Bash tools (the tools that modify files or run shell commands).
+ */
+const SECURITY_SCANNER_MATCHER = 'Write|Edit|Bash';
 
 /**
  * Reads and parses ~/.claude/settings.json.
@@ -244,6 +254,90 @@ function registerGateEnforcerHook(settings) {
 }
 
 /**
+ * Registers the ant-farm PreToolUse security scanner hook in the given settings object.
+ *
+ * The PreToolUse field is an array of `{ matcher, hooks: [...] }` group objects.
+ * ant-farm's entry is appended as a new group if it is not already present.
+ * Detection is by exact command string — if an existing group's hooks array
+ * already contains the ant-farm command, no duplicate is added.
+ *
+ * @param {object} settings  Mutable parsed settings object.
+ * @returns {{ changed: boolean }}
+ */
+function registerSecurityScannerHook(settings) {
+  // Ensure hooks and PreToolUse array exist.
+  if (!settings.hooks || typeof settings.hooks !== 'object') {
+    settings.hooks = {};
+  }
+  if (!Array.isArray(settings.hooks.PreToolUse)) {
+    settings.hooks.PreToolUse = [];
+  }
+
+  const preToolUse = settings.hooks.PreToolUse;
+
+  // Check whether the ant-farm security scanner command is already present in any group.
+  const alreadyPresent = preToolUse.some(
+    (group) =>
+      Array.isArray(group.hooks) &&
+      group.hooks.some(
+        (h) => typeof h === 'object' && h.command === SECURITY_SCANNER_COMMAND
+      )
+  );
+
+  if (alreadyPresent) {
+    return { changed: false };
+  }
+
+  // Append ant-farm's security scanner PreToolUse entry as a new group.
+  preToolUse.push({
+    matcher: SECURITY_SCANNER_MATCHER,
+    hooks: [{ type: 'command', command: SECURITY_SCANNER_COMMAND }],
+  });
+
+  return { changed: true };
+}
+
+/**
+ * Removes all ant-farm security scanner PreToolUse hook entries from the given settings object.
+ *
+ * Iterates all groups in hooks.PreToolUse, strips the ant-farm security scanner command
+ * from each group's hooks array, and prunes empty groups. Preserves all non-ant-farm entries.
+ *
+ * @param {object} settings  Mutable parsed settings object.
+ * @returns {{ changed: boolean }}
+ */
+function unregisterSecurityScannerHook(settings) {
+  if (
+    !settings.hooks ||
+    !Array.isArray(settings.hooks.PreToolUse) ||
+    settings.hooks.PreToolUse.length === 0
+  ) {
+    return { changed: false };
+  }
+
+  let changed = false;
+
+  settings.hooks.PreToolUse = settings.hooks.PreToolUse
+    .map((group) => {
+      if (!Array.isArray(group.hooks)) {
+        return group;
+      }
+      const filtered = group.hooks.filter(
+        (h) => !(typeof h === 'object' && h.command === SECURITY_SCANNER_COMMAND)
+      );
+      if (filtered.length !== group.hooks.length) {
+        changed = true;
+        return { ...group, hooks: filtered };
+      }
+      return group;
+    })
+    // Prune groups whose hooks array is now empty.
+    .filter((group) => !Array.isArray(group.hooks) || group.hooks.length > 0);
+
+  return { changed };
+}
+
+/**
  * Removes the ant-farm statusLine hook from the given settings object.
  * Only removes if the current command matches the ant-farm command exactly.
  * A user's custom statusLine is never touched.
@@ -345,7 +439,7 @@ function unregisterGateEnforcerHook(settings) {
 }
 
 /**
- * Registers all ant-farm hooks (statusLine + PreToolUse scope advisor + gate enforcer)
+ * Registers all ant-farm hooks (statusLine + PreToolUse scope advisor + gate enforcer + security scanner)
  * in Claude Code's settings.json.
  *
  * Reads the current settings, applies all registrations, and writes back
@@ -368,8 +462,9 @@ async function registerHooks({ dryRun = false, collector = null, settingsPath = 
 
   const { changed: saChanged } = registerScopeAdvisorHook(settings);
   const { changed: geChanged } = registerGateEnforcerHook(settings);
+  const { changed: ssChanged } = registerSecurityScannerHook(settings);
 
-  const anyChanged = slChanged || saChanged || geChanged;
+  const anyChanged = slChanged || saChanged || geChanged || ssChanged;
 
   if (dryRun) {
     if (collector) {
@@ -404,8 +499,9 @@ async function unregisterHooks({ dryRun = false, collector = null, settingsPath 
   const { changed: slChanged } = unregisterStatusLineHook(settings);
   const { changed: saChanged } = unregisterScopeAdvisorHook(settings);
   const { changed: geChanged } = unregisterGateEnforcerHook(settings);
+  const { changed: ssChanged } = unregisterSecurityScannerHook(settings);
 
-  const anyChanged = slChanged || saChanged || geChanged;
+  const anyChanged = slChanged || saChanged || geChanged || ssChanged;
 
   if (dryRun) {
     if (collector && anyChanged) {
@@ -427,15 +523,19 @@ module.exports = {
   registerStatusLineHook,
   registerScopeAdvisorHook,
   registerGateEnforcerHook,
+  registerSecurityScannerHook,
   unregisterStatusLineHook,
   unregisterScopeAdvisorHook,
   unregisterGateEnforcerHook,
+  unregisterSecurityScannerHook,
   registerHooks,
   unregisterHooks,
   STATUSLINE_COMMAND,
   SCOPE_ADVISOR_COMMAND,
   GATE_ENFORCER_COMMAND,
+  SECURITY_SCANNER_COMMAND,
   SCOPE_ADVISOR_MATCHER,
   GATE_ENFORCER_MATCHER,
+  SECURITY_SCANNER_MATCHER,
   SETTINGS_PATH,
 };

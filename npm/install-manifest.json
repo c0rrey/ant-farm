@@ -191,6 +191,11 @@
       "description": "ant-farm PreToolUse gate enforcer hook script"
     },
     {
+      "src": "hooks/ant-farm-security-scanner.js",
+      "dst": "hooks/ant-farm-security-scanner.js",
+      "description": "ant-farm PreToolUse security scanner hook script"
+    },
+    {
       "src": "hooks/lib/gate-manager.js",
       "dst": "hooks/lib/gate-manager.js",
       "description": "ant-farm hook library: gate status manager"
@@ -214,6 +219,16 @@
       "src": "hooks/lib/scope-reader.js",
       "dst": "hooks/lib/scope-reader.js",
       "description": "ant-farm hook library: scope sidecar reader"
+    },
+    {
+      "src": "hooks/lib/security-scanner.js",
+      "dst": "hooks/lib/security-scanner.js",
+      "description": "ant-farm hook library: security content scanner"
+    },
+    {
+      "src": "hooks/lib/security-patterns.json",
+      "dst": "hooks/lib/security-patterns.json",
+      "description": "ant-farm hook library: security pattern definitions"
     },
     {
       "src": "mcp_server.py",
