@@ -26,9 +26,11 @@
  *   "statusLine": { "type": "command", "command": "node /path/to/ant-farm-statusline.js" }
  *
  * Exports:
- *   handler(input) — async function that accepts the parsed JSON input object
- *                    and returns the status string (or empty string for silent).
- *                    Used by tests to exercise the logic without spawning a process.
+ *   handler(input)        — async function that accepts the parsed JSON input object
+ *                           and returns the status string (or empty string for silent).
+ *                           Used by tests to exercise the logic without spawning a process.
+ *   writeCtxMetrics(sessionDir, metrics) — writes ctx-metrics.json atomically to
+ *                           SESSION_DIR. Used by tests to exercise metrics write in isolation.
  */
 
 const fs = require('fs');
@@ -108,9 +110,60 @@ function countOpenCrumbs() {
 }
 
 /**
+ * Context metrics written to SESSION_DIR/ctx-metrics.json on every statusLine event.
+ *
+ * @typedef {Object} CtxMetrics
+ * @property {number} percentage_remaining  Context window percentage remaining (0–100).
+ * @property {string} timestamp             ISO 8601 timestamp of this write.
+ * @property {number} tool_use_count        Number of tool calls in this session (0 if unavailable).
+ */
+
+/**
+ * Writes context usage metrics to `{sessionDir}/ctx-metrics.json` atomically
+ * using a tmp-file + rename strategy.
+ *
+ * If the write fails for any reason the error is debug-logged and silently
+ * swallowed — metrics writes must never affect the statusLine output.
+ *
+ * @param {string}     sessionDir  Absolute path to the active session directory.
+ * @param {CtxMetrics} metrics     Metrics object to serialise as JSON.
+ * @returns {void}
+ */
+function writeCtxMetrics(sessionDir, metrics) {
+  const dest = path.join(sessionDir, 'ctx-metrics.json');
+  const tmp = dest + '.tmp';
+  try {
+    const json = JSON.stringify(metrics);
+    fs.writeFileSync(tmp, json, 'utf8');
+    fs.renameSync(tmp, dest);
+    debugLog(HOOK_NAME, 'wrote ctx-metrics.json', dest);
+  } catch (err) {
+    debugLog(HOOK_NAME, 'ctx-metrics write failed', err && err.message);
+    // Silent no-op — metrics write failure must never surface to Claude Code.
+  }
+}
+
+/**
+ * Extracts a numeric context metric from the statusLine input payload.
+ * Returns `fallback` when the value is absent, null, or NaN.
+ *
+ * @param {unknown} value     Raw value from the input payload.
+ * @param {number}  fallback  Default when value is unavailable.
+ * @returns {number}
+ */
+function extractNumericMetric(value, fallback) {
+  if (value === null || value === undefined) {
+    return fallback;
+  }
+  const n = Number(value);
+  return isNaN(n) ? fallback : n;
+}
+
+/**
  * Core handler: accepts the parsed JSON event object from Claude Code's
  * statusLine event, reads session state, and returns the status string.
  *
+ * Side effect: writes ctx-metrics.json to SESSION_DIR when a session is active.
  * Returns an empty string for any silent no-op condition.
  *
  * @param {object} input  Parsed JSON from Claude Code's statusLine stdin.
@@ -142,6 +195,30 @@ async function handler(input) {
     }
 
     debugLog(HOOK_NAME, 'parsed state', state);
+
+    // Derive SESSION_DIR from the progress.log path (progress.log lives directly
+    // inside SESSION_DIR — its parent is always the session directory).
+    const sessionDir = path.dirname(progressLogPath);
+
+    // Extract context metrics from the statusLine input payload.
+    // Claude Code provides context_window.remaining_percentage directly; fall back
+    // to computing 100 - used_percentage when the field is absent (older versions).
+    const ctxWindow = (input && input.context_window) || {};
+    const usedPct = extractNumericMetric(ctxWindow.used_percentage, 0);
+    const remainingPct = extractNumericMetric(
+      ctxWindow.remaining_percentage,
+      Math.max(0, 100 - usedPct)
+    );
+    const toolUseCount = extractNumericMetric(
+      input && input.session && input.session.tool_use_count,
+      0
+    );
+
+    writeCtxMetrics(sessionDir, {
+      percentage_remaining: Math.min(100, Math.max(0, remainingPct)),
+      timestamp: new Date().toISOString(),
+      tool_use_count: toolUseCount,
+    });
 
     const openCount = countOpenCrumbs();
 
@@ -190,4 +267,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { handler };
+module.exports = { handler, writeCtxMetrics };
