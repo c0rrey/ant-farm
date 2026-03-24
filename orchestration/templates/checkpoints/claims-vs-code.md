@@ -19,7 +19,7 @@ Verify the substance of the Implementer's work by cross-checking claims against 
 **Summary doc**: `{SESSION_DIR}/summaries/{TASK_SUFFIX}.md`
 **Task ID**: {TASK_ID}
 
-Read the summary doc first, then perform these 4 checks:
+Read the summary doc first, then perform these 5 checks:
 
 ## Check 1: Git Diff Verification
 Run `git log --oneline -5` to identify the agent's commit(s), then run `git diff {before-commit}..{after-commit}` (or `git show {commit}` for single commits).
@@ -61,8 +61,31 @@ Pick 1 changed file and read the agent's correctness notes for it.
 - Or are they generic boilerplate? (e.g., "no issues found, code looks clean")
 - Read the actual file and verify the notes are accurate
 
+## Check 5: Test-First Ordering
+Use `crumb validate-tdd` to verify that test files appear in commits chronologically before or in the same commit as implementation files.
+
+**Prerequisite — check for tdd: false:**
+Use `crumb_show` (or `crumb show {TASK_ID}`) and inspect the `tdd` field.
+- If `tdd: false`, skip this check entirely and record: "Check 5 SKIPPED — tdd: false for {TASK_ID}"
+- If `tdd` is absent or `tdd: true`, proceed with the check below.
+
+**Running the check:**
+1. Identify the commit range from the summary doc (e.g. the commit hash recorded in the "Commit" section).
+2. Run: `crumb validate-tdd <commit-hash> --json`
+   (Use a single commit hash to inspect just that commit, or a range like `HEAD~3..HEAD`.)
+3. Examine the JSON output:
+   - `test_files` — files matching `*_test.*`, `test_*.*`, `*.spec.*`, `*.test.*`
+   - `impl_files` — all other added files
+   - `ordering_violations` — impl files added before any test file
+4. If `merge_warning` is present in the output, note it in your report.
+
+**Verdict for Check 5:**
+- **PASS** — `ordering_violations` is empty, OR only test files were added, OR no files were added at all.
+- **FAIL** — `ordering_violations` is non-empty (implementation committed before tests).
+- **SKIP** — `tdd: false` on the crumb.
+
 ## Verdict
-- **PASS** — All 4 checks confirm substance
+- **PASS** — All 5 checks confirm substance
 - **PARTIAL: <list checks that failed with evidence>** — Some checks failed
 - **FAIL: <list all failures with evidence>** — Multiple checks failed or critical fabrication detected
 

@@ -27,6 +27,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import sys
 
 import time
@@ -2275,6 +2276,215 @@ def cmd_validate_spec(args: argparse.Namespace) -> None:
 
 
 # ---------------------------------------------------------------------------
+# validate-tdd subcommand — verify test-first ordering in a commit range
+# ---------------------------------------------------------------------------
+
+#: Patterns that identify test files.
+_TEST_FILE_PATTERNS: List[re.Pattern[str]] = [
+    re.compile(r".*_test\.[^/]+$"),     # *_test.*
+    re.compile(r"(?:^|/)test_[^/]+$"),  # test_*.*
+    re.compile(r".*\.spec\.[^/]+$"),    # *.spec.*
+    re.compile(r".*\.test\.[^/]+$"),    # *.test.*
+]
+
+
+def _is_test_file(path: str) -> bool:
+    """Return True when *path* matches any known test-file pattern."""
+    for pat in _TEST_FILE_PATTERNS:
+        if pat.search(path):
+            return True
+    return False
+
+
+def _git_run(args: List[str], cwd: str) -> subprocess.CompletedProcess:
+    """Run a git command and return the CompletedProcess."""
+    return subprocess.run(
+        ["git", *args],
+        capture_output=True,
+        text=True,
+        cwd=cwd,
+    )
+
+
+def _parse_commit_range(commit_range: str) -> Tuple[Optional[str], Optional[str]]:
+    """Split 'A..B' into (A, B). Returns (None, commit_range) for bare hashes."""
+    if ".." in commit_range:
+        parts = commit_range.split("..", 1)
+        return parts[0], parts[1]
+    return None, commit_range
+
+
+def cmd_validate_tdd(args: argparse.Namespace) -> None:
+    """Verify test-first ordering in a commit range.
+
+    Uses ``git log --diff-filter=A --name-only`` to collect files added in
+    each commit, then classifies them as test files (matching known patterns)
+    or implementation files.  A violation occurs when an implementation file
+    is added in an earlier commit than any test file that shares the same
+    directory root.  Warns when merge commits are detected in the range.
+
+    Args:
+        args: Parsed CLI arguments.  Expected attributes:
+
+            - ``commit_range`` (str): Git commit range (e.g. ``HEAD~3..HEAD``).
+            - ``crumb_id`` (Optional[str]): Crumb ID to check for ``tdd:
+              false``.
+            - ``json_output`` (bool): Emit JSON instead of human-readable text.
+    """
+    commit_range: str = args.commit_range
+    crumb_id: Optional[str] = getattr(args, "crumb_id", None)
+    json_output: bool = getattr(args, "json_output", False)
+
+    # Honour tdd: false if a crumb ID is provided.
+    if crumb_id:
+        try:
+            path = require_tasks_jsonl()
+            tasks = read_tasks(path)
+            crumb = _require_crumb(tasks, crumb_id)
+            if crumb.get("tdd") is False:
+                if json_output:
+                    print(json.dumps({"skipped": True, "reason": "tdd: false", "crumb_id": crumb_id}, indent=2))
+                else:
+                    print(f"validate-tdd: SKIP — tdd: false for {crumb_id}")
+                return
+        except SystemExit:
+            # _require_crumb / require_tasks_jsonl calls die() which exits;
+            # propagate the exit rather than swallowing it.
+            raise
+
+    cwd = os.getcwd()
+
+    # Detect merge commits in the range.
+    merge_check = _git_run(
+        ["log", "--merges", "--oneline", commit_range],
+        cwd=cwd,
+    )
+    merge_commits: List[str] = [
+        line.strip() for line in merge_check.stdout.splitlines() if line.strip()
+    ]
+    has_merges = bool(merge_commits)
+
+    # Collect added files per commit (ordered oldest-first via --reverse).
+    log_result = _git_run(
+        [
+            "log",
+            "--reverse",
+            "--diff-filter=A",
+            "--name-only",
+            "--format=%H",
+            commit_range,
+        ],
+        cwd=cwd,
+    )
+
+    if log_result.returncode != 0:
+        err = log_result.stderr.strip()
+        die(f"git log failed: {err or '(no stderr)'}")
+
+    # Parse output: alternating commit hash lines and file-name lines.
+    # ``--format=%H`` emits a blank line before the file list for each commit.
+    commits_ordered: List[str] = []      # commit hashes in reverse order (oldest first)
+    commit_files: Dict[str, List[str]] = {}  # hash -> list of added files
+    current_commit: Optional[str] = None
+
+    for raw_line in log_result.stdout.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        # A full-length hex string (40 chars) is a commit hash.
+        if re.fullmatch(r"[0-9a-f]{40}", line):
+            current_commit = line
+            commits_ordered.append(line)
+            commit_files[current_commit] = []
+        elif current_commit is not None:
+            commit_files[current_commit].append(line)
+
+    # Classify files and build ordered lists.
+    test_files: List[Dict[str, str]] = []
+    impl_files: List[Dict[str, str]] = []
+    ordering_violations: List[Dict[str, str]] = []
+
+    # Map from file path to the index of the commit that first added it.
+    file_commit_index: Dict[str, int] = {}
+    for idx, chash in enumerate(commits_ordered):
+        for fpath in commit_files.get(chash, []):
+            if fpath not in file_commit_index:
+                file_commit_index[fpath] = idx
+            entry = {"file": fpath, "commit": chash}
+            if _is_test_file(fpath):
+                test_files.append(entry)
+            else:
+                impl_files.append(entry)
+
+    # Detect ordering violations: impl file added before the earliest test file.
+    # We check at the directory-root level: for each impl file, check whether
+    # ANY test file was added at the same commit index or earlier.
+    if test_files and impl_files:
+        min_test_idx = min(file_commit_index[e["file"]] for e in test_files)
+        for entry in impl_files:
+            impl_idx = file_commit_index[entry["file"]]
+            if impl_idx < min_test_idx:
+                ordering_violations.append(
+                    {
+                        "impl_file": entry["file"],
+                        "impl_commit": entry["commit"],
+                        "message": (
+                            f"{entry['file']} added before any test file "
+                            f"(commit {entry['commit'][:8]})"
+                        ),
+                    }
+                )
+    elif impl_files and not test_files:
+        # Implementation files present but no test files added at all.
+        for entry in impl_files:
+            ordering_violations.append(
+                {
+                    "impl_file": entry["file"],
+                    "impl_commit": entry["commit"],
+                    "message": f"{entry['file']} added with no test files in range",
+                }
+            )
+
+    verdict = "PASS" if not ordering_violations else "FAIL"
+
+    if json_output:
+        result: Dict[str, Any] = {
+            "verdict": verdict,
+            "commit_range": commit_range,
+            "test_files": test_files,
+            "impl_files": impl_files,
+            "ordering_violations": ordering_violations,
+        }
+        if has_merges:
+            result["merge_warning"] = (
+                f"{len(merge_commits)} merge commit(s) detected; "
+                "--diff-filter=A results may be incomplete"
+            )
+            result["merge_commits"] = merge_commits
+        print(json.dumps(result, indent=2))
+    else:
+        if has_merges:
+            print(
+                f"warning: {len(merge_commits)} merge commit(s) detected in range; "
+                "--diff-filter=A results may be incomplete",
+                file=sys.stderr,
+            )
+        print(f"validate-tdd: {verdict}")
+        print(f"  commit range : {commit_range}")
+        print(f"  test files   : {len(test_files)}")
+        print(f"  impl files   : {len(impl_files)}")
+        if ordering_violations:
+            print("  violations:")
+            for v in ordering_violations:
+                print(f"    {v['message']}")
+        else:
+            print("  no ordering violations")
+
+    if verdict == "FAIL":
+        sys.exit(1)
+
+
+# ---------------------------------------------------------------------------
 # Prune subcommand — remove old session directories
 # ---------------------------------------------------------------------------
 
@@ -2667,6 +2877,7 @@ def build_parser() -> argparse.ArgumentParser:
             "  session-retries  Show retry counts for a session directory\n"
             "  session-reset-retries  Clear the retry log for a session directory\n"
             "  session-status   Show current position, last step, and next step for a session\n"
+            "  validate-tdd     Verify test-first ordering in a commit range\n"
         ),
     )
     parser.set_defaults(func=None)
@@ -2846,6 +3057,26 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_json_flag(p_validate_spec)
     p_validate_spec.set_defaults(func=cmd_validate_spec)
+
+    # --- validate-tdd ---
+    p_validate_tdd = sub.add_parser(
+        "validate-tdd",
+        help="Verify test-first ordering in a commit range",
+    )
+    p_validate_tdd.add_argument(
+        "commit_range",
+        metavar="COMMIT_RANGE",
+        help="Git commit range to inspect (e.g. HEAD~3..HEAD or a single ref)",
+    )
+    p_validate_tdd.add_argument(
+        "--crumb-id",
+        dest="crumb_id",
+        metavar="ID",
+        default=None,
+        help="Crumb ID to check for tdd: false (skips check when disabled)",
+    )
+    _add_json_flag(p_validate_tdd)
+    p_validate_tdd.set_defaults(func=cmd_validate_tdd)
 
     # --- tree ---
     p_tree = sub.add_parser("tree", help="Show trail/crumb hierarchy")

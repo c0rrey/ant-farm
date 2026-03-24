@@ -2024,3 +2024,313 @@ class TestPruneJSON:
 
         assert result.returncode == 0
         assert not result.stdout.strip().startswith("{")
+
+
+# ---------------------------------------------------------------------------
+# Helpers for validate-tdd tests
+# ---------------------------------------------------------------------------
+
+
+def _make_git_repo(base: Path) -> str:
+    """Initialise a minimal git repo under *base* and return the root commit hash.
+
+    Sets a local user.name and user.email so commits work in CI environments
+    that have no global git config.  Creates a dummy initial commit so that
+    subsequent commits always have a reachable parent for ``A..B`` ranges.
+
+    Returns:
+        The hash of the initial (root) commit.
+    """
+    subprocess.run(["git", "init", str(base)], check=True, capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.email", "test@example.com"],
+        cwd=str(base), check=True, capture_output=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "Test User"],
+        cwd=str(base), check=True, capture_output=True,
+    )
+    # Add a sentinel initial commit so every subsequent commit has a parent.
+    return _git_add_commit(base, {".gitkeep": ""}, "initial commit")
+
+
+def _git_add_commit(base: Path, files: dict, message: str) -> str:
+    """Write *files* (name -> content), ``git add`` them, commit, and return the hash.
+
+    Args:
+        base: Working directory (must already be a git repo).
+        files: Dict mapping relative filename to text content.
+        message: Commit message.
+
+    Returns:
+        The full 40-char commit hash.
+    """
+    for name, content in files.items():
+        fpath = base / name
+        fpath.parent.mkdir(parents=True, exist_ok=True)
+        fpath.write_text(content, encoding="utf-8")
+        subprocess.run(
+            ["git", "add", name], cwd=str(base), check=True, capture_output=True
+        )
+    subprocess.run(
+        ["git", "commit", "-m", message],
+        cwd=str(base), check=True, capture_output=True,
+    )
+    result = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=str(base), check=True, capture_output=True, text=True,
+    )
+    return result.stdout.strip()
+
+
+# ---------------------------------------------------------------------------
+# TestValidateTDD
+# ---------------------------------------------------------------------------
+
+
+class TestValidateTDD:
+    """Integration tests for ``crumb validate-tdd``."""
+
+    # ------------------------------------------------------------------
+    # AC-1 / AC-2 — basic PASS when tests appear before or with impl files
+    # ------------------------------------------------------------------
+
+    def test_pass_when_test_added_before_impl(self, tmp_path: Path) -> None:
+        """validate-tdd exits 0 when test file is committed before implementation.
+
+        Acceptance criterion: test files (test_*.* pattern) must appear before
+        or in the same commit as implementation files; no violation when they do.
+        """
+        _make_crumbs_env(tmp_path)
+        root = _make_git_repo(tmp_path)
+
+        # Commit: test file only
+        _git_add_commit(tmp_path, {"test_foo.py": "# test"}, "add test")
+        # Commit: implementation file
+        commit_impl = _git_add_commit(tmp_path, {"foo.py": "# impl"}, "add impl")
+
+        result = _run(["validate-tdd", f"{root}..{commit_impl}"], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected PASS when test precedes impl.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        assert "PASS" in result.stdout, f"Expected 'PASS' in output.\nstdout: {result.stdout!r}"
+
+    def test_fail_when_impl_added_before_test(self, tmp_path: Path) -> None:
+        """validate-tdd exits 1 when implementation file is committed before test.
+
+        Acceptance criterion: ordering_violations is non-empty when impl precedes tests.
+        """
+        _make_crumbs_env(tmp_path)
+        root = _make_git_repo(tmp_path)
+
+        # Commit: implementation file (no test yet — violation)
+        _git_add_commit(tmp_path, {"foo.py": "# impl"}, "add impl")
+        # Commit: test file added later
+        commit_test = _git_add_commit(tmp_path, {"test_foo.py": "# test"}, "add test")
+
+        result = _run(["validate-tdd", f"{root}..{commit_test}"], cwd=tmp_path)
+
+        assert result.returncode == 1, (
+            f"Expected FAIL when impl precedes test.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        assert "FAIL" in result.stdout, f"Expected 'FAIL' in output.\nstdout: {result.stdout!r}"
+
+    # ------------------------------------------------------------------
+    # AC-2 — test file patterns recognised
+    # ------------------------------------------------------------------
+
+    def test_recognises_all_test_file_patterns(self, tmp_path: Path) -> None:
+        """All four test-file patterns are recognised as test files.
+
+        Acceptance criterion: *_test.*, test_*.*, *.spec.*, *.test.* are test files.
+        """
+        _make_crumbs_env(tmp_path)
+        root = _make_git_repo(tmp_path)
+
+        # Add all test-pattern files in the first commit, impl in second.
+        _git_add_commit(
+            tmp_path,
+            {
+                "foo_test.py": "# test",
+                "test_bar.js": "// test",
+                "baz.spec.ts": "// spec",
+                "qux.test.ts": "// test",
+            },
+            "add tests",
+        )
+        commit_impl = _git_add_commit(
+            tmp_path, {"impl.py": "# impl"}, "add impl"
+        )
+
+        result = _run(["validate-tdd", "--json", f"{root}..{commit_impl}"], cwd=tmp_path)
+
+        assert result.returncode == 0, (
+            f"Expected PASS.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        parsed = json.loads(result.stdout)
+        test_file_paths = [e["file"] for e in parsed["test_files"]]
+        assert "foo_test.py" in test_file_paths
+        assert "test_bar.js" in test_file_paths
+        assert "baz.spec.ts" in test_file_paths
+        assert "qux.test.ts" in test_file_paths
+
+    # ------------------------------------------------------------------
+    # AC-3 — tdd: false skips Check 5
+    # ------------------------------------------------------------------
+
+    def test_skips_when_tdd_false(self, tmp_path: Path) -> None:
+        """validate-tdd exits 0 and prints SKIP when crumb has tdd: false.
+
+        Acceptance criterion: when --crumb-id points to a crumb with tdd: false,
+        the check is skipped (exit 0, no violation reported).
+        """
+        _make_crumbs_env(tmp_path)
+        _make_git_repo(tmp_path)
+
+        # Create a crumb with tdd: false.
+        # crumb create prints "created AF-N"; extract just the ID.
+        create_result = _run(
+            ["create", "--title", "No TDD task", "--no-tdd"], cwd=tmp_path
+        )
+        assert create_result.returncode == 0
+        crumb_id = create_result.stdout.strip().split()[-1]
+
+        # The git range is irrelevant because tdd: false causes an early exit
+        # before any git commands are run.
+        result = _run(
+            ["validate-tdd", "HEAD~1..HEAD", "--crumb-id", crumb_id],
+            cwd=tmp_path,
+        )
+
+        assert result.returncode == 0, (
+            f"Expected exit 0 (SKIP) for tdd: false.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        assert "SKIP" in result.stdout.upper(), (
+            f"Expected SKIP in output.\nstdout: {result.stdout!r}"
+        )
+
+    # ------------------------------------------------------------------
+    # AC-5 — --json returns structured result
+    # ------------------------------------------------------------------
+
+    def test_json_returns_structured_result(self, tmp_path: Path) -> None:
+        """validate-tdd --json returns test_files, impl_files, ordering_violations.
+
+        Acceptance criterion: structured JSON output contains all three arrays.
+        """
+        _make_crumbs_env(tmp_path)
+        root = _make_git_repo(tmp_path)
+
+        _git_add_commit(tmp_path, {"test_foo.py": "# test"}, "add test")
+        commit_impl = _git_add_commit(tmp_path, {"foo.py": "# impl"}, "add impl")
+
+        result = _run(
+            ["validate-tdd", "--json", f"{root}..{commit_impl}"], cwd=tmp_path
+        )
+
+        assert result.returncode == 0, (
+            f"Expected PASS.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
+        parsed = json.loads(result.stdout)
+        assert "test_files" in parsed, "JSON must contain 'test_files'"
+        assert "impl_files" in parsed, "JSON must contain 'impl_files'"
+        assert "ordering_violations" in parsed, "JSON must contain 'ordering_violations'"
+        assert isinstance(parsed["test_files"], list)
+        assert isinstance(parsed["impl_files"], list)
+        assert isinstance(parsed["ordering_violations"], list)
+
+    def test_json_skipped_when_tdd_false(self, tmp_path: Path) -> None:
+        """validate-tdd --json returns skipped:true when tdd: false.
+
+        Acceptance criterion: JSON output includes 'skipped: true' and 'crumb_id'.
+        """
+        _make_crumbs_env(tmp_path)
+        _make_git_repo(tmp_path)
+
+        create_result = _run(
+            ["create", "--title", "No TDD", "--no-tdd"], cwd=tmp_path
+        )
+        # crumb create prints "created AF-N"; extract just the ID.
+        crumb_id = create_result.stdout.strip().split()[-1]
+
+        # tdd: false causes early return before git is invoked — range irrelevant.
+        result = _run(
+            ["validate-tdd", "--json", "HEAD~1..HEAD", "--crumb-id", crumb_id],
+            cwd=tmp_path,
+        )
+
+        assert result.returncode == 0
+        parsed = json.loads(result.stdout)
+        assert parsed.get("skipped") is True
+        assert parsed.get("crumb_id") == crumb_id
+
+    # ------------------------------------------------------------------
+    # AC-6 — warns on merge commits
+    # ------------------------------------------------------------------
+
+    def test_warns_on_merge_commit(self, tmp_path: Path) -> None:
+        """validate-tdd warns to stderr when a merge commit is in the range.
+
+        Acceptance criterion: merge commits trigger a warning message.
+        """
+        _make_crumbs_env(tmp_path)
+        root = _make_git_repo(tmp_path)
+
+        # Commit on the default branch.
+        main_commit = _git_add_commit(tmp_path, {"base.py": "# base"}, "base commit")
+
+        # Create a feature branch from root and add a test file there.
+        subprocess.run(
+            ["git", "checkout", "-b", "feature", root],
+            cwd=str(tmp_path), check=True, capture_output=True,
+        )
+        _git_add_commit(tmp_path, {"test_feature.py": "# test"}, "feature test")
+
+        # Switch back to the default branch (use rev-parse to find its name).
+        default_branch = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            cwd=str(tmp_path), capture_output=True, text=True,
+        ).stdout.strip()
+        # We're on feature; HEAD of default branch is main_commit
+        subprocess.run(
+            ["git", "checkout", main_commit],  # detached HEAD ok for test
+            cwd=str(tmp_path), check=True, capture_output=True,
+        )
+        # Re-create default branch pointer and check it out
+        r = subprocess.run(
+            ["git", "branch", "--list"],
+            cwd=str(tmp_path), capture_output=True, text=True,
+        )
+        branch_names = [b.strip().lstrip("* ") for b in r.stdout.splitlines()]
+        # Determine original default branch name (master or main).
+        orig_branch = next(
+            (b for b in branch_names if b in ("master", "main")),
+            branch_names[0] if branch_names else "master",
+        )
+        subprocess.run(
+            ["git", "checkout", orig_branch],
+            cwd=str(tmp_path), check=True, capture_output=True,
+        )
+
+        # Merge feature --no-ff to force a merge commit.
+        subprocess.run(
+            ["git", "merge", "--no-ff", "feature", "-m", "merge feature"],
+            cwd=str(tmp_path), check=True, capture_output=True,
+        )
+
+        merge_commit = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=str(tmp_path), check=True, capture_output=True, text=True,
+        ).stdout.strip()
+
+        # Range from root to merge commit; merge commit is within the range.
+        result = _run(
+            ["validate-tdd", f"{root}..{merge_commit}"],
+            cwd=tmp_path,
+        )
+
+        # The merge warning goes to stderr.
+        assert "merge" in result.stderr.lower() or "merge" in result.stdout.lower(), (
+            f"Expected merge warning.\nstdout: {result.stdout!r}\nstderr: {result.stderr!r}"
+        )
