@@ -17,10 +17,12 @@ It is not an open-ended autonomous coding agent. It is a constrained orchestrati
 
 ## How It Works
 
-ant-farm defines two workflows:
+ant-farm defines four workflows:
 
 - **Planning** (`/ant-farm-plan`): turns a freeform request or structured spec into dependency-aware tasks (trails and crumbs) via requirements gathering, parallel research, and decomposition.
 - **Execution** (`/ant-farm-work` or "let's get to work"): runs an implementation session with recon, prompt composition, parallel agent spawning, post-commit verification, code review, and documentation.
+- **Lite mode** (`/ant-farm-quick`): single-crumb execution path that skips Recon Planner, Prompt Composer, and Reviewer overhead. For self-contained, low-risk tasks.
+- **Pause** (`/ant-farm-pause`): saves session state to `handoff.json` and `continue-here.md` for safe resumption after context exhaustion or deliberate pause.
 
 The core idea is **constrained delegation**. Work is split across specialist agents, but progression is controlled by artifacts on disk, verification checkpoints, retry limits, and explicit escalation to you when things go wrong.
 
@@ -97,12 +99,16 @@ All checkpoint artifacts are written to `<session-dir>/pc/` with timestamped fil
 
 ```bash
 git clone <repo-url> && cd ant-farm
-./scripts/setup.sh           # installs agents, orchestration, skills, crumb CLI
+./scripts/setup.sh           # installs agents, orchestration, hooks, MCP, skills, crumb CLI
 ```
 
 The setup script installs:
 - Agent definitions (`agents/*.md`) to `~/.claude/agents/`
 - Orchestration files to `~/.claude/orchestration/`
+- Hooks (`hooks/*.js`, `hooks/lib/`) to `~/.claude/hooks/`
+- MCP server (`mcp_server.py`) to `~/.claude/mcp_server.py`
+- Hook registration in `~/.claude/settings.json`
+- MCP registration in `~/.claude.json`
 - Skills to `~/.claude/skills/ant-farm-*/SKILL.md`
 - `crumb.py` to `~/.local/bin/crumb`
 - Orchestration triggers to your project's `CLAUDE.md`
@@ -145,9 +151,25 @@ ant-farm/
 │   ├── ant-farm-researcher.md
 │   ├── ant-farm-spec-writer.md
 │   └── ant-farm-session-scribe.md
+├── hooks/                   # Claude Code hooks (installed to ~/.claude/hooks/)
+│   ├── ant-farm-statusline.js       # Status line display
+│   ├── ant-farm-scope-advisor.js    # Scope boundary enforcement (PreToolUse)
+│   ├── ant-farm-security-scanner.js # Security pattern scanning (PreToolUse)
+│   ├── ant-farm-context-monitor.js  # Context window usage tracking (PostToolUse)
+│   ├── ant-farm-gate-enforcer.js    # Gate progression enforcement (PreToolUse)
+│   └── lib/                         # Shared hook libraries
+│       ├── gate-manager.js, wave-tracker.js, retry-tracker.js
+│       ├── scope-reader.js, progress-reader.js, debug-log.js
+│       ├── security-scanner.js, security-patterns.json
+├── npm/                     # Hook and MCP registration (installer tooling)
+│   ├── install-manifest.json        # Declares all installable files
+│   ├── lib/hooks-registration.js    # Registers hooks in settings.json
+│   ├── lib/mcp-registration.js      # Registers MCP server in .claude.json
+│   └── test/                        # Installer tests
 ├── orchestration/
 │   ├── RULES.md             # Orchestrator's execution workflow steps and gates
 │   ├── RULES-decompose.md   # Planner's decomposition workflow
+│   ├── RULES-lite.md        # Lite mode workflow (single-crumb execution)
 │   ├── RULES-review.md      # Review-phase-specific rules
 │   ├── SETUP.md             # How to wire orchestration into a new project
 │   ├── GLOSSARY.md          # Term definitions used across docs
@@ -168,9 +190,16 @@ ant-farm/
 │   ├── setup.sh                     # Installs everything to ~/.claude/ and PATH
 │   ├── build-review-prompts.sh      # Builds review prompts from templates
 │   └── parse-progress-log.sh        # Session recovery from progress log
-├── skills/                  # Slash commands (/ant-farm-work, /ant-farm-plan, etc.)
+├── skills/                  # Slash commands
+│   ├── work.md              # /ant-farm-work — full execution mode
+│   ├── plan.md              # /ant-farm-plan — spec decomposition
+│   ├── quick.md             # /ant-farm-quick — lite mode (single crumb)
+│   ├── pause.md             # /ant-farm-pause — session pause with handoff
+│   ├── status.md            # /ant-farm-status — project dashboard
+│   └── init.md              # /ant-farm-init — bootstrap .crumbs/ in a new project
 ├── crumb.py                 # Task-tracking CLI (installed to ~/.local/bin/crumb)
-├── tests/                   # Tests for crumb.py
+├── mcp_server.py            # MCP server wrapping crumb.py (installed to ~/.claude/)
+├── tests/                   # Tests for crumb.py and hooks
 ├── CONTRIBUTING.md          # How to add agents, checkpoints, and templates
 ├── CHANGELOG.md             # Session-by-session development history
 └── .crumbs/                 # Task database and session artifacts
@@ -286,6 +315,46 @@ Agent definitions live in `agents/` and are installed to `~/.claude/agents/` by 
 | `ant-farm-spec-writer` | Requirements gathering: structured specs with acceptance criteria |
 | `ant-farm-session-scribe` | Session Scribe: exec summaries and CHANGELOG entries |
 
+## Hooks
+
+Hooks are Claude Code event handlers installed to `~/.claude/hooks/` by `scripts/setup.sh`. They run automatically during sessions — no agent or Orchestrator action required.
+
+| Hook | Event | What it does |
+|------|-------|-------------|
+| `ant-farm-statusline` | statusLine | Displays session progress, current step, and agent count |
+| `ant-farm-scope-advisor` | PreToolUse | Validates that Write/Edit operations stay within the task's declared file scope. Has advisory and enforcing modes |
+| `ant-farm-security-scanner` | PreToolUse | Scans Write/Edit/Bash content against known security anti-patterns (hardcoded secrets, shell injection, etc.) |
+| `ant-farm-context-monitor` | PostToolUse | Tracks context window consumption and warns when approaching thresholds |
+| `ant-farm-gate-enforcer` | PreToolUse | Blocks out-of-order gate progression (e.g., prevents spawning agents before startup-check passes) |
+
+Supporting libraries in `hooks/lib/` include `gate-manager.js` (gate status tracking), `wave-tracker.js` (wave execution tracking), `retry-tracker.js` (retry event tracking), `scope-reader.js` (scope sidecar reader), `progress-reader.js` (progress log parser), `security-scanner.js` + `security-patterns.json` (pattern matching), and `debug-log.js` (debug logging via `ANT_FARM_DEBUG`).
+
+## MCP Server
+
+`mcp_server.py` exposes `crumb.py` operations as MCP tools that Claude Code can call directly, avoiding CLI subprocess overhead. The server is installed to `~/.claude/mcp_server.py` and registered in `~/.claude.json` by `scripts/setup.sh`.
+
+Available MCP tools: `crumb_list`, `crumb_show`, `crumb_update`, `crumb_query`, `crumb_create`, `crumb_doctor`, `crumb_close`, `crumb_ready`, `crumb_blocked`, `crumb_link`, `crumb_trail_list`, `crumb_trail_show`, `crumb_trail_close`.
+
+Orchestration templates and agent prompts prefer MCP tools over CLI invocations where available.
+
+## Crumb CLI
+
+`crumb.py` is the task-tracking CLI used by all agents and the Orchestrator. It is installed to `~/.local/bin/crumb` by `scripts/setup.sh`. Core commands (`create`, `show`, `list`, `update`, `close`, `query`, `doctor`, etc.) support `--json` output for machine consumption.
+
+Notable subcommands beyond basic CRUD:
+
+| Command | What it does |
+|---------|-------------|
+| `crumb conflict-matrix` | Builds a file modification matrix across tasks; `--wave-plan` generates wave groupings |
+| `crumb validate-coverage` | Verifies implementation coverage against acceptance criteria |
+| `crumb validate-tdd` | Checks that tests were committed before or alongside implementation |
+| `crumb validate-trail` | Validates trail completeness with configurable thresholds |
+| `crumb validate-spec` | Runs banned-phrase filters against spec text |
+| `crumb session-agents` | Lists agents in a session; detects stuck agents (>10 min without commit) |
+| `crumb session-list` | Lists all sessions with status and resume support |
+| `crumb session-status` | Shows current session gate progression |
+| `crumb doctor` | Validates task database integrity; `--fix` mode auto-breaks dependency cycles |
+
 ## Priority Calibration
 
 | Level | Meaning | Examples |
@@ -358,5 +427,14 @@ All file paths in this document use repo-root relative format. At runtime, agent
 | `orchestration/templates/SESSION_PLAN_TEMPLATE.md` | User | Session planning template |
 | `orchestration/reference/dependency-analysis.md` | The Recon Planner | Pre-flight conflict analysis |
 | `orchestration/reference/known-failures.md` | Post-mortem reference | Past failures and fixes applied |
+| `hooks/ant-farm-statusline.js` | Claude Code (statusLine event) | Status line display |
+| `hooks/ant-farm-scope-advisor.js` | Claude Code (PreToolUse event) | Scope boundary enforcement |
+| `hooks/ant-farm-security-scanner.js` | Claude Code (PreToolUse event) | Security pattern scanning |
+| `hooks/ant-farm-context-monitor.js` | Claude Code (PostToolUse event) | Context window usage tracking |
+| `hooks/ant-farm-gate-enforcer.js` | Claude Code (PreToolUse event) | Gate progression enforcement |
+| `mcp_server.py` | Claude Code (MCP) | Task operations as MCP tools |
+| `npm/install-manifest.json` | `setup.sh` | Declares all installable hook/lib files |
+| `npm/lib/hooks-registration.js` | `setup.sh` | Registers hooks in `~/.claude/settings.json` |
+| `npm/lib/mcp-registration.js` | `setup.sh` | Registers MCP server in `~/.claude.json` |
 
 </details>

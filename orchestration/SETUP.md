@@ -29,6 +29,8 @@ For complete details, see `docs/installation-guide.md`. Quick reference:
 - Agent definitions (`agents/*.md`) to `~/.claude/agents/`
 - Orchestration files to `~/.claude/orchestration/`
 - `build-review-prompts.sh` to `~/.claude/orchestration/scripts/`
+- Hooks (`hooks/*.js`, `hooks/lib/`) to `~/.claude/hooks/` + registration in `~/.claude/settings.json`
+- MCP server (`mcp_server.py`) to `~/.claude/mcp_server.py` + registration in `~/.claude.json`
 - Skills (`skills/*.md`) to `~/.claude/skills/ant-farm-<name>/SKILL.md`
 - `crumb.py` to `~/.local/bin/crumb` (marked executable)
 
@@ -114,8 +116,8 @@ For single, isolated tasks where full-pipeline overhead (Recon Planner, Prompt C
 
 **How to trigger:**
 ```
-# In Claude Code, say: "Let's work on <task-id> in lite mode"
-# Claude Code will read RULES-lite.md instead of RULES.md
+# In Claude Code, use the slash command:
+/ant-farm-quick <task-id>
 ```
 
 **What is different in lite mode:**

@@ -38,9 +38,13 @@ The script performs these steps:
 3. **Review script** -- copies `scripts/build-review-prompts.sh` to `~/.claude/orchestration/scripts/` and marks it executable
 4. **Skills** -- copies `skills/*.md` to `~/.claude/skills/ant-farm-<name>/SKILL.md`
 5. **Crumb CLI** -- copies `crumb.py` to `~/.local/bin/crumb` and marks it executable
-6. **CLAUDE.md** -- removes any existing ant-farm sentinel block from `~/.claude/CLAUDE.md` (migration cleanup), removes any stale block from the per-project prompt-dir file (migration cleanup), then writes the ant-farm prompt block to the repo's own `CLAUDE.md`
-7. **PATH check** -- warns if `~/.local/bin` is not in your PATH
-8. **Preflight check** -- warns if `~/.claude/agents/code-reviewer.md` is missing (required by the Reviewer team)
+6. **Hooks** -- copies `hooks/*.js` and `hooks/lib/` to `~/.claude/hooks/`
+7. **MCP server** -- copies `mcp_server.py` to `~/.claude/mcp_server.py`
+8. **Hook registration** -- registers hooks in `~/.claude/settings.json` (statusLine, PreToolUse, PostToolUse events)
+9. **MCP registration** -- registers the MCP server in `~/.claude.json`
+10. **CLAUDE.md** -- removes any existing ant-farm sentinel block from `~/.claude/CLAUDE.md` (migration cleanup), removes any stale block from the per-project prompt-dir file (migration cleanup), then writes the ant-farm prompt block to the repo's own `CLAUDE.md`
+11. **PATH check** -- warns if `~/.local/bin` is not in your PATH
+12. **Preflight check** -- warns if `~/.claude/agents/code-reviewer.md` is missing (required by the Reviewer team)
 
 ### Step 2: Verify PATH
 
@@ -77,10 +81,16 @@ To verify the installation:
 
 ```bash
 # Confirm agent files are installed
-ls ~/.claude/agents/
+ls ~/.claude/agents/ant-farm-*.md
 
 # Confirm orchestration files are installed
 ls ~/.claude/orchestration/
+
+# Confirm hooks are installed
+ls ~/.claude/hooks/ant-farm-*.js
+
+# Confirm MCP server is installed
+ls ~/.claude/mcp_server.py
 
 # Confirm crumb CLI is available
 crumb --help
@@ -135,12 +145,30 @@ Files deleted from the repo's `orchestration/` directory will **not** be automat
 
 New or changed agent files require a Claude Code restart to load.
 
+### Hooks Installation
+
+- **Source**: `{repo-root}/hooks/*.js` and `{repo-root}/hooks/lib/`
+- **Target**: `~/.claude/hooks/`
+- **Behavior**: File-by-file copy with change detection
+- **Contents**: Claude Code event hooks (PreToolUse, PostToolUse, statusLine) and shared libraries
+
+After copying, setup.sh registers hooks in `~/.claude/settings.json` via `npm/lib/hooks-registration.js`. This adds entries for each hook's event type and tool matcher (e.g., scope advisor triggers on Write|Edit, gate enforcer on Task|TeamCreate|SendMessage).
+
+### MCP Server Installation
+
+- **Source**: `{repo-root}/mcp_server.py`
+- **Target**: `~/.claude/mcp_server.py`
+- **Behavior**: Copy with change detection
+- **Contents**: MCP server exposing crumb.py operations as MCP tools
+
+After copying, setup.sh registers the server in `~/.claude.json` via `npm/lib/mcp-registration.js`. This tells Claude Code to start the MCP server at session launch.
+
 ### Skills Installation
 
 - **Source**: `{repo-root}/skills/*.md`
 - **Target**: `~/.claude/skills/ant-farm-<name>/SKILL.md`
 - **Behavior**: Each skill file is placed in its own directory under `~/.claude/skills/`
-- **Contents**: Slash command definitions (e.g., `/ant-farm-work`, `/ant-farm-plan`)
+- **Contents**: Slash command definitions (`/ant-farm-work`, `/ant-farm-plan`, `/ant-farm-quick`, `/ant-farm-pause`, `/ant-farm-status`, `/ant-farm-init`)
 
 ### Crumb CLI Installation
 
@@ -200,6 +228,9 @@ cp -r ~/.claude.backup.20260217_214523/* ~/.claude/
 
 - **orchestration/** directory — The source is in version control (.git), so restoring from there is safer than relying on backups
 - **agents/** directory — Same rationale as orchestration/
+- **hooks/** directory — Same rationale as orchestration/
+- **MCP server** — Same rationale as orchestration/
+- **settings.json / .claude.json registrations** — Hook and MCP registrations are additive; re-running setup.sh restores them
 - **Session artifacts** — `.crumbs/sessions/` contains working files, not meant for backup
 
 If you need to recover orchestration files, use git:
@@ -229,18 +260,29 @@ rm ~/.claude/agents/ant-farm-researcher.md
 rm ~/.claude/agents/ant-farm-spec-writer.md
 rm ~/.claude/agents/ant-farm-session-scribe.md
 
+# Remove hooks and hook libraries
+rm -rf ~/.claude/hooks/ant-farm-*.js
+rm -rf ~/.claude/hooks/lib/
+
+# Remove MCP server
+rm ~/.claude/mcp_server.py
+
 # Remove orchestration directory
 rm -rf ~/.claude/orchestration/
 
 # Remove skills
 rm -rf ~/.claude/skills/ant-farm-init/
 rm -rf ~/.claude/skills/ant-farm-plan/
+rm -rf ~/.claude/skills/ant-farm-quick/
+rm -rf ~/.claude/skills/ant-farm-pause/
 rm -rf ~/.claude/skills/ant-farm-status/
 rm -rf ~/.claude/skills/ant-farm-work/
 
 # Remove crumb CLI
 rm ~/.local/bin/crumb
 ```
+
+**Note**: Hook registrations in `~/.claude/settings.json` and MCP registrations in `~/.claude.json` are not automatically removed. Edit those files manually to remove ant-farm entries, or delete them if ant-farm was the only consumer.
 
 ### Step 2: Clean Up `~/.claude/` (Optional)
 
