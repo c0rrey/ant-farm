@@ -74,15 +74,15 @@ If your orchestrator is spending tokens reading `utils.py`, it is not orchestrat
 
 Nothing progresses until these pass.
 
-| Gate | Historical Acronym | What it blocks | Model |
-|------|--------------------|---------------|-------|
-| **startup-check** | SSV | Prompt Composer spawn | haiku |
-| **pre-spawn-check** | CCO (Colony Cartography Office) | Agent spawn | haiku |
-| **scope-verify** | WWD (Wandering Worker Detection) | Next agent in wave | haiku |
-| **claims-vs-code** | CMVCC (Crumbs Moved vs Crumbs Claimed) | Task closure | sonnet |
-| **review-integrity** | CCB (Colony Census Bureau) | Presenting results to user | sonnet |
-| **session-complete** | ESV (Exec Summary Verification) | Git push | haiku |
-| **decomposition-check** | TDV (Trail Decomposition Verification) | Handoff to implementation wave | haiku |
+| Gate | What it blocks | Model |
+|------|---------------|-------|
+| **startup-check** | Prompt Composer spawn | haiku |
+| **pre-spawn-check** | Agent spawn | haiku |
+| **scope-verify** | Next agent in wave | haiku |
+| **claims-vs-code** | Task closure | sonnet |
+| **review-integrity** | Presenting results to user | sonnet |
+| **session-complete** | Git push | haiku |
+| **decomposition-check** | Handoff to implementation wave | haiku |
 
 All checkpoint artifacts are written to `<session-dir>/pc/` with timestamped filenames for full audit history.
 
